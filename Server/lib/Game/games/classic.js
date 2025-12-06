@@ -775,7 +775,9 @@ exports.readyRobot = function (robot) {
 		var limitMultiplier = 1;
 		if (strategy === "ATTACK" || strategy === "LONG") limitMultiplier = 4; // Fetch 4x for advanced selection (2x Freq + 2x Random)
 
-		getAuto.call(my, my.game.char, my.game.subChar, 2, limitMultiplier).then(function (list) {
+		var sort = (strategy === "LONG") ? { 'length(_id)': -1 } : null;
+
+		getAuto.call(my, my.game.char, my.game.subChar, 2, limitMultiplier, sort).then(function (list) {
 			console.log(`[BOT] executeStrategy: ${strategy}, fetched ${list ? list.length : 0} words`);
 			if (list && list.length) {
 				// Filter by length limit and done list
@@ -796,19 +798,12 @@ exports.readyRobot = function (robot) {
 				if (strategy === "LONG") {
 					// 2x Frequency + 2x Random logic
 					// Sort by Hit DESC first to identify "Frequency" pool
-					list.sort(function (a, b) { return b.hit - a.hit; });
+					// list.sort(function (a, b) { return b.hit - a.hit; }); 
+					// User requested: Use DB sort. So 'list' is already sorted by Length DESC.
 
-					var limit = ROBOT_CANDIDATE_LIMIT[level];
-					var freqPool = list.slice(0, limit * 2);
-					var restPool = list.slice(limit * 2);
-					var randomPool = shuffle(restPool).slice(0, limit * 2);
-
-					var combined = freqPool.concat(randomPool);
-					// Sort combined by Length DESC
-					combined.sort(function (a, b) { return b._id.length - a._id.length; });
-
-					var top = combined.slice(0, 10); // Pick from top 10
-					pickList(top);
+					// Just pick top ones.
+					var top = list.slice(0, 30);
+					pickList(shuffle(top)); // Pick randomly from top 30
 
 				} else if (strategy === "ATTACK") {
 					// 2x Frequency + 2x Random logic
@@ -957,7 +952,7 @@ function getMission(l) {
 	if (!arr) return "-";
 	return arr[Math.floor(Math.random() * arr.length)];
 }
-function getAuto(char, subc, type, limit) {
+function getAuto(char, subc, type, limit, sort) {
 	/* type
 		0 무작위 단어 하나
 		1 존재 여부
@@ -1034,7 +1029,9 @@ function getAuto(char, subc, type, limit) {
 				};
 				break;
 		}
-		DB.kkutu[my.rule.lang].find.apply(this, aqs).limit((bool ? 1 : 123) * (limit || 1)).on(function ($md) {
+		var raiser = DB.kkutu[my.rule.lang].find.apply(this, aqs);
+		if (sort) raiser.sort(sort);
+		raiser.limit((bool ? 1 : 123) * (limit || 1)).on(function ($md) {
 			forManner($md);
 			if (my.game.chain) aft($md.filter(function (item) { return !my.game.chain.includes(item); }));
 			else aft($md);

@@ -254,7 +254,9 @@ exports.readyRobot = function (robot) {
 		var limit = 0;
 		if (strategy === "LONG") limit = 3;
 
-		getAuto.call(my, my.game.theme, 2, limit).then(function (list) {
+		var sort = (strategy === "LONG") ? { 'length(_id)': -1 } : null;
+
+		getAuto.call(my, my.game.theme, 2, limit, sort).then(function (list) {
 			if (list && list.length) {
 				list = list.filter(function (w) {
 					return w._id.length <= ROBOT_LENGTH_LIMIT[level] && !robot._done.includes(w._id);
@@ -270,9 +272,9 @@ exports.readyRobot = function (robot) {
 				}
 
 				if (strategy === "LONG") {
-					list.sort(function (a, b) { return b._id.length - a._id.length; });
-					var top = list.slice(0, 10);
-					pickList(top);
+					// list is already sorted by length desc from DB
+					var top = list.slice(0, 30);
+					pickList(shuffle(top)); // Pick randomly from top 30
 				} else {
 					// NORMAL (Attack is disabled in Daneo per user request for "Word Battle" types)
 					list.sort(function (a, b) { return b.hit - a.hit; });
@@ -323,7 +325,7 @@ function getMission(l) {
 	if (!arr) return "-";
 	return arr[Math.floor(Math.random() * arr.length)];
 }
-function getAuto(theme, type, limit) {
+function getAuto(theme, type, limit, sort) {
 	/* type
 		0 무작위 단어 하나
 		1 존재 여부
@@ -339,7 +341,9 @@ function getAuto(theme, type, limit) {
 	var lst = false;
 
 	if (my.game.chain) aqs.push(['_id', { '$nin': my.game.chain }]);
-	raiser = DB.kkutu[my.rule.lang].find.apply(this, aqs).limit((bool ? 1 : 123) * (limit || 1));
+	raiser = DB.kkutu[my.rule.lang].find.apply(this, aqs);
+	if (sort) raiser.sort(sort);
+	raiser.limit((bool ? 1 : 123) * (limit || 1));
 	switch (type) {
 		case 0:
 		default:
