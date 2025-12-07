@@ -101,6 +101,10 @@
         <h1>서버가 잠시 쉬고 있어요</h1>
         <p>현재 서버가 닫혀있거나 점검 중입니다.<br>잠시 후 다시 접속해주세요.</p>
         <button class="btn-retry" onclick="checkServer()">다시 시도</button>
+        <br>
+        <a href="#" id="force-link"
+            style="display:inline-block; margin-top:15px; color:#999; text-decoration:underline; font-size:12px;">혹시 거짓말
+            치는 거 아니에요?</a>
     </div>
 
     <script>
@@ -115,6 +119,9 @@
         const CHECK_RESOURCE = "/favicon.ico"; // 서버가 켜져있는지 확인할 리소스
 
         function checkServer() {
+            // [추가] 강제 접속 버튼 링크 설정
+            document.getElementById('force-link').href = GAME_SERVER_URL;
+
             // UI 초기화
             document.getElementById('checking').classList.remove('hidden');
             document.getElementById('offline').classList.add('hidden');
@@ -132,7 +139,8 @@
             img.onerror = function () {
                 if (isProcessed) return;
                 isProcessed = true;
-                // 서버 OFF -> 안내 메시지 표시
+                // [참고] HTTPS(깃허브)에서 HTTP(게임서버) 리소스 체크 시 실패할 수 있음
+                // 실패해도 "서버가 켜져 있는데..." 링크를 통해 접속 가능
                 showOffline();
             };
 
