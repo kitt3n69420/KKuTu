@@ -66,6 +66,10 @@ function applyOptions(opt) {
 
 	$data.muteBGM = $data.opts.mb;
 	$data.muteEff = $data.opts.me;
+	$data.BGMVolume = parseFloat($data.opts.bv);
+	if (isNaN($data.BGMVolume)) $data.BGMVolume = 1;
+	$data.EffectVolume = parseFloat($data.opts.ev);
+	if (isNaN($data.EffectVolume)) $data.EffectVolume = 1;
 
 	$("#mute-bgm").attr('checked', $data.muteBGM);
 	$("#mute-effect").attr('checked', $data.muteEff);
@@ -77,15 +81,46 @@ function applyOptions(opt) {
 	$("#only-waiting").attr('checked', $data.opts.ow);
 	$("#only-unlock").attr('checked', $data.opts.ou);
 	$("#sound-pack").val($data.opts.sp || "");
+	$(".bgmVolume").val($data.BGMVolume * 100);
+	$(".effectVolume").val($data.EffectVolume * 100);
 
-	if ($data.bgm) {
-		if ($data.muteBGM) {
-			$data.bgm.volume = 0;
-			$data.bgm.stop();
-		} else {
-			$data.bgm.volume = 1;
-			$data.bgm = playBGM($data.bgm.key, true);
-		}
+	updateBGMVol();
+	updateEffectVol();
+}
+
+function updateBGMVol() {
+	if ($data.muteBGM)
+		updateVolume(0, $data.EffectVolume);
+	else
+		updateVolume($data.BGMVolume, $data.EffectVolume);
+
+	if ($("#mute-bgm").prop("checked") !== $data.muteBGM) $("#mute-bgm").prop("checked", $data.muteBGM);
+	if ($(".bgmVolume").val() != $data.BGMVolume * 100) $(".bgmVolume").val($data.BGMVolume * 100);
+}
+
+function updateEffectVol() {
+	if ($data.muteEff)
+		updateVolume($data.BGMVolume, 0);
+	else
+		updateVolume($data.BGMVolume, $data.EffectVolume);
+
+	if ($("#mute-effect").prop("checked") !== $data.muteEff) $("#mute-effect").prop("checked", $data.muteEff);
+	if ($(".effectVolume").val() != $data.EffectVolume * 100) $(".effectVolume").val($data.EffectVolume * 100);
+}
+
+function updateVolume(bgmVol, effectVol) { // bgmVol, effectVol
+	var vol;
+	if (!isFinite(bgmVol)) bgmVol = 1;
+	if (bgmVol < 0) bgmVol = 0; else if (bgmVol > 1) bgmVol = 1;
+	if (!isFinite(effectVol)) effectVol = 1;
+	if (effectVol < 0) effectVol = 0; else if (effectVol > 1) effectVol = 1;
+
+	for (var i in $_sound) {
+		if ($_sound[i].__BGM) vol = bgmVol;
+		else vol = effectVol;
+
+		if ($_sound[i].gainNode) $_sound[i].gainNode.gain.value = vol;
+		else if ($_sound[i].audio) $_sound[i].audio.volume = vol;
 	}
 }
 function checkInput() {
@@ -212,6 +247,17 @@ function onMessage(data) {
 	var $target;
 
 	switch (data.type) {
+		case 'updateUser':
+			if ($data.users[data.id]) {
+				$data.users[data.id].profile = data.profile;
+				if (data.id === $data.id) {
+					$data.nickname = data.profile.nickname;
+					$data.exordial = data.profile.exordial;
+				}
+				updateUserList();
+				if ($data.room) updateRoom($data.room.gaming);
+			}
+			break;
 		case 'recaptcha':
 			var $introText = $("#intro-text");
 			$introText.empty();
@@ -965,7 +1011,7 @@ function userListBar(o, forInvite) {
 			.append($("<div>").addClass("jt-image users-image").css('background-image', "url('" + o.profile.image + "')"))
 			.append(getLevelImage(o.data.score).addClass("users-level"))
 			// .append($("<div>").addClass("jt-image users-from").css('background-image', "url('/img/kkutu/"+o.profile.type+".png')"))
-			.append($("<div>").addClass("users-name").html(o.profile.title || o.profile.name))
+			.append($("<div>").addClass("users-name").html(getDisplayName(o)))
 			.on('click', function (e) {
 				requestInvite($(e.currentTarget).attr('id').slice(12));
 			});
@@ -974,7 +1020,7 @@ function userListBar(o, forInvite) {
 			.append($("<div>").addClass("jt-image users-image").css('background-image', "url('" + o.profile.image + "')"))
 			.append(getLevelImage(o.data.score).addClass("users-level"))
 			// .append($("<div>").addClass("jt-image users-from").css('background-image', "url('/img/kkutu/"+o.profile.type+".png')"))
-			.append($("<div>").addClass("users-name ellipse").html(o.profile.title || o.profile.name))
+			.append($("<div>").addClass("users-name ellipse").html(getDisplayName(o)))
 			.on('click', function (e) {
 				requestProfile($(e.currentTarget).attr('id').slice(11));
 			});
@@ -1043,7 +1089,7 @@ function normalGameUserBar(o) {
 		.append($m = $("<div>").addClass("moremi game-user-image"))
 		.append($("<div>").addClass("game-user-title")
 			.append(getLevelImage(o.data.score).addClass("game-user-level"))
-			.append($bar = $("<div>").addClass("game-user-name ellipse").html(o.profile.title || o.profile.name))
+			.append($bar = $("<div>").addClass("game-user-name ellipse").html(getDisplayName(o)))
 			.append($("<div>").addClass("expl").html(L['LEVEL'] + " " + getLevel(o.data.score)))
 		)
 		.append($n = $("<div>").addClass("game-user-score"));
@@ -1059,7 +1105,7 @@ function miniGameUserBar(o) {
 	var $R = $("<div>").attr('id', "game-user-" + o.id).addClass("game-user")
 		.append($("<div>").addClass("game-user-title")
 			.append(getLevelImage(o.data.score).addClass("game-user-level"))
-			.append($bar = $("<div>").addClass("game-user-name ellipse").html(o.profile.title || o.profile.name))
+			.append($bar = $("<div>").addClass("game-user-name ellipse").html(getDisplayName(o)))
 		)
 		.append($n = $("<div>").addClass("game-user-score"));
 	if (o.id == $data.id) $bar.addClass("game-user-my-name");
@@ -1127,7 +1173,7 @@ function updateRoom(gaming) {
 				)
 				.append($("<div>").addClass("room-user-title")
 					.append(getLevelImage(o.data.score).addClass("room-user-level"))
-					.append($bar = $("<div>").addClass("room-user-name").html(o.profile.title || o.profile.name))
+					.append($bar = $("<div>").addClass("room-user-name").html(getDisplayName(o)))
 				).on('click', function (e) {
 					requestProfile($(e.currentTarget).attr('id').slice(10));
 				})
@@ -2620,27 +2666,31 @@ function stopBGM() {
 function playSound(key, loop) {
 	var src, sound;
 	var mute = (loop && $data.muteBGM) || (!loop && $data.muteEff);
+	var vol = loop ? $data.BGMVolume : $data.EffectVolume;
+	if (typeof vol === 'undefined') vol = 1;
 
 	sound = $sound[key] || $sound.missing;
 	if (window.hasOwnProperty("AudioBuffer") && sound instanceof AudioBuffer) {
 		src = audioContext.createBufferSource();
 		src.startedAt = audioContext.currentTime;
 		src.loop = loop;
-		if (mute) {
-			src.buffer = audioContext.createBuffer(2, sound.length, audioContext.sampleRate);
-		} else {
-			src.buffer = sound;
-		}
-		src.connect(audioContext.destination);
+		src.buffer = sound;
+
+		var gain = audioContext.createGain();
+		gain.gain.value = mute ? 0 : vol;
+		src.connect(gain);
+		gain.connect(audioContext.destination);
+		src.gainNode = gain;
 	} else {
 		if (sound.readyState) sound.audio.currentTime = 0;
 		sound.audio.loop = loop || false;
-		sound.audio.volume = mute ? 0 : 1;
+		sound.audio.volume = mute ? 0 : vol;
 		src = sound;
 	}
 	if ($_sound[key]) $_sound[key].stop();
 	$_sound[key] = src;
 	src.key = key;
+	src.__BGM = loop;
 	src.start();
 	/*if(sound.readyState) sound.currentTime = 0;
 	sound.loop = loop || false;

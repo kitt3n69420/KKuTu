@@ -669,6 +669,10 @@ function processClientRequest($c, msg) {
 		case 'test':
 			checkTailUser($c.id, $c.place, msg);
 			break;
+		case 'updateProfile':
+			if (!$c.profile) return;
+			$c.updateProfile(msg || {});
+			break;
 		default:
 			break;
 	}

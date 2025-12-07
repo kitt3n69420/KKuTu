@@ -22,6 +22,8 @@ $(document).ready(function () {
 	$data.PUBLIC = $("#PUBLIC").html() == "true";
 	$data.URL = $("#URL").html();
 	$data.version = $("#version").html();
+	$data.NICKNAME_LIMIT = JSON.parse($("#NICKNAME_LIMIT").html() || "{}");
+	if ($data.NICKNAME_LIMIT.REGEX) $data.NICKNAME_LIMIT.REGEX = new RegExp($data.NICKNAME_LIMIT.REGEX[0], $data.NICKNAME_LIMIT.REGEX[1]);
 	var serverMatch = location.href.match(/[?&]server=(\d+)/);
 	$data.server = serverMatch ? serverMatch[1] : null;
 	$data.shop = {};
@@ -230,6 +232,8 @@ $(document).ready(function () {
 	MODE = Object.keys(RULE);
 	mobile = $("#mobile").html() == "true";
 	if (mobile) TICK = 200;
+	$data.NICKNAME_LIMIT = JSON.parse($("#NICKNAME_LIMIT").html() || "{}");
+	if ($data.NICKNAME_LIMIT.REGEX) $data.NICKNAME_LIMIT.REGEX = new RegExp($data.NICKNAME_LIMIT.REGEX[0], $data.NICKNAME_LIMIT.REGEX[1]);
 	$data._timePercent = false ? function () {
 		return $data._turnTime / $data.turnTime * 100 + "%";
 	} : function () {
@@ -651,9 +655,11 @@ $(document).ready(function () {
 		location.href = "/";
 	});
 	$stage.dialog.settingOK.on('click', function (e) {
-		applyOptions({
+		$data.opts = {
 			mb: $("#mute-bgm").is(":checked"),
 			me: $("#mute-effect").is(":checked"),
+			bv: $data.BGMVolume,
+			ev: $data.EffectVolume,
 			di: $("#deny-invite").is(":checked"),
 			dw: $("#deny-whisper").is(":checked"),
 			df: $("#deny-friend").is(":checked"),
@@ -662,9 +668,31 @@ $(document).ready(function () {
 			ow: $("#only-waiting").is(":checked"),
 			ou: $("#only-unlock").is(":checked"),
 			sp: $("#sound-pack").val()
-		});
+		};
 		$.cookie('kks', encodeURIComponent(JSON.stringify($data.opts)));
 		$stage.dialog.setting.hide();
+	});
+	$("#mute-bgm").on('click', function () {
+		$data.muteBGM = !$data.muteBGM;
+		updateBGMVol();
+		send("option", { mb: $data.muteBGM, bv: $data.BGMVolume, me: $data.muteEff, ev: $data.EffectVolume });
+	});
+	$(".bgmVolume").on('input change', function () {
+		$data.BGMVolume = $(this).val() / 100;
+		updateBGMVol();
+	}).on('change', function () {
+		send("option", { mb: $data.muteBGM, bv: $data.BGMVolume, me: $data.muteEff, ev: $data.EffectVolume });
+	});
+	$("#mute-effect").on('click', function () {
+		$data.muteEff = !$data.muteEff;
+		updateEffectVol();
+		send("option", { mb: $data.muteBGM, bv: $data.BGMVolume, me: $data.muteEff, ev: $data.EffectVolume });
+	});
+	$(".effectVolume").on('input change', function () {
+		$data.EffectVolume = $(this).val() / 100;
+		updateEffectVol();
+	}).on('change', function () {
+		send("option", { mb: $data.muteBGM, bv: $data.BGMVolume, me: $data.muteEff, ev: $data.EffectVolume });
 	});
 	$stage.dialog.profileLevel.on('click', function (e) {
 		$("#PracticeDiag .dialog-title").html(L['robot']);
@@ -835,13 +863,32 @@ $(document).ready(function () {
 		});
 	});
 	$stage.dialog.dressOK.on('click', function (e) {
-		$(e.currentTarget).attr('disabled', true);
-		$.post("/exordial", { data: $("#dress-exordial").val() }, function (res) {
-			$stage.dialog.dressOK.attr('disabled', false);
-			if (res.error) return fail(res.error);
+		const data = {};
 
+		$(e.currentTarget).attr('disabled', true);
+
+		if ($("#dress-nickname").val() && $("#dress-nickname").val() !== $data.nickname) data.nickname = $("#dress-nickname").val();
+		if ($("#dress-exordial").val() !== undefined && $("#dress-exordial").val() !== $data.exordial) data.exordial = $("#dress-exordial").val();
+
+		if (data.nickname && $data.NICKNAME_LIMIT.REGEX && $data.NICKNAME_LIMIT.REGEX.test(data.nickname)) data.nickname = confirm(L.confirmNickPolicy) ? data.nickname.replace($data.NICKNAME_LIMIT.REGEX, "") : undefined;
+		if (!data.nickname && data.exordial === undefined) {
+			$stage.dialog.dressOK.attr("disabled", false);
 			$stage.dialog.dress.hide();
+			return;
+		}
+		if (confirm($data.NICKNAME_LIMIT.TERM > 0 ? L.confirmNickChangeLimit.replace("{V1}", $data.NICKNAME_LIMIT.TERM) : L.confirmNickChange)) $.post("/profile", data, function (res) {
+			const message = [];
+			if (data.nickname) {
+				$("#account-info").text($data.users[$data.id].nickname = $data.users[$data.id].profile.title = $data.users[$data.id].profile.name = $data.nickname = data.nickname);
+				message.push(L.nickChanged.replace("{V1}", data.nickname));
+			}
+			if (data.exordial !== undefined) message.push(L.exorChanged.replace("{V1}", $data.users[$data.id].exordial = $data.exordial = data.exordial));
+
+			send("updateProfile", data, true);
+			alert(message.join("\n"));
 		});
+		$stage.dialog.dressOK.attr("disabled", false);
+		$stage.dialog.dress.hide();
 	});
 	$("#DressDiag .dress-type").on('click', function (e) {
 		var $target = $(e.currentTarget);

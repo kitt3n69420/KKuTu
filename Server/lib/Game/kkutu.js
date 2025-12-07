@@ -454,6 +454,19 @@ exports.Client = function (socket, profile, sid) {
 			my.flush(my.box, my.equip);
 		}
 	};
+	my.updateProfile = function (profile) {
+		if (profile.nickname) {
+			my.profile.nickname = my.profile.title = my.profile.name = profile.nickname;
+			my.publish('chat', {
+				value: "님께서 별명을 " + profile.nickname + "(으)로 변경하셨습니다."
+			});
+		}
+		if (profile.exordial) my.profile.exordial = profile.exordial;
+		my.publish('updateUser', {
+			id: my.id,
+			profile: my.profile
+		});
+	};
 	my.refresh = function () {
 		var R = new Lizard.Tail();
 

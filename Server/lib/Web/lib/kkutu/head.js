@@ -53,3 +53,7 @@ var audioContext = window.hasOwnProperty("AudioContext") ? (new AudioContext()) 
 var _WebSocket = window['WebSocket'];
 var _setInterval = setInterval;
 var _setTimeout = setTimeout;
+
+function getDisplayName(user) {
+	return user.nickname || user.profile.nickname || user.profile.title || user.profile.name;
+}
