@@ -79,10 +79,29 @@
             cursor: pointer;
             font-size: 14px;
             transition: background 0.3s;
+            margin-right: 10px;
+        }
+
+        .btn-discord {
+            margin-top: 25px;
+            padding: 10px 20px;
+            background-color: #5865F2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn-retry:hover {
             background-color: #2980b9;
+        }
+
+        .btn-discord:hover {
+            background-color: #4752c4;
         }
     </style>
 </head>
@@ -103,6 +122,7 @@
         <h1>서버가 자고 있어요</h1>
         <p>현재 서버가 닫혀있거나 점검 중입니다.<br>잠시 후 다시 접속해주세요.</p>
         <button class="btn-retry" onclick="checkServer()">다시 시도</button>
+        <a href="https://discord.gg/aEAVmrtU4w" target="_blank" class="btn-discord">디스코드</a>
         <br>
         <a href="#" id="force-link"
             style="display:inline-block; margin-top:15px; color:#999; text-decoration:underline; font-size:12px;">혹시 거짓말

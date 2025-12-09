@@ -1767,9 +1767,10 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 		* (0.77 + 0.05 * (all - rank) * (all - rank)) // 순위
 		* 1.25 / (1 + 1.25 * sr * sr) // 점차비(양학했을 수록 ↓)
 		;
-	rw.money = 1 + rw.score * 0.05;
+	rw.money = 1 + rw.score * 0.1; //0.01에서 대폭 상승한 것이다.
 	if (all < 2) {
 		rw.score = rw.score * 0.05;
+		rw.money = rw.money * 0.5;
 	} else {
 		rw.together = true;
 	}
