@@ -1229,6 +1229,7 @@ exports.Room = function (room, channel) {
 			if (my.players.length < 1) {
 				if (my._adt) clearTimeout(my._adt);
 				delete ROOM[my.id];
+				if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
 			}
 			return client.sendError(409);
 		}
@@ -1546,6 +1547,7 @@ exports.Room = function (room, channel) {
 			});
 		});
 		my.gaming = false;
+		my.checkJamsu();
 		my.export();
 		delete my.game.seq;
 		delete my.game.wordLength;

@@ -38,7 +38,8 @@ const PRIORITY_ATTACK_CHARS_MANNER = ["릇", "륨", "늄", "럴", "텝", "슭", 
 const PRIORITY_KAP_ATTACK_CHARS = ["넓", "앉", "높", "깊", "된", "뾰", "짧", "덮", "꺾", "돋", "얕", "잦", "굵", "걷", "얽", "잿", "묻", "읽", "펩", "흩"];
 const PRIORITY_KAP_ATTACK_CHARS_MANNER = ["흰", "왼", "붉", "홑", "넙", "퓨", "귓", "받", "엎", "굳", "앨", "좁", "닫", "캘", "긁", "묶", "밉", "잰"];
 const DUBANG = ["괙", "귁", "껙", "꿕", "뀍", "늡", "릅", "돨", "똴", "뙁", "뛸", "뜩", "띡", "띨", "멫", "몇", "뱍", "뷩", "뷩", "븩", "뽓", "뿅", "솰", "쏼", "었", "쟘", "좍", "좜", "좸", "줅", "줍", "쥄", "쫙", "챱", "홱"]
-
+const PRIORITY_ATTACK_CHARS_EN = ["ght", "ock", "ick", "ird", "ert", "ork", "eck", "nds", "uck", "ond", "lue", "lls", "elt", "rds", "arp", "uff", "erm", "irl", "ilt", "ilk", "ods", "cks", "ays", "iff", "ett", "olt", "ors", "erb", "ohn", "erk", "awk", "nks", "irs", "irm", "urd", "ilm", "nue", "rks", "arf", "nyx", "erd", "ryx", "olk", "itt", "rys", "gie", "url", "nck", "ils", "avy", "ynx", "ews", "mie", "irk", "cht", "cue", "ulb", "onk", "elp", "urk", "ldt", "aws"]
+const PRIORITY_ATTACK_CHARS_MANNER_EN = ["ack", "ark", "ics", "orm", "ers", "ify", "ons", "omb", "ngs", "ump", "owl", "ift", "urn", "rie", "eek", "oud", "elf", "irt", "ild", "kie", "itz", "rld", "iew", "thm", "els", "awl", "awn", "rue", "yew", "eft", "oft", "ffy", "uld", "hew", "ivy", "rtz", "egs", "tew", "oux", "rns", "ebs", "tua", "tyl", "efy", "ohm", "omp", "bbs", "ltz", "ggs", "oek", "xxv", "few", "wyn", "orr", "utz", "enn", "ebb", "hns", "ogs", "ruz", "ibs", "uhr", "nyl"]
 
 var AttackCache = {};
 
@@ -547,31 +548,19 @@ exports.readyRobot = function (robot) {
 	// Helper: Count next words for a given character using Pre-calculated Stats
 	function countNextWords(char) {
 		return new Promise(function (resolve, reject) {
-			if (!char || char.length > 1) return resolve(0); // Only single char supported for stats
+			if (!char) return resolve(0);
 
 			// Determine State Index (0-7)
 			var state = 0;
-			// Bit 0: No Injeong (If Opts Injeong is OFF, then we are in No Injeong mode)
-			// Wait, logic in helper:
-			// reqNoInjeong (Bit 0): If Set, reject if is_injeong.
-			// Default game: opts.injeong = false?
-			// Let's check 'keyByOptions' in classic.js or similar.
-			// Const.js: 'ext' : { name: "Injeong" }
-			// If my.opts.injeong is TRUE, we ALLOW Injeong. So reqNoInjeong should be 0.
-			// If my.opts.injeong is FALSE, we DISALLOW Injeong. So reqNoInjeong should be 1.
 			if (!my.opts.injeong) state |= 1;
-
-			// Bit 1: Strict (If Opts Strict is ON, we REQUIRE Strict)
 			if (my.opts.strict) state |= 2;
-
-			// Bit 2: No Loanword (If Opts Loanword is ON, we FORBID Loanword)
-			// Const.js: 'loa' : { name: "Loanword" } -> Usually "Forbidden Loanword" rule?
-			// Let's re-read db.js or classic.js usage.
-			// Line 414: else if (my.opts.loanword && ($doc.flag & Const.KOR_FLAG.LOANWORD)) denied(405);
-			// So if opts.loanword is TRUE, we DENY loanwords.
 			if (my.opts.loanword) state |= 4;
 
 			var col = isRev ? `end_${state}` : `start_${state}`;
+
+			// If English, we might check 2 or 3 chars.
+			// But this function is generic. It just checks stats for 'char'.
+			// Caller handles logic.
 
 			DB.kkutu_stats.findOne(['_id', char]).on(function (doc) {
 				if (doc) {
@@ -612,8 +601,85 @@ exports.readyRobot = function (robot) {
 			var hardList = isRev ? PRIORITY_KAP_ATTACK_CHARS : PRIORITY_ATTACK_CHARS;
 			var softList = isRev ? PRIORITY_KAP_ATTACK_CHARS_MANNER : PRIORITY_ATTACK_CHARS_MANNER;
 
-			// If Manner Mode: Hard List is invalid/unsafe (One-shots), so we ignore it or Treat it as "Don't Use".
-			// Actually, we just won't add it to Tier 1.
+			// English Logic:
+			// If English, we don't have manual priority lists yet.
+			// We rely on calculating "Killer Suffixes" from stats.
+			// Killer Suffix (3-char) = stats(3-char) <= X AND stats(2-char suffix) <= X.
+
+			if (my.rule.lang === 'en') {
+				var p1 = new Promise(function (res1) {
+					// 1. Fetch 3-letter candidates with Low Start Count (Hard: 0, Soft: <=3)
+					// Let's assume Hard <= 2 for now based on user request "One-shot words".
+					var threshold = 2; // Can be adjusted
+					// Use Regex for length check (custom DB doesn't support .where)
+					DB.kkutu_stats.find([col, { $lte: threshold }], ['_id', /^...$/]).limit(5000).on(function (docs3) {
+						res1(docs3 || []);
+					}, null, () => res1([]));
+				});
+
+				var p2 = new Promise(function (res2) {
+					// 2. Fetch 2-letter candidates with Low Start Count
+					var threshold = 2;
+					DB.kkutu_stats.find([col, { $lte: threshold }], ['_id', /^..$/]).limit(2000).on(function (docs2) {
+						res2(docs2 || []);
+					}, null, () => res2([]));
+				});
+
+				Promise.all([p1, p2]).then(function (results) {
+					var docs3 = results[0];
+					var docs2 = results[1];
+
+					// Build Map for 2-char counts
+					var map2 = new Map();
+					docs2.forEach(d => map2.set(d._id, d[col]));
+
+					var t1Set = new Set();
+					var t2Set = new Set();
+
+					// Add Manual Heuristics First
+					if (typeof PRIORITY_ATTACK_CHARS_EN !== 'undefined') {
+						PRIORITY_ATTACK_CHARS_EN.forEach(c => t1Set.add(c));
+					}
+					if (typeof PRIORITY_ATTACK_CHARS_MANNER_EN !== 'undefined') {
+						PRIORITY_ATTACK_CHARS_MANNER_EN.forEach(c => t2Set.add(c));
+					}
+
+					docs3.forEach(d3 => {
+						var s3 = d3._id;
+						var s2 = s3.slice(1); // Last 2 chars
+						var count3 = d3[col];
+
+						// Check if s2 is in our low-count list (or if we need to query it? We fetched limited list.
+						// If s2 not in docs2, it likely has High count (since we queried <= threshold).
+						// So valid killer ONLY if s2 is in docs2.
+
+						if (map2.has(s2)) {
+							var count2 = map2.get(s2);
+
+							// Intersection Logic:
+							// If Both are 0 -> Hard Killer (One-shot)
+							// If one is > 0 -> Soft Killer
+
+							if (count3 === 0 && count2 === 0) {
+								t1Set.add(s3);
+							} else {
+								t2Set.add(s3);
+							}
+						}
+					});
+
+					var data = { tier1: Array.from(t1Set), tier2: Array.from(t2Set) };
+					AttackCache[key] = {
+						time: Date.now(),
+						data: data
+					};
+					console.log(`[BOT] Updated Attack Cache for ${key} (EN): Tier1=${data.tier1.length}, Tier2=${data.tier2.length}`);
+					resolve(data);
+				});
+				return;
+			}
+
+			// Korean Logic (Existing)
 
 			var fetchList = hardList.concat(softList);
 
@@ -641,27 +707,15 @@ exports.readyRobot = function (robot) {
 				var manualHard = new Set(hardList);
 				var manualSoft = new Set(softList);
 
-				// Process Manual Priority Chars (From DB Result to ensure validity, or Raw)
-				// User wants these priority chars to be used.
-				// We trust the manual list, but verifying existence via 'priorityDocs' is safer?
-				// For now, let's add them if they appear in priorityDocs OR if they are just in the list.
-				// Actually, if we add them blindly, we might try to attack with a char that doesn't exist.
-				// 'priorityDocs' contains the stats for them. 
-
 				// Helper to decide where a char goes
 				function classify(char, count) {
 					// Manner Mode Filter: NO One-Shots (Count 0) allowed in ANY Tier.
 					if (my.opts.manner && count === 0) return;
 
 					// Tier 1: One-shots (Count 0) OR Manual Hard Priority
-					// If Manner Mode, Tier 1 should be EMPTY (or at least no one-shots).
-					// User said: "Manner constants are Tier 2... Tier 1 is one-shot so can't use."
-					// So if Manner Mode, We SKIP Tier 1 assignment entirely? 
-					// Or we just put everything allowed into Tier 2?
-					// Let's implement: If Manner, Tier 1 is disabled. All allowed chars go to Tier 2.
-
+					// If Manner Mode, Tier 1 should be disabled or filtered.
+					// Implementation: Skip Tier 1 assignment if Manner.
 					if (my.opts.manner) {
-						// Only allow Softs and Count >= 1
 						if (count > 0) t2Set.add(char);
 						return;
 					}
@@ -690,10 +744,6 @@ exports.readyRobot = function (robot) {
 				charMap.forEach((count, char) => {
 					classify(char, count);
 				});
-
-				// Also ensure Manual Softs are in T2 if missed by DB (rare, but if stats missing?)
-				// If stats missing, we don't know count. Safer to skip or assume safe?
-				// Assuming DB covers everything.
 
 				var t1List = Array.from(t1Set);
 				var t2List = Array.from(t2Set);
@@ -1095,6 +1145,90 @@ exports.readyRobot = function (robot) {
 								}
 								if (flagMask > 0) query.push(['flag', { '$nand': flagMask }]);
 							} else {
+								// English Query Logic - Advanced (Middle/Second Rule Support)
+								// We need to find words that START with 'adc' AND yield a 'killer' suffix for the next turn.
+								// 1. Standard: Ends with killer.
+								// 2. Second: getChar() returns killer.
+								// 3. Middle: getChar() returns killer.
+
+								// Killers are in 'subset'. Join them once.
+								var killerPattern = subset.join("|");
+								var patterns = [];
+								var minLen = 2; // Min word length
+								var maxLen = ROBOT_LENGTH_LIMIT[level];
+								if (maxLen > 50) maxLen = 50;
+
+								// Check if we need complex rules
+								if (my.opts.middle || my.opts.second) {
+									// Iterate lengths to place killer correctly
+									for (var len = minLen; len <= maxLen; len++) {
+										// Calculate where the "Next Char" (Link) would be extracted from a word of this length
+										var idx = -1;
+										var rStart = -1; // Relative start index of the link
+										var linkLen = 0; // expected link length (should match killer length, e.g. 3)
+
+										// Mimic getChar / getSubChar logic to find the Link Position
+										// English EKT: Link is usually 3 chars.
+										// But we also need to match the killer length (2 or 3).
+										// Our killers are mixed 2/3 chars? No, mostly 3 chars if using EKT logic.
+										// But 'subset' might have 2-char killers too.
+										// ATTENTION: Middle/Second rules in English (as per getChar) have specific logic.
+
+										// EKT Middle/Second Logic for "getChar" (which returns the LINK for the next person):
+										// Wait, 'getChar' extracts the char used for chaining.
+										// For English EKT Middle:
+										//   if len%2!=0: idx = floor(len/2). Link = text.slice(idx-1, idx+2) -> Length 3.
+										//   if len%2==0: idx = len/2. Link = text.slice(idx-1, idx+2) -> Length 3.
+										// For English EKT Second:
+										//   if len>=4: Link = text.slice(len-4, len-1) -> Length 3.
+										//   if len==3: Link = text (Length 3).
+
+										// So for EKT, the Link is ALWAYS 3 characters (consistent with killer length).
+										// If our killers are 2 chars, they won't match a 3-char extraction exactly?
+										// Or does the game allow 2-char links? EKK vs EKT.
+										// EKT = 3 char chain. EKK = 1 char chain (normally).
+										// If EKT, we assume killers are 3 chars.
+
+										// Let's assume we are in a mode where 3-char killers are relevant.
+
+										// Logic to find 'start index' of the link within the word:
+										if (my.opts.middle) {
+											if (len % 2 !== 0) idx = Math.floor(len / 2);
+											else idx = len / 2;
+
+											rStart = idx - 1;
+										} else if (my.opts.second) {
+											if (len >= 4) rStart = len - 4;
+											else if (len === 3) rStart = 0;
+										}
+
+										if (rStart >= 0 && rStart + 3 <= len) {
+											var pre = rStart;
+											var post = len - (rStart + 3);
+											// Pattern: .{pre}(killer).{post}
+											patterns.push(`.{${pre}}(${killerPattern}).{${post}}`);
+										}
+									}
+
+									if (patterns.length > 0) {
+										// Combined Regex: Must start with 'adc', and match one of the length patterns.
+										// Use Lookahead to enforce "Starts with adc" independent of the length pattern structure (which handles full length).
+										// Actually, if 'adc' is long, it might overlap.
+										// Safer: ^(?=adc)(pattern1|pattern2|...)$
+
+										regex = `^(?=(${adc}))(${patterns.join('|')})$`;
+									} else {
+										// Fallback (e.g. no valid lengths found? unlikely)
+										regex = `^(${adc}).*(${killerPattern})$`;
+									}
+
+								} else {
+									// Standard Rule: Ends with killer
+									// Regex: ^adc.*(killer)$
+									regex = `^(${adc}).*(${killerPattern})$`;
+								}
+
+								query = [['_id', new RegExp(regex)]];
 								query.push(['_id', Const.ENG_ID]);
 							}
 
@@ -1456,7 +1590,7 @@ function getSubChar(char) {
 				if (len && len !== 2) {
 					if (my.opts.middle) {
 						if (len % 2 !== 0) r = char.slice(1);
-						else r = char.slice(0, 2);
+						else r = char.slice(1);
 					} else if (my.opts.second) {
 						if (len >= 4) r = char.slice(1);
 						else if (len === 3) r = char.slice(0, 2);

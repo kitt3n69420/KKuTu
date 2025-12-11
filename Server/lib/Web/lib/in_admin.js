@@ -165,7 +165,9 @@
 				list: JSON.stringify({ list: list }),
 				pw: $("#db-password").val()
 			}, function (res) {
-				alert(res);
+				alert("적용되었습니다 (" + res + ")");
+			}).fail(function (xhr) {
+				alert("오류가 발생했습니다.\n상태: " + xhr.status + "\n내용: " + xhr.responseText || xhr.statusText);
 			});
 		});
 		// 유저 DB 다루기

@@ -161,8 +161,6 @@
             img.onerror = function () {
                 if (isProcessed) return;
                 isProcessed = true;
-                // [참고] HTTPS(깃허브)에서 HTTP(게임서버) 리소스 체크 시 실패할 수 있음
-                // 실패해도 "서버가 켜져 있는데..." 링크를 통해 접속 가능
                 showOffline();
             };
 

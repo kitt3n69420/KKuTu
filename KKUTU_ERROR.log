@@ -350,4 +350,15 @@ TypeError: Cannot read properties of undefined (reading 'length')
     at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12
     at Parser.parse (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\parser.js:40:17)
     at Socket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\index.js:11:42)
-    at Socket.emit (node:events:518:28)
+    at Socket.emit (node:events:518:28):8496 [2025. 12. 12. 오전 3:03:51] ERROR: TypeError: DB.kkutu_stats.find(...).where is not a function
+TypeError: DB.kkutu_stats.find(...).where is not a function
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:613:54
+    at new Promise (<anonymous>)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:609:14
+    at new Promise (<anonymous>)
+    at getAttackChars (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:580:10)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1067:6
+    at exports.Tail.go (C:\myKKuTu\KKuTu-master\Server\lib\sub\lizard.js:43:16)
+    at aft (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1476:8)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1484:23
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13)

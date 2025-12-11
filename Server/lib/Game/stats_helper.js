@@ -5,17 +5,6 @@ var RIEUL_TO_NIEUN = [4449, 4450, 4457, 4460, 4462, 4467];
 var RIEUL_TO_IEUNG = [4451, 4455, 4456, 4461, 4466, 4469];
 var NIEUN_TO_IEUNG = [4455, 4461, 4466, 4469];
 
-/*
-    Stats Helper
-    Populates kkutu_stats table with pre-calculated word counts.
-    Columns: start_0..7, end_0..7
-    Index Bits: (NoLoanword << 2) | (Strict << 1) | (NoInjeong << 0)
-    
-    Logic Update:
-    - Exclude 1-letter words.
-    - Start Stats: Include Origins (Reverse Dueum).
-    - End Stats: Include Targets (Forward Dueum).
-*/
 
 DB.ready = function () {
     console.log("Stats Helper: DB Ready. Starting population...");
@@ -24,75 +13,94 @@ DB.ready = function () {
 
 function populateStats() {
     var stats = {}; // Key: Char, Value: { start: [0..7], end: [0..7] }
+    var langs = ['ko', 'en'];
+    var pending = langs.length;
 
-    console.log("Fetching words from kkutu_ko...");
-    DB.kkutu['ko'].find().on(function (words) {
-        if (!words) {
-            console.error("No words found or DB error.");
-            process.exit(1);
-        }
-
-        console.log(`Processing ${words.length} words...`);
-
-        words.forEach(function (word) {
-            var w = word._id;
-            var flag = word.flag || 0;
-            var type = word.type || "";
-
-            // Exclude single character words
-            if (w.length <= 1) return;
-
-            // Determine Word Properties
-            var isInjeong = (flag & Const.KOR_FLAG.INJEONG) ? true : false;
-            var isLoan = (flag & Const.KOR_FLAG.LOANWORD) ? true : false;
-            var isStrict = (type.match(Const.KOR_STRICT) && flag < 4) ? true : false;
-
-            // Get Start and End Chars
-            var startChar = w.charAt(0);
-
-            // Start Stats: Word starts with 'C'.
-            // Include 'C' + Any Origin that converts to 'C'.
-            // Example: '이' -> Include '이', '리', '니'.
-            var startOriginList = getReverseDueumChars(startChar);
-            startOriginList.push(startChar);
-
-            // End Stats: Word ends with 'C' (Tail).
-            // Include 'C' + Any Target that 'C' converts to.
-            // Example: '리' -> Include '리', '이'.
-            var endTarget = getSubChar(w.charAt(w.length - 1));
-            var endList = [w.charAt(w.length - 1)];
-            if (endTarget && endTarget !== w.charAt(w.length - 1)) endList.push(endTarget);
-
-            // Update Stats for each of the 8 States
-            for (var state = 0; state < 8; state++) {
-                var reqNoInjeong = (state & 1);
-                var reqStrict = (state & 2);
-                var reqNoLoan = (state & 4);
-
-                var valid = true;
-                if (reqNoInjeong && isInjeong) valid = false;
-                if (reqStrict && !isStrict) valid = false;
-                if (reqNoLoan && isLoan) valid = false;
-
-                if (valid) {
-                    // Start Update
-                    startOriginList.forEach(function (sc) {
-                        if (!stats[sc]) stats[sc] = { start: [0, 0, 0, 0, 0, 0, 0, 0], end: [0, 0, 0, 0, 0, 0, 0, 0] };
-                        stats[sc].start[state]++;
-                    });
-
-                    // End Update
-                    endList.forEach(function (ec) {
-                        if (!stats[ec]) stats[ec] = { start: [0, 0, 0, 0, 0, 0, 0, 0], end: [0, 0, 0, 0, 0, 0, 0, 0] };
-                        stats[ec].end[state]++;
-                    });
-                }
+    langs.forEach(function (lang) {
+        console.log(`Fetching words from kkutu_${lang}...`);
+        DB.kkutu[lang].find().on(function (words) {
+            if (!words) {
+                console.error(`No words found for ${lang} or DB error.`);
+                if (--pending === 0) finalize();
+                return;
             }
-        });
 
+            console.log(`Processing ${words.length} words for ${lang}...`);
+
+            words.forEach(function (word) {
+                var w = word._id;
+                var flag = word.flag || 0;
+                var type = word.type || "";
+
+                // Exclude single character words (except for English maybe? No, 1-char usually irrelevant for chaining)
+                if (w.length <= 1) return;
+
+                // Determine Word Properties
+                var isInjeong = (flag & Const.KOR_FLAG.INJEONG) ? true : false;
+                var isLoan = (flag & Const.KOR_FLAG.LOANWORD) ? true : false;
+                var isStrict = (type.match(Const.KOR_STRICT) && flag < 4) ? true : false;
+
+                // For English, usually flags are 0, so valid for all.
+                // But let's respect flags if they exist.
+
+                var startOriginList = [];
+                var endList = [];
+
+                if (lang === 'ko') {
+                    // Korean Logic
+                    var startChar = w.charAt(0);
+                    startOriginList = getReverseDueumChars(startChar);
+                    startOriginList.push(startChar);
+
+                    var endTarget = getSubChar(w.charAt(w.length - 1));
+                    endList.push(w.charAt(w.length - 1));
+                    if (endTarget && endTarget !== w.charAt(w.length - 1)) endList.push(endTarget);
+                } else {
+                    // English Logic
+                    // Start Stats: Prefixes of length 2 and 3
+                    if (w.length >= 2) startOriginList.push(w.slice(0, 2));
+                    if (w.length >= 3) startOriginList.push(w.slice(0, 3));
+
+                    // End Stats: Suffixes of length 2 and 3
+                    if (w.length >= 2) endList.push(w.slice(-2));
+                    if (w.length >= 3) endList.push(w.slice(-3));
+                }
+
+                // Update Stats for each of the 8 States
+                for (var state = 0; state < 8; state++) {
+                    var reqNoInjeong = (state & 1);
+                    var reqStrict = (state & 2);
+                    var reqNoLoan = (state & 4);
+
+                    var valid = true;
+                    if (reqNoInjeong && isInjeong) valid = false;
+                    if (reqStrict && !isStrict) valid = false;
+                    if (reqNoLoan && isLoan) valid = false;
+
+                    if (valid) {
+                        // Start Update
+                        startOriginList.forEach(function (sc) {
+                            if (!stats[sc]) stats[sc] = { start: [0, 0, 0, 0, 0, 0, 0, 0], end: [0, 0, 0, 0, 0, 0, 0, 0] };
+                            stats[sc].start[state]++;
+                        });
+
+                        // End Update
+                        endList.forEach(function (ec) {
+                            if (!stats[ec]) stats[ec] = { start: [0, 0, 0, 0, 0, 0, 0, 0], end: [0, 0, 0, 0, 0, 0, 0, 0] };
+                            stats[ec].end[state]++;
+                        });
+                    }
+                }
+            });
+
+            if (--pending === 0) finalize();
+        });
+    });
+
+    function finalize() {
         console.log("Aggregation done. Writing to DB...");
         saveStats(stats);
-    });
+    }
 }
 
 function saveStats(stats) {
