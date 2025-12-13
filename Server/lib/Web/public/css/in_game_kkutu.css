@@ -2029,3 +2029,80 @@ iframe {
 		opacity: 0.1;
 	}
 }
+
+/* Dynamic Player Card Resizing */
+/* Dynamic Player Card Resizing */
+/* Waiting Room */
+.room-users.small-mode .room-user {
+	width: 224px;
+	height: 95px;
+	/* Reduced height for 3 rows */
+}
+
+.room-users.small-mode .room-user-image {
+	width: 50px;
+	height: 50px;
+}
+
+.room-users.small-mode .room-user-stat {
+	width: 152px;
+	height: 45px;
+}
+
+.room-users.small-mode .room-user-title {
+	clear: both;
+	padding: 2px 4px;
+	font-size: 12px;
+}
+
+.room-users.small-mode .room-user-level {
+	width: 18px;
+	height: 18px;
+}
+
+.room-users.small-mode .room-user-name {
+	padding: 2px 0px 0px 4px;
+	font-size: 12px;
+}
+
+/* Game Screen */
+.game-body.small-mode .game-user {
+	float: left;
+	/* Ensure horizontal layout */
+	width: 68px;
+	/* 68 + 2(pad) + 4(border) + 2(margin) = 76px * 12 = 912px < 992px */
+	height: 160px;
+	border-width: 2px;
+	margin: 10px 1px 1px 1px;
+}
+
+.game-body.small-mode .game-user-image {
+	width: 60px;
+	height: 60px;
+	margin: 3px 4px;
+}
+
+.game-body.small-mode .game-user-name {
+	float: left;
+	width: 48px;
+	font-size: 12px;
+	padding-left: 2px;
+	height: 18px;
+}
+
+.game-body.small-mode .game-user-score {
+	clear: both;
+	width: 65px;
+	font-size: 16px;
+	padding: 0px 1px;
+}
+
+.game-body.small-mode .game-user-score-char {
+	width: 11px;
+}
+
+.game-body.small-mode .game-user-level {
+	float: left;
+	width: 15px;
+	height: 15px;
+}

@@ -59,9 +59,9 @@ exports.roundReady = function () {
 			// $ans가 null이면 골치아프다...
 			my.game.late = false;
 			my.game.answer = $ans || {};
-			my.game.done.push($ans._id);
-			$ans.mean = ($ans.mean.length > 20) ? $ans.mean : getConsonants($ans._id, Math.round($ans._id.length / 2), my.opts.vowel);
-			my.game.hint = getHint($ans, my.opts.vowel);
+			var gType = Const.GAME_TYPE[my.mode];
+			$ans.mean = ($ans.mean.length > 20) ? $ans.mean : getConsonants($ans._id, Math.round($ans._id.length / 2), my.opts.vowel, gType);
+			my.game.hint = getHint($ans, my.opts.vowel, gType);
 			my.byMaster('roundReady', {
 				round: my.game.round,
 				theme: my.game.theme
@@ -78,7 +78,7 @@ exports.turnStart = function () {
 
 	if (!my.game.answer) return;
 
-	my.game.conso = getConsonants(my.game.answer._id, 1, my.opts.vowel);
+	my.game.conso = getConsonants(my.game.answer._id, 1, my.opts.vowel, Const.GAME_TYPE[my.mode]);
 	my.game.roundAt = (new Date()).getTime();
 	my.game.meaned = 0;
 	my.game.primary = 0;
@@ -173,7 +173,7 @@ exports.getScore = function (text, delay) {
 	var my = this;
 	var rank = my.game.hum - my.game.primary + 3;
 	var tr = 1 - delay / my.game.roundTime;
-	var score = 6 * Math.pow(rank, 1.4) * (0.5 + 0.5 * tr);
+	var score = 10 * Math.pow(rank, 1.4) * (0.5 + 0.5 * tr);
 
 	return Math.round(score * my.game.themeBonus);
 };
@@ -196,40 +196,78 @@ exports.readyRobot = function (robot) {
 		} else continue;
 	}
 };
-function getConsonants(word, lucky, isVowel) {
+function getConsonants(word, lucky, isVowel, mode) {
 	var R = "";
 	var i, len = word.length;
 	var c;
 	var rv = [];
 
 	lucky = lucky || 0;
-	while (lucky > 0) {
-		c = Math.floor(Math.random() * len);
-		if (rv.includes(c)) continue;
-		rv.push(c);
-		lucky--;
-	}
-	for (i = 0; i < len; i++) {
-		c = word.charCodeAt(i) - 44032;
-
-		if (c < 0 || rv.includes(i)) {
-			R += word.charAt(i);
-			continue;
+	if (mode == "KSC") {
+		if (lucky == 1) {
+			var arr = word.split('');
+			for (var j = arr.length - 1; j > 0; j--) {
+				var k = Math.floor(Math.random() * (j + 1));
+				var temp = arr[j];
+				arr[j] = arr[k];
+				arr[k] = temp;
+			}
+			return arr.join('');
 		}
-
-		if (isVowel) {
-			c = Math.floor(c % 588 / 28);
-			R += Const.VOWEL_SOUNDS[c];
-		} else {
-			c = Math.floor(c / 588);
-			R += Const.INIT_SOUNDS[c];
+		while (lucky > 0) {
+			c = Math.floor(Math.random() * len);
+			if (rv.includes(c)) continue;
+			rv.push(c);
+			lucky--;
 		}
+		for (i = 0; i < len; i++) {
+			if (rv.includes(i)) {
+				R += word.charAt(i);
+			} else {
+				R += "○";
+			}
+		}
+		return R;
+
+	} else {
+		while (lucky > 0) {
+			c = Math.floor(Math.random() * len);
+			if (rv.includes(c)) continue;
+			rv.push(c);
+			lucky--;
+		}
+		for (i = 0; i < len; i++) {
+			c = word.charCodeAt(i) - 44032;
+
+			if (c < 0 || rv.includes(i)) {
+				R += word.charAt(i);
+				continue;
+			}
+
+			if (isVowel) {
+				c = Math.floor(c % 588 / 28);
+				R += Const.VOWEL_SOUNDS[c];
+			} else {
+				c = Math.floor(c / 588);
+				R += Const.INIT_SOUNDS[c];
+			}
+		}
+		return R;
 	}
-	return R;
 }
-function getHint($ans, isVowel) {
+function getHint($ans, isVowel, mode) {
 	var R = [];
-	var h1 = $ans.mean.replace(new RegExp($ans._id, "g"), "★");
+	var h1;
+	if (mode == "KSC") {
+		var len = $ans._id.length;
+		// Hint 1
+		R.push(getConsonants($ans._id, Math.floor(len * 0.33) + 1, false, mode));
+		// Hint 2
+		R.push(getConsonants($ans._id, Math.floor(len * 0.66) + 1, false, mode));
+		return R;
+	}
+
+	h1 = $ans.mean.replace(new RegExp($ans._id, "g"), "★");
 	var h2;
 
 	R.push(h1);
@@ -256,8 +294,18 @@ function getAnswer(theme, nomean) {
 		if (!len) return R.go(null);
 		do {
 			pick = Math.floor(Math.random() * len);
-			if ($res[pick]._id.length >= 2) if ($res[pick].type == "INJEONG" || $res[pick].mean.length >= 0) {
-				return R.go($res[pick]);
+			var word = $res[pick];
+			var isValid = true;
+			var wlen = word._id.length;
+			if (wlen < 2) isValid = false;
+			else if (word.type != "INJEONG" && word.mean.length < 0) isValid = false;
+			if (Const.GAME_TYPE[my.mode] == "KSC" && wlen < 4) isValid = false;
+			if (!my.opts.unlimited) {
+				var minLen = (Const.GAME_TYPE[my.mode] == "KSC") ? 4 : 3;
+				if (wlen < minLen || wlen > 7) isValid = false;
+			}
+			if (isValid) {
+				return R.go(word);
 			}
 			$res.splice(pick, 1);
 			len--;

@@ -1108,6 +1108,13 @@ function miniGameUserBar(o) {
 			.append($bar = $("<div>").addClass("game-user-name ellipse").html(getDisplayName(o)))
 		)
 		.append($n = $("<div>").addClass("game-user-score"));
+
+	// Add classes for small-mode styling compatibility if needed
+	if ($(".game-body").hasClass("small-mode")) {
+		// No specific changes needed here if CSS covers .game-body.small-mode .game-user
+		// But let's ensure structure matches what CSS expects
+	}
+
 	if (o.id == $data.id) $bar.addClass("game-user-my-name");
 	addonNickname($bar, o);
 	if (o.game.team) $n.addClass("team-" + o.game.team);
@@ -1134,6 +1141,9 @@ function updateRoom(gaming) {
 	setRoomHead($(".GameBox .product-title"), $data.room);
 	if (gaming) {
 		$r = $(".GameBox .game-body").empty();
+		// Use active player count (room.game.seq) instead of total room players
+		if ($data.room.game.seq.length > 8) $r.addClass("small-mode");
+		else $r.removeClass("small-mode");
 		// updateScore(true);
 		for (i in $data.room.game.seq) {
 			if ($data._replay) {
@@ -1152,6 +1162,8 @@ function updateRoom(gaming) {
 		delete $data._jamsu;
 	} else {
 		$r = $(".room-users").empty();
+		if ($data.room.players.length > 8) $r.addClass("small-mode");
+		else $r.removeClass("small-mode");
 		spec = $data.users[$data.id].game.form == "S";
 		// 참가자
 		for (i in $data.room.players) {
@@ -2746,7 +2758,7 @@ function forkChat() {
 	$stage.chat.scrollTop(999999999);
 }
 function badWords(text) {
-	return text.replace(BAD, "♥♥");
+	return text.replace(BAD, "냥냥");
 }
 function chatBalloon(text, id, flag) {
 	$("#cb-" + id).remove();

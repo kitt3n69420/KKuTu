@@ -169,7 +169,7 @@ block Middle
 			input#room-pw(type='password', placeholder=L('password'), maxlength=20)
 		div.dialog-bar
 			h4= L('userLimit')
-			input#room-limit(type='number', min=2, max=8, step=1, value=8)
+			input#room-limit(type='number', min=2, max=12, step=1, value=8)
 		div.dialog-bar
 			h4= L('gameMode')
 			select#room-mode
@@ -183,6 +183,7 @@ block Middle
 					option(value=13)= L('modeKSS')
 					option(value=5)= L('modeCSQ')
 					option(value=10)= L('modeHUN')
+					option(value=16)= L('modeKSC')
 					option(value=15)= L('modeKFR')
 				optgroup(label=L('mcEnglish'))
 					option(value=2)= L('modeESH')
@@ -200,6 +201,7 @@ block Middle
 		div.dialog-bar
 			h4= L('roundTime')
 			select#room-time
+				option(value=5, style='color: #FF4444')
 				option(value=10, style='color: #FF4444')
 				option(value=30)
 				option(value=60, selected)

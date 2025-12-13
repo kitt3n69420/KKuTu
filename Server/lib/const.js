@@ -50,7 +50,8 @@ exports.OPTIONS = {
 	'mid': { name: "Middle" },
 	'sch': { name: "Second" },
 	'vow': { name: "Vowel" },
-	'lng': { name: "Long" }
+	'lng': { name: "Long" },
+	'unl': { name: "Unlimited" }
 
 };
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
@@ -65,7 +66,8 @@ exports.ROBOT_DEFEAT_MESSAGES_2 = [ // 남은 단어가 없으면 봇이 보내�
 exports.ROBOT_VICTORY_MESSAGES = [ // 봇이 한방단어를 주고 보내는 메시지
 	"ㄴㅇㅅ", "ㅅㄱ", "ㅂㅂ", "잘가시게", "이거나 먹어라", ":3", ":)", "^-^", "OwO",
 	"ㅋㅋㅋㅋ", "나이스~", "한번 당해봐라!", "바이바이~", "ㅋㅋㅋㅋㅋㅋ", "ㅎㅎ",
-	"즐~", "ㅃㅃ", "ㅋㅋㅋㅋㅋㅋㅋㅋ", "수고~", "안녕은 영원한 헤어짐은 아니겠지요~"
+	"즐~", "ㅃㅃ", "ㅋㅋㅋㅋㅋㅋㅋㅋ", "수고~", "안녕은 영원한 헤어짐은 아니겠지요~",
+	"이얍!", "이건 못 참지"
 ];
 exports.ROBOT_DEFEAT_MESSAGES = [ // 봇이 한방단어를 받았을 때 보내는 메시지
 	"아니", "살살 좀 해", "짜증나", "이건 너무하잖아...", "으앙", "히잉", "아놔...",
@@ -95,7 +97,7 @@ exports.GROUPS = {
 	'head': ["blackbere", "black_mask", "blue_headphone", "brownbere", "haksamo", "hamster_G", "hamster_O", "miljip", "nekomimi", "orange_headphone", "redbere", "twoeight", "white_mask", "Mhead"],
 	'eye': ["bigeye", "brave_eyes", "close_eye", "cuspidal", "double_brows", "inverteye", "lazy_eye", "scouter", "sunglasses", "Meye"],
 	'mouth': ["beardoll", "cat_mouth", "decayed_mouth", "laugh", "merong", "mustache", "oh", "Mmouth"],
-	'clothes': ["blackrobe", "blue_vest", "medal", "orange_vest", "pants_china", "pants_japan", "pants_korea", "pink_vest", "sqpants", "water", "Mclothes"],
+	'clothes': ["blackrobe", "blue_vest", "medal", "orange_vest", "pants_china", "pants_japan", "pants_korea", "pink_vest", "sqpants", "water", "ilusweater", "kktpixel", "pixgradg", "pixgrado", "Mclothes"],
 	'hs': ["bluecandy", "bokjori", "choco_ice", "lemoncandy", "melon_ice", "pinkcandy", "purple_ice", "black_oxford", "black_shoes", "brown_oxford", "loosesocks", "Mshoes", "Mhand"],
 	'back': ["Mback", "Mfront"]
 };
@@ -160,12 +162,13 @@ exports.RULE = {
 	'CSQ': {
 		lang: "ko",
 		rule: "Jaqwi",
-		opts: ["ijp", "vow"],
+		opts: ["ijp", "vow", "unl"],
 		time: 1,
 		ai: true,
 		big: false,
 		ewq: false
 	},
+
 	'KCW': {
 		lang: "ko",
 		rule: "Crossword",
@@ -256,6 +259,15 @@ exports.RULE = {
 		big: false,
 		ewq: true
 	},
+	'KSC': {
+		lang: "ko",
+		rule: "Jaqwi",
+		opts: ["ijp", "unl"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: false
+	},
 
 };
 exports.getPreScore = function (text, chain, tr) {
@@ -266,8 +278,8 @@ exports.getPenalty = function (chain, score) {
 };
 exports.GAME_TYPE = Object.keys(exports.RULE);
 exports.EXAMPLE_TITLE = {
-	'ko': "고양이여우강아지토끼",
-	'en': ""
+	'ko': "일이삼사오육칠팔구십",
+	'en': "twofivesix"
 };
 exports.INIT_SOUNDS = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
 exports.VOWEL_SOUNDS = ["ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", "ㅗ", "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"];
@@ -281,7 +293,7 @@ exports.KO_INJEONG = [
 	"MOB", "HYK", "CYP", "HRH", "STA", "OIJ",
 	"KGR", "ESB", "ELW", "OIM", "OVW", "NEX", /*"WOW",*/
 	"YRY", "KPO", "JLN", "JAN", "ZEL", "POK", "HAI",
-	"HSS", "KMV", "HDC", "HOS"
+	"HSS", "KMV", "HDC", "HOS", "FRC", "TPW"
 ];
 exports.EN_INJEONG = [
 	"LOL"
@@ -298,7 +310,7 @@ exports.EN_THEME = [
 	"e18", "e20", "e43"
 ];
 exports.IJP_EXCEPT = [
-	"OIJ"
+	"OIJ", "TPW"
 ];
 exports.KO_IJP = exports.KO_INJEONG.concat(exports.KO_THEME).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });
 exports.EN_IJP = exports.EN_INJEONG.concat(exports.EN_THEME).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });

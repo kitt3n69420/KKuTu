@@ -33,13 +33,14 @@ const PREFERRED_CHAR_PROB = [0.6, 0.7, 0.8, 0.9, 1.0];
 const RIEUL_TO_NIEUN = [4449, 4450, 4457, 4460, 4462, 4467];
 const RIEUL_TO_IEUNG = [4451, 4455, 4456, 4461, 4466, 4469];
 const NIEUN_TO_IEUNG = [4455, 4461, 4466, 4469];
-const PRIORITY_ATTACK_CHARS = ["렁", "듈", "븐", "튬", "쾃", "럿", "럄", "듐", "픔", "뮴", "냑", "녘"];
-const PRIORITY_ATTACK_CHARS_MANNER = ["릇", "륨", "늄", "럴", "텝", "슭", "픈", "깟", "왑", "켓", "븨", "껏"];
-const PRIORITY_KAP_ATTACK_CHARS = ["넓", "앉", "높", "깊", "된", "뾰", "짧", "덮", "꺾", "돋", "얕", "잦", "굵", "걷", "얽", "잿", "묻", "읽", "펩", "흩"];
-const PRIORITY_KAP_ATTACK_CHARS_MANNER = ["흰", "왼", "붉", "홑", "넙", "퓨", "귓", "받", "엎", "굳", "앨", "좁", "닫", "캘", "긁", "묶", "밉", "잰"];
+const PRIORITY_ATTACK_CHARS = ["렁", "듈", "븐", "튬", "쾃", "럿", "럄", "듐", "픔", "뮴", "읃", "읓", "읔", "읕", "읖", "읗", "냑", "녘"];
+const PRIORITY_ATTACK_CHARS_MANNER = ["릇", "륨", "늄", "럴", "텝", "슭", "읒", "픈", "깟", "왑", "켓", "븨", "껏"];
+const PRIORITY_KAP_ATTACK_CHARS = ["녈", "맞", "흰", "뉸", "뒷", "헛", "붉", "뻐", "첫", "룍", "뇩", "넓", "홑", "맆", "렾", "녚", "갯", "받", "뉼", "앉", "높", "롶", "돼", "윗", "넙", "랼", "된", "뾰", "햇", "엑", "좁", "굳", "왼", "뻔", "빤", "륽", "늙", "뺑", "엎", "같", "띾", "꺾", "닫", "랕", "뙤", "돋", "쨍", "씽", "꽈", "귓", "므", "쌩", "샐", "잦", "섞", "덮", "맏", "얽", "왱", "긁", "짧", "걷", "헥", "잿"];
+const PRIORITY_KAP_ATTACK_CHARS_MANNER = ["겉", "쩔", "떠", "녑", "훌", "숫", "붙", "곧", "랒", "쫄", "쏠", "녓", "갸", "콧", "갖", "썰", "뻥", "삥", "쩌", "뗑", "꺄", "쐐", "헝", "갤", "촬", "옵", "찡", "믿", "줴", "촐", "놓", "쓴", "맑", "칡", "핸", "힌", "싀", "깁", "씀", "뭍"];
 const DUBANG = ["괙", "귁", "껙", "꿕", "뀍", "늡", "릅", "돨", "똴", "뙁", "뛸", "뜩", "띡", "띨", "멫", "몇", "뱍", "뷩", "뷩", "븩", "뽓", "뿅", "솰", "쏼", "었", "쟘", "좍", "좜", "좸", "줅", "줍", "쥄", "쫙", "챱", "홱"]
-const PRIORITY_ATTACK_CHARS_EN = ["ght", "ock", "ick", "ird", "ert", "ork", "eck", "nds", "uck", "ond", "lue", "lls", "elt", "rds", "arp", "uff", "erm", "irl", "ilt", "ilk", "ods", "cks", "ays", "iff", "ett", "olt", "ors", "erb", "ohn", "erk", "awk", "nks", "irs", "irm", "urd", "ilm", "nue", "rks", "arf", "nyx", "erd", "ryx", "olk", "itt", "rys", "gie", "url", "nck", "ils", "avy", "ynx", "ews", "mie", "irk", "cht", "cue", "ulb", "onk", "elp", "urk", "ldt", "aws"]
-const PRIORITY_ATTACK_CHARS_MANNER_EN = ["ack", "ark", "ics", "orm", "ers", "ify", "ons", "omb", "ngs", "ump", "owl", "ift", "urn", "rie", "eek", "oud", "elf", "irt", "ild", "kie", "itz", "rld", "iew", "thm", "els", "awl", "awn", "rue", "yew", "eft", "oft", "ffy", "uld", "hew", "ivy", "rtz", "egs", "tew", "oux", "rns", "ebs", "tua", "tyl", "efy", "ohm", "omp", "bbs", "ltz", "ggs", "oek", "xxv", "few", "wyn", "orr", "utz", "enn", "ebb", "hns", "ogs", "ruz", "ibs", "uhr", "nyl"]
+const DUBANG_KAP = ["넓", "앉", "높", "깊", "된", "뾰", "짧", "덮", "꺾", "돋", "얕", "잦", "굵", "걷", "얽", "잿", "묻", "읽", "펩", "흩", "핫", "갤", "캘"];
+const PRIORITY_ATTACK_CHARS_EN = ["ght", "ock", "ick", "ird", "ert", "ork", "eck", "nds", "uck", "ond", "lue", "lls", "elt", "rds", "arp", "uff", "erm", "irl", "ilt", "ilk", "ods", "cks", "ays", "iff", "ett", "olt", "ors", "erb", "ohn", "erk", "awk", "nks", "irs", "irm", "urd", "ilm", "nue", "rks", "arf", "nyx", "erd", "ryx", "olk", "itt", "rys", "gie", "url", "nck", "ils", "avy", "ynx", "ews", "mie", "irk", "cht", "cue", "ulb", "onk", "elp", "urk", "ldt", "aws"];
+const PRIORITY_ATTACK_CHARS_MANNER_EN = ["ack", "ark", "ics", "orm", "ers", "ify", "ons", "omb", "ngs", "ump", "owl", "ift", "urn", "rie", "eek", "oud", "elf", "irt", "ild", "kie", "itz", "rld", "iew", "thm", "els", "awl", "awn", "rue", "yew", "eft", "oft", "ffy", "uld", "hew", "ivy", "rtz", "egs", "tew", "oux", "rns", "ebs", "tua", "tyl", "efy", "ohm", "omp", "bbs", "ltz", "ggs", "oek", "xxv", "few", "wyn", "orr", "utz", "enn", "ebb", "hns", "ogs", "ruz", "ibs", "uhr", "nyl"];
 
 var AttackCache = {};
 
@@ -607,6 +608,40 @@ exports.readyRobot = function (robot) {
 			// Killer Suffix (3-char) = stats(3-char) <= X AND stats(2-char suffix) <= X.
 
 			if (my.rule.lang === 'en') {
+				// Simple Attack Logic for ESH / EKK (1-char link, but user wants specific priorities)
+				// Priority: 1. non-alpha, 2. j,q,z,x, 3. y,k,g
+				// EKT (3-char link) logic is distinct.
+
+				var isEKT = Const.GAME_TYPE[my.mode] === "EKT";
+
+				if (!isEKT) {
+					// Simple Logic for ESH / EKK
+					var t1Set = new Set(); // Tier 1 (Priority 1 & 2)
+					var t2Set = new Set(); // Tier 2 (Priority 3)
+
+					// Priority 1: Non-alphabet ending
+					// Regex pattern "not ending in a-z". 
+					// Since we supply a list of "killers", we can pass specific regex strings if tryAttackEN handles them.
+					// tryAttackEN joins them with |. 
+					// So if we pass "[^a-z]", the regex becomes ...([^a-z]).
+					t1Set.add("[^a-z]");
+
+					// Priority 2: j, q, z, x
+					["j", "q", "z", "x"].forEach(c => t1Set.add(c));
+
+					// Priority 3: y, k, g (Tier 2)
+					["y", "k", "g"].forEach(c => t2Set.add(c));
+
+					var data = { tier1: Array.from(t1Set), tier2: Array.from(t2Set) };
+					AttackCache[key] = {
+						time: Date.now(),
+						data: data
+					};
+					resolve(data);
+					return;
+				}
+
+				// Complex Logic for EKT (Existing)
 				var p1 = new Promise(function (res1) {
 					// 1. Fetch 3-letter candidates with Low Start Count (Hard: 0, Soft: <=3)
 					// Let's assume Hard <= 2 for now based on user request "One-shot words".
@@ -1078,12 +1113,27 @@ exports.readyRobot = function (robot) {
 						var tier1 = tiers.tier1 || [];
 						var tier2 = tiers.tier2 || [];
 
+						// Level-based Constraints
+						var heuristicRatio = 1.0;
+						var tier2StartProb = 0.0;
+
+						if (level <= 2) {
+							heuristicRatio = 0.25;
+							tier2StartProb = 0.5;
+						} else if (level === 3) {
+							heuristicRatio = 0.5;
+							tier2StartProb = 0.25;
+						}
+
 						// Shuffle Tiers but keeping Priority Chars at the front
 						// This ensures that when we slice (e.g. top 150), the Priority chars are included.
 						function postShuffle(list) {
 							var pList = isRev ? PRIORITY_KAP_ATTACK_CHARS : PRIORITY_ATTACK_CHARS;
 							var mList = isRev ? PRIORITY_KAP_ATTACK_CHARS_MANNER : PRIORITY_ATTACK_CHARS_MANNER;
-							var allP = new Set(pList.concat(mList));
+
+							var pSlice = pList ? pList.slice(0, Math.ceil(pList.length * heuristicRatio)) : [];
+							var mSlice = mList ? mList.slice(0, Math.ceil(mList.length * heuristicRatio)) : [];
+							var allP = new Set(pSlice.concat(mSlice));
 
 							var p = [], n = [];
 							list.forEach(c => {
@@ -1099,175 +1149,294 @@ exports.readyRobot = function (robot) {
 
 						// Helper to perform attack search (Optimized: Shuffle -> Slice -> Single Query)
 						function tryAttack(killers, nextStepCallback) {
-							if (!killers || killers.length === 0) {
-								nextStepCallback();
-								return;
-							}
+							if (my.rule.lang === "ko") tryAttackKO(killers, nextStepCallback);
+							else tryAttackEN(killers, nextStepCallback);
+						}
 
-							// Optimization: User requested "Shuffle -> Heuristic -> Fast Query"
-							// 1. Shuffle is already done above.
-							// 2. Take a reasonable subset (e.g., 150 chars) to form the Regex.
-							//    Too many chars might make Regex slow or hit DB limits.
-							//    By taking a random subset, we ensure variety without looping.
-							var subsetSize = 150;
-							var subset = killers.slice(0, subsetSize);
+						function processList(list, nextStepCallback) {
+							if (list && list.length) {
+								list = list.filter(function (w) {
+									return w._id.length <= ROBOT_LENGTH_LIMIT[level] && !robot._done.includes(w._id);
+								});
 
-							// Construct Regex
-							var killerString = subset.join("").replace(/[\[\]\^\-\\]/g, "\\$&");
-							var adc = my.game.char + (my.game.subChar ? ("|" + my.game.subChar) : "");
+								if (list.length > 0) {
+									console.log(`[BOT] ATTACK Success: Found ${list.length} words.`);
 
-							var middlePattern = ".*";
-							if (my.game.wordLength) {
-								var midLen = Math.max(0, my.game.wordLength - 2);
-								middlePattern = `.{${midLen}}`;
-							}
+									if (Const.GAME_TYPE[my.mode] === "KSH" && my.game.seq && my.game.seq.length === 2) {
+										var safe = list.filter(w => !DUBANG.includes(w._id.slice(-1)));
+										var unsafe = list.filter(w => DUBANG.includes(w._id.slice(-1)));
 
-							var regex;
-							if (isRev) {
-								regex = `^[${killerString}]${middlePattern}(${adc})$`;
-							} else {
-								regex = `^(${adc})${middlePattern}[${killerString}]$`;
-							}
-
-							console.log(`[BOT] ATTACK: Optimized Query with ${subset.length} random killers...`);
-
-							var query = [['_id', new RegExp(regex)]];
-							var flagMask = 0;
-
-							if (my.rule.lang == "ko") {
-								if (!my.opts.injeong) flagMask |= Const.KOR_FLAG.INJEONG;
-								if (my.opts.loanword) flagMask |= Const.KOR_FLAG.LOANWORD;
-								if (my.opts.strict) {
-									flagMask |= (Const.KOR_FLAG.SPACED | Const.KOR_FLAG.SATURI | Const.KOR_FLAG.OLD | Const.KOR_FLAG.MUNHWA);
-									query.push(['type', Const.KOR_STRICT]);
-								} else {
-									query.push(['type', Const.KOR_GROUP]);
-								}
-								if (flagMask > 0) query.push(['flag', { '$nand': flagMask }]);
-							} else {
-								// English Query Logic - Advanced (Middle/Second Rule Support)
-								// We need to find words that START with 'adc' AND yield a 'killer' suffix for the next turn.
-								// 1. Standard: Ends with killer.
-								// 2. Second: getChar() returns killer.
-								// 3. Middle: getChar() returns killer.
-
-								// Killers are in 'subset'. Join them once.
-								var killerPattern = subset.join("|");
-								var patterns = [];
-								var minLen = 2; // Min word length
-								var maxLen = ROBOT_LENGTH_LIMIT[level];
-								if (maxLen > 50) maxLen = 50;
-
-								// Check if we need complex rules
-								if (my.opts.middle || my.opts.second) {
-									// Iterate lengths to place killer correctly
-									for (var len = minLen; len <= maxLen; len++) {
-										// Calculate where the "Next Char" (Link) would be extracted from a word of this length
-										var idx = -1;
-										var rStart = -1; // Relative start index of the link
-										var linkLen = 0; // expected link length (should match killer length, e.g. 3)
-
-										// Mimic getChar / getSubChar logic to find the Link Position
-										// English EKT: Link is usually 3 chars.
-										// But we also need to match the killer length (2 or 3).
-										// Our killers are mixed 2/3 chars? No, mostly 3 chars if using EKT logic.
-										// But 'subset' might have 2-char killers too.
-										// ATTENTION: Middle/Second rules in English (as per getChar) have specific logic.
-
-										// EKT Middle/Second Logic for "getChar" (which returns the LINK for the next person):
-										// Wait, 'getChar' extracts the char used for chaining.
-										// For English EKT Middle:
-										//   if len%2!=0: idx = floor(len/2). Link = text.slice(idx-1, idx+2) -> Length 3.
-										//   if len%2==0: idx = len/2. Link = text.slice(idx-1, idx+2) -> Length 3.
-										// For English EKT Second:
-										//   if len>=4: Link = text.slice(len-4, len-1) -> Length 3.
-										//   if len==3: Link = text (Length 3).
-
-										// So for EKT, the Link is ALWAYS 3 characters (consistent with killer length).
-										// If our killers are 2 chars, they won't match a 3-char extraction exactly?
-										// Or does the game allow 2-char links? EKK vs EKT.
-										// EKT = 3 char chain. EKK = 1 char chain (normally).
-										// If EKT, we assume killers are 3 chars.
-
-										// Let's assume we are in a mode where 3-char killers are relevant.
-
-										// Logic to find 'start index' of the link within the word:
-										if (my.opts.middle) {
-											if (len % 2 !== 0) idx = Math.floor(len / 2);
-											else idx = len / 2;
-
-											rStart = idx - 1;
-										} else if (my.opts.second) {
-											if (len >= 4) rStart = len - 4;
-											else if (len === 3) rStart = 0;
-										}
-
-										if (rStart >= 0 && rStart + 3 <= len) {
-											var pre = rStart;
-											var post = len - (rStart + 3);
-											// Pattern: .{pre}(killer).{post}
-											patterns.push(`.{${pre}}(${killerPattern}).{${post}}`);
-										}
-									}
-
-									if (patterns.length > 0) {
-										// Combined Regex: Must start with 'adc', and match one of the length patterns.
-										// Use Lookahead to enforce "Starts with adc" independent of the length pattern structure (which handles full length).
-										// Actually, if 'adc' is long, it might overlap.
-										// Safer: ^(?=adc)(pattern1|pattern2|...)$
-
-										regex = `^(?=(${adc}))(${patterns.join('|')})$`;
-									} else {
-										// Fallback (e.g. no valid lengths found? unlikely)
-										regex = `^(${adc}).*(${killerPattern})$`;
-									}
-
-								} else {
-									// Standard Rule: Ends with killer
-									// Regex: ^adc.*(killer)$
-									regex = `^(${adc}).*(${killerPattern})$`;
-								}
-
-								query = [['_id', new RegExp(regex)]];
-								query.push(['_id', Const.ENG_ID]);
-							}
-
-							// Increased limit to 200 to get a broader pool from the subset, then pick randomly.
-							DB.kkutu[my.rule.lang].find(...query).limit(200).on(function (list) {
-								if (list && list.length) {
-									list = list.filter(function (w) {
-										return w._id.length <= ROBOT_LENGTH_LIMIT[level] && !robot._done.includes(w._id);
-									});
-
-									if (list.length > 0) {
-										console.log(`[BOT] ATTACK Success: Found ${list.length} words.`);
-
-										// Dubang Avoidance Logic
-										// Condition: KSH (Korean Word Chain) AND 2 Players
-										if (Const.GAME_TYPE[my.mode] === "KSH" && my.game.seq && my.game.seq.length === 2) {
-											var safe = list.filter(w => !DUBANG.includes(w._id.slice(-1)));
-											var unsafe = list.filter(w => DUBANG.includes(w._id.slice(-1)));
-
-											if (safe.length > 0) {
-												console.log(`[BOT] Dubang Avoidance: Picking from ${safe.length} safe words.`);
-												list = shuffle(safe).concat(shuffle(unsafe));
-											} else {
-												console.log(`[BOT] Dubang Avoidance: No safe words.`);
-												list = shuffle(unsafe);
-											}
+										if (safe.length > 0) {
+											console.log(`[BOT] Dubang Avoidance: Picking from ${safe.length} safe words.`);
+											list = shuffle(safe).concat(shuffle(unsafe));
 										} else {
-											list = shuffle(list);
+											console.log(`[BOT] Dubang Avoidance: No safe words.`);
+											list = shuffle(unsafe);
 										}
+									} else if (Const.GAME_TYPE[my.mode] === "KAP" && my.game.seq && my.game.seq.length === 2) {
+										var safe = list.filter(w => !DUBANG_KAP.includes(w._id.charAt(0)));
+										var unsafe = list.filter(w => DUBANG_KAP.includes(w._id.charAt(0)));
 
-										if (list.length > 0) pickList(list);
-										else nextStepCallback();
-
+										if (safe.length > 0) {
+											console.log(`[BOT] Dubang Avoidance (KAP): Picking from ${safe.length} safe words.`);
+											list = shuffle(safe).concat(shuffle(unsafe));
+										} else {
+											console.log(`[BOT] Dubang Avoidance (KAP): No safe words.`);
+											list = shuffle(unsafe);
+										}
 									} else {
-										nextStepCallback();
+										list = shuffle(list);
 									}
+
+									if (list.length > 0) pickList(list);
+									else nextStepCallback();
 								} else {
 									nextStepCallback();
 								}
+							} else {
+								nextStepCallback();
+							}
+						}
+
+						function tryAttackKO(killers, nextStepCallback) {
+							if (!killers || killers.length === 0) return nextStepCallback();
+
+							// Optimization: For Middle/Second rules, use ONLY Heuristics
+							if (my.opts.middle || my.opts.second) {
+								var heuristicSet = new Set();
+								var pList = isRev ? PRIORITY_KAP_ATTACK_CHARS : PRIORITY_ATTACK_CHARS;
+								var mList = isRev ? PRIORITY_KAP_ATTACK_CHARS_MANNER : PRIORITY_ATTACK_CHARS_MANNER;
+
+								var pSlice = pList ? pList.slice(0, Math.ceil(pList.length * heuristicRatio)) : [];
+								var mSlice = mList ? mList.slice(0, Math.ceil(mList.length * heuristicRatio)) : [];
+
+								pSlice.forEach(c => heuristicSet.add(c));
+								mSlice.forEach(c => heuristicSet.add(c));
+
+								if (heuristicSet.size > 0) {
+									killers = killers.filter(k => heuristicSet.has(k));
+								}
+							}
+
+							var subsetSize = Math.max(10, Math.floor(150 * heuristicRatio));
+							var subset = killers.slice(0, subsetSize);
+							if (subset.length === 0) return nextStepCallback();
+
+							var killerString = subset.join("").replace(/[\[\]\^\-\\]/g, "\\$&");
+							var adc = my.game.char + (my.game.subChar ? ("|" + my.game.subChar) : "");
+							var regex;
+
+							if (my.opts.middle || my.opts.second) {
+								var patterns = [];
+								var minLen = 2; // Min word length
+								var maxLen = ROBOT_LENGTH_LIMIT[level];
+
+								// Fixed Word Length (KKT/Sami)
+								if (my.game.wordLength > 0) {
+									minLen = my.game.wordLength;
+									maxLen = my.game.wordLength;
+								} else {
+									// Optimization: Cap Length at 20 for Complex Rules (Middle/Second)
+									// Generating 50+ patterns kills performance. 20 is enough for attacks.
+									if (maxLen > 20) maxLen = 20;
+								}
+
+								for (var len = minLen; len <= maxLen; len++) {
+									var idx = -1;
+									// Logic must match getChar shared block
+									if (my.opts.middle && my.opts.second) {
+										if (len % 2 !== 0) idx = Math.floor(len / 2);
+										else idx = isRev ? (len / 2) : (len / 2 - 1);
+									} else if (my.opts.middle) {
+										if (len % 2 !== 0) idx = Math.floor(len / 2);
+										else idx = isRev ? (len / 2 - 1) : (len / 2);
+									} else { // Second only
+										idx = isRev ? 1 : (len - 2);
+									}
+
+									if (idx >= 0 && idx < len) {
+										// Pattern: .{idx}(killerString).{rest}
+										var pre = idx;
+										var post = len - 1 - idx;
+										patterns.push(`.{${pre}}[${killerString}].{${post}}`);
+									}
+								}
+
+								if (patterns.length > 0) {
+									if (isRev) {
+										// Ends with adc: (?=.*adc$)...
+										regex = `^(?=.*(${adc})$)(${patterns.join('|')})$`;
+									} else {
+										// Starts with adc: (?=adc)...
+										regex = `^(?=(${adc}))(${patterns.join('|')})$`;
+									}
+								} else {
+									// Fallback
+									if (isRev) regex = `^[${killerString}].*(${adc})$`;
+									else regex = `^(${adc}).*[${killerString}]$`;
+								}
+							} else {
+								var middlePattern = ".*";
+								if (my.game.wordLength) {
+									var midLen = Math.max(0, my.game.wordLength - 2);
+									middlePattern = `.{${midLen}}`;
+								}
+
+								if (isRev) {
+									regex = `^[${killerString}]${middlePattern}(${adc})$`;
+								} else {
+									regex = `^(${adc})${middlePattern}[${killerString}]$`;
+								}
+							}
+
+							console.log(`[BOT] ATTACK KO: Optimized Query with ${subset.length} random killers...`);
+
+							var query = [['_id', new RegExp(regex)]];
+							var flagMask = ((my.game.history && my.game.history.length > 0) ? Const.KOR_FLAG.DELETED : 0);
+
+							if (!my.opts.injeong) flagMask |= Const.KOR_FLAG.INJEONG;
+							if (my.opts.loanword) flagMask |= Const.KOR_FLAG.LOANWORD;
+
+							if (my.opts.strict) {
+								flagMask |= (Const.KOR_FLAG.SPACED | Const.KOR_FLAG.SATURI | Const.KOR_FLAG.OLD | Const.KOR_FLAG.MUNHWA);
+								query.push(['type', Const.KOR_STRICT]);
+							} else {
+								query.push(['type', Const.KOR_GROUP]);
+							}
+
+							if (flagMask > 0) query.push(['flag', { '$nand': flagMask }]);
+
+							DB.kkutu['ko'].find(...query).limit(200).on(function (list) {
+								processList(list, nextStepCallback);
+							});
+						}
+
+						function tryAttackEN(killers, nextStepCallback) {
+							if (!killers || killers.length === 0) return nextStepCallback();
+
+							// Optimization: For Middle/Second rules, use ONLY Heuristics (Top 25)
+							if (my.opts.middle || my.opts.second) {
+								var heuristicSet = new Set();
+								var hList = [];
+								if (typeof PRIORITY_ATTACK_CHARS_EN !== 'undefined') hList = hList.concat(PRIORITY_ATTACK_CHARS_EN);
+								if (typeof PRIORITY_ATTACK_CHARS_MANNER_EN !== 'undefined') hList = hList.concat(PRIORITY_ATTACK_CHARS_MANNER_EN);
+
+								// Limit by Heuristic Ratio and Max 25
+								var limitLen = Math.ceil(hList.length * heuristicRatio);
+								if (limitLen > 25) limitLen = 25;
+								hList = hList.slice(0, limitLen);
+
+								hList.forEach(c => heuristicSet.add(c));
+
+								// Strict Filter: If heuristics exist, use ONLY them.
+								if (heuristicSet.size > 0) {
+									killers = killers.filter(k => heuristicSet.has(k));
+								} else {
+									killers = [];
+								}
+							}
+
+							if (killers.length === 0) return nextStepCallback();
+
+							var subsetSize = Math.max(10, Math.floor(150 * heuristicRatio));
+							var subset = killers.slice(0, subsetSize);
+							if (subset.length === 0) return nextStepCallback();
+
+							var adc = my.game.char + (my.game.subChar ? ("|" + my.game.subChar) : "");
+							var killerPattern = subset.join("|");
+
+							var regex;
+							if (my.opts.middle || my.opts.second) {
+								var patterns = [];
+								var minLen = 2;
+								var maxLen = ROBOT_LENGTH_LIMIT[level];
+
+								// Fixed Word Length (EKK/Sami)
+								if (my.game.wordLength > 0) {
+									minLen = my.game.wordLength;
+									maxLen = my.game.wordLength;
+								} else {
+									// Optimization: Cap to 20
+									if (maxLen > 20) maxLen = 20;
+								}
+								var isEKT = Const.GAME_TYPE[my.mode] === "EKT";
+
+								for (var len = minLen; len <= maxLen; len++) {
+									var idx = -1;
+									var rStart = -1;
+									var linkLen = isEKT ? 3 : 1;
+
+									if (isEKT) {
+										// EKT Specific Logic (from getChar)
+										if (my.opts.middle) {
+											if (len % 2 !== 0) { idx = Math.floor(len / 2); rStart = idx - 1; }
+											else { idx = len / 2; rStart = idx - 1; }
+										} else if (my.opts.second) {
+											// EKT Second:
+											// if len >= 4: Link = text.slice(len - 4, len - 1) -> Start len-4, Len 3
+											// if len === 3: Link = text -> Start 0, Len 3
+											if (len >= 4) rStart = len - 4;
+											else if (len === 3) rStart = 0;
+										}
+									} else {
+										// EKK / General Logic (from getChar)
+										// English EKK usually uses same logic as Korean (1 char link)
+										if (my.opts.middle && my.opts.second) {
+											if (len % 2 !== 0) idx = Math.floor(len / 2);
+											else idx = len / 2 - 1;
+										} else if (my.opts.middle) {
+											if (len % 2 !== 0) idx = Math.floor(len / 2);
+											else idx = len / 2; // Even: Latter
+										} else { // Second only
+											idx = len - 2;
+										}
+										rStart = idx;
+									}
+
+									if (rStart >= 0 && rStart + linkLen <= len) {
+										var pre = rStart;
+										var post = len - (rStart + linkLen);
+										patterns.push(`.{${pre}}(${killerPattern}).{${post}}`);
+									}
+								}
+
+								if (patterns.length > 0) {
+									regex = `^(?=(${adc}))(${patterns.join('|')})$`;
+								} else {
+									regex = `^(${adc}).*(${killerPattern})$`;
+								}
+							} else {
+								// End-to-End Attack (Normal)
+								var middlePattern = ".*";
+
+								// Fixed Word Length (EKK/Sami/KKT)
+								if (my.game.wordLength > 0) {
+									// Assumes killer is 1 char (Simple Logic) or EKT uses 3 char logic (but EKT has no wordLimit usually)
+									// For EKK, killers are 1 char.
+									// Length = 1(adc) + Mid + 1(killer) = wordLength
+									// Mid = wordLength - 2
+									var midLen = Math.max(0, my.game.wordLength - 2);
+									middlePattern = `.{${midLen}}`;
+								} else if (Const.GAME_TYPE[my.mode] === "EKT") {
+									// EKT: Ban 3-letter words (Min Len 4)
+									// Since EKT killers are 3-char, usually leads to 4+ chars.
+									// But just in case, enforce min length.
+									// 1(adc) + Mid + 3(killer) = 4+ -> Mid >= 0.
+									// If Mid is ".*", it covers 0.
+									// So EKT is fine, but if we want to be strict about "No 3 letter words":
+									// Regex doesn't need change as 1+3=4.
+								}
+
+								regex = `^(${adc})${middlePattern}(${killerPattern})$`;
+							}
+
+							console.log(`[BOT] ATTACK EN: Optimized Query with ${subset.length} random killers...`);
+
+							var query = [['_id', new RegExp(regex)]];
+							query.push(['_id', Const.ENG_ID]);
+
+							DB.kkutu['en'].find(...query).limit(200).on(function (list) {
+								processList(list, nextStepCallback);
 							});
 						}
 
@@ -1277,8 +1446,11 @@ exports.readyRobot = function (robot) {
 						// If Normal Turn: Start Tier 1.
 
 						var startTier1 = true;
-						if (my.game.chain.length === 0) {
-							console.log("[BOT] First Turn detected. Skipping Tier 1 (Hard Attack) for polite start.");
+						if (my.game.chain.length === 0 || my.opts.manner) {
+							console.log("[BOT] First Turn or Manner Mode detected. Skipping Tier 1 (Hard Attack). (Killer word unavailable)");
+							startTier1 = false;
+						} else if (Math.random() < tier2StartProb) {
+							console.log(`[BOT] Stochastic Skip: Skipping Tier 1 with probability ${tier2StartProb.toFixed(2)}.`);
 							startTier1 = false;
 						}
 

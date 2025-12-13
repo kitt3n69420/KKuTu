@@ -1368,6 +1368,8 @@ iframe {
 	padding: 5px;
 	border-radius: 10px;
 	background-color: rgba(0, 0, 0, 0.7);
+	z-index: 20;
+	/* Ensure it stays above player cards (level 5) */
 }
 
 #game-input {
@@ -1376,11 +1378,7 @@ iframe {
 	font-size: 20px;
 }
 
-.game-body {
-	margin: 0px -1px;
-	width: 992px;
-	height: 180px;
-}
+/* .game-body definition moved to end of file for flexbox support */
 
 .cw.game-body {
 	position: relative;
@@ -2146,4 +2144,178 @@ iframe {
 		font-size: 20px;
 		opacity: 0.1;
 	}
+}
+
+/* Dynamic Player Card Resizing */
+/* Waiting Room */
+.room-users.small-mode .room-user {
+	width: 224px;
+	height: 95px;
+	/* Reduced height for 3 rows */
+}
+
+.room-users.small-mode .room-user-image {
+	width: 60px;
+	height: 60px;
+}
+
+.room-users.small-mode .room-user-stat {
+	width: 152px;
+	height: 45px;
+}
+
+.room-users.small-mode .room-user-title {
+	clear: both;
+	padding: 2px 4px;
+	font-size: 12px;
+}
+
+.room-users.small-mode .room-user-level {
+	width: 18px;
+	height: 18px;
+}
+
+.room-users.small-mode .room-user-name {
+	padding: 2px 0px 0px 4px;
+	font-size: 12px;
+}
+
+/* Game Screen */
+.game-body {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap;
+	/* Ensure normal mode works if items wrap, though normally they don't */
+	margin: 0px -1px;
+	width: 992px;
+	height: 180px;
+}
+
+.game-body.small-mode {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.game-body.small-mode .game-user {
+	flex: 1;
+	max-width: 100px;
+	min-width: 60px;
+	height: 160px;
+	border-width: 2px;
+	margin: 5px 1px;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	position: relative;
+}
+
+/* Ensure animation works by forcing border color when active */
+/* Ensure animation works by forcing border color when active */
+.game-body.small-mode .game-user.game-user-current {
+	animation: CurrentBlink 2s linear infinite;
+	border-color: #3EFF3E;
+	/* Removed !important */
+	transform: translateY(-10px);
+	/* Move the whole card up */
+	z-index: 5;
+	/* Ensure it stays on top */
+	background-color: #E8F5E9;
+	/* Slight background highlight */
+}
+
+@keyframes ScoreGoingSmall {
+	0% {
+		margin-top: -30px;
+		font-size: 14px;
+		opacity: 1;
+	}
+
+	10% {
+		margin-top: -50px;
+		/* Go higher */
+		font-size: 20px;
+		opacity: 0.95;
+	}
+
+	100% {
+		margin-top: -10px;
+		font-size: 12px;
+		opacity: 0.1;
+	}
+}
+
+.game-body.small-mode .deltaScore {
+	position: absolute;
+	/* Take out of flow to prevent layout shift */
+	width: 100%;
+	/* Center horizontally */
+	left: 0;
+	top: 50%;
+	/* Start from middle */
+	animation: ScoreGoingSmall 2s ease 1;
+	z-index: 10;
+	/* Ensure visibility on top */
+	pointer-events: none;
+	/* Click-through */
+}
+
+.game-body.small-mode .game-user-image {
+	width: 85%;
+	/* Larger Moremi as requested */
+	aspect-ratio: 1 / 1;
+	/* Maintain square ratio */
+	height: auto;
+	/* Allow height to scale with width */
+	margin: 5px auto;
+	/* Center horizontal, push down vertical */
+	flex-grow: 0;
+	flex-shrink: 0;
+	background-position: center;
+	background-size: contain;
+	background-repeat: no-repeat;
+}
+
+.game-body.small-mode .game-user-title {
+	width: 100%;
+}
+
+.game-body.small-mode .game-user-level {
+	display: block !important;
+	/* Force show */
+	position: absolute;
+	bottom: 5px;
+	left: 5px;
+	width: 15px;
+	height: 15px;
+	background-size: contain;
+}
+
+.game-body.small-mode .game-user-name {
+	width: 100%;
+	font-size: min(16px, 1.4vw);
+	/* Increased size */
+	padding-left: 0;
+	text-align: center;
+	height: auto;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.game-body.small-mode .game-user-score {
+	width: 100%;
+	font-size: min(20px, 1.8vw);
+	/* Slightly reduced from 22px/2.0vw */
+	padding-left: 20px;
+	/* Space for level icon */
+	text-align: center;
+	/* Center score */
+	margin-bottom: 2px;
+}
+
+.game-body.small-mode .game-user-score-char {
+	width: auto;
+	display: inline-block;
 }

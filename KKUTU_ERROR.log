@@ -361,4 +361,20 @@ TypeError: DB.kkutu_stats.find(...).where is not a function
     at exports.Tail.go (C:\myKKuTu\KKuTu-master\Server\lib\sub\lizard.js:43:16)
     at aft (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1476:8)
     at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1484:23
-    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13)
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13):8496 [2025. 12. 12. 오후 1:11:54] ERROR: TypeError: Cannot read properties of undefined (reading 'length')
+TypeError: Cannot read properties of undefined (reading 'length')
+    at tryAttack (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1152:41)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1347:8
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5):8496 [2025. 12. 12. 오후 1:12:37] ERROR: TypeError: Cannot read properties of undefined (reading 'length')
+TypeError: Cannot read properties of undefined (reading 'length')
+    at tryAttack (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1152:41)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1347:8
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5):8496 [2025. 12. 12. 오후 1:13:50] ERROR: TypeError: Cannot read properties of undefined (reading 'length')
+TypeError: Cannot read properties of undefined (reading 'length')
+    at tryAttack (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1152:41)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1347:8
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5):8496 [2025. 12. 13. 오전 11:13:36] ERROR: TypeError: my.publish is not a function
+TypeError: my.publish is not a function
+    at Timeout._onTimeout (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:925:8)
+    at listOnTimeout (node:internal/timers:588:17)
+    at process.processTimers (node:internal/timers:523:7)

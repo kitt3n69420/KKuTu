@@ -614,7 +614,8 @@ body {
 
 .RoomBox {
 	width: calc(100% - 10px);
-	height: 225px;
+	height: 400px;
+	/* Increased to use more vertical space */
 }
 
 .RoomBox .product-title {
@@ -1196,6 +1197,15 @@ body {
 	font-size: 20px;
 }
 
+/* Waiting Room Scrolling */
+/* Waiting Room Scrolling */
+.RoomBox .product-body {
+	height: 370px;
+	/* Filled to new RoomBox height */
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
 .game-body {
 	margin: 0px -1px;
 	width: 100%;
@@ -1218,6 +1228,47 @@ body {
 	box-shadow: 0px 1px 1px #141414;
 	background-color: #BBDEFB;
 	transition: all 300ms ease;
+}
+
+/* Mobile Small Mode (9+ Players) Scaling */
+/* Mobile Small Mode (9+ Players) Scaling */
+.game-body.small-mode {
+	height: auto !important;
+	/* Allow expansion */
+	min-height: 250px;
+}
+
+.GameBox {
+	height: auto !important;
+	/* Allow expansion */
+	min-height: 410px;
+	padding-bottom: 10px;
+}
+
+.game-body.small-mode .game-user {
+	height: 17px;
+	margin: 1px 1px 4px 1px;
+	/* Added 4px bottom margin for spacing */
+	border-width: 1px;
+}
+
+.game-body.small-mode .game-user-name {
+	font-size: 11px;
+	/* Smaller font */
+	padding-top: 2px;
+	height: 15px;
+}
+
+.game-body.small-mode .game-user-score {
+	font-size: 12px;
+	/* Smaller score */
+	padding: 0px 2px;
+}
+
+.game-body.small-mode .game-user-level {
+	width: 14px;
+	/* Smaller icon */
+	height: 14px;
 }
 
 .game-user-current {

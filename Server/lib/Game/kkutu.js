@@ -886,37 +886,50 @@ exports.Room = function (room, channel) {
 	my.gaming = false;
 	my.game = {};
 
-	my.setAutoDelete = function () {
+	my.setAutoDelete = function (stage) {
 		if (my.practice) return;
-		if (DIC[my.master] && DIC[my.master].subPlace) return; // Master is practicing
+
 		if (my._adt) clearTimeout(my._adt);
-		my._adt = setTimeout(function () {
-			var i;
-			var users = my.players.slice();
-			if (my.gaming) return;
-			// Master in practice: Restart timer and return
-			if (DIC[my.master] && DIC[my.master].subPlace) {
-				my.setAutoDelete();
-				return;
-			}
-			for (i in users) {
-				if (typeof users[i] !== 'object' && DIC[users[i]]) {
-					if (users[i] == my.master && DIC[users[i]].subPlace) {
-						my.setAutoDelete();
-						return;
-					}
-					DIC[users[i]].sendError(470, "");
-					DIC[users[i]].leave();
+		var warnTime = 540000; // 9 minutes
+		var boomTime = 60000;  // 1 minute
+
+		if (stage === 'warning') {
+			my._adt = setTimeout(function () {
+				if (my.gaming) return;
+				if (DIC[my.master] && DIC[my.master].subPlace) {
+					my.setAutoDelete();
+					return;
 				}
-			}
-			if (ROOM[my.id]) {
-				delete ROOM[my.id];
-				if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
-			}
-		}, 180000);
+
+				var i;
+				var users = my.players.slice();
+				for (i in users) {
+					if (typeof users[i] !== 'object' && DIC[users[i]]) {
+						DIC[users[i]].sendError(470, "");
+						DIC[users[i]].leave();
+					}
+				}
+				if (ROOM[my.id]) {
+					delete ROOM[my.id];
+					if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
+				}
+			}, boomTime);
+		} else {
+			my._adt = setTimeout(function () {
+				if (my.gaming) return;
+				if (DIC[my.master] && DIC[my.master].subPlace) {
+					my.setAutoDelete();
+					return;
+				}
+
+				exports.narrate(my.players, 'chat', { value: "1분 후 방이 삭제됩니다.", notice: true });
+				my.setAutoDelete('warning');
+			}, warnTime);
+		}
 	};
 
 	my.checkJamsu = function () {
+		if (my.password) return;
 		var i, o, allReady = true;
 		var h_count = 0; // Human count (including master)
 		var b_count = 0; // Bot count
@@ -992,8 +1005,8 @@ exports.Room = function (room, channel) {
 									}, 500);
 								} else {
 									// 혼자거나 봇만 있어서 시작 불가능하면 방에서 퇴장 (Kick)
-									masterClient.send('system', { code: 'masterJamsu' });
-									masterClient.leave();
+									// masterClient.send('system', { code: 'masterJamsu' });
+									// masterClient.leave();
 								}
 							}
 						} else if (masterIsPlayer) {
@@ -1291,7 +1304,7 @@ exports.Room = function (room, channel) {
 
 		my.title = room.title;
 		my.password = room.password;
-		my.limit = Math.max(Math.min(8, my.players.length), Math.round(room.limit));
+		my.limit = Math.max(Math.min(12, my.players.length), Math.round(room.limit));
 		my.mode = room.mode;
 		my.rule = Const.getRule(room.mode);
 		my.round = Math.round(room.round);
@@ -1731,6 +1744,9 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 			break;
 		case "CSQ":
 			rw.score += score * 0.4;
+			break;
+		case "KSC":
+			rw.score += score * 0.52;
 			break;
 		case 'KCW':
 			rw.score += score * 1.0;
