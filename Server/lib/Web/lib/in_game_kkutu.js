@@ -728,30 +728,55 @@ $(document).ready(function () {
 			ou: $("#only-unlock").is(":checked"),
 			sp: $("#sound-pack").val()
 		};
+
+		// localStorage에 볼륨 설정 저장
+		saveVolumeSettings({
+			bgmVolume: $data.BGMVolume,
+			effectVolume: $data.EffectVolume,
+			bgmMute: $data.opts.mb,
+			effectMute: $data.opts.me,
+			soundPack: $data.opts.sp
+		});
+
 		$.cookie('kks', encodeURIComponent(JSON.stringify($data.opts)));
 		$stage.dialog.setting.hide();
 	});
 	$("#mute-bgm").on('click', function () {
 		$data.muteBGM = !$data.muteBGM;
+		saveBGMMute($data.muteBGM); // localStorage에 즉시 저장
 		updateBGMVol();
 		send("option", { mb: $data.muteBGM, bv: $data.BGMVolume, me: $data.muteEff, ev: $data.EffectVolume });
 	});
 	$(".bgmVolume").on('input change', function () {
 		$data.BGMVolume = $(this).val() / 100;
+		saveBGMVolume($data.BGMVolume); // localStorage에 즉시 저장
 		updateBGMVol();
 	}).on('change', function () {
 		send("option", { mb: $data.muteBGM, bv: $data.BGMVolume, me: $data.muteEff, ev: $data.EffectVolume });
 	});
 	$("#mute-effect").on('click', function () {
 		$data.muteEff = !$data.muteEff;
+		saveEffectMute($data.muteEff); // localStorage에 즉시 저장
 		updateEffectVol();
 		send("option", { mb: $data.muteBGM, bv: $data.BGMVolume, me: $data.muteEff, ev: $data.EffectVolume });
 	});
 	$(".effectVolume").on('input change', function () {
 		$data.EffectVolume = $(this).val() / 100;
+		saveEffectVolume($data.EffectVolume); // localStorage에 즉시 저장
 		updateEffectVol();
 	}).on('change', function () {
 		send("option", { mb: $data.muteBGM, bv: $data.BGMVolume, me: $data.muteEff, ev: $data.EffectVolume });
+	});
+
+	// 사운드팩 변경 핸들러
+	$("#sound-pack").on('change', function () {
+		var selectedPack = $(this).val();
+		saveSoundPack(selectedPack); // localStorage에 즉시 저장
+
+		// 사운드팩 변경 시 페이지 새로고침 안내
+		if (confirm("사운드팩을 변경하려면 페이지를 새로고침해야 합니다. 지금 새로고침하시겠습니까?")) {
+			location.reload();
+		}
 	});
 	$stage.dialog.profileLevel.on('click', function (e) {
 		$("#PracticeDiag .dialog-title").html(L['robot']);
@@ -1898,100 +1923,100 @@ $lib.Daneo.turnEnd = function (id, data) {
 
 $lib.Free = {};
 $lib.Free.roundReady = function (data) {
-	var i, len = $data.room.game.title.length;
+    var i, len = $data.room.game.title.length;
 
-	clearBoard();
-	$data._roundTime = $data.room.time * 1000;
+    clearBoard();
+    $data._roundTime = $data.room.time * 1000;
 
-	// Display "Free Mode" or similar. 
-	// Since there is no specific theme, maybe just "아무거나" (Anything)
-	$stage.game.display.html($data._char = "<아무거나>");
+    // Display "Free Mode" or similar. 
+    // Since there is no specific theme, maybe just "아무거나" (Anything)
+    $stage.game.display.html($data._char = "<아무거나>");
 
-	$stage.game.chain.show().html($data.chain = 0);
-	if ($data.room.opts.mission) {
-		$stage.game.items.show().css('opacity', 1).html($data.mission = data.mission);
-	}
-	drawRound(data.round);
-	playSound('round_start');
-	recordEvent('roundReady', { data: data });
+    $stage.game.chain.show().html($data.chain = 0);
+    if ($data.room.opts.mission) {
+        $stage.game.items.show().css('opacity', 1).html($data.mission = data.mission);
+    }
+    drawRound(data.round);
+    playSound('round_start');
+    recordEvent('roundReady', { data: data });
 };
 
 $lib.Free.turnStart = function (data) {
-	$data.room.game.turn = data.turn;
-	if (data.seq) $data.room.game.seq = data.seq;
-	if (!($data._tid = $data.room.game.seq[data.turn])) return;
-	if ($data._tid.robot) $data._tid = $data._tid.id;
-	data.id = $data._tid;
+    $data.room.game.turn = data.turn;
+    if (data.seq) $data.room.game.seq = data.seq;
+    if (!($data._tid = $data.room.game.seq[data.turn])) return;
+    if ($data._tid.robot) $data._tid = $data._tid.id;
+    data.id = $data._tid;
 
-	// Keep the display as is (set in roundReady)
-	$stage.game.display.html($data._char);
+    // Keep the display as is (set in roundReady)
+    $stage.game.display.html($data._char);
 
-	$("#game-user-" + data.id).addClass("game-user-current");
-	if (!$data._replay) {
-		$stage.game.here.css('display', (data.id == $data.id) ? "block" : "none");
-		if (data.id == $data.id) {
-			if (mobile) $stage.game.hereText.val("").focus();
-			else $stage.talk.focus();
-		}
-	}
-	$stage.game.items.html($data.mission = data.mission);
+    $("#game-user-" + data.id).addClass("game-user-current");
+    if (!$data._replay) {
+        $stage.game.here.css('display', (data.id == $data.id) ? "block" : "none");
+        if (data.id == $data.id) {
+            if (mobile) $stage.game.hereText.val("").focus();
+            else $stage.talk.focus();
+        }
+    }
+    $stage.game.items.html($data.mission = data.mission);
 
-	ws.onmessage = _onMessage;
-	clearInterval($data._tTime);
-	clearTrespasses();
-	// No specific chars to track
-	$data._chars = [];
-	$data._speed = data.speed;
-	$data._tTime = addInterval(turnGoing, TICK);
-	$data.turnTime = data.turnTime;
-	$data._turnTime = data.turnTime;
-	$data._roundTime = data.roundTime;
-	$data._turnSound = playSound("T" + data.speed);
-	recordEvent('turnStart', {
-		data: data
-	});
+    ws.onmessage = _onMessage;
+    clearInterval($data._tTime);
+    clearTrespasses();
+    // No specific chars to track
+    $data._chars = [];
+    $data._speed = data.speed;
+    $data._tTime = addInterval(turnGoing, TICK);
+    $data.turnTime = data.turnTime;
+    $data._turnTime = data.turnTime;
+    $data._roundTime = data.roundTime;
+    $data._turnSound = playSound("T" + data.speed);
+    recordEvent('turnStart', {
+        data: data
+    });
 };
 
 $lib.Free.turnGoing = $lib.Classic.turnGoing;
 $lib.Free.turnEnd = function (id, data) {
-	var $sc = $("<div>")
-		.addClass("deltaScore")
-		.html((data.score > 0) ? ("+" + (data.score - data.bonus)) : data.score);
-	var $uc = $(".game-user-current");
-	var hi;
+    var $sc = $("<div>")
+        .addClass("deltaScore")
+        .html((data.score > 0) ? ("+" + (data.score - data.bonus)) : data.score);
+    var $uc = $(".game-user-current");
+    var hi;
 
-	if ($data._turnSound) $data._turnSound.stop();
-	addScore(id, data.score, data.totalScore);
-	clearInterval($data._tTime);
-	if (data.ok) {
-		checkFailCombo();
-		clearTimeout($data._fail);
-		$stage.game.here.hide();
-		$stage.game.chain.html(++$data.chain);
-		pushDisplay(data.value, data.mean, data.theme, data.wc);
-	} else {
-		checkFailCombo(id);
-		$sc.addClass("lost");
-		$(".game-user-current").addClass("game-user-bomb");
-		$stage.game.here.hide();
-		playSound('timeout');
-	}
-	if (data.hint) {
-		// Just display the hint word without special highlighting
-		$stage.game.display.empty()
-			.append($("<label>").html(data.hint));
-	}
-	if (data.bonus) {
-		mobile ? $sc.html("+" + (data.score - data.bonus) + "+" + data.bonus) : addTimeout(function () {
-			var $bc = $("<div>")
-				.addClass("deltaScore bonus")
-				.html("+" + data.bonus);
+    if ($data._turnSound) $data._turnSound.stop();
+    addScore(id, data.score, data.totalScore);
+    clearInterval($data._tTime);
+    if (data.ok) {
+        checkFailCombo();
+        clearTimeout($data._fail);
+        $stage.game.here.hide();
+        $stage.game.chain.html(++$data.chain);
+        pushDisplay(data.value, data.mean, data.theme, data.wc);
+    } else {
+        checkFailCombo(id);
+        $sc.addClass("lost");
+        $(".game-user-current").addClass("game-user-bomb");
+        $stage.game.here.hide();
+        playSound('timeout');
+    }
+    if (data.hint) {
+        // Just display the hint word without special highlighting
+        $stage.game.display.empty()
+            .append($("<label>").html(data.hint));
+    }
+    if (data.bonus) {
+        mobile ? $sc.html("+" + (data.score - data.bonus) + "+" + data.bonus) : addTimeout(function () {
+            var $bc = $("<div>")
+                .addClass("deltaScore bonus")
+                .html("+" + data.bonus);
 
-			drawObtainedScore($uc, $bc);
-		}, 500);
-	}
-	drawObtainedScore($uc, $sc).removeClass("game-user-current");
-	updateScore(id, getScore(id));
+            drawObtainedScore($uc, $bc);
+        }, 500);
+    }
+    drawObtainedScore($uc, $sc).removeClass("game-user-current");
+    updateScore(id, getScore(id));
 };
 
 /**
@@ -2175,15 +2200,23 @@ function showDialog($d, noToggle) {
 function applyOptions(opt) {
 	$data.opts = opt;
 
-	$data.muteBGM = $data.opts.mb;
-	$data.muteEff = $data.opts.me;
-	$data.BGMVolume = parseFloat($data.opts.bv);
+	// localStorage에서 볼륨 설정 불러오기 (우선순위: localStorage > cookie)
+	var savedSettings = loadVolumeSettings();
+
+	// 음소거 상태 적용 (localStorage 우선)
+	$data.muteBGM = savedSettings.bgmMute !== undefined ? savedSettings.bgmMute : ($data.opts.mb || false);
+	$data.muteEff = savedSettings.effectMute !== undefined ? savedSettings.effectMute : ($data.opts.me || false);
+
+	// 볼륨 값 적용 (localStorage 우선)
+	$data.BGMVolume = savedSettings.bgmVolume !== undefined ? savedSettings.bgmVolume : parseFloat($data.opts.bv);
 	if (isNaN($data.BGMVolume)) $data.BGMVolume = 1;
-	$data.EffectVolume = parseFloat($data.opts.ev);
+
+	$data.EffectVolume = savedSettings.effectVolume !== undefined ? savedSettings.effectVolume : parseFloat($data.opts.ev);
 	if (isNaN($data.EffectVolume)) $data.EffectVolume = 1;
 
-	$("#mute-bgm").attr('checked', $data.muteBGM);
-	$("#mute-effect").attr('checked', $data.muteEff);
+	// UI 요소에 값 설정
+	$("#mute-bgm").prop('checked', $data.muteBGM);
+	$("#mute-effect").prop('checked', $data.muteEff);
 	$("#deny-invite").attr('checked', $data.opts.di);
 	$("#deny-whisper").attr('checked', $data.opts.dw);
 	$("#deny-friend").attr('checked', $data.opts.df);
@@ -2191,33 +2224,60 @@ function applyOptions(opt) {
 	$("#sort-user").attr('checked', $data.opts.su);
 	$("#only-waiting").attr('checked', $data.opts.ow);
 	$("#only-unlock").attr('checked', $data.opts.ou);
-	$("#sound-pack").val($data.opts.sp || "");
+
+	// 사운드팩 설정 (localStorage 우선)
+	var soundPack = savedSettings.soundPack || $data.opts.sp || "";
+	$("#sound-pack").val(soundPack);
+
+	// 슬라이더 값 설정
 	$(".bgmVolume").val($data.BGMVolume * 100);
 	$(".effectVolume").val($data.EffectVolume * 100);
 
+	// 볼륨 적용
 	updateBGMVol();
 	updateEffectVol();
 }
 
+
 function updateBGMVol() {
+	// 실제 볼륨 업데이트 (음소거 시 0, 아니면 설정된 볼륨)
 	if ($data.muteBGM)
 		updateVolume(0, $data.EffectVolume);
 	else
 		updateVolume($data.BGMVolume, $data.EffectVolume);
 
-	if ($("#mute-bgm").prop("checked") !== $data.muteBGM) $("#mute-bgm").prop("checked", $data.muteBGM);
-	if ($(".bgmVolume").val() != $data.BGMVolume * 100) $(".bgmVolume").val($data.BGMVolume * 100);
+	// UI 동기화 (슬라이더 값은 음소거 여부와 관계없이 유지)
+	if ($("#mute-bgm").prop("checked") !== $data.muteBGM) {
+		$("#mute-bgm").prop("checked", $data.muteBGM);
+	}
+	// 슬라이더는 항상 실제 볼륨 값을 표시 (음소거 상태와 무관)
+	var currentSliderValue = $(".bgmVolume").val();
+	var expectedSliderValue = Math.round($data.BGMVolume * 100);
+	if (currentSliderValue != expectedSliderValue) {
+		$(".bgmVolume").val(expectedSliderValue);
+	}
 }
 
+
 function updateEffectVol() {
+	// 실제 볼륨 업데이트 (음소거 시 0, 아니면 설정된 볼륨)
 	if ($data.muteEff)
 		updateVolume($data.BGMVolume, 0);
 	else
 		updateVolume($data.BGMVolume, $data.EffectVolume);
 
-	if ($("#mute-effect").prop("checked") !== $data.muteEff) $("#mute-effect").prop("checked", $data.muteEff);
-	if ($(".effectVolume").val() != $data.EffectVolume * 100) $(".effectVolume").val($data.EffectVolume * 100);
+	// UI 동기화 (슬라이더 값은 음소거 여부와 관계없이 유지)
+	if ($("#mute-effect").prop("checked") !== $data.muteEff) {
+		$("#mute-effect").prop("checked", $data.muteEff);
+	}
+	// 슬라이더는 항상 실제 볼륨 값을 표시 (음소거 상태와 무관)
+	var currentSliderValue = $(".effectVolume").val();
+	var expectedSliderValue = Math.round($data.EffectVolume * 100);
+	if (currentSliderValue != expectedSliderValue) {
+		$(".effectVolume").val(expectedSliderValue);
+	}
 }
+
 
 function updateVolume(bgmVol, effectVol) { // bgmVol, effectVol
 	var vol;
@@ -3683,7 +3743,7 @@ function drawLeaderboard(data) {
 	$("#ranking-" + $data.id).addClass("ranking-me");
 	$stage.dialog.lbPage.html(L['page'] + " " + page);
 	$stage.dialog.lbPrev.attr('disabled', page <= 1);
-	$stage.dialog.lbNext.attr('disabled', data.data.length < 15);
+	$stage.dialog.lbNext.attr('disabled', data.data.length < 12);
 	$stage.dialog.lbMe.attr('disabled', !!$data.guest);
 	$data._lbpage = page - 1;
 }
@@ -4205,6 +4265,7 @@ function roundEnd(result, data) {
 		r = result[i];
 		if ($data._replay) {
 			o = $rec.users[r.id];
+		} else {
 			o = $data.users[r.id] || $data.robots[r.id];
 		}
 		if (!o) {
@@ -4229,7 +4290,7 @@ function roundEnd(result, data) {
 				.append($("<div>").html(L['lvUp']))
 			)
 		);
-		if (o.game && o.game.team) $p.addClass("team-" + o.game.team);
+		if (o.game.team) $p.addClass("team-" + o.game.team);
 		if (r.id == $data.id) {
 			r.exp = o.data.score - r.reward.score;
 			r.level = getLevel(r.exp);
