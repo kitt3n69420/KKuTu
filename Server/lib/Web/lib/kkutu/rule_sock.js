@@ -64,9 +64,12 @@ $lib.Sock.turnEnd = function (id, data) {
 	}
 };
 $lib.Sock.drawMaps = function () {
-	var i;
+	var len = $data._maps.length;
 
 	$stage.game.bb.empty();
+	if (len > 40) $stage.game.bb.addClass("large-mode");
+	else $stage.game.bb.removeClass("large-mode");
+
 	$data._maps.sort(function (a, b) { return b.length - a.length; }).forEach(function (item) {
 		$stage.game.bb.append($word(item));
 	});

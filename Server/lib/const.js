@@ -53,7 +53,8 @@ exports.OPTIONS = {
 	'lng': { name: "Long" },
 	'unl': { name: "Unlimited" },
 	'sur': { name: "Survival" },
-	'fdu': { name: "FreeDueum" }
+	'fdu': { name: "FreeDueum" },
+	'spd': { name: "Speed" }
 
 };
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
@@ -63,7 +64,7 @@ exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 
 exports.ROBOT_DEFEAT_MESSAGES_2 = [ // 남은 단어가 없으면 봇이 보내는 메시지
 	"뭐였더라?", "단어가 생각이 안나", "아 까먹었다", "GG", "모르겠어",
 	"기억이 안 나...", "아 뭐지?", "생각이 안 나네", "단어 더 없나?",
-	"에라이", "으앙", "ㅇㅅㅇ"
+	"에라이", "으앙", "ㅇㅅㅇ", "ㅁㄴㅇㄹ", "님들 헬프"
 ];
 exports.ROBOT_VICTORY_MESSAGES = [ // 봇이 한방단어를 주고 보내는 메시지
 	"ㄴㅇㅅ", "ㅅㄱ", "ㅂㅂ", "잘가시게", "이거나 먹어라", ":3", ":)", "^-^", "OwO",
@@ -73,12 +74,14 @@ exports.ROBOT_VICTORY_MESSAGES = [ // 봇이 한방단어를 주고 보내는 �
 ];
 exports.ROBOT_DEFEAT_MESSAGES = [ // 봇이 한방단어를 받았을 때 보내는 메시지
 	"아니", "살살 좀 해", "짜증나", "이건 너무하잖아...", "으앙", "히잉", "아놔...",
-	"ㅁㄴㅇㄹ", "ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", "님아 제발",
-	"ㅠㅠ", "너무해", "선넘네", "이렇게 가는구나...", "이런!", "에라이",
-	"그래 너 끄투 잘한다", "꽤나 잘하는 분이시군", "다음에는 내가 한방단어 줄테니 기대해",
-	"아니 님아", "아 제발", "뿌에엥", "꿼!", "악", "안돼", "ㅠㅠ", "?ㅠ", "아슬프다",
-	"너 봇이지?", "치트 쓰지마", "사기치지마", "으아악", "어...?", "???"
+	"ㅁㄴㅇㄹ", "ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", "님아 제발", "아오 진짜",
+	"ㅠㅠ", "너무해", "선넘네", "이렇게 가는구나...", "이런!", "에라이", "하...", "엣?",
+	"아니 님아", "아 제발", "뿌에엥", "뾄!", "악", "안돼", "ㅠㅠ", "저기요?", "이럴수가",
+	"너 봇이지?", "치트 쓰지마", "사기치지마", "으아악", "어...?", "???", "야!!!"
 ];
+exports.ROBOT_ANGRY_MESSAGES = [
+	"나 안해", "이건 불공평해", "억까 제발좀", "아오!!!!!!", "개짜증나", "망겜", "○○"
+]
 exports.MOREMI_PART = ["back", "shoes", "clothes", "head", "eye", "mouth", "lhand", "rhand"];
 exports.CATEGORIES = ["all", "spec", "skin", "badge", "head", "eye", "mouth", "clothes", "hs", "back"];
 exports.AVAIL_EQUIP = [
@@ -118,16 +121,7 @@ exports.RULE = {
 	'EKT': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch"],
-		time: 1,
-		ai: true,
-		big: false,
-		ewq: true
-	},
-	'EKK': {
-		lang: "en",
-		rule: "Classic",
-		opts: ["ext", "mis", "unk", "one", "ret", "mid", "sch"],
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -136,7 +130,7 @@ exports.RULE = {
 	'ESH': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["ext", "mis", "unk", "one", "ret", "mid", "sch"],
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -145,17 +139,16 @@ exports.RULE = {
 	'KKT': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "k32", "unk", "one", "ret", "mid", "sch", "fdu"],
+		opts: ["man", "ext", "mis", "loa", "str", "k32", "unk", "one", "ret", "mid", "sch", "fdu", "spd"],
 		time: 1,
 		ai: true,
 		big: false,
 		ewq: true
 	},
-
 	'KSH': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu"],
+		opts: ["man", "ext", "mis", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "spd"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -170,7 +163,6 @@ exports.RULE = {
 		big: false,
 		ewq: false
 	},
-
 	'KCW': {
 		lang: "ko",
 		rule: "Crossword",
@@ -201,17 +193,28 @@ exports.RULE = {
 	'KAP': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu"],
+		opts: ["man", "ext", "mis", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "spd"],
 		time: 1,
 		ai: true,
 		big: false,
 		_back: true,
 		ewq: true
 	},
+	'EAP': {
+		lang: "en",
+		rule: "Classic",
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd"],
+		time: 1,
+		ai: true,
+		big: false,
+		_back: true,
+		ewq: true
+	},
+
 	'HUN': {
 		lang: "ko",
 		rule: "Hunmin",
-		opts: ["ext", "mis", "loa", "str", "one", "ret"],
+		opts: ["ext", "mis", "loa", "str", "one", "ret", "spd"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -220,7 +223,7 @@ exports.RULE = {
 	'KDA': {
 		lang: "ko",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "trp", "one", "ret"],
+		opts: ["ijp", "mis", "trp", "one", "ret", "spd"],
 		time: 1,
 		ai: true,
 		ewq: false
@@ -228,7 +231,7 @@ exports.RULE = {
 	'EDA': {
 		lang: "en",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "trp", "one", "ret"],
+		opts: ["ijp", "mis", "trp", "one", "ret", "spd"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -252,14 +255,14 @@ exports.RULE = {
 		big: true,
 		ewq: false
 	},
-	'KFR': {
+	'KPQ': {
 		lang: "ko",
-		rule: "Free",
-		opts: ["ext", "mis", "one", "unk", "ret"],
-		time: 1,
-		ai: true,
-		big: false,
-		ewq: true
+		rule: "Picture",
+		opts: ["ijp"],
+		time: 2,
+		ai: false,
+		big: true,
+		ewq: false
 	},
 	'KSC': {
 		lang: "ko",
@@ -270,13 +273,69 @@ exports.RULE = {
 		big: false,
 		ewq: false
 	},
+	'KFR': {
+		lang: "ko",
+		rule: "Free",
+		opts: ["ext", "mis", "one", "unk", "ret", "spd"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: true
+	},
+	'EFR': {
+		lang: "en",
+		rule: "Free",
+		opts: ["ext", "mis", "one", "unk", "ret", "spd"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: true
+	},
+	'EKK': {
+		lang: "en",
+		rule: "Classic",
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: true
+	},
+	'EPQ': {
+		lang: "en",
+		rule: "Picture",
+		opts: ["ijp"],
+		time: 2,
+		ai: false,
+		big: true,
+		ewq: false
+	},
+	'KAK': {
+		lang: "ko",
+		rule: "Classic",
+		opts: ["man", "ext", "mis", "loa", "str", "k32", "unk", "one", "ret", "mid", "sch", "fdu", "spd"],
+		time: 1,
+		ai: true,
+		big: false,
+		_back: true,
+		ewq: true
+	},
+	'EAK': {
+		lang: "en",
+		rule: "Classic",
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd"],
+		time: 1,
+		ai: true,
+		big: false,
+		_back: true,
+		ewq: true
+	}
 
 };
 exports.getPreScore = function (text, chain, tr) {
 	return 2 * (Math.pow(5 + 7 * (text || "").length, 0.74) + 0.88 * (chain || []).length) * (0.5 + 0.5 * tr);
 };
 exports.getPenalty = function (chain, score) {
-	return -1 * Math.round(Math.min(10 + (chain || []).length * 2.1 + score * 0.15, score));
+	return -1 * Math.round(Math.max(100, 10 + (chain || []).length * 2.1 + score * 0.25));
 };
 exports.GAME_TYPE = Object.keys(exports.RULE);
 exports.EXAMPLE_TITLE = {
@@ -293,12 +352,12 @@ exports.KO_INJEONG = [
 	"NSK", "KOT", "DOT", "DRR", "DGM", "RAG", "LVL",
 	"LOL", "MRN", "MMM", "MAP", "MKK", "MNG",
 	"MOB", "HYK", "CYP", "HRH", "STA", "OIJ",
-	"KGR", "ESB", "ELW", "OIM", "OVW", "NEX", /*"WOW",*/
+	"KGR", "ESB", "ELW", "OIM", "OVW", "NEX", /*"WOW",*/ //얘는 왜 주석임?
 	"YRY", "KPO", "JLN", "JAN", "ZEL", "POK", "HAI",
-	"HSS", "KMV", "HDC", "HOS", "FRC", "TPW"
+	"HSS", "KMV", "HDC", "HOS", "FRC", "TPW", "MCJ"
 ];
 exports.EN_INJEONG = [
-	"LOL"
+	"LOL", "MCJ"
 ];
 exports.KO_THEME = [
 	"30", "40", "60", "80", "90",
@@ -343,7 +402,7 @@ exports.getRule = function (mode) {
 };
 
 exports.BOT_NAME_TEMPLATES = [
-	"나는 {0}다", "{0} 끄돌이", "{0} 끄순이",
+	"나는 {0}다", "{0} 끄돌이", "{0} 끄순이", "{0} 끄투 봇",
 	"끄투잘하고싶어요", "완전 물렙", "모레미귀여워", "모레미는 세계최강",
 	"유기농 감자", "평범한 끄투러", "끄투가좋아", "한판해요"
 ];

@@ -934,9 +934,10 @@ iframe {
 }
 
 .jjoDisplayBar .graph {
+	float: none;
 	border-left: 1px solid rgba(0, 0, 0, 0.7);
 	border-right: 1px solid rgba(0, 0, 0, 0.7);
-	width: calc(100% - 2px);
+	width: auto;
 	height: 20px;
 	color: #FFFFFF;
 	box-shadow: none;

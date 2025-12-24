@@ -383,4 +383,103 @@ TypeError: Cannot read properties of undefined (reading 'length')
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5):8496 [2025. 12. 15. 오전 3:00:09] ERROR: TypeError: Cannot read properties of undefined (reading 'length')
 TypeError: Cannot read properties of undefined (reading 'length')
     at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1449:25
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5):8496 [2025. 12. 17. 오후 1:35:23] ERROR: TypeError: Cannot read properties of null (reading 'mean')
+TypeError: Cannot read properties of null (reading 'mean')
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\jaqwi.js:63:22
+    at exports.Tail.go (C:\myKKuTu\KKuTu-master\Server\lib\sub\lizard.js:43:16)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\jaqwi.js:295:22
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13)
+    at Query.preCB (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:298:6)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12)
+    at Client._handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\client.js:290:19)
+    at Connection.emit (node:events:518:28)
+    at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12
+    at Parser.parse (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\parser.js:40:17):8496 [2025. 12. 17. 오후 1:41:10] ERROR: TypeError: Cannot read properties of null (reading 'mean')
+TypeError: Cannot read properties of null (reading 'mean')
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\jaqwi.js:63:22
+    at exports.Tail.go (C:\myKKuTu\KKuTu-master\Server\lib\sub\lizard.js:43:16)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\jaqwi.js:295:22
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13)
+    at Query.preCB (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:298:6)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12)
+    at Client._handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\client.js:290:19)
+    at Connection.emit (node:events:518:28)
+    at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12
+    at Parser.parse (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\parser.js:40:17):8496 [2025. 12. 17. 오후 2:52:11] ERROR: ReferenceError: keyByOptions is not defined
+ReferenceError: keyByOptions is not defined
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:689:36
+    at new Promise (<anonymous>)
+    at getAttackChars (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:688:10)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1256:6
+    at exports.Tail.go (C:\myKKuTu\KKuTu-master\Server\lib\sub\lizard.js:43:16)
+    at aft (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1887:8)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1894:23
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13)
+    at Query.preCB (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:298:6)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12):8496 [2025. 12. 17. 오후 2:52:54] ERROR: ReferenceError: keyByOptions is not defined
+ReferenceError: keyByOptions is not defined
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:689:36
+    at new Promise (<anonymous>)
+    at getAttackChars (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:688:10)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1256:6
+    at exports.Tail.go (C:\myKKuTu\KKuTu-master\Server\lib\sub\lizard.js:43:16)
+    at aft (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1887:8)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1894:23
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13)
+    at Query.preCB (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:298:6)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12):8496 [2025. 12. 18. 오후 7:41:51] ERROR: ReferenceError: table is not defined
+ReferenceError: table is not defined
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:85:4
+    at new Promise (<anonymous>)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:83:12
+    at new Promise (<anonymous>)
+    at getAttackChars (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:48:9)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1141:6
+    at exports.Tail.go (C:\myKKuTu\KKuTu-master\Server\lib\sub\lizard.js:43:16)
+    at aft (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1783:8)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1790:23
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13):8496 [2025. 12. 18. 오후 7:59:59] ERROR: TypeError: Cannot read properties of undefined (reading '$not')
+TypeError: Cannot read properties of undefined (reading '$not')
+    at wSearch (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:132:18)
+    at Array.map (<anonymous>)
+    at sqlWhere (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:147:11)
+    at pointer.on (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:324:40)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:98:18
+    at new Promise (<anonymous>)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:84:12
+    at new Promise (<anonymous>)
+    at getAttackChars (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:48:9)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1156:6:8496 [2025. 12. 18. 오후 8:35:20] ERROR: ReferenceError: priorityChars is not defined
+ReferenceError: priorityChars is not defined
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:166:4
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5):8496 [2025. 12. 18. 오후 9:24:43] ERROR: ReferenceError: bannedSet is not defined
+ReferenceError: bannedSet is not defined
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:177:7
+    at Array.forEach (<anonymous>)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:147:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5):8496 [2025. 12. 21. 오후 6:26:07] ERROR: TypeError: Cannot read properties of undefined (reading 'score')
+TypeError: Cannot read properties of undefined (reading 'score')
+    at my.roundEnd (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:1763:23)
+    at exports.roundReady (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:391:6)
+    at my.route.my.routeSync (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:1992:13)
+    at my.roundReady (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:1708:13)
+    at listOnTimeout (node:internal/timers:588:17)
+    at process.processTimers (node:internal/timers:523:7):8496 [2025. 12. 21. 오후 7:50:44] ERROR: TypeError: Cannot read properties of undefined (reading 'humanRank')
+TypeError: Cannot read properties of undefined (reading 'humanRank')
+    at my.roundEnd (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:1810:53)
+    at exports.roundReady (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:391:6)
+    at my.route.my.routeSync (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:1995:13)
+    at my.roundReady (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:1709:13)
+    at listOnTimeout (node:internal/timers:588:17)
+    at process.processTimers (node:internal/timers:523:7):8496 [2025. 12. 24. 오후 10:02:46] ERROR: TypeError: Cannot read properties of undefined (reading 'charCodeAt')
+TypeError: Cannot read properties of undefined (reading 'charCodeAt')
+    at exports.Room.getSubChar (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1947:15)
+    at onDB (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:594:31)
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13)
+    at Query.preCB (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:298:6)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12)
+    at Client._handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\client.js:290:19)
+    at Connection.emit (node:events:518:28)
+    at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12
+    at Parser.parse (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\parser.js:40:17)
+    at Socket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\index.js:11:42)

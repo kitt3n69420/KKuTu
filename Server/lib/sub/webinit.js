@@ -20,7 +20,8 @@ var GLOBAL = require("./global.json");
 var JLog = require("./jjlog");
 var Language = {
 	'ko_KR': require("../Web/lang/ko_KR.json"),
-	'en_US': require("../Web/lang/en_US.json")
+	'en_US': require("../Web/lang/en_US.json"),
+	'nya': require("../Web/lang/nya.json")
 };
 
 function updateLanguage() {

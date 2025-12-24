@@ -56,17 +56,37 @@ exports.roundReady = function () {
 		getAnswer.call(my, my.game.theme).then(function ($ans) {
 			if (!my.game.done) return;
 
-			// $ans가 null이면 골치아프다...
-			my.game.late = false;
-			my.game.answer = $ans || {};
-			var gType = Const.GAME_TYPE[my.mode];
-			$ans.mean = ($ans.mean.length > 20) ? $ans.mean : getConsonants($ans._id, Math.round($ans._id.length / 2), my.opts.vowel, gType);
-			my.game.hint = getHint($ans, my.opts.vowel, gType);
-			my.byMaster('roundReady', {
-				round: my.game.round,
-				theme: my.game.theme
-			}, true);
-			setTimeout(my.turnStart, 2400);
+			// $ans가 null인 경우 done 목록 무시하고 재시도
+			if (!$ans) {
+				console.warn("[JAQWI] getAnswer returned null, retrying without done list...");
+				console.warn("[JAQWI] Debug Info:");
+				console.warn("  - Theme: " + my.game.theme);
+				console.warn("  - Round: " + my.game.round + " / " + my.round);
+				console.warn("  - Mode: " + my.mode);
+				console.warn("  - Game Type: " + Const.GAME_TYPE[my.mode]);
+				console.warn("  - Done words count: " + (my.game.done ? my.game.done.length : 0));
+				console.warn("  - Options: " + JSON.stringify(my.opts));
+				console.warn("  - KOR_GROUP regex: " + Const.KOR_GROUP);
+
+				// done 목록 무시하고 재시도
+				getAnswer.call(my, my.game.theme, false, true).then(function ($ans2) {
+					if (!my.game.done) return;
+
+					if (!$ans2) {
+						console.error("[JAQWI] Retry also returned null! No words available for theme: " + my.game.theme);
+						my.game.late = true;
+						my.byMaster('turnEnd', { answer: "", error: "NO_WORD_FOUND" });
+						my.game._rrt = setTimeout(my.roundReady, 2500);
+						return;
+					}
+
+					console.warn("[JAQWI] Retry succeeded with word: " + $ans2._id);
+					processAnswer.call(my, $ans2);
+				});
+				return;
+			}
+
+			processAnswer.call(my, $ans);
 		});
 	} else {
 		my.roundEnd();
@@ -161,7 +181,14 @@ exports.submit = function (client, text) {
 			giveup: true
 		}, true);
 	} else {
-		client.chat(text);
+
+		// Start of Masking Logic
+		if (my.game.primary > 0) {
+			client.chat(maskText(text, my.game.answer ? my.game.answer._id : ""));
+		} else {
+			client.chat(text);
+		}
+		// End of Masking Logic
 	}
 	if (play) if (my.game.primary + my.game.giveup.length >= my.game.seq.length) {
 		clearTimeout(my.game.hintTimer);
@@ -256,6 +283,21 @@ function getConsonants(word, lucky, isVowel, mode) {
 		return R;
 	}
 }
+function processAnswer($ans) {
+	var my = this;
+	var gType = Const.GAME_TYPE[my.mode];
+
+	my.game.late = false;
+	my.game.answer = $ans;
+	// 뜻이 길면 마스킹된 뜻을 사용하고, 짧으면 초성을 사용
+	$ans.mean = ($ans.mean.length > 20) ? maskText($ans.mean, $ans._id) : getConsonants($ans._id, Math.round($ans._id.length / 2), my.opts.vowel, gType);
+	my.game.hint = getHint($ans, my.opts.vowel, gType);
+	my.byMaster('roundReady', {
+		round: my.game.round,
+		theme: my.game.theme
+	}, true);
+	setTimeout(my.turnStart, 2400);
+}
 function getHint($ans, isVowel, mode) {
 	var R = [];
 	var h1;
@@ -268,7 +310,8 @@ function getHint($ans, isVowel, mode) {
 		return R;
 	}
 
-	h1 = $ans.mean.replace(new RegExp($ans._id, "g"), "★");
+	// $ans.mean은 이미 processAnswer에서 마스킹되어 있음
+	h1 = $ans.mean;
 	var h2;
 
 	R.push(h1);
@@ -279,10 +322,10 @@ function getHint($ans, isVowel, mode) {
 
 	return R;
 }
-function getAnswer(theme, nomean) {
+function getAnswer(theme, nomean, ignoreDone) {
 	var my = this;
 	var R = new Lizard.Tail();
-	var args = [['_id', { $nin: my.game.done }]];
+	var args = ignoreDone ? [] : [['_id', { $nin: my.game.done }]];
 
 	args.push(['theme', new RegExp("(,|^)(" + theme + ")(,|$)")]);
 	args.push(['type', Const.KOR_GROUP]);
@@ -314,4 +357,33 @@ function getAnswer(theme, nomean) {
 		R.go(null);
 	});
 	return R;
+}
+
+function maskText(text, answer) {
+	if (!answer || answer.length === 0) return text;
+
+	var mask = new Array(text.length).fill(false);
+	var found = false;
+	var lowerAns = answer.toLowerCase();
+	var lowerText = text.toLowerCase();
+
+	for (var i = 0; i < text.length; i++) {
+		for (var len = 2; i + len <= text.length; len++) {
+			var sub = lowerText.substr(i, len);
+			if (lowerAns.includes(sub)) {
+				for (var k = 0; k < len; k++) mask[i + k] = true;
+				found = true;
+			}
+		}
+	}
+
+	if (found) {
+		var censored = "";
+		for (var i = 0; i < text.length; i++) {
+			censored += mask[i] ? "○" : text[i];
+		}
+		return censored;
+	} else {
+		return text;
+	}
 }

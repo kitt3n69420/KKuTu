@@ -56,51 +56,128 @@ function getAttackChars(my) {
 		var col = isRev ? `end_${state}` : `start_${state}`;
 		var key = my.rule.lang + "_" + col;
 
+		var isKo = my.rule.lang === 'ko';
+		var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
+		var useCol = col;
+		if (isKo) {
+			var reqLen = getNextTurnLength.call(my);
+			var lenSuffix = (reqLen === 2) ? "2" : (reqLen === 3) ? "3" : "all";
+			useCol = isRev ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
+		} else {
+			useCol = `count_${state}`;
+		}
+		// Update Cache Key to include useCol and Manner state
+		key += "_" + useCol + "_M" + (my.opts.manner ? 1 : 0);
+
 		// Cache Validity: 1 hour (or until restart)
 		if (AttackCache[key] && AttackCache[key].time > Date.now() - 3600000) {
-			return resolve(AttackCache[key].list);
+			return resolve(AttackCache[key].data);
 		}
 
 		// Parallel Fetch:
-		// 1. Hard Killers (<= 2)
-		// 2. Priority Soft Killers (Manual List - Mode Dependent)
+		// 1. Hard Killers (<= 2) - Tier 1 (One-shots)
+		// 2. Soft Killers (3-5) - Tier 2
+		// 3. Priority Lists (Manual) - Added to Tier 2
 		var priorityList = isRev ? PRIORITY_KAP_ATTACK_CHARS : PRIORITY_ATTACK_CHARS;
+		var priorityMannerList = isRev ? PRIORITY_KAP_ATTACK_CHARS_MANNER : PRIORITY_ATTACK_CHARS_MANNER;
 
 		var p1 = new Promise(function (res1) {
-			DB.kkutu_stats.find([col, {
-				$lte: 2
-			}]).sort({
-				[col]: 1
-			}).limit(50).on(function (docs) {
-				res1(docs ? docs.map(d => d._id) : []);
+			// Tier 1: One-shot killers (count 0-2)
+			// Logic: If Manner mode, exclude 0. Count 1-2 allowed.
+			// If Normal mode, include 0-2.
+
+			var cond = {};
+			if (my.opts.manner) {
+				cond = { $gte: 1, $lte: 2 };
+			} else {
+				cond = { $lte: 2 };
+			}
+
+			table.find([useCol, cond]).sort({
+				[useCol]: 1
+			}).limit(100).on(function (docs) {
+				res1(docs || []);
 			}, null, () => res1([]));
 		});
 
 		var p2 = new Promise(function (res2) {
-			// Fetch stats for priority chars to check if they are valid for this mode (e.g. have non-zero count, or at least exist)
-			// Actually, even if count is high, user wants to prioritize them.
-			// But we should verify they exist in stats (valid chars).
-			DB.kkutu_stats.find(['_id', {
-				$in: priorityList
-			}]).on(function (docs) {
+			// Tier 2: Soft killers (count 3-5)
+			table.find([useCol, {
+				$gte: 3
+			}], [useCol, {
+				$lte: 5
+			}]).sort({
+				[useCol]: 1
+			}).limit(200).on(function (docs) {
 				res2(docs ? docs.map(d => d._id) : []);
 			}, null, () => res2([]));
 		});
 
-		Promise.all([p1, p2]).then(function (results) {
-			var hardKillers = results[0];
-			var softKillers = results[1];
+		var p3 = new Promise(function (res3) {
+			// Priority chars from manual list
+			var allPriority = priorityList.concat(priorityMannerList);
+			var isKo = my.rule.lang === 'ko';
+			var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
+			// Note: This promise just fetches documents by ID. Doesn't use columns yet.
+			// But for consistency we should use the new table.
+			table.find(['_id', {
+				$in: allPriority
+			}]).on(function (docs) {
+				res3(docs || []);
+			}, null, () => res3([]));
+		});
 
-			// Merge: Priority first, then Hard Killers (deduplicated)
-			var combined = softKillers.concat(hardKillers);
-			var unique = combined.filter((item, index) => combined.indexOf(item) === index);
+		Promise.all([p1, p2, p3]).then(function (results) {
+			var hardKillers = results[0]; // Tier 1 base
+			var softKillers = results[1]; // Tier 2 base
+			var priorityDocs = results[2]; // Full docs
+
+			// Build Tier 1: Hard killers + Priority chars that are hard
+			var tier1Set = new Set();
+			var tier2Set = new Set(softKillers);
+
+			// Process DB Hard Killers
+			hardKillers.forEach(function (doc) {
+				// DB query already filtered based on Manner (0 or 1-2).
+				// So just add them.
+				tier1Set.add(doc._id);
+			});
+
+			// Process Priority Chars (Heuristics) - Add to Tier 1 or Tier 2
+			priorityDocs.forEach(function (doc) {
+				var count = doc[useCol];
+				if (!count && count !== 0) count = 0; // Normalize undefined to 0
+
+				if (my.opts.manner) {
+					// Manner Mode: Exclude ONLY if count is 0
+					if (count === 0) return;
+				}
+
+				if (count <= 2) {
+					// Hard Killer (Heuristic) -> Tier 1
+					tier1Set.add(doc._id);
+				} else {
+					// Soft Killer (Heuristic) -> Tier 2
+					tier2Set.add(doc._id);
+				}
+			});
+
+
+
+			var tier1 = Array.from(tier1Set);
+			var tier2 = Array.from(tier2Set);
+
+			var data = {
+				tier1: tier1,
+				tier2: tier2
+			};
 
 			AttackCache[key] = {
 				time: Date.now(),
-				list: unique
+				data: data
 			};
-			console.log(`[BOT] Updated Attack Cache for ${key}: ${unique.length} chars (Soft: ${softKillers.length}, Hard: ${hardKillers.length})`);
-			resolve(unique);
+			console.log(`[BOT] Updated Attack Cache for ${key}: Tier1=${tier1.length}, Tier2=${tier2.length} (Manner:${my.opts.manner})`);
+			resolve(data);
 		});
 	});
 }
@@ -135,12 +212,18 @@ exports.getTitle = function () {
 		case 'ESH':
 			eng = "^" + String.fromCharCode(97 + Math.floor(Math.random() * 26));
 			break;
+		case 'EAK':
+			my.game.wordLength = 5;
+			eng = String.fromCharCode(97 + Math.floor(Math.random() * 26)) + "$";
+			break;
 		case 'KKT':
 			my.game.wordLength = 3;
 		case 'KSH':
 			ja = 44032 + 588 * Math.floor(Math.random() * 18);
 			eng = "^[\\u" + ja.toString(16) + "-\\u" + (ja + 587).toString(16) + "]";
 			break;
+		case 'KAK':
+			my.game.wordLength = 3;
 		case 'KAP':
 			ja = 44032 + 588 * Math.floor(Math.random() * 18);
 			eng = "[\\u" + ja.toString(16) + "-\\u" + (ja + 587).toString(16) + "]$";
@@ -227,7 +310,7 @@ exports.getTitle = function () {
 		var my = this;
 		var R = new Lizard.Tail();
 		var gameType = Const.GAME_TYPE[my.mode];
-		var isRev = gameType === 'KAP';
+		var isRev = (gameType === 'KAP' || gameType === 'KAK' || gameType === 'EAP' || gameType === 'EAK');
 
 		// State 비트마스크 계산 (stats_helper.js와 동일)
 		var state = 0;
@@ -251,9 +334,24 @@ exports.getTitle = function () {
 		var totalCount = 0;
 
 		chars.forEach(function (c) {
-			DB.kkutu_stats.findOne(['_id', c]).on(function (doc) {
-				if (doc && doc[col]) {
-					totalCount += doc[col];
+			var isKo = my.rule.lang === 'ko';
+			var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
+			var colName = col;
+
+			if (isKo) {
+				// Title check: usually standard "start_all" or specific? 
+				// The game hasn't started, so wordLength might be default.
+				// For KKT, wordLength is 3.
+				var reqLen = my.game.wordLength || 0;
+				var lenSuffix = (reqLen === 2) ? "2" : (reqLen === 3) ? "3" : "all";
+				colName = isRev ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
+			} else {
+				colName = `count_${state}`;
+			}
+
+			table.findOne(['_id', c]).on(function (doc) {
+				if (doc && doc[colName]) {
+					totalCount += doc[colName];
 				}
 				if (--pending === 0) {
 					R.go(totalCount);
@@ -306,7 +404,7 @@ exports.turnStart = function (force) {
 
 	if (!my.game.chain) return;
 	my.game.roundTime = Math.min(my.game.roundTime, Math.max(10000, 150000 - my.game.chain.length * 1500));
-	speed = my.getTurnSpeed(my.game.roundTime);
+	speed = my.getTurnSpeed(my.opts.speed ? my.game.roundTime / 2 : my.game.roundTime);
 	clearTimeout(my.game.turnTimer);
 	clearTimeout(my.game.robotTimer);
 	my.game.late = false;
@@ -343,6 +441,21 @@ exports.turnStart = function (force) {
 			my.readyRobot(si);
 		}
 };
+
+function getNextTurnLength() {
+	var my = this;
+	if (my.opts.sami) {
+		var n = my.game.seq.length;
+		if (n % 2 !== 0) {
+			return (my.game.wordLength == 3) ? 2 : 3;
+		} else {
+			var nextIdx = (my.game.samiCount + 1) % (n + 1);
+			return (nextIdx % 2 === 0) ? 3 : 2;
+		}
+	}
+	return my.game.wordLength || 0;
+}
+
 exports.turnEnd = function () {
 	var my = this;
 	var target;
@@ -434,7 +547,9 @@ exports.submit = function (client, text) {
 
 	if (!isChainable(text, my.mode, my.game.char, my.game.subChar)) return client.chat(text);
 	if (my.game.chain.indexOf(text) != -1) {
-		if (my.opts.return) {
+		var isRecentDuplicate = my.opts.return && my.game.chain.slice(-5).indexOf(text) != -1;
+
+		if (my.opts.return && !isRecentDuplicate) {
 			// Return rule: Allow duplicate but 0 score
 		} else {
 			if (client.robot && client.data.candidates && client.data.candidateIndex < client.data.candidates.length - 1) {
@@ -446,7 +561,7 @@ exports.submit = function (client, text) {
 				return;
 			}
 			client.publish('turnError', {
-				code: 409,
+				code: isRecentDuplicate ? 411 : 409,
 				value: text
 			}, true);
 
@@ -561,10 +676,13 @@ exports.submit = function (client, text) {
 			else {
 				var valid = true;
 				if (my.opts.manner) {
+					var nextLen = getNextTurnLength.call(my);
 					if (my.rule.lang == "ko") {
 						if (!preChar.match(/[가-힣ㄱ-ㅎㅏ-ㅣ0-9]/)) valid = false;
+						// Additional length check for manner mode if needed?
+						// Assuming getAuto handles the connectivity check.
 					} else {
-						if (!preChar.match(/[a-zA-Z0-9]/)) valid = false;
+						if (!/^[a-zA-Z0-9]+$/.test(preChar)) valid = false;
 					}
 				}
 
@@ -603,7 +721,7 @@ exports.submit = function (client, text) {
 		if (!text) return false;
 		if (text.length <= l) return false;
 		if (my.game.wordLength && text.length != my.game.wordLength) return false;
-		if (type == "KAP") {
+		if (type == "KAP" || type == "KAK" || type == "EAP" || type == "EAK") {
 			var lastChar = text.slice(-1);
 			return (lastChar == char) || subChars.some(function (sc) {
 				return lastChar == sc;
@@ -644,7 +762,7 @@ exports.readyRobot = function (robot) {
 	var ended = {};
 	var w, text, i;
 	var lmax;
-	var isRev = Const.GAME_TYPE[my.mode] == "KAP";
+	var isRev = (Const.GAME_TYPE[my.mode] == "KAP" || Const.GAME_TYPE[my.mode] == "KAK" || Const.GAME_TYPE[my.mode] == "EAP" || Const.GAME_TYPE[my.mode] == "EAK");
 	var personality = robot.data.personality || 0;
 	var preferredChar = robot.data.preferredChar;
 
@@ -663,260 +781,49 @@ exports.readyRobot = function (robot) {
 			if (my.opts.loanword) state |= 4;
 			if (my.opts.freedueum) state |= 8;
 
-			var col = isRev ? `end_${state}` : `start_${state}`;
+			var isKo = my.rule.lang === 'ko';
+			var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
 
-			// If English, we might check 2 or 3 chars.
-			// But this function is generic. It just checks stats for 'char'.
-			// Caller handles logic.
-
-			DB.kkutu_stats.findOne(['_id', char]).on(function (doc) {
-				if (doc) {
-					resolve(doc[col] || 0);
-				} else {
-					resolve(0);
-				}
-			}, null, function (err) {
-				console.error("[BOT] countNextWords Error:", err);
-				resolve(0);
-			});
-		});
-	}
-
-	// Helper: Get characters that lead to a dead end (or very few next words)
-	var AttackCache = {}; // Cache for attack chars
-	function getAttackChars(my) {
-		return new Promise(function (resolve) {
-			var key = `${my.rule.lang}_${my.mode}_${keyByOptions(my.opts)}`;
-			if (AttackCache[key] && (Date.now() - AttackCache[key].time < 60 * 60 * 1000)) { // Cache for 1 hour
-				console.log(`[BOT] Using cached Attack Chars for ${key}`);
-				resolve(AttackCache[key].data);
-				return;
+			// Determine Column
+			var col;
+			if (isKo) {
+				var nextLen = getNextTurnLength.call(my);
+				var lenSuffix = (nextLen === 2) ? "2" : (nextLen === 3) ? "3" : "all";
+				col = isRev ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
+			} else {
+				// English: Use simplified 'count' columns (Start stats only)
+				// Note: Stats only track words starting with the char. 
+				// If isRev (KAP), this is technically checking if words START with the char, 
+				// which is not what KAP needs (words ENDING with the char). 
+				// But user specified English manner is for KKuTu (Standard) only.
+				// If KAP, this might return irrelevant counts, but typically EN KAP is rare/not focused.
+				col = `count_${state}`;
 			}
 
-			var state = 0;
-			if (!my.opts.injeong) state |= 1;
-			if (my.opts.strict) state |= 2;
-			if (my.opts.loanword) state |= 4;
-			if (my.opts.freedueum) state |= 8;
-
-			var col = isRev ? `start_${state}` : `end_${state}`;
-
-			// Parallel Fetch:
-			// 1. Hard Killers (<= 3) - Fetched from DB
-			// 2. Priority Lists (Hard + Soft)
-
-			// Determine Manual Lists based on Mode
-			var hardList = isRev ? PRIORITY_KAP_ATTACK_CHARS : PRIORITY_ATTACK_CHARS;
-			var softList = isRev ? PRIORITY_KAP_ATTACK_CHARS_MANNER : PRIORITY_ATTACK_CHARS_MANNER;
-
-			// English Logic:
-			// If English, we don't have manual priority lists yet.
-			// We rely on calculating "Killer Suffixes" from stats.
-			// Killer Suffix (3-char) = stats(3-char) <= X AND stats(2-char suffix) <= X.
-
-			if (my.rule.lang === 'en') {
-				// Simple Attack Logic for ESH / EKK (1-char link, but user wants specific priorities)
-				// Priority: 1. non-alpha, 2. j,q,z,x, 3. y,k,g
-				// EKT (3-char link) logic is distinct.
-
-				var isEKT = Const.GAME_TYPE[my.mode] === "EKT";
-
-				if (!isEKT) {
-					// Simple Logic for ESH / EKK
-					var t1Set = new Set(); // Tier 1 (Priority 1 & 2)
-					var t2Set = new Set(); // Tier 2 (Priority 3)
-
-					// Priority 1: Non-alphabet ending
-					// Regex pattern "not ending in a-z". 
-					// Since we supply a list of "killers", we can pass specific regex strings if tryAttackEN handles them.
-					// tryAttackEN joins them with |. 
-					// So if we pass "[^a-z]", the regex becomes ...([^a-z]).
-					t1Set.add("[^a-z]");
-
-					// Priority 2: j, q, z, x
-					["j", "q", "z", "x"].forEach(c => t1Set.add(c));
-
-					// Priority 3: y, k, g (Tier 2)
-					["y", "k", "g"].forEach(c => t2Set.add(c));
-
-					var data = {
-						tier1: Array.from(t1Set),
-						tier2: Array.from(t2Set)
-					};
-					AttackCache[key] = {
-						time: Date.now(),
-						data: data
-					};
-					resolve(data);
-					return;
-				}
-
-				// Complex Logic for EKT (Existing)
-				var p1 = new Promise(function (res1) {
-					// 1. Fetch 3-letter candidates with Low Start Count (Hard: 0, Soft: <=3)
-					// Let's assume Hard <= 2 for now based on user request "One-shot words".
-					var threshold = 2; // Can be adjusted
-					// Use Regex for length check (custom DB doesn't support .where)
-					DB.kkutu_stats.find([col, {
-						$lte: threshold
-					}], ['_id', /^...$/]).limit(5000).on(function (docs3) {
-						res1(docs3 || []);
-					}, null, () => res1([]));
+			// Dueum/SubChar Logic (Read-Time)
+			// Need to check char AND subChar(s) and SUM them?
+			// But for Bot logic, we usually check if *any* next word exists.
+			// Summing is safer.
+			var chars = [char];
+			var subChar = getSubChar.call(my, char);
+			if (subChar) {
+				subChar.split('|').forEach(sc => {
+					if (sc && !chars.includes(sc)) chars.push(sc);
 				});
-
-				var p2 = new Promise(function (res2) {
-					// 2. Fetch 2-letter candidates with Low Start Count
-					var threshold = 2;
-					DB.kkutu_stats.find([col, {
-						$lte: threshold
-					}], ['_id', /^..$/]).limit(2000).on(function (docs2) {
-						res2(docs2 || []);
-					}, null, () => res2([]));
-				});
-
-				Promise.all([p1, p2]).then(function (results) {
-					var docs3 = results[0];
-					var docs2 = results[1];
-
-					// Build Map for 2-char counts
-					var map2 = new Map();
-					docs2.forEach(d => map2.set(d._id, d[col]));
-
-					var t1Set = new Set();
-					var t2Set = new Set();
-
-					// Add Manual Heuristics First
-					if (typeof PRIORITY_ATTACK_CHARS_EN !== 'undefined') {
-						PRIORITY_ATTACK_CHARS_EN.forEach(c => t1Set.add(c));
-					}
-					if (typeof PRIORITY_ATTACK_CHARS_MANNER_EN !== 'undefined') {
-						PRIORITY_ATTACK_CHARS_MANNER_EN.forEach(c => t2Set.add(c));
-					}
-
-					docs3.forEach(d3 => {
-						var s3 = d3._id;
-						var s2 = s3.slice(1); // Last 2 chars
-						var count3 = d3[col];
-
-						// Check if s2 is in our low-count list (or if we need to query it? We fetched limited list.
-						// If s2 not in docs2, it likely has High count (since we queried <= threshold).
-						// So valid killer ONLY if s2 is in docs2.
-
-						if (map2.has(s2)) {
-							var count2 = map2.get(s2);
-
-							// Intersection Logic:
-							// If Both are 0 -> Hard Killer (One-shot)
-							// If one is > 0 -> Soft Killer
-
-							if (count3 === 0 && count2 === 0) {
-								t1Set.add(s3);
-							} else {
-								t2Set.add(s3);
-							}
-						}
-					});
-
-					var data = {
-						tier1: Array.from(t1Set),
-						tier2: Array.from(t2Set)
-					};
-					AttackCache[key] = {
-						time: Date.now(),
-						data: data
-					};
-					console.log(`[BOT] Updated Attack Cache for ${key} (EN): Tier1=${data.tier1.length}, Tier2=${data.tier2.length}`);
-					resolve(data);
-				});
-				return;
 			}
 
-			// Korean Logic (Existing)
+			var pending = chars.length;
+			var total = 0;
 
-			var fetchList = hardList.concat(softList);
-
-			var p1 = new Promise(function (res1) {
-				// Increase limit to cover ALL killers <= 3
-				DB.kkutu_stats.find([col, {
-					$lte: 3
-				}]).sort({
-					[col]: 1
-				}).limit(3000).on(function (docs) {
-					res1(docs || []);
-				}, null, () => res1([]));
-			});
-
-			var p2 = new Promise(function (res2) {
-				DB.kkutu_stats.find(['_id', {
-					$in: fetchList
-				}]).on(function (docs) {
-					res2(docs || []);
-				}, null, () => res2([]));
-			});
-
-			Promise.all([p1, p2]).then(function (results) {
-				var statsDocs = results[0];
-				var priorityDocs = results[1];
-
-				var t1Set = new Set(); // Hard / One-shots
-				var t2Set = new Set(); // Soft / Multi-shots
-
-				// Sets for quick lookup of manual priorities
-				var manualHard = new Set(hardList);
-				var manualSoft = new Set(softList);
-
-				// Helper to decide where a char goes
-				function classify(char, count) {
-					// Manner Mode Filter: NO One-Shots (Count 0) allowed in ANY Tier.
-					if (my.opts.manner && count === 0) return;
-
-					// Tier 1: One-shots (Count 0) OR Manual Hard Priority
-					// If Manner Mode, Tier 1 should be disabled or filtered.
-					// Implementation: Skip Tier 1 assignment if Manner.
-					if (my.opts.manner) {
-						if (count > 0) t2Set.add(char);
-						return;
+			chars.forEach(c => {
+				table.findOne(['_id', c]).on(function (doc) {
+					if (doc && doc[col]) {
+						total += doc[col];
 					}
-
-					// Normal Mode logic
-					if (manualHard.has(char) || count === 0) {
-						t1Set.add(char);
-					} else {
-						// Count 1-3 OR Manual Soft
-						t2Set.add(char);
-					}
-				}
-
-				// Map docs to a Map for easy merging
-				var charMap = new Map();
-
-				// Priority docs first
-				priorityDocs.forEach(d => charMap.set(d._id, d[col]));
-
-				// Stats docs (might overlap)
-				statsDocs.forEach(d => {
-					if (!charMap.has(d._id)) charMap.set(d._id, d[col]);
+					if (--pending === 0) resolve(total);
+				}, null, function () {
+					if (--pending === 0) resolve(total);
 				});
-
-				// Now classify
-				charMap.forEach((count, char) => {
-					classify(char, count);
-				});
-
-				var t1List = Array.from(t1Set);
-				var t2List = Array.from(t2Set);
-
-				var data = {
-					tier1: t1List,
-					tier2: t2List
-				};
-
-				AttackCache[key] = {
-					time: Date.now(),
-					data: data
-				};
-				console.log(`[BOT] Updated Attack Cache for ${key}: Tier1=${t1List.length}, Tier2=${t2List.length} (Manner:${my.opts.manner})`);
-				resolve(data);
 			});
 		});
 	}
@@ -1087,10 +994,20 @@ exports.readyRobot = function (robot) {
 			} else {
 				if (isRev) {
 					// Ends with game char (adc), starts with preferred char
-					regex = `^${preferredChar}.*(${adc})$`;
+					var midPattern = ".*";
+					if (my.game.wordLength) {
+						var midLen = Math.max(0, my.game.wordLength - 2);
+						midPattern = `.{${midLen}}`;
+					}
+					regex = `^${preferredChar}${midPattern}(${adc})$`;
 				} else {
 					// Starts with game char (adc), ends with preferred char
-					regex = `^(${adc}).*${preferredChar}$`;
+					var midPattern = ".*";
+					if (my.game.wordLength) {
+						var midLen = Math.max(0, my.game.wordLength - 2);
+						midPattern = `.{${midLen}}`;
+					}
+					regex = `^(${adc})${midPattern}${preferredChar}$`;
 				}
 			}
 
@@ -1293,6 +1210,17 @@ exports.readyRobot = function (robot) {
 						tier2 = postShuffle(tier2);
 
 						// Helper to perform attack search (Optimized: Shuffle -> Slice -> Single Query)
+						// Initialize Priority Set for Smart Shuffle
+						var prioritySet = new Set();
+						(function initPrioritySet() {
+							var pList = isRev ? PRIORITY_KAP_ATTACK_CHARS : PRIORITY_ATTACK_CHARS;
+							var mList = isRev ? PRIORITY_KAP_ATTACK_CHARS_MANNER : PRIORITY_ATTACK_CHARS_MANNER;
+							var pSlice = pList ? pList.slice(0, Math.ceil(pList.length * heuristicRatio)) : [];
+							var mSlice = mList ? mList.slice(0, Math.ceil(mList.length * heuristicRatio)) : [];
+							pSlice.forEach(c => prioritySet.add(c));
+							mSlice.forEach(c => prioritySet.add(c));
+						})();
+
 						function tryAttack(killers, nextStepCallback) {
 							if (my.rule.lang === "ko") tryAttackKO(killers, nextStepCallback);
 							else tryAttackEN(killers, nextStepCallback);
@@ -1313,22 +1241,21 @@ exports.readyRobot = function (robot) {
 
 										if (safe.length > 0) {
 											console.log(`[BOT] Dubang Avoidance: Picking from ${safe.length} safe words.`);
-											list = shuffle(safe).concat(shuffle(unsafe));
+											list = smartShuffle(safe).concat(smartShuffle(unsafe));
 										} else {
 											console.log(`[BOT] Dubang Avoidance: No safe words.`);
-											list = shuffle(unsafe);
+											list = smartShuffle(unsafe);
 										}
 									} else if (Const.GAME_TYPE[my.mode] === "KSH" && my.opts.freedueum) {
-										// 자유 두음법칙 + KSH: AVOID_FD 글자로 끝나는 단어 회피
 										var safe = list.filter(w => !AVOID_FD.includes(w._id.slice(-1)));
 										var unsafe = list.filter(w => AVOID_FD.includes(w._id.slice(-1)));
 
 										if (safe.length > 0) {
 											console.log(`[BOT] FreeDueum Avoidance (KSH): Picking from ${safe.length} safe words.`);
-											list = shuffle(safe).concat(shuffle(unsafe));
+											list = smartShuffle(safe).concat(smartShuffle(unsafe));
 										} else {
 											console.log(`[BOT] FreeDueum Avoidance (KSH): No safe words.`);
-											list = shuffle(unsafe);
+											list = smartShuffle(unsafe);
 										}
 									} else if (Const.GAME_TYPE[my.mode] === "KAP" && my.game.seq && my.game.seq.length === 2) {
 										var safe = list.filter(w => !DUBANG_KAP.includes(w._id.charAt(0)));
@@ -1336,13 +1263,13 @@ exports.readyRobot = function (robot) {
 
 										if (safe.length > 0) {
 											console.log(`[BOT] Dubang Avoidance (KAP): Picking from ${safe.length} safe words.`);
-											list = shuffle(safe).concat(shuffle(unsafe));
+											list = smartShuffle(safe).concat(smartShuffle(unsafe));
 										} else {
 											console.log(`[BOT] Dubang Avoidance (KAP): No safe words.`);
-											list = shuffle(unsafe);
+											list = smartShuffle(unsafe);
 										}
 									} else {
-										list = shuffle(list);
+										list = smartShuffle(list);
 									}
 
 									if (list.length > 0) pickList(list);
@@ -1353,6 +1280,27 @@ exports.readyRobot = function (robot) {
 							} else {
 								nextStepCallback();
 							}
+						}
+
+						function smartShuffle(list) {
+							// Determine "Killer Char" for each word and check against prioritySet
+							// Logic matches tryAttackKO: Standard/KKT/KSH checks last char. KAP checks first char.
+							// Middle/Second logic is complex, so we skip prioritization for them (fallback to random).
+							if (my.opts.middle || my.opts.second) return shuffle(list);
+							if (prioritySet.size === 0) return shuffle(list);
+
+							var p = [], n = [];
+							list.forEach(function (w) {
+								var char = "";
+								if (isRev) char = w._id.charAt(0);
+								else char = w._id.slice(-1);
+
+								if (prioritySet.has(char)) p.push(w);
+								else n.push(w);
+							});
+
+							if (p.length > 0) console.log(`[BOT] SmartShuffle: Prioritized ${p.length} / ${list.length} words.`);
+							return shuffle(p).concat(shuffle(n));
 						}
 
 						function tryAttackKO(killers, nextStepCallback) {
@@ -1667,6 +1615,18 @@ exports.readyRobot = function (robot) {
 	}
 
 	function denied() {
+		// Prepare Defeat Message
+		var secondMsg = Const.ROBOT_DEFEAT_MESSAGES[Math.floor(Math.random() * Const.ROBOT_DEFEAT_MESSAGES.length)];
+
+		// If round is late (ended), only send Defeat Message and exit.
+		// Do not send Char Message (spam) or queue any moves (after).
+		if (my.game.late) {
+			setTimeout(function () {
+				robot.chat(secondMsg);
+			}, 500);
+			return;
+		}
+
 		var char = my.game.char;
 		var charMsgs = [
 			`${char}${char}${char}`,
@@ -1685,7 +1645,6 @@ exports.readyRobot = function (robot) {
 		}
 
 		var firstMsg = charMsgs[Math.floor(Math.random() * charMsgs.length)];
-		var secondMsg = Const.ROBOT_DEFEAT_MESSAGES[Math.floor(Math.random() * Const.ROBOT_DEFEAT_MESSAGES.length)];
 
 		text = firstMsg;
 		after();
@@ -1697,6 +1656,7 @@ exports.readyRobot = function (robot) {
 	}
 
 	function pickList(list) {
+		if (my.game.late) return; // Prevent move after round end
 		if (list && list.length > 0) {
 			robot.data.candidates = list;
 			robot.data.candidateIndex = 0;
@@ -1718,6 +1678,7 @@ exports.readyRobot = function (robot) {
 	}
 
 	function after() {
+		if (my.game.late) return; // Prevent scheduling after round end
 		delay += text.length * ROBOT_TYPE_COEF[level];
 		robot._done.push(text);
 		setTimeout(my.turnRobot, delay, robot, text);
@@ -1774,9 +1735,8 @@ function getAuto(char, subc, type, limit, sort) {
 	var R = new Lizard.Tail();
 	var gameType = Const.GAME_TYPE[my.mode];
 	var adv, adc;
-	var key = gameType + "_" + keyByOptions(my.opts);
-	var MAN = DB.kkutu_manner[my.rule.lang];
 	var bool = type == 1;
+	var isKAP = (gameType === 'KAP' || gameType === 'KAK' || gameType === 'EAP' || gameType === 'EAK');
 
 	adc = char + (subc ? ("|" + subc) : "");
 	switch (gameType) {
@@ -1796,27 +1756,82 @@ function getAuto(char, subc, type, limit, sort) {
 			adv = `^(${adc}).{${my.game.wordLength - 1}}$`;
 			break;
 		case 'KAP':
+		case 'EAP':
 			adv = `.(${adc})$`;
+			break;
+		case 'KAK':
+		case 'EAK':
+			adv = `^.{${my.game.wordLength - 1}}(${adc})$`;
 			break;
 	}
 	if (!char) {
-		console.log(`Undefined char detected! key=${key} type=${type} adc=${adc}`);
+		console.log(`Undefined char detected! type=${type} adc=${adc}`);
 	}
-	MAN.findOne(['_id', char || "★"]).on(function ($mn) {
-		if ($mn && bool) {
-			if ($mn[key] === null) produce();
-			else R.go($mn[key]);
+
+	// type=1 (존재 여부 확인 Check): kkutu_stats table check
+	if (bool && char) {
+		// Bitmask State
+		var state = 0;
+		if (!my.opts.injeong) state |= 1;
+		if (my.opts.strict) state |= 2;
+		if (my.opts.loanword) state |= 4;
+		if (my.opts.freedueum) state |= 8;
+
+		var isKo = my.rule.lang === 'ko';
+		var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
+		var col;
+
+		if (isKo) {
+			var nextLen = getNextTurnLength.call(my);
+			var lenSuffix = (nextLen === 2) ? "2" : (nextLen === 3) ? "3" : "all";
+			col = isKAP ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
 		} else {
-			produce();
+			col = `count_${state}`;
 		}
-	});
+
+		// Check both char and subChar (Read-Time Dueum)
+		var charsToCheck = [char];
+		if (subc) {
+			subc.split("|").forEach(function (sc) {
+				if (sc && charsToCheck.indexOf(sc) === -1) charsToCheck.push(sc);
+			});
+		}
+
+		var pending = charsToCheck.length;
+		var totalCount = 0;
+
+		charsToCheck.forEach(function (c) {
+			table.findOne(['_id', c]).on(function ($st) {
+				if ($st && $st[col]) {
+					totalCount += $st[col];
+				}
+				if (--pending === 0) {
+					// Done
+					if (totalCount > 0) {
+						R.go(true);
+					} else {
+						// Fallback to real DB check if stats say 0 (or cache miss)
+						produce();
+					}
+				}
+			}, null, function () {
+				// Error/Empty
+				if (--pending === 0) {
+					if (totalCount > 0) R.go(true);
+					else produce();
+				}
+			});
+		});
+	} else {
+		// type=0 or type=2: Real DB Query needed
+		produce();
+	}
 
 	function produce() {
 		var aqs = [
 			['_id', new RegExp(adv)]
 		];
 		var aft;
-		var lst;
 
 		if (!my.opts.injeong) aqs.push(['flag', {
 			'$nand': Const.KOR_FLAG.INJEONG
@@ -1853,38 +1868,15 @@ function getAuto(char, subc, type, limit, sort) {
 		var raiser = DB.kkutu[my.rule.lang].find.apply(this, aqs);
 		if (sort) raiser.sort(sort);
 		raiser.limit((bool ? 1 : 123) * (limit || 1)).on(function ($md) {
-			forManner($md);
 			if (my.game.chain) aft($md.filter(function (item) {
 				return !my.game.chain.includes(item);
 			}));
 			else aft($md);
 		});
-
-		function forManner(list) {
-			if (my.opts.unknown) return;
-			if (!char) return; // char가 없으면 DB 업데이트 건너뜀
-			lst = list;
-			MAN.upsert(['_id', char]).set([key, lst.length ? true : false]).on(null, null, onFail);
-		}
-
-		function onFail() {
-			MAN.createColumn(key, "boolean").on(function () {
-				forManner(lst);
-			});
-		}
 	}
 	return R;
 }
 
-function keyByOptions(opts) {
-	var arr = [];
-
-	if (opts.injeong) arr.push('X');
-	if (opts.loanword) arr.push('L');
-	if (opts.strict) arr.push('S');
-	if (opts.freedueum) arr.push('F');
-	return arr.join('');
-}
 
 function shuffle(arr) {
 	var i, r = [];
@@ -1902,7 +1894,7 @@ function getChar(text) {
 	var type = Const.GAME_TYPE[my.mode];
 	var len = text.length;
 	var idx = -1;
-	var isKAP = type === 'KAP';
+	var isKAP = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK');
 
 	if (type === 'EKT' && my.rule.lang === 'en' && (my.opts.middle || my.opts.second)) {
 		my._lastWordLen = len;
@@ -1950,6 +1942,9 @@ function getChar(text) {
 		case 'KSH':
 			return text.slice(-1);
 		case 'KAP':
+		case 'EAP':
+		case 'KAK':
+		case 'EAK':
 			return text.charAt(0);
 	}
 };
@@ -1960,7 +1955,7 @@ function getSubChar(char) {
 	var c = char.charCodeAt();
 	var k;
 	var ca, cb, cc;
-	var isKAP = Const.GAME_TYPE[my.mode] === "KAP";
+	var isKAP = (Const.GAME_TYPE[my.mode] === "KAP" || Const.GAME_TYPE[my.mode] === "KAK" || Const.GAME_TYPE[my.mode] === "EAP" || Const.GAME_TYPE[my.mode] === "EAK");
 
 	switch (Const.GAME_TYPE[my.mode]) {
 		case "EKT":

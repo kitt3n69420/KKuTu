@@ -34,7 +34,7 @@ var channel = process.env['CHANNEL'] || 0;
 
 const NUM_SLAVES = 4;
 const GUEST_IMAGE = "/img/kkutu/guest.png";
-const MAX_OKG = 18;
+const MAX_OKG = 63;
 const PER_OKG = 600000;
 
 exports.NIGHT = false;
@@ -671,6 +671,8 @@ exports.Client = function (socket, profile, sid) {
 			my.pracRoom.go(my);
 			if ($room) my.send('room', { target: my.id, room: $room.getData() });
 			my.publish('user', my.getData());
+			// 버그 수정: 연습 종료 후 본 방의 잠수 상태 재확인
+			if ($room) $room.checkJamsu();
 			if (!kickVote) return;
 		}
 		if ($room) {
@@ -772,6 +774,11 @@ exports.Client = function (socket, profile, sid) {
 		if (my.subPlace) return;
 		if (my.form != "J") return;
 
+		// 버그 수정: 방장이 연습 시작 시 잠수 타이머 정리
+		if ($room.master === my.id) {
+			if ($room._jst) { clearTimeout($room._jst); delete $room._jst; }
+		}
+
 		my.team = 0;
 		my.ready = false;
 		ud = my.getData();
@@ -788,6 +795,9 @@ exports.Client = function (socket, profile, sid) {
 		my.pracRoom.come(my);
 		my.pracRoom.start(data.level, data.personality, data.preferredChar);
 		my.pracRoom.game.hum = 1;
+
+		// 버그 수정: 연습 시작 후 본 방의 잠수 상태 재확인
+		$room.checkJamsu();
 	};
 	my.setRoom = function (room) {
 		var $room = ROOM[my.place];
@@ -900,42 +910,106 @@ exports.Room = function (room, channel) {
 
 	my.setAutoDelete = function (stage) {
 		if (my.practice) return;
+		if (my.password) return;
 
 		if (my._adt) clearTimeout(my._adt);
-		var warnTime = 540000; // 9 minutes
+		// 버그 수정: _jst 타이머도 함께 정리하여 중복 알림 방지
+		if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+		var warnTime = 240000; // 4 minutes
 		var boomTime = 60000;  // 1 minute
 
-		if (stage === 'warning') {
+		if (stage === 'destroy') {
+			// 폭파 단계: 1분 후 방 삭제
 			my._adt = setTimeout(function () {
 				if (my.gaming) return;
+
+				// Phantom Player Cleanup
+				var i, p;
+				for (i = my.players.length - 1; i >= 0; i--) {
+					p = my.players[i];
+					if (typeof p !== 'object') {
+						if (!DIC[p] || DIC[p].place != my.id) {
+							my.players.splice(i, 1);
+						}
+					}
+				}
+				if (my.players.length == 0) {
+					if (my._adt) clearTimeout(my._adt);
+					if (my._jst) clearTimeout(my._jst);
+					delete ROOM[my.id];
+					if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
+					return;
+				}
+
 				if (DIC[my.master] && DIC[my.master].subPlace) {
+					// 방장이 연습 중이면 타이머 재시작
 					my.setAutoDelete();
 					return;
 				}
 
-				var i;
+				// 타이머 정리
+				if (my._jst) {
+					clearTimeout(my._jst);
+					delete my._jst;
+				}
+
+				// 방 ID 저장 후 방 먼저 삭제 (중복 알림 방지)
+				var roomId = my.id;
 				var users = my.players.slice();
+
+				delete ROOM[roomId];
+				if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: roomId } });
+
+				// 모든 플레이어에게 방 삭제 알림 전송
 				for (i in users) {
 					if (typeof users[i] !== 'object' && DIC[users[i]]) {
-						DIC[users[i]].sendError(470, "");
-						DIC[users[i]].leave();
+						// 시스템 알림으로 방 삭제 메시지 전송 (알림창 표시용)
+						DIC[users[i]].send('system', { code: 'roomDestroyed' });
+						DIC[users[i]].place = 0;
 					}
 				}
-				if (ROOM[my.id]) {
-					delete ROOM[my.id];
-					if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
-				}
+
+				// 클라이언트가 메시지를 받을 시간 확보 후 소켓 닫기 (딜레이 증가)
+				setTimeout(function () {
+					for (var j in users) {
+						if (typeof users[j] !== 'object' && DIC[users[j]]) {
+							if (Cluster.isWorker) {
+								DIC[users[j]].socket.close();
+								process.send({ type: "room-go", target: users[j], id: roomId, removed: true });
+							}
+						}
+					}
+				}, 2000);
 			}, boomTime);
 		} else {
 			my._adt = setTimeout(function () {
 				if (my.gaming) return;
+
+				// Fix: Phantom Player Cleanup
+				var i, p;
+				for (i = my.players.length - 1; i >= 0; i--) {
+					p = my.players[i];
+					if (typeof p !== 'object') {
+						if (!DIC[p] || DIC[p].place != my.id) {
+							my.players.splice(i, 1);
+						}
+					}
+				}
+				if (my.players.length == 0) {
+					if (my._adt) clearTimeout(my._adt);
+					if (my._jst) clearTimeout(my._jst);
+					delete ROOM[my.id];
+					if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
+					return;
+				}
+
 				if (DIC[my.master] && DIC[my.master].subPlace) {
 					my.setAutoDelete();
 					return;
 				}
 
-				exports.narrate(my.players, 'chat', { value: "1분 후 방이 삭제됩니다.", notice: true });
-				my.setAutoDelete('warning');
+				exports.narrate(my.players, 'chat', { code: "room_will_be_deleted_1m", notice: true });
+				my.setAutoDelete('destroy');
 			}, warnTime);
 		}
 	};
@@ -971,97 +1045,133 @@ exports.Room = function (room, channel) {
 		// 2. 그 대기하는 모든 사람이 준비 상태여야 함 (allReady)
 		if (waitingHumans > 0 && allReady) {
 			if (!my._jst) {
-				// 타이머 시작 (20초: 10초 대기 + 10초 경고)
-				my._jst = setTimeout(function () {
-					delete my._jst;
-					if (my.gaming) return;
+				var masterClient = DIC[my.master];
+				var masterIsPractice = masterClient && masterClient.subPlace;
+				var masterIsSpectator = masterClient && masterClient.form == 'S';
+				var others_count = waitingHumans + b_count;
 
-					// 타이머 만료 시 재검사
-					var hc = 0, bc = 0, wh = 0, ar = true;
-					for (var j in my.players) {
-						var p = my.players[j];
-						if (p.robot) bc++;
-						else if (DIC[p]) {
-							hc++;
-							if (DIC[p].id !== my.master) {
-								wh++;
-								if (!DIC[p].ready) ar = false;
+				// 사전 경고: 방장 상태에 따라 다른 경고 메시지
+				if (masterClient) {
+					if (masterIsPractice) {
+						// 연습 중: 본게임 참여 경고
+						masterClient.send('system', { code: 'subJamsu4' });
+					} else if (masterIsSpectator && others_count >= 2) {
+						// 관전 중 + 2명 이상: 자동 시작 경고
+						masterClient.send('system', { code: 'subJamsu3' });
+					} else if (others_count >= 2) {
+						// 플레이어 + 2명 이상: 관전 전환 경고
+						masterClient.send('system', { code: 'subJamsu2' });
+					} else {
+						// 1명만: 게임 불가 상황, 일반 경고
+						masterClient.send('system', { code: 'masterJamsu' });
+					}
+				}
+
+				// 비호스트 플레이어들에게 준비 경고 알림
+				for (var j in my.players) {
+					var pl = my.players[j];
+					if (typeof pl !== 'object' && DIC[pl] && DIC[pl].id !== my.master && DIC[pl].ready) {
+						DIC[pl].send('system', { code: 'guestJamsu' });
+					}
+				}
+
+				// 타이머 시작 (20초)
+				my._jst = setTimeout(function () {
+					try {
+						delete my._jst;
+						if (my.gaming) return;
+
+						// Phantom Player Cleanup
+						var i, p;
+						for (i = my.players.length - 1; i >= 0; i--) {
+							p = my.players[i];
+							if (typeof p !== 'object') {
+								if (!DIC[p] || DIC[p].place != my.id) {
+									my.players.splice(i, 1);
+								}
 							}
 						}
-					}
+						if (my.players.length == 0) {
+							if (my._adt) clearTimeout(my._adt);
+							delete ROOM[my.id];
+							if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
+							return;
+						}
 
-					// 조건 재확인
-					if (wh > 0 && ar) {
-						var others_count = wh + bc; // 방장 제외 총 인원 (사람+봇)
-						var masterClient = DIC[my.master];
-						var masterIsPlayer = masterClient && masterClient.form == 'J';
-						var masterIsPractice = masterClient && masterClient.subPlace;
-						var masterIsSpectator = masterClient && masterClient.form == 'S';
+						// 타이머 만료 시 재검사
+						var hc = 0, bc = 0, wh = 0, ar = true;
+						for (var j in my.players) {
+							var p = my.players[j];
+							if (p.robot) bc++;
+							else if (DIC[p]) {
+								hc++;
+								if (DIC[p].id !== my.master) {
+									wh++;
+									if (!DIC[p].ready) ar = false;
+								}
+							}
+						}
 
-						if (masterIsPractice) {
-							// 방장이 연습 중인 경우
-							// 1. 방장 연습 종료 (본 방으로 복귀)
-							if (masterClient) {
-								masterClient.leave();
+						// 조건 재확인
+						if (wh > 0 && ar) {
+							var others_count = wh + bc;
+							var masterClient = DIC[my.master];
+							var masterIsPlayer = masterClient && masterClient.form == 'J';
+							var masterIsPractice = masterClient && masterClient.subPlace;
+							var masterIsSpectator = masterClient && masterClient.form == 'S';
 
-								// 2. 플레이 가능한 인원이면 자동 시작
-								// (방장이 복귀했으므로 others_count + 방장 = 1 + others_count >= 2 여야 함)
-								// 즉 others_count >= 1 이면 시작 가능
-								if (others_count >= 1) {
-									masterClient.send('system', { code: 'masterJamsu2' }); // 메시지: 관전 전환/시작 멘트 활용 (적절한 새 멘트가 없어서 기존 것 활용 혹은 subJamsu3 대응)
-									// 사실 masterJamsu2는 "관전 전환" 멘트라 약간 어색하지만, "게임이 시작됩니다" 의미로 사용
-
+							if (masterIsPractice) {
+								// 방장이 연습 중인 경우: 연습 종료 후 본게임 시작 (2명 이상일 때만)
+								if (masterClient && others_count >= 2) {
+									masterClient.leave(); // 연습 종료 (본 방으로 복귀)
+									// 방장을 플레이어로 설정하여 게임 참여
+									masterClient.form = 'J';
+									masterClient.ready = false;
 									my.export();
 									setTimeout(function () {
+										if (my.gaming) return;
+										if (!ROOM[my.id]) return;
 										my.ready();
-									}, 500);
-								} else {
-									// 혼자거나 봇만 있어서 시작 불가능하면 방에서 퇴장 (Kick)
-									// masterClient.send('system', { code: 'masterJamsu' });
-									// masterClient.leave();
-								}
-							}
-						} else if (masterIsPlayer) {
-							// 1. 방장 제외 플레이어 1명 && 봇 없음 -> 방장 추방
-							if (others_count >= 1 && bc === 0 && wh === 1) {
-								if (masterClient) {
-									masterClient.send('system', { code: 'masterJamsu' });
-									masterClient.leave(); // 방장 나감 -> 방장 위임됨
-								}
-							}
-							// 2. 방장 제외 봇+플레이어 2명 이상 -> 방장 관전 + 자동 시작
-							else if (others_count >= 2) {
-								if (masterClient) {
-									masterClient.send('system', { code: 'masterJamsu2' });
-									// 방장 관전 처리
-									masterClient.ready = false;
-									masterClient.setForm("S"); // 관전 모드 변경
-
-									my.export(); // 방 정보 갱신
-									setTimeout(function () {
-										my.ready(); // 게임 시작 시도
-									}, 500);
-								}
-							}
-						} else if (masterIsSpectator) {
-							// 방장이 관전인 경우
-							// 1. 방장(관전) + 사람 1명 (봇 없음) -> 방장 추방
-							if (others_count >= 1 && bc === 0 && wh === 1) {
-								if (masterClient) {
-									masterClient.send('system', { code: 'masterJamsu' });
+									}, 1000);
+								} else if (masterClient && others_count == 1) {
+									// 1명만: 연습 종료만 시키고 게임은 시작 안 함
 									masterClient.leave();
+									my.export();
 								}
-							}
-							// 2. 방장(관전) + 플레이 가능 인원(2명 이상) -> 자동 시작
-							else if (others_count >= 2) {
-								if (masterClient) {
-									masterClient.send('system', { code: 'subJamsu3' }); // "자동으로 시작됩니다"
+							} else if (masterIsPlayer) {
+								// 방장이 플레이어인 경우
+								if (others_count >= 2) {
+									// 2명 이상: 방장 관전 전환 + 자동 시작
+									if (masterClient) {
+										masterClient.ready = false;
+										masterClient.setForm("S");
+										my.export();
+										setTimeout(function () {
+											if (my.gaming) return;
+											if (!ROOM[my.id]) return;
+											my.ready();
+										}, 500);
+									}
+								}
+								// 1명만: 게임 시작 불가, 강제 조치 없음 (경고만 표시됨)
+							} else if (masterIsSpectator) {
+								// 방장이 관전인 경우
+								if (others_count >= 2) {
+									// 2명 이상: 자동 시작
 									setTimeout(function () {
+										if (my.gaming) return;
+										if (!ROOM[my.id]) return;
 										my.ready();
 									}, 500);
 								}
+								// 1명만: 게임 시작 불가, 강제 조치 없음
 							}
-							// 3. 그 외 (봇만 있거나 등) -> 무시
+						}
+					} catch (err) {
+						JLog.error(`checkJamsu error in room ${my.id}: ${err.toString()}`);
+						if (my._jst) {
+							clearTimeout(my._jst);
+							delete my._jst;
 						}
 					}
 				}, 20000);
@@ -1231,6 +1341,14 @@ exports.Room = function (room, channel) {
 		if (my.players.push(client.id) == 1) {
 			my.master = client.id;
 		}
+
+		// 버그 수정: 새 플레이어 입장 시 잠수 타이머 리셋
+		if (!my.practice && !my.gaming) {
+			if (my._adt) { clearTimeout(my._adt); delete my._adt; }
+			if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+			my.setAutoDelete();
+		}
+
 		if (Cluster.isWorker) {
 			client.ready = false;
 			client.team = 0;
@@ -1245,6 +1363,13 @@ exports.Room = function (room, channel) {
 		if (!my.practice) client.place = my.id;
 		var len = my.players.push(client.id);
 
+		// 버그 수정: 관전자 입장 시에도 잠수 타이머 리셋
+		if (!my.practice && !my.gaming) {
+			if (my._adt) { clearTimeout(my._adt); delete my._adt; }
+			if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+			my.setAutoDelete();
+		}
+
 		if (Cluster.isWorker) {
 			client.ready = false;
 			client.team = 0;
@@ -1256,13 +1381,29 @@ exports.Room = function (room, channel) {
 		}
 	};
 	my.go = function (client, kickVote) {
+		// Fix: 방이 이미 삭제되었는지 확인 (재귀 호출 방지)
+		// 주의: 연습방(practice)은 ROOM[]에 저장되지 않으므로 이 체크를 스킵
+		if (!my.practice && !ROOM[my.id]) {
+			JLog.warn(`Room.go: Room ${my.id} already deleted, skipping for client ${client.id}`);
+			client.place = 0;
+			if (Cluster.isWorker) {
+				client.socket.close();
+			}
+			return;
+		}
+
 		var x = my.players.indexOf(client.id);
 		var me;
 
+		// 문제 3: 플레이어가 players 배열에 없는 경우 처리 개선
 		if (x == -1) {
+			JLog.warn(`Room.go: Client ${client.id} not found in room ${my.id} players array`);
 			client.place = 0;
+			// 방에 플레이어가 아무도 없으면 방 삭제
 			if (my.players.length < 1) {
+				JLog.info(`Room ${my.id} has no players, deleting room`);
 				if (my._adt) clearTimeout(my._adt);
+				if (my._jst) clearTimeout(my._jst);
 				delete ROOM[my.id];
 				if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
 			}
@@ -1276,7 +1417,26 @@ exports.Room = function (room, channel) {
 		}
 		if (DIC[my.master]) {
 			DIC[my.master].ready = false;
+
+			// 플레이어 퇴장 후 상태 확인
+			if (!my.gaming) {
+				var canPlay = my.players.some(function (p) {
+					if (typeof p === 'object' && p.robot) return true;
+					var client = DIC[p];
+					return client && client.form === 'J';
+				});
+
+				// 관전자만 남은 경우: 방 즉시 삭제하지 않고 타이머 재시작
+				if (!canPlay && my.players.length > 0) {
+					JLog.info(`Room ${my.id}: Only spectators remain, starting auto-delete timer`);
+					// 잠수 타이머 정리 후 재시작
+					if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+					my.setAutoDelete();
+				}
+			}
+
 			if (my.gaming) {
+				my.route("onLeave", client.id);
 				x = my.game.seq.indexOf(client.id);
 				if (x != -1) {
 					if (my.game.seq.length <= 2) {
@@ -1297,6 +1457,7 @@ exports.Room = function (room, channel) {
 						if (my.game.turn >= my.game.seq.length) my.game.turn = 0;
 					}
 				}
+				if (my.gaming && my.game.seq.length < 2) my.roundEnd();
 			}
 		} else {
 			if (my.gaming) {
@@ -1305,8 +1466,33 @@ exports.Room = function (room, channel) {
 				my.gaming = false;
 				my.game = {};
 			}
+
+			// 문제 1: 마스터 없이 방 삭제 시 남은 플레이어 퇴장 처리
+			var roomId = my.id;
+			var remainingPlayers = my.players.slice();
+
+			// 타이머 정리 및 방 먼저 삭제 (재귀 호출 방지)
 			if (my._adt) clearTimeout(my._adt);
-			delete ROOM[my.id];
+			if (my._jst) clearTimeout(my._jst);
+			delete ROOM[roomId];
+			if (Cluster.isWorker) {
+				process.send({ type: "room-invalid", room: { id: roomId } });
+			}
+
+			// 남은 플레이어가 있다면 강제 퇴장 (leave() 대신 직접 처리)
+			if (remainingPlayers.length > 0) {
+				JLog.warn(`Room ${roomId} deleting without master. Kicking ${remainingPlayers.length} remaining players.`);
+				remainingPlayers.forEach(function (p) {
+					if (typeof p !== 'object' && DIC[p]) {
+						DIC[p].sendError(471);
+						DIC[p].place = 0;
+						if (Cluster.isWorker) {
+							DIC[p].socket.close();
+							process.send({ type: "room-go", target: p, id: roomId, removed: true });
+						}
+					}
+				});
+			}
 		}
 		if (my.practice) {
 			clearTimeout(my.game.turnTimer);
@@ -1580,6 +1766,7 @@ exports.Room = function (room, channel) {
 		for (i in my.game.seq) {
 			o = DIC[my.game.seq[i]] || my.game.seq[i];
 			if (!o) continue;
+			if (!o.game) continue; // Fix: o.game이 없으면 스킵
 			if (o.robot) {
 				if (o.game.team) teams[o.game.team].push(o.game.score);
 			} else if (o.team) teams[o.team].push(o.game.score);
@@ -1598,6 +1785,7 @@ exports.Room = function (room, channel) {
 		for (i in my.game.seq) {
 			o = DIC[my.game.seq[i]] || my.game.seq[i];
 			if (!o) continue;
+			if (!o.game) continue; // Fix: o.game이 없으면 스킵
 			sumScore += o.game.score;
 
 			var actualTeam = o.robot ? o.game.team : o.team;
@@ -1622,35 +1810,12 @@ exports.Room = function (room, channel) {
 		});
 		rl = res.length;
 
-		// 3. Assign Ranks and Calculate Rewards
+
 		var currentHumanRank = 0;
 		var userRankMap = {};
 
-		// First pass: Determine ranks (Strict 1..N order as per request "A, B, E, D, C")
-		// User example implies distinct ranks for everyone based on list order.
-		// However, standard UI might expect shared ranks for ties.
-		// But in team mode per user description, A(5) and B(3) are separate entries.
-		// A is 1st, B is 2nd.
-		// Let's use simple index + 1 for rank, which guarantees valid unique ranks.
-		// If strict tie-handling is needed (e.g. same individual score in same team), they can share rank.
-		// Let's stick to standard pv check but use the sorting keys.
-
 		for (i in res) {
-			// Check if Identical (TeamScore AND TeamID AND IndividualScore)
-			// Actually just TeamScore and IndividualScore usually enough for Rank purposes if we ignore TeamID grouping for coloring
-			// But for "Ranking", usually unique is fine for now.
-			// Let's try standard tie-check on the primary sort key? 
-			// No, user wants A(5) > B(3). So rank 1 and 2.
-			// So Rank is purely based on the sorted list index usually?
-			// Let's keep it simple: Rank = Index.
 
-			// Wait, if I use index, ties in individual score get different ranks.
-			// e.g. A(5), B(5).
-			// If pv logic: A(1), B(1).
-			// Let's use individual score for pv check?
-			// But total ordering is TeamScore.
-
-			// Let's construct a "compareKey".
 			var key = res[i].teamScore + "_" + res[i].score;
 			if (pv == key) {
 				res[i].rank = res[Number(i) - 1].rank;
@@ -1660,13 +1825,12 @@ exports.Room = function (room, channel) {
 			pv = key;
 		}
 
-		// Second pass: Calculate human-specific ranks
-		// We need to re-sort or iterate carefully to determine "Human Rank"
-		// A simple way: Filter humans, sort by score, assign ranks.
+
 		var humanRes = res.filter(function (r) { return !r.robot; });
 		var h_pv = -1;
 		for (i in humanRes) {
-			if (h_pv == humanRes[i].score) {
+			// Fix: i가 0일 때 humanRes[-1] 접근 방지
+			if (Number(i) > 0 && h_pv == humanRes[i].score) {
 				humanRes[i].humanRank = humanRes[Number(i) - 1].humanRank;
 			} else {
 				humanRes[i].humanRank = Number(i);
@@ -1677,13 +1841,12 @@ exports.Room = function (room, channel) {
 
 		for (i in res) {
 
-			// For bots, we don't need to do complex reward calc, but we need 'o'
 			if (res[i].robot) {
 				o = DIC[res[i].id] || my.players.find(function (p) { return p.id == res[i].id; });
 				if (o) {
 					users[o.id] = o.getData();
 				}
-				// Client requires 'reward' object to be present to render the row
+
 				res[i].reward = { score: 0, money: 0 };
 				continue;
 			}
@@ -1815,6 +1978,15 @@ exports.Room = function (room, channel) {
 	my.submit = function (client, text, data) {
 		return my.route("submit", client, text, data);
 	};
+	my.handleDraw = function (client, msg) {
+		return my.route("handleDraw", client, msg);
+	};
+	my.handleClear = function (client, msg) {
+		return my.route("handleClear", client, msg);
+	};
+	my.handlePass = function (client) {
+		return my.route("handlePass", client);
+	};
 	my.getScore = function (text, delay, ignoreMission) {
 		return my.routeSync("getScore", text, delay, ignoreMission);
 	};
@@ -1886,7 +2058,7 @@ function getGuestName(sid) {
 	for (i = 0; i < len; i++) {
 		res += sid.charCodeAt(i) * (i + 1);
 	}
-	return "GUEST" + (1000 + (res % 9000));
+	return "손님" + (1000 + (res % 9000));
 }
 function shuffle(arr) {
 	var i, r = [];
@@ -1954,7 +2126,17 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 		case 'KFR':
 			rw.score += score * 0.15;
 			break;
+		case 'EFR':
+			rw.score += score * 0.15;
+			break;
+		case "KPQ":
+			rw.score += score * 0.72;
+			break;
+		case "EPQ":
+			rw.score += score * 0.56;
+			break;
 		default:
+			rw.score += score * 0.5;
 			break;
 	}
 	rw.score = rw.score
@@ -1971,6 +2153,8 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 	rw.score += bonus;
 	rw.score = rw.score || 0;
 	rw.money = rw.money || 0;
+	if (rw.score < 0) rw.score = 0;
+	if (rw.money < 0) rw.money = 0;
 
 	// applyEquipOptions에서 반올림한다.
 	return rw;

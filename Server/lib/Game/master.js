@@ -259,9 +259,11 @@ Cluster.on('message', function (worker, msg) {
 			break;
 		case "room-new":
 			if (ROOM[msg.room.id] || !DIC[msg.target]) { // 이미 그런 ID의 방이 있다... 그 방은 없던 걸로 해라.
+				JLog.warn(`[IPC] room-new rejected: Room ${msg.room.id} already exists or target ${msg.target} not found`);
 				worker.send({ type: "room-invalid", room: msg.room });
 			} else {
 				ROOM[msg.room.id] = new KKuTu.Room(msg.room, msg.room.channel);
+				JLog.info(`[IPC] room-new: Room ${msg.room.id} created on master (channel: ${msg.room.channel})`);
 			}
 			break;
 		case "room-come":
@@ -281,9 +283,14 @@ Cluster.on('message', function (worker, msg) {
 		case "room-go":
 			if (ROOM[msg.id] && DIC[msg.target]) {
 				ROOM[msg.id].go(DIC[msg.target]);
+				if (msg.removed && ROOM[msg.id]) {
+					delete ROOM[msg.id];
+					JLog.warn(`Room ${msg.id} sync-deleted (master)`);
+				}
 			} else {
 				// 나가기 말고 연결 자체가 끊겼을 때 생기는 듯 하다.
 				JLog.warn(`Wrong room-go id=${msg.id}&target=${msg.target}`);
+				if (DIC[msg.target]) DIC[msg.target].place = 0;
 				if (ROOM[msg.id] && ROOM[msg.id].players) {
 					// 이 때 수동으로 지워준다.
 					var x = ROOM[msg.id].players.indexOf(msg.target);
@@ -323,7 +330,12 @@ Cluster.on('message', function (worker, msg) {
 			}
 			break;
 		case "room-invalid":
-			delete ROOM[msg.room.id];
+			if (ROOM[msg.room.id]) {
+				delete ROOM[msg.room.id];
+				JLog.info(`[IPC] room-invalid: Room ${msg.room.id} deleted from master`);
+			} else {
+				JLog.warn(`[IPC] room-invalid: Room ${msg.room.id} not found on master (already deleted?)`);
+			}
 			break;
 		default:
 			JLog.warn(`Unhandled IPC message type: ${msg.type}`);

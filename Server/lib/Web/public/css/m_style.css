@@ -16,10 +16,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+html,
 body {
 	color: #EEEEEE;
 	padding: 0px;
 	margin: 0px;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	overscroll-behavior: none;
 	min-width: 360px;
 	font-family: 맑은 고딕, 돋움;
 }
@@ -409,6 +414,7 @@ span {
 
 /* 설명 */
 #ExplBox {
+	display: none;
 	box-sizing: border-box;
 	position: fixed;
 	font-size: 12px;

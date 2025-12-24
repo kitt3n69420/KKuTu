@@ -422,6 +422,27 @@ KKuTu.onClientMessage = function ($c, msg) {
 
 			ROOM[$c.place].setAI(msg.target, Math.round(msg.level), Math.round(msg.team), msg.personality, msg.preferredChar);
 			break;
+		case 'draw':
+			// Picture Quiz drawing message handler
+			if (!ROOM[$c.place]) return;
+			if (!ROOM[$c.place].gaming) return;
+			if (!ROOM[$c.place].handleDraw) return;
+			ROOM[$c.place].handleDraw($c, msg);
+			break;
+		case 'clear':
+			// Picture Quiz clear handler
+			if (!ROOM[$c.place]) return;
+			if (!ROOM[$c.place].gaming) return;
+			if (!ROOM[$c.place].handleClear) return;
+			ROOM[$c.place].handleClear($c, msg);
+			break;
+		case 'pass':
+			// Picture Quiz pass button handler
+			if (!ROOM[$c.place]) return;
+			if (!ROOM[$c.place].gaming) return;
+			if (!ROOM[$c.place].handlePass) return;
+			ROOM[$c.place].handlePass($c);
+			break;
 		default:
 			break;
 	}

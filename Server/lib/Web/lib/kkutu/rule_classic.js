@@ -27,7 +27,7 @@ $lib.Classic.roundReady = function (data) {
 	if ($data.room.opts.mission) {
 		$stage.game.items.show().css('opacity', 1).html($data.mission = data.mission);
 	}
-	if (MODE[$data.room.mode] == "KAP") {
+	if (MODE[$data.room.mode] == "KAP" || MODE[$data.room.mode] == "KAK" || MODE[$data.room.mode] == "EAP" || MODE[$data.room.mode] == "EAK") {
 		$(".jjoDisplayBar .graph-bar").css({ 'float': "right", 'text-align': "left" });
 	}
 	drawRound(data.round);
@@ -108,7 +108,7 @@ $lib.Classic.turnEnd = function (id, data) {
 		hi = data.hint.indexOf($data._chars[0]);
 		if (hi == -1) hi = data.hint.indexOf($data._chars[1]);
 
-		if (MODE[$data.room.mode] == "KAP") $stage.game.display.empty()
+		if (MODE[$data.room.mode] == "KAP" || MODE[$data.room.mode] == "KAK" || MODE[$data.room.mode] == "EAP" || MODE[$data.room.mode] == "EAK") $stage.game.display.empty()
 			.append($("<label>").css('color', "#AAAAAA").html(data.hint.slice(0, hi)))
 			.append($("<label>").html(data.hint.slice(hi)));
 		else $stage.game.display.empty()

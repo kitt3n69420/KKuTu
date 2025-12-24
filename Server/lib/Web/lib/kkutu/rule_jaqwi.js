@@ -47,7 +47,7 @@ $lib.Jaqwi.turnGoing = function () {
 	var bRate;
 	var tt;
 
-	if (!$data.room) clearInterval($data._tTime);
+	if (!$data.room || !$data.room.gaming) clearInterval($data._tTime);
 	$data._roundTime -= TICK;
 
 	tt = $data._spectate ? L['stat_spectate'] : ($data._roundTime * 0.001).toFixed(1) + L['SECOND'];

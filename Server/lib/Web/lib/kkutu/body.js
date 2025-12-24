@@ -20,7 +20,14 @@ var spamWarning = 0;
 var spamCount = 0;
 // var smile = 94, tag = 35;
 
-function zeroPadding(num, len) { var s = num.toString(); return "000000000000000".slice(0, Math.max(0, len - s.length)) + s; }
+function zeroPadding(num, len) {
+	if (num < 0) {
+		var s = Math.abs(num).toString();
+		return "-" + "000000000000000".slice(0, Math.max(0, len - s.length) - 1) + s;
+	}
+	var s = num.toString();
+	return "000000000000000".slice(0, Math.max(0, len - s.length)) + s;
+}
 function send(type, data, toMaster) {
 	var i, r = { type: type };
 	var subj = toMaster ? ws : (rws || ws);
@@ -32,7 +39,8 @@ function send(type, data, toMaster) {
 	}else $data._sameTalk = 0;
 	$data._talkValue = r.value;*/
 
-	if (type != "test") if (spamCount++ > 10) {
+	// Exempt 'draw' and 'test' from spam counter
+	if (type != "test" && type != "draw") if (spamCount++ > 10) {
 		if (++spamWarning >= 3) return subj.close();
 		spamCount = 5;
 	}
@@ -61,22 +69,82 @@ function showDialog($d, noToggle) {
 		return true;
 	}
 }
+function showConfirm(msg, callback, yesText, noText) {
+	if (typeof callback !== 'function') callback = function () { };
+	$stage.dialog.confirmText.html(msg.replace(/\n/g, '<br>'));
+	$stage.dialog.confirmOK.text(yesText || L['OK']);
+	$stage.dialog.confirmNo.text(noText || L['NO']);
+	showDialog($stage.dialog.confirm);
+
+	$stage.dialog.confirmOK.off('click').on('click', function () {
+		$stage.dialog.confirm.hide();
+		callback(true);
+	});
+	$stage.dialog.confirmNo.off('click').on('click', function () {
+		$stage.dialog.confirm.hide();
+		callback(false);
+	});
+}
+function showAlert(msg, callback) {
+	$stage.dialog.alertText.html(msg.replace(/\n/g, '<br>'));
+	showDialog($stage.dialog.alert);
+
+	$stage.dialog.alertOK.off('click').on('click', function () {
+		$stage.dialog.alert.hide();
+		if (typeof callback === 'function') callback();
+	});
+}
+function tryOpenLink(url) {
+	showConfirm(L['linkWarning'], function (res) {
+		if (res) window.open(url);
+	});
+}
+function showPrompt(msg, value, callback) {
+	if (typeof callback !== 'function') callback = function () { };
+	$stage.dialog.inputText.html(msg.replace(/\n/g, '<br>'));
+	$stage.dialog.inputInput.val(value || "");
+	showDialog($stage.dialog.input);
+	$stage.dialog.inputInput.focus();
+
+	var onOK = function () {
+		$stage.dialog.input.hide();
+		callback($stage.dialog.inputInput.val());
+	};
+	var onNo = function () {
+		$stage.dialog.input.hide();
+		callback(null);
+	};
+
+	$stage.dialog.inputOK.off('click').on('click', onOK);
+	$stage.dialog.inputNo.off('click').on('click', onNo);
+	$stage.dialog.inputInput.off('keypress').on('keypress', function (e) {
+		if (e.which == 13) onOK();
+	});
+}
 function applyOptions(opt) {
 	$data.opts = opt;
 
 	// localStorage에서 볼륨 설정 불러오기 (우선순위: localStorage > cookie)
 	var savedSettings = loadVolumeSettings();
 
-	// 음소거 상태 적용 (localStorage 우선)
-	$data.muteBGM = savedSettings.bgmMute !== undefined ? savedSettings.bgmMute : ($data.opts.mb || false);
-	$data.muteEff = savedSettings.effectMute !== undefined ? savedSettings.effectMute : ($data.opts.me || false);
+	// 음소거 상태 적용 (localStorage에 값이 있으면 localStorage, 없으면 cookie)
+	$data.muteBGM = savedSettings.bgmMute !== null ? savedSettings.bgmMute : ($data.opts.mb || false);
+	$data.muteEff = savedSettings.effectMute !== null ? savedSettings.effectMute : ($data.opts.me || false);
 
-	// 볼륨 값 적용 (localStorage 우선)
-	$data.BGMVolume = savedSettings.bgmVolume !== undefined ? savedSettings.bgmVolume : parseFloat($data.opts.bv);
-	if (isNaN($data.BGMVolume)) $data.BGMVolume = 1;
+	// 볼륨 값 적용 (localStorage에 값이 있으면 localStorage, 없으면 cookie)
+	if (savedSettings.bgmVolume !== null) {
+		$data.BGMVolume = savedSettings.bgmVolume;
+	} else {
+		$data.BGMVolume = parseFloat($data.opts.bv);
+		if (isNaN($data.BGMVolume)) $data.BGMVolume = 1;
+	}
 
-	$data.EffectVolume = savedSettings.effectVolume !== undefined ? savedSettings.effectVolume : parseFloat($data.opts.ev);
-	if (isNaN($data.EffectVolume)) $data.EffectVolume = 1;
+	if (savedSettings.effectVolume !== null) {
+		$data.EffectVolume = savedSettings.effectVolume;
+	} else {
+		$data.EffectVolume = parseFloat($data.opts.ev);
+		if (isNaN($data.EffectVolume)) $data.EffectVolume = 1;
+	}
 
 	// UI 요소에 값 설정
 	$("#mute-bgm").prop('checked', $data.muteBGM);
@@ -89,8 +157,8 @@ function applyOptions(opt) {
 	$("#only-waiting").attr('checked', $data.opts.ow);
 	$("#only-unlock").attr('checked', $data.opts.ou);
 
-	// 사운드팩 설정 (localStorage 우선)
-	var soundPack = savedSettings.soundPack || $data.opts.sp || "";
+	// 사운드팩 설정 (localStorage에 값이 있으면 localStorage, 없으면 cookie)
+	var soundPack = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts.sp || "");
 	$("#sound-pack").val(soundPack);
 
 	// 슬라이더 값 설정
@@ -102,13 +170,26 @@ function applyOptions(opt) {
 	updateEffectVol();
 }
 
+function loadVolumeSettings() {
+	try {
+		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null };
+	} catch (e) {
+		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null };
+	}
+}
+
+function saveVolumeSettings(data) {
+	var current = loadVolumeSettings();
+	for (var key in data) current[key] = data[key];
+	localStorage.setItem('kkutu_volume', JSON.stringify(current));
+}
+
 
 function updateBGMVol() {
-	// 실제 볼륨 업데이트 (음소거 시 0, 아니면 설정된 볼륨)
-	if ($data.muteBGM)
-		updateVolume(0, $data.EffectVolume);
-	else
-		updateVolume($data.BGMVolume, $data.EffectVolume);
+	// 실제 볼륨 업데이트 (각각의 음소거 상태 확인)
+	var bgmVol = $data.muteBGM ? 0 : $data.BGMVolume;
+	var effVol = $data.muteEff ? 0 : $data.EffectVolume;
+	updateVolume(bgmVol, effVol);
 
 	// UI 동기화 (슬라이더 값은 음소거 여부와 관계없이 유지)
 	if ($("#mute-bgm").prop("checked") !== $data.muteBGM) {
@@ -124,11 +205,10 @@ function updateBGMVol() {
 
 
 function updateEffectVol() {
-	// 실제 볼륨 업데이트 (음소거 시 0, 아니면 설정된 볼륨)
-	if ($data.muteEff)
-		updateVolume($data.BGMVolume, 0);
-	else
-		updateVolume($data.BGMVolume, $data.EffectVolume);
+	// 실제 볼륨 업데이트 (각각의 음소거 상태 확인)
+	var bgmVol = $data.muteBGM ? 0 : $data.BGMVolume;
+	var effVol = $data.muteEff ? 0 : $data.EffectVolume;
+	updateVolume(bgmVol, effVol);
 
 	// UI 동기화 (슬라이더 값은 음소거 여부와 관계없이 유지)
 	if ($("#mute-effect").prop("checked") !== $data.muteEff) {
@@ -236,45 +316,66 @@ function connectToRoom(chan, rid) {
 	rws.onclose = function (e) {
 		console.log("room-disc", chan, rid);
 		rws = undefined;
+		if ($data.place != 0) {
+			$data.place = 0;
+			$data.room = null;
+			updateUI();
+			playBGM('lobby');
+		}
 	};
 	rws.onerror = function (e) {
 		console.warn(L['error'], e);
 	};
 }
 function checkAge() {
-	if (!confirm(L['checkAgeAsk'])) return send('caj', { answer: "no" }, true);
+	showConfirm(L['checkAgeAsk'], function (res) {
+		if (!res) return send('caj', { answer: "no" }, true);
+		askStep(1, []);
+	});
 
-	while (true) {
-		var input = [], lv = 1;
-
-		while (lv <= 3) {
-			var str = prompt(L['checkAgeInput' + lv]);
-
-			if (!str || isNaN(str = Number(str))) {
-				if (--lv < 1) break; else continue;
-			}
-			if (lv == 1 && (str < 1000 || str > 2999)) {
-				alert(str + "\n" + L['checkAgeNo']);
-				continue;
-			}
-			if (lv == 2 && (str < 1 || str > 12)) {
-				alert(str + "\n" + L['checkAgeNo']);
-				continue;
-			}
-			if (lv == 3 && (str < 1 || str > 31)) {
-				alert(str + "\n" + L['checkAgeNo']);
-				continue;
-			}
-			input[lv++ - 1] = str;
-		}
-		if (lv == 4) {
-			if (confirm(L['checkAgeSure'] + "\n"
+	function askStep(lv, input) {
+		if (lv > 3) {
+			var msg = L['checkAgeSure'] + "\n"
 				+ input[0] + L['YEAR'] + " "
 				+ input[1] + L['MONTH'] + " "
-				+ input[2] + L['DATE'])) return send('caj', { answer: "yes", input: [input[1], input[2], input[0]] }, true);
-		} else {
-			if (confirm(L['checkAgeCancel'])) return send('caj', { answer: "no" }, true);
+				+ input[2] + L['DATE'];
+
+			showConfirm(msg, function (res) {
+				if (res) {
+					send('caj', { answer: "yes", input: [input[1], input[2], input[0]] }, true);
+				} else {
+					showConfirm(L['checkAgeCancel'], function (res2) {
+						if (res2) send('caj', { answer: "no" }, true);
+						else askStep(1, []);
+					});
+				}
+			});
+			return;
 		}
+
+		showPrompt(L['checkAgeInput' + lv], "", function (str) {
+			if (!str || isNaN(str = Number(str))) {
+				if (lv > 1) askStep(lv - 1, input); // Go back one step
+				else askStep(1, []); // Restart
+				return;
+			}
+
+			if (lv == 1 && (str < 1000 || str > 2999)) {
+				showAlert(str + ("\n" + L['checkAgeNo']), function () { askStep(lv, input); });
+				return;
+			}
+			if (lv == 2 && (str < 1 || str > 12)) {
+				showAlert(str + ("\n" + L['checkAgeNo']), function () { askStep(lv, input); });
+				return;
+			}
+			if (lv == 3 && (str < 1 || str > 31)) {
+				showAlert(str + ("\n" + L['checkAgeNo']), function () { askStep(lv, input); });
+				return;
+			}
+
+			input[lv - 1] = str;
+			askStep(lv + 1, input);
+		});
 	}
 }
 function onMessage(data) {
@@ -320,7 +421,7 @@ function onMessage(data) {
 			$data._okg = data.okg;
 			$data._gaming = false;
 			$data.box = data.box;
-			if (data.test) alert(L['welcomeTestServer']);
+			if (data.test) showAlert(L['welcomeTestServer']);
 			if (location.hash[1]) tryJoin(location.hash.slice(1));
 			updateUI(undefined, true);
 			welcome();
@@ -371,13 +472,13 @@ function onMessage(data) {
 			break;
 		case 'chat':
 			if (data.notice) {
-				notice(L['error_' + data.code]);
+				notice(data.value || L[data.code] || L['error_' + data.code]);
 			} else {
 				chat(data.profile || { title: L['robot'] }, data.value, data.from, data.timestamp);
 			}
 			break;
 		case 'roomStuck':
-			rws.close();
+			if (rws) rws.close();
 			break;
 		case 'preRoom':
 			connectToRoom(data.channel, data.id);
@@ -417,10 +518,13 @@ function onMessage(data) {
 		case 'friendAdd':
 			$target = $data.users[data.from].profile;
 			i = ($target.title || $target.name) + "(#" + String(data.from).substr(0, 5) + ")";
-			send('friendAddRes', {
-				from: data.from,
-				res: $data.opts.df ? false : confirm(i + L['attemptFriendAdd'])
-			}, true);
+			if ($data.opts.df) {
+				send('friendAddRes', { from: data.from, res: false }, true);
+			} else {
+				showConfirm(i + L['attemptFriendAdd'], function (res) {
+					send('friendAddRes', { from: data.from, res: res }, true);
+				});
+			}
 			break;
 		case 'friendAddRes':
 			$target = $data.users[data.target].profile;
@@ -476,6 +580,17 @@ function onMessage(data) {
 			$data._resultRank = data.ranks;
 			roundEnd(data.result, data.data);
 			break;
+		case 'draw':
+			// Picture Quiz drawing sync
+			if ($lib.Picture && $lib.Picture.handleDraw) {
+				$lib.Picture.handleDraw(data);
+			}
+			break;
+		case 'clear':
+			if ($lib.Picture && $lib.Picture.handleClear) {
+				$lib.Picture.handleClear(data);
+			}
+			break;
 		case 'kickVote':
 			$data._kickTarget = $data.users[data.target];
 			if ($data.id != data.target && $data.id != $data.room.master) {
@@ -487,10 +602,13 @@ function onMessage(data) {
 			notice(getKickText($data._kickTarget.profile, data));
 			break;
 		case 'invited':
-			send('inviteRes', {
-				from: data.from,
-				res: $data.opts.di ? false : confirm(data.from + L['invited'])
-			});
+			if ($data.opts.di) {
+				send('inviteRes', { from: data.from, res: false });
+			} else {
+				showConfirm(data.from + L['invited'], function (res) {
+					send('inviteRes', { from: data.from, res: res });
+				});
+			}
 			break;
 		case 'inviteNo':
 			$target = $data.users[data.target];
@@ -552,12 +670,14 @@ function onMessage(data) {
 				i = L['server_' + i];
 			} else if (data.code == 416) {
 				// 게임 중
-				if (confirm(L['error_' + data.code])) {
-					stopBGM();
-					$data._spectate = true;
-					$data._gaming = true;
-					send('enter', { id: data.target, password: $data._pw, spectate: true }, true);
-				}
+				showConfirm(L['error_' + data.code], function (res) {
+					if (res) {
+						stopBGM();
+						$data._spectate = true;
+						$data._gaming = true;
+						send('enter', { id: data.target, password: $data._pw, spectate: true }, true);
+					}
+				});
 				return;
 			} else if (data.code == 413) {
 				$stage.dialog.room.hide();
@@ -575,7 +695,7 @@ function onMessage(data) {
 			} else if (data.code == 444) {
 				i = data.message;
 				if (i.indexOf("생년월일") != -1) {
-					alert("생년월일이 올바르게 입력되지 않아 게임 이용이 제한되었습니다. 잠시 후 다시 시도해 주세요.");
+					showAlert(L['birthdate_invalid_game_block']);
 					break;
 				}
 				/* Enhanced User Block System [S] */
@@ -585,7 +705,7 @@ function onMessage(data) {
 				var block = "\n제한 시점: " + blockedUntil.getFullYear() + "년 " + blockedUntil.getMonth() + 1 + "월 " +
 					blockedUntil.getDate() + "일 " + blockedUntil.getHours() + "시 " + blockedUntil.getMinutes() + "분까지";
 
-				alert("[#444] " + L['error_444'] + i + block);
+				showAlert("[#444] " + L['error_444'] + i + block);
 				break;
 			} else if (data.code == 446) {
 				i = data.reasonBlocked;
@@ -595,14 +715,19 @@ function onMessage(data) {
 				var block = "\n제한 시점: " + blockedUntil.getFullYear() + "년 " + blockedUntil.getMonth() + 1 + "월 " +
 					blockedUntil.getDate() + "일 " + blockedUntil.getHours() + "시 " + blockedUntil.getMinutes() + "분까지";
 
-				alert("[#446] " + L['error_446'] + i + block);
+				showAlert("[#446] " + L['error_446'] + i + block);
 				break;
 				/* Enhanced User Block System [E] */
 			} else if (data.code === 447) {
-				alert("자동화 봇 방지를 위한 캡챠 인증에 실패했습니다. 메인 화면에서 다시 시도해 주세요.");
+				showAlert(L['security_bot_check_fail']);
 				break;
+			} else if (data.code == 470 || data.code == 471) {
+				$data.place = 0;
+				$data.room = null;
+				updateUI();
+				playBGM('lobby');
 			}
-			alert("[#" + data.code + "] " + L['error_' + data.code] + i);
+			showAlert("[#" + data.code + "] " + L['error_' + data.code] + i);
 			break;
 		default:
 			break;
@@ -742,7 +867,7 @@ function processRoom(data) {
 		$target = $data.users[data.target];
 		if (data.kickVote) {
 			notice(getKickText($target.profile, data.kickVote));
-			if ($target.id == data.id) alert(L['hasKicked']);
+			if ($target.id == data.id) showAlert(L['hasKicked']);
 		}
 		if (data.room.players.indexOf($data.id) == -1) {
 			if ($data.room) if ($data.room.gaming) {
@@ -758,6 +883,8 @@ function processRoom(data) {
 			$stage.menu.spectate.removeClass("toggled");
 			$stage.menu.ready.removeClass("toggled");
 			$data.room = null;
+			clearTimeout($data._jamsu);
+			delete $data._jamsu;
 			$data.resulting = false;
 			$data._players = null;
 			$data._master = null;
@@ -982,7 +1109,7 @@ function updateMe() {
 	renderMoremi(".my-image", my.equip);
 	// $(".my-image").css('background-image', "url('"+my.profile.image+"')");
 	$(".my-stat-level").replaceWith(getLevelImage(my.data.score).addClass("my-stat-level"));
-	$(".my-stat-name").html(my.profile.title || my.profile.name);
+	$(".my-stat-name").text(my.profile.title || my.profile.name);
 	$(".my-stat-record").html(L['globalWin'] + " " + gw + L['W']);
 	$(".my-stat-ping").html(commify(my.money) + L['ping']);
 	$(".my-okg .graph-bar").width(($data._playTime % 600000) / 6000 + "%");
@@ -1046,7 +1173,7 @@ function userListBar(o, forInvite) {
 			.append($("<div>").addClass("jt-image users-image").css('background-image', "url('" + o.profile.image + "')"))
 			.append(getLevelImage(o.data.score).addClass("users-level"))
 			// .append($("<div>").addClass("jt-image users-from").css('background-image', "url('/img/kkutu/"+o.profile.type+".png')"))
-			.append($("<div>").addClass("users-name").html(getDisplayName(o)))
+			.append($("<div>").addClass("users-name").text(getDisplayName(o)))
 			.on('click', function (e) {
 				requestInvite($(e.currentTarget).attr('id').slice(12));
 			});
@@ -1055,7 +1182,7 @@ function userListBar(o, forInvite) {
 			.append($("<div>").addClass("jt-image users-image").css('background-image', "url('" + o.profile.image + "')"))
 			.append(getLevelImage(o.data.score).addClass("users-level"))
 			// .append($("<div>").addClass("jt-image users-from").css('background-image', "url('/img/kkutu/"+o.profile.type+".png')"))
-			.append($("<div>").addClass("users-name ellipse").html(getDisplayName(o)))
+			.append($("<div>").addClass("users-name ellipse").text(getDisplayName(o)))
 			.on('click', function (e) {
 				requestProfile($(e.currentTarget).attr('id').slice(11));
 			});
@@ -1124,7 +1251,7 @@ function normalGameUserBar(o) {
 		.append($m = $("<div>").addClass("moremi game-user-image"))
 		.append($("<div>").addClass("game-user-title")
 			.append(getLevelImage(o.data.score).addClass("game-user-level"))
-			.append($bar = $("<div>").addClass("game-user-name ellipse").html(getDisplayName(o)))
+			.append($bar = $("<div>").addClass("game-user-name ellipse").text(getDisplayName(o)))
 			.append($("<div>").addClass("expl").html(L['LEVEL'] + " " + getLevel(o.data.score)))
 		)
 		.append($n = $("<div>").addClass("game-user-score"));
@@ -1140,7 +1267,7 @@ function miniGameUserBar(o) {
 	var $R = $("<div>").attr('id', "game-user-" + o.id).addClass("game-user")
 		.append($("<div>").addClass("game-user-title")
 			.append(getLevelImage(o.data.score).addClass("game-user-level"))
-			.append($bar = $("<div>").addClass("game-user-name ellipse").html(getDisplayName(o)))
+			.append($bar = $("<div>").addClass("game-user-name ellipse").text(getDisplayName(o)))
 		)
 		.append($n = $("<div>").addClass("game-user-score"));
 
@@ -1176,9 +1303,17 @@ function updateRoom(gaming) {
 	setRoomHead($(".GameBox .product-title"), $data.room);
 	if (gaming) {
 		$r = $(".GameBox .game-body").empty();
-		// Use active player count (room.game.seq) instead of total room players
-		if ($data.room.game.seq.length > 8) $r.addClass("small-mode");
-		else $r.removeClass("small-mode");
+		// Apply appropriate CSS class based on mode and player count
+		if (rule.big) {
+			// Big board modes: rely on .cw class from rule files, don't use small-mode
+			$r.removeClass("small-mode");
+		} else if ($data.room.game.seq.length >= 9) {
+			// Normal modes with 9+ players: use small-mode
+			$r.addClass("small-mode");
+		} else {
+			// Normal modes with <9 players: use default layout
+			$r.removeClass("small-mode");
+		}
 		// updateScore(true);
 		for (i in $data.room.game.seq) {
 			if ($data._replay) {
@@ -1207,7 +1342,7 @@ function updateRoom(gaming) {
 		delete $data._jamsu;
 	} else {
 		$r = $(".room-users").empty();
-		if ($data.room.players.length > 8) $r.addClass("small-mode");
+		if ($data.room.players.length >= 9) $r.addClass("small-mode");
 		else $r.removeClass("small-mode");
 		spec = $data.users[$data.id].game.form == "S";
 		// 참가자
@@ -1230,7 +1365,7 @@ function updateRoom(gaming) {
 				)
 				.append($("<div>").addClass("room-user-title")
 					.append(getLevelImage(o.data.score).addClass("room-user-level"))
-					.append($bar = $("<div>").addClass("room-user-name").html(getDisplayName(o)))
+					.append($bar = $("<div>").addClass("room-user-name").text(getDisplayName(o)))
 				).on('click', function (e) {
 					requestProfile($(e.currentTarget).attr('id').slice(10));
 				})
@@ -1265,29 +1400,10 @@ function updateRoom(gaming) {
 	}
 }
 function onMasterSubJamsu() {
-	var room = $data.room;
-	var my = $data.users[$data.id];
-	var others_count = 0;
-	var i;
-
-	// 방장 제외 인원 수 계산 (봇 포함)
-	for (i in room.players) {
-		if (room.players[i] != room.master) others_count++;
-	}
-
-	var msgKey = 'subJamsu'; // 기본: 강퇴 경고
-
-	if (others_count >= 2) {
-		if (my.game.form == 'S') {
-			msgKey = 'subJamsu3'; // 관전 방장 자동 시작 경고
-		} else {
-			msgKey = 'subJamsu2'; // 플레이어 방장 관전 전환 경고
-		}
-	}
-
-	notice(L[msgKey]);
-
-	// 클라이언트 측 강제 퇴장은 제거함 (서버가 처리)
+	if (!$data.room || $data.room.master != $data.id) return;
+	// 서버에서 이미 'subJamsu' 시스템 메시지를 보내므로 
+	// 클라이언트에서 중복 알림을 방지하기 위해 notice() 호출 제거
+	// 타이머만 정리
 	delete $data._jamsu;
 }
 function updateScore(id, score) {
@@ -1430,33 +1546,42 @@ function drawMyGoods(avGroup) {
 
 		if (e.ctrlKey) {
 			if ($target.hasClass("dress-equipped")) return fail(426);
-			if (!confirm(L['surePayback'] + commify(Math.round((item.cost || 0) * 0.2)) + L['ping'])) return;
-			$.post("/payback/" + id, function (res) {
-				if (res.error) return fail(res.error);
-				alert(L['painback']);
-				$data.box = res.box;
-				$data.users[$data.id].money = res.money;
+			showConfirm(L['surePayback'] + commify(Math.round((item.cost || 0) * 0.2)) + L['ping'], function (res) {
+				if (res) {
+					$.post("/payback/" + id, function (res) {
+						if (res.error) return fail(res.error);
+						showAlert(L['painback']);
+						$data.box = res.box;
+						$data.users[$data.id].money = res.money;
 
-				drawMyDress($data._avGroup);
-				updateUI(false);
+						drawMyDress($data._avGroup);
+						updateUI(false);
+					});
+				}
 			});
 		} else if (AVAIL_EQUIP.indexOf(item.group) != -1) {
 			if (item.group == "Mhand") {
-				isLeft = confirm(L['dressWhichHand']);
+				showConfirm(L['dressWhichHand'], function (isLeft) {
+					requestEquip(id, isLeft);
+				});
+			} else {
+				requestEquip(id);
 			}
-			requestEquip(id, isLeft);
 		} else if (item.group == "CNS") {
-			if (!confirm(L['sureConsume'])) return;
-			$.post("/consume/" + id, function (res) {
-				if (res.exp) notice(L['obtainExp'] + ": " + commify(res.exp));
-				if (res.money) notice(L['obtainMoney'] + ": " + commify(res.money));
-				res.gain.forEach(function (item) { queueObtain(item); });
-				$data.box = res.box;
-				$data.users[$data.id].data = res.data;
-				send('refresh');
+			showConfirm(L['sureConsume'], function (res) {
+				if (res) {
+					$.post("/consume/" + id, function (res) {
+						if (res.exp) notice(L['obtainExp'] + ": " + commify(res.exp));
+						if (res.money) notice(L['obtainMoney'] + ": " + commify(res.money));
+						res.gain.forEach(function (item) { queueObtain(item); });
+						$data.box = res.box;
+						$data.users[$data.id].data = res.data;
+						send('refresh');
 
-				drawMyDress($data._avGroup);
-				updateMe();
+						drawMyDress($data._avGroup);
+						updateMe();
+					});
+				}
 			});
 		}
 	});
@@ -1468,17 +1593,20 @@ function requestEquip(id, isLeft) {
 	if (part.substr(0, 3) == "BDG") part = "BDG";
 	var already = my.equip[part] == id;
 
-	if (confirm(L[already ? 'sureUnequip' : 'sureEquip'] + ": " + L[id][0])) {
-		$.post("/equip/" + id, { isLeft: isLeft }, function (res) {
-			if (res.error) return fail(res.error);
-			$data.box = res.box;
-			my.equip = res.equip;
+	var msg = L[already ? 'sureUnequip' : 'sureEquip'] + ": " + L[id][0];
+	showConfirm(msg, function (res) {
+		if (res) {
+			$.post("/equip/" + id, { isLeft: isLeft }, function (res) {
+				if (res.error) return fail(res.error);
+				$data.box = res.box;
+				my.equip = res.equip;
 
-			drawMyDress($data._avGroup);
-			send('refresh');
-			updateUI(false);
-		});
-	}
+				drawMyDress($data._avGroup);
+				send('refresh');
+				updateUI(false);
+			});
+		}
+	});
 }
 function drawCharFactory() {
 	var $tray = $("#cf-tray");
@@ -1499,7 +1627,7 @@ function drawCharFactory() {
 		var bd = $data.box[id];
 		var i, c = 0;
 
-		if ($data._tray.length >= 6) return fail(435);
+		if ($data._tray.length >= 10) return fail(435);
 		for (i in $data._tray) if ($data._tray[i] == id) c++;
 		if (bd - c > 0) {
 			$data._tray.push(id);
@@ -1600,7 +1728,7 @@ function drawLeaderboard(data) {
 				.append(getLevelImage(item.score).addClass("ranking-image"))
 				.append($("<label>").css('padding-top', 2).html(getLevel(item.score)))
 			)
-			.append($("<td>").html(profile))
+			.append($("<td>").text(profile))
 			.append($("<td>").html(commify(item.score)))
 		);
 	});
@@ -1625,7 +1753,7 @@ function updateCommunity() {
 		$stage.dialog.commFriends.append($("<div>").addClass("cf-item").attr('id', "cfi-" + i)
 			.append($("<div>").addClass("cfi-status cfi-stat-" + (o.server ? 'on' : 'off')))
 			.append($("<div>").addClass("cfi-server").html(o.server ? L['server_' + o.server] : "-"))
-			.append($("<div>").addClass("cfi-name ellipse").html(p ? (p.title || p.name) : L['hidden']))
+			.append($("<div>").addClass("cfi-name ellipse").text(p ? (p.title || p.name) : L['hidden']))
 			.append($("<div>").addClass("cfi-memo ellipse").text(memo))
 			.append($("<div>").addClass("cfi-menu")
 				.append($("<i>").addClass("fa fa-pencil").on('click', requestEditMemo))
@@ -1636,18 +1764,20 @@ function updateCommunity() {
 	function requestEditMemo(e) {
 		var id = $(e.currentTarget).parent().parent().attr('id').slice(4);
 		var _memo = $data.friends[id];
-		var memo = prompt(L['friendEditMemo'], _memo);
 
-		if (!memo) return;
-		send('friendEdit', { id: id, memo: memo }, true);
+		showPrompt(L['friendEditMemo'], _memo, function (memo) {
+			if (!memo) return;
+			send('friendEdit', { id: id, memo: memo }, true);
+		});
 	}
 	function requestRemoveFriend(e) {
 		var id = $(e.currentTarget).parent().parent().attr('id').slice(4);
 		var memo = $data.friends[id];
 
 		if ($data._friends[id].server) return fail(455);
-		if (!confirm(memo + "(#" + String(id).substr(0, 5) + ")\n" + L['friendSureRemove'])) return;
-		send('friendRemove', { id: id }, true);
+		showConfirm(memo + "(#" + String(id).substr(0, 5) + ")\n" + L['friendSureRemove'], function (res) {
+			if (res) send('friendRemove', { id: id }, true);
+		});
 	}
 	$("#CommunityDiag .dialog-title").html(L['communityText'] + " (" + len + " / 100)");
 }
@@ -1675,7 +1805,7 @@ function requestRoomInfo(id) {
 
 		$pls.append($("<div>").addClass("ri-player")
 			.append($moremi = $("<div>").addClass("moremi rip-moremi"))
-			.append($p = $("<div>").addClass("ellipse rip-title").html(p.profile.title || p.profile.name))
+			.append($p = $("<div>").addClass("ellipse rip-title").text(p.profile.title || p.profile.name))
 			.append($("<div>").addClass("rip-team team-" + rd.t).html($("#team-" + rd.t).html()))
 			.append($("<div>").addClass("rip-form").html(L['pform_' + rd.f]))
 		);
@@ -1697,11 +1827,11 @@ function requestProfile(id) {
 		notice(L['error_405']);
 		return;
 	}
-	$("#ProfileDiag .dialog-title").html((o.profile.title || o.profile.name) + L['sProfile']);
+	$("#ProfileDiag .dialog-title").text((o.profile.title || o.profile.name) + L['sProfile']);
 	$(".profile-head").empty().append($pi = $("<div>").addClass("moremi profile-moremi"))
 		.append($("<div>").addClass("profile-head-item")
 			.append(getImage(o.profile.image).addClass("profile-image"))
-			.append($("<div>").addClass("profile-title ellipse").html(o.profile.title || o.profile.name)
+			.append($("<div>").addClass("profile-title ellipse").text(o.profile.title || o.profile.name)
 				.append($("<label>").addClass("profile-tag").html(" #" + String(o.id).substr(0, 5)))
 			)
 		)
@@ -1882,6 +2012,7 @@ function replayReady() {
 	$data._rprev = 0;
 	$data._rpause = false;
 	replayStatus();
+	$stage.menu.replay.html(L['exit']).show();
 }
 function replayPrev(e) {
 	var ev = $data.room.events[--$data._rf];
@@ -1975,12 +2106,14 @@ function replayTick(stay) {
 	else replayStop();
 }
 function replayStop() {
+	stopAllSounds();
 	delete $data.room;
 	$data._replay = false;
 	$stage.box.room.height(360);
 	clearTimeout($data._rt);
 	updateUI();
 	playBGM('lobby');
+	$stage.menu.replay.html(L['replay']);
 }
 function startRecord(title) {
 	var i, u;
@@ -2049,6 +2182,8 @@ function clearBoard() {
 	$stage.dialog.dress.hide();
 	$stage.dialog.charFactory.hide();
 	$(".jjoriping,.rounds,.game-body").removeClass("cw");
+	$(".jjoriping").css({ "float": "", "margin": "" });
+	// Small-mode class is managed by updateRoom() based on player count, don't remove it here
 	$stage.game.display.empty();
 	$stage.game.chain.hide();
 	$stage.game.hints.empty().hide();
@@ -2087,8 +2222,13 @@ function turnError(code, text) {
 	}, 1800);
 }
 function getScore(id) {
-	if ($data._replay) return $rec.users[id].game.score;
-	else return ($data.users[id] || $data.robots[id]).game.score;
+	if ($data._replay) {
+		var u = $rec.users[id];
+		return u ? u.game.score : 0;
+	} else {
+		var u = $data.users[id] || $data.robots[id];
+		return u ? u.game.score : 0;
+	}
 }
 function addScore(id, score, totalScore) {
 	var u;
@@ -2144,7 +2284,7 @@ function roundEnd(result, data) {
 		$b.append($o = $("<div>").addClass("result-board-item")
 			.append($p = $("<div>").addClass("result-board-rank").html(r.rank + 1))
 			.append(getLevelImage(sc).addClass("result-board-level"))
-			.append($("<div>").addClass("result-board-name").html(o.profile.title || o.profile.name))
+			.append($("<div>").addClass("result-board-name").text(o.profile.title || o.profile.name))
 			.append($("<div>").addClass("result-board-score")
 				.html(data.scores ? (L['avg'] + " " + commify(data.scores[r.id]) + L['kpm']) : (commify(r.score || 0) + L['PTS']))
 			)
@@ -2282,7 +2422,7 @@ function drawRanking(ranks) {
 		$b.append($o = $("<div>").addClass("result-board-item")
 			.append($("<div>").addClass("result-board-rank").html(r.rank + 1))
 			.append(getLevelImage(r.score).addClass("result-board-level"))
-			.append($("<div>").addClass("result-board-name").html(o.profile.title || o.profile.name))
+			.append($("<div>").addClass("result-board-name").text(o.profile.title || o.profile.name))
 			.append($("<div>").addClass("result-board-score").html(commify(r.score) + L['PTS']))
 			.append($("<div>").addClass("result-board-reward").html(""))
 			.append($v = $("<div>").addClass("result-board-lvup").css('display', me ? "block" : "none")
@@ -2300,7 +2440,7 @@ function drawRanking(ranks) {
 function kickVoting(target) {
 	var op = $data.users[target].profile;
 
-	$("#kick-vote-text").html((op.title || op.name) + L['kickVoteText']);
+	$("#kick-vote-text").text((op.title || op.name) + L['kickVoteText']);
 	$data.kickTime = 10;
 	$data._kickTime = 10;
 	$data._kickTimer = addTimeout(kickVoteTick, 1000);
@@ -2431,8 +2571,8 @@ function vibrate(level) {
 function pushDisplay(text, mean, theme, wc) {
 	var len;
 	var mode = MODE[$data.room.mode];
-	var isKKT = mode == "KKT";
-	var isRev = mode == "KAP";
+	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK";
+	var isRev = (mode == "KAP" || mode == "KAK" || mode == "EAP" || mode == "EAK");
 	var beat = BEAT[len = text.length];
 	var ta, kkt;
 	var i, j = 0;
@@ -2695,8 +2835,9 @@ function setRoomHead($obj, room) {
 		global.expl($obj);
 	}
 }
-function loadSounds(list, callback) {
+function loadSounds(list, callback, silent) {
 	$data._lsRemain = list.length;
+	$data._lsSilent = silent || false;
 
 	list.forEach(function (v) {
 		getAudio(v.key, v.value, callback);
@@ -2720,7 +2861,7 @@ function getAudio(k, url, cb) {
 	function done() {
 		if (--$data._lsRemain == 0) {
 			if (cb) cb();
-		} else loading(L['loadRemain'] + $data._lsRemain);
+		} else if (!$data._lsSilent) loading(L['loadRemain'] + $data._lsRemain);
 	}
 	function AudioSound(url) {
 		var my = this;
@@ -2789,16 +2930,79 @@ function stopAllSounds() {
 
 	for (i in $_sound) $_sound[i].stop();
 }
-function tryJoin(id) {
-	var pw;
+function changeSoundPack(newPackName, callback) {
+	// 현재 재생 중인 BGM 중지
+	stopBGM();
+	stopAllSounds();
 
+	// 사운드 팩 목록 가져오기
+	$.get("/soundpacks", function (packs) {
+		var newPack = packs.find(function (p) { return p.name === newPackName; });
+		var packFiles = newPack ? newPack.files : [];
+		var i;
+
+		// 기본 사운드 리스트 구성
+		var soundList = [
+			{ key: "k", value: "/media/kkutu/k.mp3" },
+			{ key: "lobby", value: "/media/kkutu/LobbyBGM.mp3" },
+			{ key: "jaqwi", value: "/media/kkutu/JaqwiBGM.mp3" },
+			{ key: "jaqwiF", value: "/media/kkutu/JaqwiFastBGM.mp3" },
+			{ key: "game_start", value: "/media/kkutu/game_start.mp3" },
+			{ key: "round_start", value: "/media/kkutu/round_start.mp3" },
+			{ key: "fail", value: "/media/kkutu/fail.mp3" },
+			{ key: "timeout", value: "/media/kkutu/timeout.mp3" },
+			{ key: "lvup", value: "/media/kkutu/lvup.mp3" },
+			{ key: "Al", value: "/media/kkutu/Al.mp3" },
+			{ key: "success", value: "/media/kkutu/success.mp3" },
+			{ key: "missing", value: "/media/kkutu/missing.mp3" },
+			{ key: "mission", value: "/media/kkutu/mission.mp3" },
+			{ key: "kung", value: "/media/kkutu/kung.mp3" },
+			{ key: "horr", value: "/media/kkutu/horr.mp3" }
+		];
+		for (i = 0; i <= 10; i++) {
+			soundList.push(
+				{ key: "T" + i, value: "/media/kkutu/T" + i + ".mp3" },
+				{ key: "K" + i, value: "/media/kkutu/K" + i + ".mp3" },
+				{ key: "As" + i, value: "/media/kkutu/As" + i + ".mp3" }
+			);
+		}
+
+		// 사운드 팩에 있는 파일로 경로 교체
+		if (newPack) {
+			soundList.forEach(function (s) {
+				var filename = s.value.split('/').pop();
+				if (packFiles.indexOf(filename) != -1) {
+					s.value = "/media/kkutu/" + newPack.name + "/" + filename;
+				}
+			});
+		}
+
+		// 새 사운드 로드 (silent=true로 오버레이 없이 로드)
+		loadSounds(soundList, function () {
+			// 로비에 있으면 로비 BGM 재생 (리플레이 중에는 제외)
+			if (!$data._replay && (!$data.room || !$data.room.gaming)) {
+				playBGM("lobby");
+			}
+			if (callback) callback();
+		}, true);
+	});
+}
+function tryJoin(id) {
 	if (!$data.rooms[id]) return;
+
 	if ($data.rooms[id].password) {
-		pw = prompt(L['putPassword']);
-		if (!pw) return;
+		showPrompt(L['putPassword'], "", function (pw) {
+			if (pw === null) return; // Cancelled
+			join(pw);
+		});
+	} else {
+		join();
 	}
-	$data._pw = pw;
-	send('enter', { id: id, password: pw });
+
+	function join(pw) {
+		$data._pw = pw;
+		send('enter', { id: id, password: pw });
+	}
 }
 function clearChat() {
 	$("#Chat").empty();
@@ -2812,7 +3016,7 @@ function forkChat() {
 	$stage.chat.scrollTop(999999999);
 }
 function badWords(text) {
-	return text.replace(BAD, "냥냥");
+	return text.replace(BAD, L['captured_nyan']);
 }
 function chatBalloon(text, id, flag) {
 	$("#cb-" + id).remove();
@@ -2883,7 +3087,7 @@ function chat(profile, msg, from, timestamp) {
 	if (link = msg.match(/https?:\/\/[\w\.\?\/&#%=-_\+]+/g)) {
 		msg = $msg.html();
 		link.forEach(function (item) {
-			msg = msg.replace(item, "<a href='#' style='color: #2222FF;' onclick='if(confirm(\"" + L['linkWarning'] + "\")) window.open(\"" + item + "\");'>" + item + "</a>");
+			msg = msg.replace(item, "<a href='#' style='color: #2222FF;' onclick='tryOpenLink(\"" + item + "\");'>" + item + "</a>");
 		});
 		$msg.html(msg);
 	}
@@ -2901,7 +3105,7 @@ function notice(msg, head) {
 	stackChat();
 	$("#Chat,#chat-log-board").append($("<div>").addClass("chat-item chat-notice")
 		.append($("<div>").addClass("chat-head").text(head || L['notice']))
-		.append($("<div>").addClass("chat-body").html(msg))
+		.append($("<div>").addClass("chat-body").text(msg))
 		.append($("<div>").addClass("chat-stamp").text(time.toLocaleTimeString()))
 	);
 	$stage.chat.scrollTop(999999999);
@@ -3028,6 +3232,14 @@ function renderMoremi(target, equip) {
 	var i, key;
 
 	if (!equip) equip = {};
+	else equip = $.extend({}, equip); // Create a shallow copy to prevent mutation
+
+	// Easter Egg for 'nya' language
+	var savedLang = localStorage.getItem('kkutu_lang');
+	if (savedLang === 'nya') {
+		equip['Mhead'] = 'nekomimi';
+	}
+
 	for (i in MOREMI_PART) {
 		key = 'M' + MOREMI_PART[i];
 
@@ -3065,10 +3277,10 @@ function setLocation(place) {
 	else location.hash = "";
 }
 function fail(code) {
-	return alert(L['error_' + code]);
+	return showAlert(L['error_' + code]);
 }
 function yell(msg) {
-	$stage.yell.show().css('opacity', 1).html(msg);
+	$stage.yell.show().css('opacity', 1).text(msg);
 	addTimeout(function () {
 		$stage.yell.animate({ 'opacity': 0 }, 3000);
 		addTimeout(function () {

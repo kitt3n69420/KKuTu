@@ -1263,6 +1263,12 @@ body {
 	font-size: 12px;
 	/* Smaller score */
 	padding: 0px 2px;
+	text-align: center;
+}
+
+.game-body.small-mode .game-user-score-char {
+	display: inline-block;
+	text-align: center;
 }
 
 .game-body.small-mode .game-user-level {

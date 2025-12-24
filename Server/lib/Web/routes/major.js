@@ -125,10 +125,14 @@ exports.run = function (Server, page) {
 	Server.post("/profile", function (req, res) {
 		let nickname = req.body.nickname;
 		const exordial = req.body.exordial;
+		const rawNickname = req.body.rawNickname;
 
 		if (!req.session.profile) return res.send({ error: 400 });
 
+
 		if (exordial !== undefined) MainDB.users.update(['_id', req.session.profile.id]).set(['exordial', exordial.slice(0, 100)]).on();
+		console.log("[DEBUG] /profile received nickname:", nickname);
+		if (rawNickname) console.log("[DEBUG] /profile received raw nickname: " + rawNickname + " -> " + nickname);
 		if (!nickname) return res.send({ result: 200 });
 
 		if (nickname.length > 12) nickname = nickname.slice(0, 12);
@@ -272,7 +276,7 @@ exports.run = function (Server, page) {
 		var tray = (req.body.tray || "").split('|');
 		var i, o;
 
-		if (tray.length < 1 || tray.length > 6) return res.json({ error: 400 });
+		if (tray.length < 1 || tray.length > 10) return res.json({ error: 400 });
 		MainDB.users.findOne(['_id', uid]).limit(['money', true], ['box', true]).on(function ($user) {
 			if (!$user) return res.json({ error: 400 });
 			if (!$user.box) $user.box = {};
@@ -335,7 +339,7 @@ exports.run = function (Server, page) {
 function getCFRewards(word, level, blend) {
 	var R = [];
 	var f = {
-		len: word.length, // 최대 6
+		len: word.length, // 최대 10
 		lev: level // 최대 18
 	};
 	var cost = 20 * f.lev;

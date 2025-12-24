@@ -19,18 +19,10 @@
 	* Login 을 Passport 로 수행하기 위한 수정
 -
 	const MENU = [
-		{ key: 'HOME', href: "http://jjo.kr/" },
-		/*{ key: 'DB', sub: [
-			{ key: 'DB_CHAMP', href: "/db/champion" },
-			{ key: 'DB_ITEM', href: "/db/item" },
-			{ key: 'DB_RUNE', href: "/db/rune" },
-			{ key: 'DB_MASTERY', href: "/db/mastery" }
-		]},*/
-		{ key: 'GAMES', sub: [
-			{ key: 'GAMES_KKUTU', href: "/" },
-			{ key: 'GAMES_FATES', href: "http://jjo.kr/game/fates" }
-		]},
-		{ key: 'GALLERY', href: "http://jjo.kr/gallery" }
+		{ key: 'HOME', href: "/" },
+		{ key: 'GAMES', href: "/?server=0" },
+		{ key: 'DISCORD', href: "https://discord.gg/aEAVmrtU4w", target: "_blank" },
+		{ key: 'REPOSITORY', href: "https://github.com/kitt3n69420/KKuTu-N", target: "_blank" }
 	];
 	const PUBLIC = locals.published;
 	
@@ -60,15 +52,13 @@ mixin Menu()
 	div.Menu
 		- for(i in MENU)
 			- if(MENU[i].href)
-				button.menu-btn(id='menu-item-'+MENU[i].key, onclick='location.href = "'+MENU[i].href+'";')!= L(MENU[i].key)
+				- var clickAction = MENU[i].target ? ('window.open("' + MENU[i].href + '", "' + MENU[i].target + '");') : ('location.href = "' + MENU[i].href + '";');
+				button.menu-btn(id='menu-item-'+MENU[i].key, onclick=clickAction)!= L(MENU[i].key)
 			- else if(MENU[i].sub)
 				div.menu-btn(id='menu-item-'+MENU[i].key)!= L(MENU[i].key)
 					div.menu-sub-separator
 					- for(j in MENU[i].sub)
 						div.menu-sub-btn(onclick='location.href = "'+MENU[i].sub[j].href+'";')!= L(MENU[i].sub[j].key)
-		div#quick-search
-			input#quick-search-tf(placeholder=L('QUICK_HOLDER'))
-			button#quick-search-btn!= L('QUICK_BTN')
 		div#account
 			span#profile= SESSION.profile ? JSON.stringify(SESSION.profile) : '{}'
 			div#account-info
@@ -78,12 +68,10 @@ mixin MMenu()
 		div.menu-btn(id='menu-item-GAMES')
 			+FA('bars')
 			+separator(10)
-			div.menu-sub-btn(onclick='location.href = "http://jjo.kr/";', style='margin: 7px 0px; height: 25px;')!= L('HOME')
-			div.menu-sub-btn(onclick='location.href = "http://kkutu-n.xyz/";', style='margin: 7px 0px; height: 25px;')!= L('GAMES_KKUTU')
-			div.menu-sub-btn(onclick='location.href = "http://jjo.kr/gallery";', style='margin: 7px 0px; height: 25px;')!= L('GALLERY')
-		div#quick-search
-			input#quick-search-tf(placeholder=L('QUICK_HOLDER'))
-			button#quick-search-btn!= L('QUICK_BTN')
+			div.menu-sub-btn(onclick='location.href = "/";', style='margin: 7px 0px; height: 25px;')!= L('HOME')
+			div.menu-sub-btn(onclick='location.href = "/0";', style='margin: 7px 0px; height: 25px;')!= L('GAMES')
+			div.menu-sub-btn(onclick='window.open("https://discord.gg/aEAVmrtU4w", "_blank");', style='margin: 7px 0px; height: 25px;')!= L('DISCORD')
+			div.menu-sub-btn(onclick='window.open("https://github.com/kitt3n69420/KKuTu-N", "_blank");', style='margin: 7px 0px; height: 25px;')!= L('REPOSITORY')
 		div#account
 			span#profile= SESSION.profile ? JSON.stringify(SESSION.profile) : '{}'
 			div#account-info
@@ -110,7 +98,7 @@ mixin PageHead(min)
 	if PUBLIC && !SESSION.admin
 		//script(type='text/javascript', src='/js/google.js')
 	script(type='text/javascript', src='/js/global.min.js')
-	script(type='text/javascript', src='/lib/kkutu/volume-persistence.js')
+	script(type='text/javascript', src='/js/volume-persistence.js')
 	if !min
 		//script(type='text/javascript', src='/js/facebook.js')
 	if block

@@ -1,4 +1,4 @@
-//-
+﻿//-
 	Rule the words! KKuTu Online
 	Copyright (C) 2017 JJoriping(op@jjo.kr)
 	
@@ -92,16 +92,16 @@ block Middle
 		button#ReplayBtn.for-lobby(style='display: none; background-color: #D9FF82;')= L('replay')
 		button#LeaderboardBtn.for-lobby(style='display: none; background-color: #FFADD3;')!= L('leaderboard')
 		div#facebook-menu.fb-like.for-lobby.for-master.for-normal.for-gaming(data-href='http://kkutu-n.xyz', data-width='300', data-layout='button_count', data-action='like', data-show-faces='true', data-share='true')
-	+Dialog('SettingDiag', 300, 320, L('settingsText'))
+	+Dialog('SettingDiag', 300, 350, L('settingsText'))
 		div.dialog-bar
 			div.dialog-opt(style="width: 100%; margin-bottom: 5px;")
-				label(for='mute-bgm', style='width: 60px;')= L('bgm')
-				input#mute-bgm(type='checkbox', style='width: auto; vertical-align: middle;')
-				input.bgmVolume(type='range', min='0', max='100', value='100', style='float: right; width: 150px;')
+				label(for='mute-bgm', style='float: left; width: 100px; text-align: center; padding-top: 5px;')= L('bgm')
+				input#mute-bgm(type='checkbox', style='float: left; margin-top: 5px; width: auto; vertical-align: middle;')
+				input.bgmVolume(type='range', min='0', max='100', value='50', style='margin-top: 0px; float: right; width: 125px; margin-right: 20px;')
 			div.dialog-opt(style="width: 100%;")
-				label(for='mute-effect', style='width: 60px;')= L('effect')
-				input#mute-effect(type='checkbox', style='width: auto; vertical-align: middle;')
-				input.effectVolume(type='range', min='0', max='100', value='100', style='float: right; width: 150px;')
+				label(for='mute-effect', style='float: left; width: 100px; text-align: center; padding-top: 5px;')= L('effect')
+				input#mute-effect(type='checkbox', style='float: left; margin-top: 5px; width: auto; vertical-align: middle;')
+				input.effectVolume(type='range', min='0', max='100', value='50', style='margin-top: 0px; float: right; width: 125px; margin-right: 20px;')
 		div.dialog-bar
 			h4= L('denyReq')
 			+SettingOption('deny-invite', L('denyInvite'))
@@ -119,7 +119,13 @@ block Middle
 			h4
 			+SettingOption('only-unlock', L('onlyUnlock'), "width: 200px;")
 		div.dialog-bar
-			h4 사운드 팩
+			h4= L('language')
+			select#language-setting(style="width: 150px;")
+				option(value="ko_KR") 한국어	
+				option(value="en_US") English
+				option(value="nya") ???
+		div.dialog-bar
+			h4 사운드팩
 			select#sound-pack(style="width: 150px;")
 				option(value="") 기본
 		div.dialog-bar.tail-button
@@ -174,24 +180,30 @@ block Middle
 			h4= L('gameMode')
 			select#room-mode
 				optgroup(label=L('mcKorean'))
-					option(value=4)= L('modeKSH')
-					option(value=3)= L('modeKKT')
-					option(value=9)= L('modeKAP')
-					option(value=7)= L('modeKTY')
+					option(value=3)= L('modeKSH')
+					option(value=2)= L('modeKKT')
+					option(value=8)= L('modeKAP')
+					option(value=21)= L('modeKAK')
+					option(value=6)= L('modeKTY')
 					option(value=11)= L('modeKDA')
-					option(value=6)= L('modeKCW')
+					option(value=5)= L('modeKCW')
 					option(value=13)= L('modeKSS')
-					option(value=5)= L('modeCSQ')
-					option(value=10)= L('modeHUN')
+					option(value=4)= L('modeCSQ')
 					option(value=16)= L('modeKSC')
-					option(value=15)= L('modeKFR')
+					option(value=10)= L('modeHUN')
+					option(value=15)= L('modeKPQ')
+					option(value=17)= L('modeKFR')
 				optgroup(label=L('mcEnglish'))
-					option(value=2)= L('modeESH')
-					option(value=1)= L('modeEKK')
+					option(value=1)= L('modeESH')
+					option(value=19)= L('modeEKK')
 					option(value=0)= L('modeEKT')
-					option(value=8)= L('modeETY')
+					option(value=9)= L('modeEAP')
+					option(value=22)= L('modeEAK')
+					option(value=7)= L('modeETY')
 					option(value=12)= L('modeEDA')
 					option(value=14)= L('modeESS')
+					option(value=20)= L('modeEPQ')
+					option(value=18)= L('modeEFR')
 		div.dialog-bar(style='margin-top: -5px; height: 50px;')
 			h4
 			h4#game-mode-expl.dialog-bar-value(style='width: 100%; font-size: 11px;')
@@ -291,13 +303,8 @@ block Middle
 			input#dict-input(style='width: 283px;', placeholder=L('wpInput'), maxlength=200)
 		div.dialog-bar#dict-output(style='height: 195px; overflow-y: scroll; color: #BBBBBB; background-color: #111111;')
 		div.dialog-bar.tail-button
-			select#dict-theme
-				option(value="")= L('pickInjeong')
-				- locals.KO_INJEONG.forEach(function(item){
-					option(value=item)= L('theme_' + item)
-				- });
+
 			button#dict-search= L('SEARCH')
-			button#dict-injeong= L('injeongReq')
 	+Dialog('InviteDiag', 300, 420, L('invite'))
 		div.invite-board(style='height: 355px; overflow-y: scroll;')
 		div.dialog-bar.tail-button
@@ -419,10 +426,24 @@ block Middle
 			button#obtain-ok= L('OK')
 	+Dialog('HelpDiag', 550, 400, L('helpText'))
 		iframe#help-board(width=550, height=375)
+	+Dialog('ConfirmDiag', 300, 150, L('notice'), true)
+		div.dialog-bar#confirm-text(style='text-align: center; height: 60px; padding: 10px; overflow-y: auto; white-space: pre-wrap;')
+		div.dialog-bar.tail-button
+			button#confirm-no= L('NO')
+			button#confirm-ok= L('OK')
+	+Dialog('AlertDiag', 300, 150, L('notice'), true)
+		div.dialog-bar#alert-text(style='text-align: center; height: 60px; padding: 10px; overflow-y: auto; white-space: pre-wrap;')
+		div.dialog-bar.tail-button
+			button#alert-ok= L('OK')
+	+Dialog('InputDiag', 300, 150, L('notice'), true)
+		div.dialog-bar#input-text(style='text-align: center; height: 50px; padding: 10px; overflow-y: auto; white-space: pre-wrap;')
+		div.dialog-bar(style='text-align: center;')
+			input#input-input(type='text', style='width: 90%;', maxlength=50)
+		div.dialog-bar.tail-button
+			button#input-no= L('NO')
+			button#input-ok= L('OK')
 	+Product('UserList')
-		div 불러오는 중
 	+Product('RoomList')
-		div 불러오는 중
 	+Product('Shop')
 		div.shop-categories
 			- for(var i in locals.CATEGORIES)

@@ -1,21 +1,14 @@
 var DB = require('../Web/db');
 var Const = require('../const');
 
-var RIEUL_TO_NIEUN = [4449, 4450, 4457, 4460, 4462, 4467];
-var RIEUL_TO_IEUNG = [4451, 4455, 4456, 4461, 4466, 4469];
-var NIEUN_TO_IEUNG = [4455, 4461, 4466, 4469];
-
-
 DB.ready = function () {
     console.log("Stats Helper: DB Ready. Starting population...");
     populateStats();
 };
 
 function populateStats() {
-    // Key: Char, Value: { start: [0..15], end: [0..15] }
-    // States 0-7: 기본 두음법칙 (모음 조건 적용)
-    // States 8-15: 자유 두음법칙 (모음 조건 무시)
-    var stats = {};
+    var statsKo = {};
+    var statsEn = {};
     var langs = ['ko', 'en'];
     var pending = langs.length;
 
@@ -42,77 +35,96 @@ function populateStats() {
                 var isInjeong = (flag & Const.KOR_FLAG.INJEONG) ? true : false;
                 var isLoan = (flag & Const.KOR_FLAG.LOANWORD) ? true : false;
                 var isStrict = (type.match(Const.KOR_STRICT) && flag < 4) ? true : false;
-
-                var startOriginList = [];
-                var startOriginListFree = []; // 자유 두음법칙용 (역방향)
-                var endList = [];
-                var endListFree = []; // 자유 두음법칙용
+                var isGroup = (type.match(Const.KOR_GROUP)) ? true : false; // Check for valid parts of speech in Normal mode
 
                 if (lang === 'ko') {
                     // Korean Logic
+                    // No Dueum Law applied here (Raw Stats)
+                    // Length Categories: 2 (>=2), 3 (>=3), All (>=2)
                     var startChar = w.charAt(0);
                     var endChar = w.charAt(w.length - 1);
 
-                    // 기본 두음법칙 (모음 조건 적용)
-                    startOriginList = getReverseDueumChars(startChar);
-                    startOriginList.push(startChar);
+                    var len = w.length;
 
-                    var endTarget = getSubChar(endChar);
-                    endList.push(endChar);
-                    if (endTarget && endTarget !== endChar) endList.push(endTarget);
+                    if (!statsKo[startChar]) statsKo[startChar] = createEmptyStatsKo();
+                    if (!statsKo[endChar]) statsKo[endChar] = createEmptyStatsKo();
 
-                    // 자유 두음법칙 (모음 조건 무시)
-                    startOriginListFree = getReverseDueumCharsFree(startChar);
-                    startOriginListFree.push(startChar);
+                    for (var state = 0; state < 16; state++) {
+                        var reqNoInjeong = (state & 1);
+                        var reqStrict = (state & 2);
+                        var reqNoLoan = (state & 4);
+                        // State bit 3 used to be FreeDueum, checking if we still need to differentiate logic here?
+                        // Ideally FreeDueum logic is handled at Read-Time too for Korean.
+                        // But the 'state' loop is mainly for filtering words based on flags.
+                        // FreeDueum bit (8) doesn't change WHICH words are valid in the dictionary, 
+                        // it only changes WHICH columns we look at or how we connect them.
+                        // So for stats generation, the word is valid regardless of FreeDueum setting?
+                        // Wait, previous code used state & 8 to switch between different startOriginLists.
+                        // Now we only store Raw Char. So FreeDueum bit in state is redundant for *storage* if we only store for the exact char.
+                        // However, to maintain 16-state compatibility with existing query logic:
+                        // The 'valid' check determines if this word contributes to the count for this state.
 
-                    var endTargetsFree = getSubCharFree(endChar);
-                    endListFree.push(endChar);
-                    endTargetsFree.forEach(function (ec) {
-                        if (ec !== endChar && endListFree.indexOf(ec) === -1) endListFree.push(ec);
-                    });
+                        // NOTE: If FreeDueum option (bit 8) is ON, it doesn't affect the validity of the word itself.
+                        // It affects whether N->R connections are allowed.
+                        // So the count for specific char 'N' should be the same regardless of FreeDueum bit?
+                        // Actually, previous code: if (state & 8) used 'startOriginListFree'.
+                        // Now we only use Raw Char. So the count for 'N' is just the count of words starting with 'N'.
+                        // The Read-Time logic will query 'N' and 'R' separately and sum them if FreeDueum is on.
+                        // So we can populate the same value for both state X and state X+8?
+                        // YES. 
+
+                        var valid = true;
+                        if (reqNoInjeong && isInjeong) valid = false;
+                        if (reqStrict) {
+                            if (!isStrict) valid = false;
+                        } else {
+                            // Normal mode: Must match KOR_GROUP (Valid POS)
+                            if (!isGroup) valid = false;
+                        }
+                        if (reqNoLoan && isLoan) valid = false;
+
+                        if (valid) {
+                            // Update Start Stats
+                            statsKo[startChar].startall[state]++;
+                            if (len === 2) statsKo[startChar].start2[state]++;
+                            if (len === 3) statsKo[startChar].start3[state]++;
+
+                            // End Stats
+                            statsKo[endChar].endall[state]++;
+                            if (len === 2) statsKo[endChar].end2[state]++;
+                            if (len === 3) statsKo[endChar].end3[state]++;
+                        }
+                    }
+
                 } else {
-                    // English Logic - no freeDueum concept
-                    if (w.length >= 2) startOriginList.push(w.slice(0, 2));
-                    if (w.length >= 3) startOriginList.push(w.slice(0, 3));
+                    // English Logic
+                    // User Request: Only words with length >= 4
+                    // Store 1~3 char n-grams (prefixes)
+                    // 16 Columns (Start counts only)
 
-                    if (w.length >= 2) endList.push(w.slice(-2));
-                    if (w.length >= 3) endList.push(w.slice(-3));
+                    if (w.length >= 4) {
+                        var prefixes = [];
+                        if (w.length >= 1) prefixes.push(w.substring(0, 1));
+                        if (w.length >= 2) prefixes.push(w.substring(0, 2));
+                        if (w.length >= 3) prefixes.push(w.substring(0, 3));
 
-                    // 영어는 자유 두음 없음 - 빈 배열로 처리 (값은 0으로 유지)
-                    startOriginListFree = [];
-                    endListFree = [];
-                }
+                        prefixes.forEach(function (pre) {
+                            if (!statsEn[pre]) statsEn[pre] = createEmptyStatsEn();
 
-                // Update Stats for each of the 16 States
-                for (var state = 0; state < 16; state++) {
-                    var reqNoInjeong = (state & 1);
-                    var reqStrict = (state & 2);
-                    var reqNoLoan = (state & 4);
-                    var isFreeDueum = (state & 8); // bit 3 = freeDueum
+                            for (var state = 0; state < 16; state++) {
+                                var reqNoInjeong = (state & 1);
+                                var reqStrict = (state & 2);
+                                var reqNoLoan = (state & 4);
 
-                    var valid = true;
-                    if (reqNoInjeong && isInjeong) valid = false;
-                    if (reqStrict && !isStrict) valid = false;
-                    if (reqNoLoan && isLoan) valid = false;
+                                var valid = true;
+                                if (reqNoInjeong && isInjeong) valid = false;
+                                if (reqStrict && !isStrict) valid = false;
+                                if (reqNoLoan && isLoan) valid = false;
 
-                    if (valid) {
-                        // 자유 두음 적용 시 다른 리스트 사용
-                        var startList = isFreeDueum ? startOriginListFree : startOriginList;
-                        var endListToUse = isFreeDueum ? endListFree : endList;
-
-                        // 영어의 경우 freeDueum 상태에서 빈 리스트이므로 아무것도 추가되지 않음
-                        // -> 결과적으로 state 8-15는 영어에서 0 유지
-
-                        // Start Update
-                        startList.forEach(function (sc) {
-                            if (!stats[sc]) stats[sc] = createEmptyStats();
-                            stats[sc].start[state]++;
-                        });
-
-                        // End Update
-                        endListToUse.forEach(function (ec) {
-                            if (!stats[ec]) stats[ec] = createEmptyStats();
-                            stats[ec].end[state]++;
+                                if (valid) {
+                                    statsEn[pre].count[state]++;
+                                }
+                            }
                         });
                     }
                 }
@@ -124,190 +136,162 @@ function populateStats() {
 
     function finalize() {
         console.log("Aggregation done. Writing to DB...");
-        saveStats(stats);
+        saveStatsKo(statsKo).then(function () {
+            return saveStatsEn(statsEn);
+        }).then(function () {
+            console.log("\nAll Done!");
+            process.exit(0);
+        });
     }
 }
 
-function createEmptyStats() {
+function createEmptyStatsKo() {
     return {
-        start: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        end: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        start2: new Array(16).fill(0),
+        start3: new Array(16).fill(0),
+        startall: new Array(16).fill(0),
+        end2: new Array(16).fill(0),
+        end3: new Array(16).fill(0),
+        endall: new Array(16).fill(0)
     };
 }
 
-function saveStats(stats) {
-    var keys = Object.keys(stats);
-    var total = keys.length;
-    var current = 0;
+function createEmptyStatsEn() {
+    return {
+        count: new Array(16).fill(0)
+    };
+}
 
-    var createTableQuery = `
-        CREATE TABLE IF NOT EXISTS kkutu_stats (
-            _id VARCHAR(10) PRIMARY KEY,
-            start_0 INTEGER DEFAULT 0, start_1 INTEGER DEFAULT 0, start_2 INTEGER DEFAULT 0, start_3 INTEGER DEFAULT 0,
-            start_4 INTEGER DEFAULT 0, start_5 INTEGER DEFAULT 0, start_6 INTEGER DEFAULT 0, start_7 INTEGER DEFAULT 0,
-            start_8 INTEGER DEFAULT 0, start_9 INTEGER DEFAULT 0, start_10 INTEGER DEFAULT 0, start_11 INTEGER DEFAULT 0,
-            start_12 INTEGER DEFAULT 0, start_13 INTEGER DEFAULT 0, start_14 INTEGER DEFAULT 0, start_15 INTEGER DEFAULT 0,
-            end_0 INTEGER DEFAULT 0, end_1 INTEGER DEFAULT 0, end_2 INTEGER DEFAULT 0, end_3 INTEGER DEFAULT 0,
-            end_4 INTEGER DEFAULT 0, end_5 INTEGER DEFAULT 0, end_6 INTEGER DEFAULT 0, end_7 INTEGER DEFAULT 0,
-            end_8 INTEGER DEFAULT 0, end_9 INTEGER DEFAULT 0, end_10 INTEGER DEFAULT 0, end_11 INTEGER DEFAULT 0,
-            end_12 INTEGER DEFAULT 0, end_13 INTEGER DEFAULT 0, end_14 INTEGER DEFAULT 0, end_15 INTEGER DEFAULT 0
-        );
-    `;
+function saveStatsKo(stats) {
+    return new Promise(function (resolveMain) {
+        var keys = Object.keys(stats);
+        var total = keys.length;
+        var current = 0;
 
-    DB.kkutu_stats.direct(createTableQuery, function (err, res) {
-        if (err) {
-            console.error("Failed to create table:", err);
-            process.exit(1);
+        // Generate Columns String
+        var cols = [];
+        for (let i = 0; i < 16; i++) {
+            cols.push(`start2_${i} INTEGER DEFAULT 0`);
+            cols.push(`start3_${i} INTEGER DEFAULT 0`);
+            cols.push(`startall_${i} INTEGER DEFAULT 0`);
+            cols.push(`end2_${i} INTEGER DEFAULT 0`);
+            cols.push(`end3_${i} INTEGER DEFAULT 0`);
+            cols.push(`endall_${i} INTEGER DEFAULT 0`);
         }
 
-        console.log("Table verified throughout. Inserting data...");
+        var createTableQuery = `
+            CREATE TABLE IF NOT EXISTS kkutu_stats_ko (
+                _id VARCHAR(10) PRIMARY KEY,
+                ${cols.join(', ')}
+            );
+        `;
 
-        var promises = keys.map(function (key) {
-            return new Promise(function (resolve, reject) {
-                var d = stats[key];
-                var data = {
-                    _id: key,
-                    start_0: d.start[0], start_1: d.start[1], start_2: d.start[2], start_3: d.start[3],
-                    start_4: d.start[4], start_5: d.start[5], start_6: d.start[6], start_7: d.start[7],
-                    start_8: d.start[8], start_9: d.start[9], start_10: d.start[10], start_11: d.start[11],
-                    start_12: d.start[12], start_13: d.start[13], start_14: d.start[14], start_15: d.start[15],
-                    end_0: d.end[0], end_1: d.end[1], end_2: d.end[2], end_3: d.end[3],
-                    end_4: d.end[4], end_5: d.end[5], end_6: d.end[6], end_7: d.end[7],
-                    end_8: d.end[8], end_9: d.end[9], end_10: d.end[10], end_11: d.end[11],
-                    end_12: d.end[12], end_13: d.end[13], end_14: d.end[14], end_15: d.end[15]
-                };
+        // Direct query to create table
+        DB.kkutu_stats_ko.direct(createTableQuery, function (err, res) {
+            if (err) {
+                console.error("Failed to create table kkutu_stats_ko:", err);
+                process.exit(1);
+            }
 
-                DB.kkutu_stats.upsert(['_id', key]).set(data).on(function (res) {
-                    process.stdout.write(`\rProgress: ${++current}/${total}`);
-                    resolve();
-                }, null, function (err) {
-                    console.error(`Error saving ${key}:`, err);
-                    resolve();
+            console.log("Table kkutu_stats_ko verified. Inserting data...");
+            if (total === 0) {
+                resolveMain();
+                return;
+            }
+
+            var promises = keys.map(function (key) {
+                return new Promise(function (resolve, reject) {
+                    var d = stats[key];
+                    var data = { _id: key };
+
+                    for (let i = 0; i < 16; i++) {
+                        data[`start2_${i}`] = d.start2[i];
+                        data[`start3_${i}`] = d.start3[i];
+                        data[`startall_${i}`] = d.startall[i];
+                        data[`end2_${i}`] = d.end2[i];
+                        data[`end3_${i}`] = d.end3[i];
+                        data[`endall_${i}`] = d.endall[i];
+                    }
+
+                    DB.kkutu_stats_ko.upsert(['_id', key]).set(data).on(function (res) {
+                        process.stdout.write(`\r[KO] Progress: ${++current}/${total}`);
+                        resolve();
+                    }, null, function (err) {
+                        console.error(`Error saving ${key}:`, err);
+                        resolve();
+                    });
                 });
             });
-        });
 
-        Promise.all(promises).then(function () {
-            console.log("\nDone!");
-            process.exit(0);
+            Promise.all(promises).then(function () {
+                console.log("\nKO Stats Saved.");
+                resolveMain();
+            });
         });
     });
 }
 
-// 기본 두음법칙 (모음 조건 적용) - 단일 문자 반환
-function getSubChar(char) {
-    if (!char) return null;
-    var r;
-    var c = char.charCodeAt();
-    var k;
-    var ca, cb, cc;
+function saveStatsEn(stats) {
+    return new Promise(function (resolveMain) {
+        var keys = Object.keys(stats);
+        var total = keys.length;
+        var current = 0;
 
-    k = c - 0xAC00;
-    if (k < 0 || k > 11171) return null;
-    ca = [Math.floor(k / 28 / 21), Math.floor(k / 28) % 21, k % 28];
-    cb = [ca[0] + 0x1100, ca[1] + 0x1161, ca[2] + 0x11A7];
-    cc = false;
-    if (cb[0] == 4357) { // ㄹ에서 ㄴ, ㅇ
-        cc = true;
-        if (RIEUL_TO_NIEUN.includes(cb[1])) cb[0] = 4354;
-        else if (RIEUL_TO_IEUNG.includes(cb[1])) cb[0] = 4363;
-        else cc = false;
-    } else if (cb[0] == 4354) { // ㄴ에서 ㅇ
-        if (NIEUN_TO_IEUNG.indexOf(cb[1]) != -1) {
-            cb[0] = 4363;
-            cc = true;
+        var cols = [];
+        for (let i = 0; i < 16; i++) {
+            cols.push(`count_${i} INTEGER DEFAULT 0`);
         }
-    }
-    if (cc) {
-        cb[0] -= 0x1100; cb[1] -= 0x1161; cb[2] -= 0x11A7;
-        r = String.fromCharCode(((cb[0] * 21) + cb[1]) * 28 + cb[2] + 0xAC00);
-    }
-    return r;
+
+        var createTableQuery = `
+            CREATE TABLE IF NOT EXISTS kkutu_stats_en (
+                _id VARCHAR(10) PRIMARY KEY,
+                ${cols.join(', ')}
+            );
+        `;
+
+        // Since we changed schema, we might need to drop or handle existing table?
+        // Ideally user should drop table manually or we assume fresh start. 
+        // We'll proceed with IF NOT EXISTS. If it exists with 32 columns, this query won't reshape it, 
+        // but 'upsert' below will fail if columns don't match.
+        // But since this is a dev task, I'll assume I can just run this.
+
+        DB.kkutu_stats_en.direct(createTableQuery, function (err, res) {
+            if (err) {
+                console.error("Failed to create table kkutu_stats_en:", err);
+                process.exit(1);
+            }
+
+            console.log("Table kkutu_stats_en verified. Inserting data...");
+            if (total === 0) {
+                resolveMain();
+                return;
+            }
+
+            var promises = keys.map(function (key) {
+                return new Promise(function (resolve, reject) {
+                    var d = stats[key];
+                    var data = { _id: key };
+
+                    for (let i = 0; i < 16; i++) {
+                        data[`count_${i}`] = d.count[i];
+                    }
+
+                    DB.kkutu_stats_en.upsert(['_id', key]).set(data).on(function (res) {
+                        process.stdout.write(`\r[EN] Progress: ${++current}/${total}`);
+                        resolve();
+                    }, null, function (err) {
+                        console.error(`Error saving ${key}:`, err);
+                        resolve();
+                    });
+                });
+            });
+
+            Promise.all(promises).then(function () {
+                console.log("\nEN Stats Saved.");
+                resolveMain();
+            });
+        });
+    });
 }
 
-// 자유 두음법칙 (모음 조건 무시) - 배열 반환
-// 끝말잇기용: ㄹ→ㄴ,ㅇ / ㄴ→ㅇ
-function getSubCharFree(char) {
-    if (!char) return [];
-    var c = char.charCodeAt();
-    var k = c - 0xAC00;
-    if (k < 0 || k > 11171) return [];
-
-    var ca = [Math.floor(k / 28 / 21), Math.floor(k / 28) % 21, k % 28];
-    var cb = [ca[0] + 0x1100, ca[1] + 0x1161, ca[2] + 0x11A7];
-    var results = [];
-
-    function buildChar(initial, medial, final) {
-        return String.fromCharCode(((initial * 21) + medial) * 28 + final + 0xAC00);
-    }
-
-    // ㄹ(5, 4357) → ㄴ(2), ㅇ(11)
-    if (cb[0] === 4357) {
-        results.push(buildChar(2, ca[1], ca[2]));   // ㄴ
-        results.push(buildChar(11, ca[1], ca[2]));  // ㅇ
-    }
-    // ㄴ(2, 4354) → ㅇ(11)
-    else if (cb[0] === 4354) {
-        results.push(buildChar(11, ca[1], ca[2]));  // ㅇ
-    }
-
-    return results;
-}
-
-// 기본 역두음법칙 (모음 조건 적용): ㄴ→ㄹ, ㅇ→ㄹ,ㄴ (앞말잇기 등)
-function getReverseDueumChars(char) {
-    if (!char) return [];
-    var c = char.charCodeAt() - 0xAC00;
-    if (c < 0 || c > 11171) return [];
-    var medial = Math.floor(c / 28) % 21;
-    var initial = Math.floor(c / 28 / 21);
-    var final = c % 28;
-
-    var curInitialCode = initial + 0x1100;
-    var medialCode = medial + 0x1161;
-    var results = [];
-
-    if (curInitialCode === 4354) { // ㄴ
-        if (RIEUL_TO_NIEUN.includes(medialCode)) {
-            results.push(String.fromCharCode(0xAC00 + (5 * 21 + medial) * 28 + final));
-        }
-    }
-    else if (curInitialCode === 4363) { // ㅇ
-        if (RIEUL_TO_IEUNG.includes(medialCode)) {
-            results.push(String.fromCharCode(0xAC00 + (5 * 21 + medial) * 28 + final));
-        }
-        if (NIEUN_TO_IEUNG.includes(medialCode)) {
-            results.push(String.fromCharCode(0xAC00 + (2 * 21 + medial) * 28 + final));
-        }
-    }
-    return results;
-}
-
-// 자유 역두음법칙 (모음 조건 무시): ㄴ→ㄹ, ㅇ→ㄴ,ㄹ (앞말잇기 자유두음)
-function getReverseDueumCharsFree(char) {
-    if (!char) return [];
-    var c = char.charCodeAt() - 0xAC00;
-    if (c < 0 || c > 11171) return [];
-    var medial = Math.floor(c / 28) % 21;
-    var initial = Math.floor(c / 28 / 21);
-    var final = c % 28;
-
-    var curInitialCode = initial + 0x1100;
-    var results = [];
-
-    function buildChar(initIdx, med, fin) {
-        return String.fromCharCode(0xAC00 + (initIdx * 21 + med) * 28 + fin);
-    }
-
-    // ㄴ(2, 4354) → ㄹ(5)
-    if (curInitialCode === 4354) {
-        results.push(buildChar(5, medial, final)); // ㄹ
-    }
-    // ㅇ(11, 4363) → ㄴ(2), ㄹ(5)
-    else if (curInitialCode === 4363) {
-        results.push(buildChar(2, medial, final));  // ㄴ
-        results.push(buildChar(5, medial, final));  // ㄹ
-    }
-
-    return results;
-}
+// Dueum helper functions removed as they are no longer needed for Write-Time logic

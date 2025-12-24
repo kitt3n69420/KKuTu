@@ -71,7 +71,7 @@ exports.turnStart = function (force) {
 
 	if (!my.game.chain) return;
 	my.game.roundTime = Math.min(my.game.roundTime, Math.max(10000, 150000 - my.game.chain.length * 1500));
-	speed = my.getTurnSpeed(my.game.roundTime);
+	speed = my.getTurnSpeed(my.opts.speed ? my.game.roundTime / 2 : my.game.roundTime);
 	clearTimeout(my.game.turnTimer);
 	clearTimeout(my.game.robotTimer);
 	my.game.late = false;
@@ -176,7 +176,7 @@ exports.submit = function (client, text, data) {
 					denied();
 				}
 			}
-			DB.kkutu[l].findOne(['_id', text], ['type', Const.KOR_GROUP]).limit(['mean', true], ['theme', true], ['type', true]).on(onDB);
+			DB.kkutu[l].findOne(['_id', text], ['type', Const.KOR_GROUP]).limit(['mean', true], ['theme', true], ['type', true], ['hit', true], ['flag', true]).on(onDB);
 		} else {
 			if (client.robot && client.data.candidates && client.data.candidateIndex < client.data.candidates.length - 1) {
 				client.data.candidateIndex++;

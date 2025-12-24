@@ -55,7 +55,7 @@ exports.turnStart = function (force) {
 
     if (!my.game.chain) return;
     my.game.roundTime = Math.min(my.game.roundTime, Math.max(10000, 150000 - my.game.chain.length * 1500));
-    speed = my.getTurnSpeed(my.game.roundTime);
+    speed = my.getTurnSpeed(my.opts.speed ? my.game.roundTime / 2 : my.game.roundTime);
     clearTimeout(my.game.turnTimer);
     clearTimeout(my.game.robotTimer);
     my.game.late = false;
@@ -211,17 +211,22 @@ exports.submit = function (client, text) {
                 }
             }
         } else if ($doc) {
+            // Injeong check applies to all languages if flag exists
             if (!my.opts.injeong && ($doc.flag & Const.KOR_FLAG.INJEONG)) denied();
-            else if (my.opts.strict && (!$doc.type.match(Const.KOR_STRICT) || $doc.flag >= 4)) denied(406);
-            else if (my.opts.loanword && ($doc.flag & Const.KOR_FLAG.LOANWORD)) denied(405);
-            else preApproved();
+            else if (l == "ko") {
+                if (my.opts.strict && (!$doc.type.match(Const.KOR_STRICT) || $doc.flag >= 4)) denied(406);
+                else if (my.opts.loanword && ($doc.flag & Const.KOR_FLAG.LOANWORD)) denied(405);
+                else preApproved();
+            } else {
+                preApproved();
+            }
         } else {
             denied();
         }
     }
     DB.kkutu[l].findOne(['_id', text],
         (l == "ko") ? ['type', Const.KOR_GROUP] : ['_id', Const.ENG_ID]
-    ).limit(['mean', true], ['theme', true], ['type', true], ['hit', true]).on(onDB);
+    ).limit(['mean', true], ['theme', true], ['type', true], ['hit', true], ['flag', true]).on(onDB);
 };
 exports.getScore = function (text, delay, ignoreMission) {
     var my = this;
@@ -376,26 +381,14 @@ function getAuto(char, type) {
 
     if (type === 2) {
         // For bot list, pick a random start char to get a variety of words
-        var randomStart;
         if (my.rule.lang == "ko") {
-            randomStart = String.fromCharCode(0xAC00 + Math.floor(Math.random() * 11172));
+            var ja = 44032 + 588 * Math.floor(Math.random() * 19); // Random initial consonant group
+            var range = `[\\u${ja.toString(16)}-\\u${(ja + 587).toString(16)}]`;
+            aqs.push(['_id', new RegExp(`^${range}`)]);
         } else {
-            randomStart = String.fromCharCode(97 + Math.floor(Math.random() * 26));
+            var char = String.fromCharCode(97 + Math.floor(Math.random() * 26));
+            aqs.push(['_id', new RegExp(`^${char}`, 'i')]);
         }
-        // Use regex to find words starting with or containing this char?
-        // Just finding words starting with a random char is good enough distribution.
-        // Or even better, just find({}) with limit and skip? Skip is slow.
-        // Let's stick to random start char for now.
-        // Actually, let's just use a regex that matches anything but starts with a random char range.
-
-        // To ensure we get long words, maybe we don't restrict too much.
-        // Let's try to get words that are reasonably long?
-        // DB queries in this codebase seem to rely on regex.
-
-        // Let's try to find words starting with a random syllable.
-        var ja = 44032 + 588 * Math.floor(Math.random() * 19); // Random initial consonant group
-        var range = `[\\u${ja.toString(16)}-\\u${(ja + 587).toString(16)}]`;
-        aqs.push(['_id', new RegExp(`^${range}`)]);
     }
 
     switch (type) {

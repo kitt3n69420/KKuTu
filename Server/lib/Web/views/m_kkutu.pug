@@ -89,11 +89,18 @@ block Middle
 		button#ExitBtn.for-master.for-normal.for-gaming(style='display: none; background-color: #FFADAD;'): +FA('times')
 		button#ReplayBtn.for-lobby(style='display: none; background-color: #D9FF82;'): +FA('video-camera')
 		button#LeaderboardBtn.for-lobby(style='display: none; background-color: #FFADD3;'): +FA('trophy')
-	+Dialog('SettingDiag', 300, 320, L('settingsText'))
+	+Dialog('SettingDiag', 300, 420, L('settingsText'))
 		div.dialog-bar
 			h4= L('mute')
-			+SettingOption('mute-bgm', L('bgm'))
-			+SettingOption('mute-effect', L('effect'))
+			div(style="float: left; width: calc(100% - 100px);")
+				div(style="display: flex; align-items: center; margin-bottom: 5px;")
+					input#mute-bgm(type='checkbox', style='margin: 0 5px 0 0; width: auto;')
+					label(for='mute-bgm', style='margin-right: 10px; white-space: nowrap;')= L('bgm')
+					input.bgmVolume(type='range', min=0, max=100, step=1, style='flex: 1; min-width: 0;')
+				div(style="display: flex; align-items: center;")
+					input#mute-effect(type='checkbox', style='margin: 0 5px 0 0; width: auto;')
+					label(for='mute-effect', style='margin-right: 10px; white-space: nowrap;')= L('effect')
+					input.effectVolume(type='range', min=0, max=100, step=1, style='flex: 1; min-width: 0;')
 		div.dialog-bar
 			h4= L('denyReq')
 			+SettingOption('deny-invite', L('denyInvite'))
@@ -111,12 +118,18 @@ block Middle
 			h4
 			+SettingOption('only-unlock', L('onlyUnlock'), "width: 200px;")
 		div.dialog-bar
+			h4= L('language')
+			select#language-setting(style="width: 150px;")
+				option(value="ko_KR") 한국어
+				option(value="en_US") English
+				option(value="nya") ???
+		div.dialog-bar
 			h4 사운드 팩
 			select#sound-pack(style="width: 150px;")
 				option(value="") 기본
 		div.dialog-bar.tail-button
-			button#setting-ok= L('save')
-			button#setting-server= L('changeServer')
+			button#setting-ok(type='button')= L('save')
+			button#setting-server(type='button')= L('changeServer')
 	+Dialog('CommunityDiag', 300, 300)
 		div.dialog-bar(style='height: 225px; overflow-y: scroll;')
 			div#comm-friends
@@ -164,8 +177,31 @@ block Middle
 		div.dialog-bar
 			h4= L('gameMode')
 			select#room-mode
-				- for(var i in locals.MODE)
-					option(value=Number(i))= L('mode' + locals.MODE[i])
+				optgroup(label=L('mcKorean'))
+					option(value=3)= L('modeKSH')
+					option(value=2)= L('modeKKT')
+					option(value=8)= L('modeKAP')
+					option(value=21)= L('modeKAK')
+					option(value=6)= L('modeKTY')
+					option(value=11)= L('modeKDA')
+					option(value=5)= L('modeKCW')
+					option(value=13)= L('modeKSS')
+					option(value=4)= L('modeCSQ')
+					option(value=16)= L('modeKSC')
+					option(value=10)= L('modeHUN')
+					option(value=15)= L('modeKPQ')
+					option(value=17)= L('modeKFR')
+				optgroup(label=L('mcEnglish'))
+					option(value=1)= L('modeESH')
+					option(value=19)= L('modeEKK')
+					option(value=0)= L('modeEKT')
+					option(value=9)= L('modeEAP')
+					option(value=22)= L('modeEAK')
+					option(value=7)= L('modeETY')
+					option(value=12)= L('modeEDA')
+					option(value=14)= L('modeESS')
+					option(value=20)= L('modeEPQ')
+					option(value=18)= L('modeEFR')
 		div.dialog-bar(style='margin-top: -5px; height: 50px;')
 			h4
 			h4#game-mode-expl.dialog-bar-value(style='width: 100%; font-size: 11px;')
@@ -354,6 +390,22 @@ block Middle
 			button#obtain-ok= L('OK')
 	+Dialog('HelpDiag', 300, 400, L('helpText'))
 		iframe#help-board(width=300, height=375)
+	+Dialog('ConfirmDiag', 300, 200, L('notice'), true)
+		div.dialog-bar#confirm-text(style='text-align: center; height: 100px; padding: 10px; overflow-y: auto; white-space: pre-wrap;')
+		div.dialog-bar.tail-button
+			button#confirm-no= L('NO')
+			button#confirm-ok= L('OK')
+	+Dialog('AlertDiag', 300, 200, L('notice'), true)
+		div.dialog-bar#alert-text(style='text-align: center; height: 100px; padding: 10px; overflow-y: auto; white-space: pre-wrap;')
+		div.dialog-bar.tail-button
+			button#alert-ok= L('OK')
+	+Dialog('InputDiag', 300, 200, L('notice'), true)
+		div.dialog-bar#input-text(style='text-align: center; height: 80px; padding: 10px; overflow-y: auto; white-space: pre-wrap;')
+		div.dialog-bar(style='text-align: center;')
+			input#input-input(type='text', style='width: 90%;', maxlength=50)
+		div.dialog-bar.tail-button
+			button#input-no= L('NO')
+			button#input-ok= L('OK')
 	+Product('UserList')
 		div 불러오는 중
 	+Product('RoomList')

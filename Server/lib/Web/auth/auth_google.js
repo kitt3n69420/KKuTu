@@ -1,7 +1,7 @@
 const config = require('../../sub/auth.json');
 
 module.exports.config = {
-    strategy: require('passport-google-oauth2').Strategy,
+    strategy: require('passport-google-oauth20').Strategy,
     color: '#FFFFFF',
     fontColor: '#000000',
     vendor: 'google',
@@ -13,7 +13,7 @@ module.exports.strategyConfig = {
     clientSecret: config.google.clientSecret, // 이 방법을 사용하는 것을
     callbackURL: config.google.callbackURL, // 적극 권장합니다.
     passReqToCallback: true,
-    scope: ['profile', 'email', 'https://www.googleapis.com/auth/plus.login']
+    scope: ['profile', 'email']
 }
 
 module.exports.strategy = (process, MainDB, Ajae) => {
@@ -23,7 +23,7 @@ module.exports.strategy = (process, MainDB, Ajae) => {
         $p.authType = "google";
         $p.id = profile.id;
         $p.name = (profile.name.familyName ? profile.name.familyName + ' ' : '') + profile.name.givenName;
-        $p.title = profile.nickname;
+        $p.title = profile.displayName;
         $p.image = profile.photos[0].value;
 
         process(req, accessToken, MainDB, $p, done);

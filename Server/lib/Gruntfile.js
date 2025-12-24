@@ -39,6 +39,7 @@ const KKUTU_LIST = [
 	"Web/lib/kkutu/rule_daneo.js",
 	"Web/lib/kkutu/rule_free.js",
 	"Web/lib/kkutu/rule_sock.js",
+	"Web/lib/kkutu/rule_picture.js",
 	"Web/lib/kkutu/body.js",
 	"Web/lib/kkutu/tail.js"
 ];

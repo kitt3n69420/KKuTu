@@ -17,12 +17,35 @@
  */
 
 $(document).ready(function () {
+	// 언어 설정 확인 및 리다이렉트
+	try {
+		var savedLang = localStorage.getItem('kkutu_lang');
+		var match = location.href.match(/[?&]locale=([^&]+)/);
+		var currentLang = match ? match[1] : "ko_KR";
+
+		if (savedLang && savedLang !== currentLang) {
+			// URL에 locale 파라미터가 없거나 다른 경우 리다이렉트
+			// 단, 사용자가 명시적으로 URL을 변경한 경우는 제외해야 하지만,
+			// 여기서는 저장된 설정을 우선시하여 리다이렉트 (설정에서 언어를 바꾸면 저장되므로)
+			var search = location.search;
+			if (search.indexOf('locale=') >= 0) {
+				search = search.replace(/locale=[^&]+/, 'locale=' + savedLang);
+			} else {
+				search = search + (search ? '&' : '?') + 'locale=' + savedLang;
+			}
+			location.replace(location.pathname + search);
+			return;
+		}
+	} catch (e) {
+		console.error("Language redirect error:", e);
+	}
+
 	var i;
 
 	$data.PUBLIC = $("#PUBLIC").html() == "true";
 	$data.URL = $("#URL").html();
 	$data.version = $("#version").html();
-	$data.NICKNAME_LIMIT = JSON.parse($("#NICKNAME_LIMIT").html() || "{}");
+	$data.NICKNAME_LIMIT = JSON.parse($("body #NICKNAME_LIMIT").text() || "{}");
 	if ($data.NICKNAME_LIMIT.REGEX) $data.NICKNAME_LIMIT.REGEX = new RegExp($data.NICKNAME_LIMIT.REGEX[0], $data.NICKNAME_LIMIT.REGEX[1]);
 	var serverMatch = location.href.match(/[?&]server=(\d+)/);
 	$data.server = serverMatch ? serverMatch[1] : null;
@@ -132,7 +155,19 @@ $(document).ready(function () {
 			chatLog: $("#ChatLogDiag"),
 			obtain: $("#ObtainDiag"),
 			obtainOK: $("#obtain-ok"),
-			help: $("#HelpDiag")
+			help: $("#HelpDiag"),
+			confirm: $("#ConfirmDiag"),
+			confirmText: $("#confirm-text"),
+			confirmOK: $("#confirm-ok"),
+			confirmNo: $("#confirm-no"),
+			alert: $("#AlertDiag"),
+			alertText: $("#alert-text"),
+			alertOK: $("#alert-ok"),
+			input: $("#InputDiag"),
+			inputText: $("#input-text"),
+			inputInput: $("#input-input"),
+			inputOK: $("#input-ok"),
+			inputNo: $("#input-no")
 		},
 		box: {
 			chat: $(".ChatBox"),
@@ -162,7 +197,7 @@ $(document).ready(function () {
 	};
 	if (_WebSocket == undefined) {
 		loading(L['websocketUnsupport']);
-		alert(L['websocketUnsupport']);
+		showAlert(L['websocketUnsupport']);
 		return;
 	}
 	$.get("/soundpacks", function (packs) {
@@ -183,7 +218,26 @@ $(document).ready(function () {
 			}
 		}
 		if (!$data.opts) $data.opts = {};
-		var currentPackName = $data.opts && $data.opts.sp;
+
+		// localStorage에서 볼륨 설정 먼저 로드 (사운드 로드 전에 적용)
+		var savedSettings = loadVolumeSettings();
+		if (savedSettings.bgmVolume !== null) {
+			$data.BGMVolume = savedSettings.bgmVolume;
+		} else {
+			$data.BGMVolume = parseFloat($data.opts.bv);
+			if (isNaN($data.BGMVolume)) $data.BGMVolume = 1;
+		}
+		if (savedSettings.effectVolume !== null) {
+			$data.EffectVolume = savedSettings.effectVolume;
+		} else {
+			$data.EffectVolume = parseFloat($data.opts.ev);
+			if (isNaN($data.EffectVolume)) $data.EffectVolume = 1;
+		}
+		$data.muteBGM = savedSettings.bgmMute !== null ? savedSettings.bgmMute : ($data.opts.mb || false);
+		$data.muteEff = savedSettings.effectMute !== null ? savedSettings.effectMute : ($data.opts.me || false);
+
+		// 사운드팩 설정 (localStorage 우선)
+		var currentPackName = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts && $data.opts.sp);
 		var currentPack = packs.find(function (p) { return p.name === currentPackName; });
 		var packFiles = currentPack ? currentPack.files : [];
 
@@ -407,6 +461,43 @@ $(document).ready(function () {
 		showDialog($stage.dialog.help);
 	});
 	$stage.menu.setting.on('click', function (e) {
+		// 설정 창을 열 때 현재 값으로 UI 업데이트
+		var savedSettings = loadVolumeSettings();
+
+		// 슬라이더 값 설정
+		var bgmVol = savedSettings.bgmVolume !== null ? savedSettings.bgmVolume : $data.BGMVolume;
+		var effVol = savedSettings.effectVolume !== null ? savedSettings.effectVolume : $data.EffectVolume;
+		$(".bgmVolume").val((bgmVol || 1) * 100);
+		$(".effectVolume").val((effVol || 1) * 100);
+
+		// 음소거 체크박스 설정
+		var bgmMute = savedSettings.bgmMute !== null ? savedSettings.bgmMute : $data.muteBGM;
+		var effMute = savedSettings.effectMute !== null ? savedSettings.effectMute : $data.muteEff;
+		$("#mute-bgm").prop('checked', bgmMute || false);
+		$("#mute-effect").prop('checked', effMute || false);
+
+		// 사운드팩 선택 설정
+		$("#sound-pack").val(savedSettings.soundPack || "");
+
+		// 현재 로드된 언어 감지
+		// L 객체로부터 실제 언어 감지 시도
+		var detectedLang = null;
+		try {
+			// 한국어 체크
+			if (L && L('language') === '한국어') detectedLang = 'ko_KR';
+			else if (L && L('language') === 'English') detectedLang = 'en_US';
+			else if (L && L('language') === '???') detectedLang = 'nya';
+		} catch (e) { }
+
+		// URL locale 파라미터 확인
+		var match = location.href.match(/[?&]locale=([^&]+)/);
+		var pageLang = match ? match[1] : null;
+		var savedLang = localStorage.getItem('kkutu_lang');
+
+		// 우선순위: URL locale > 감지된언어 > 저장된 언어 > 한국어
+		var currentLang = pageLang || detectedLang || savedLang || "ko_KR";
+		$("#language-setting").val(currentLang);
+
 		showDialog($stage.dialog.setting);
 	});
 	$stage.menu.community.on('click', function (e) {
@@ -414,12 +505,12 @@ $(document).ready(function () {
 		showDialog($stage.dialog.community);
 	});
 	$stage.dialog.commFriendAdd.on('click', function (e) {
-		var id = prompt(L['friendAddNotice']);
+		showPrompt(L['friendAddNotice'], "", function (id) {
+			if (!id) return;
+			if (!$data.users[id]) return fail(450);
 
-		if (!id) return;
-		if (!$data.users[id]) return fail(450);
-
-		send('friendAdd', { target: id }, true);
+			send('friendAdd', { target: id }, true);
+		});
 	});
 	$stage.menu.newRoom.on('click', function (e) {
 		var $d;
@@ -609,10 +700,15 @@ $(document).ready(function () {
 	});
 	$stage.menu.exit.on('click', function (e) {
 		if ($data.room.gaming) {
-			if (!confirm(L['sureExit'])) return;
-			clearGame();
+			showConfirm(L['sureExit'], function (res) {
+				if (res) {
+					clearGame();
+					send('leave');
+				}
+			});
+		} else {
+			send('leave');
 		}
-		send('leave');
 	});
 	$stage.menu.replay.on('click', function (e) {
 		if ($data._replay) {
@@ -655,6 +751,37 @@ $(document).ready(function () {
 		location.href = "/";
 	});
 	$stage.dialog.settingOK.on('click', function (e) {
+		e.preventDefault();
+		var previousSoundPack = $data.opts.sp || "";
+		var newSoundPack = $("#sound-pack").val();
+		var newLang = $("#language-setting").val();
+		var savedLang = localStorage.getItem('kkutu_lang'); // 이전에 저장된 언어 확인
+
+		// 언어 설정 저장
+		if (newLang) {
+			// 현재 페이지의 locale 파라미터 확인
+			var match = location.href.match(/[?&]locale=([^&]+)/);
+			var pageLang = match ? match[1] : null;
+
+			// locale 파라미터가 있고 새 언어와 다르면 리로드
+			if (pageLang && newLang !== pageLang) {
+				// 언어가 변경되었고 현재 페이지 언어와 다르면 리로드
+				localStorage.setItem('kkutu_lang', newLang);
+				// 쿼리 스트링 파싱 및 업데이트
+				var search = location.search;
+				if (search.indexOf('locale=') >= 0) {
+					search = search.replace(/locale=[^&]+/, 'locale=' + newLang);
+				} else {
+					search = search + (search ? '&' : '?') + 'locale=' + newLang;
+				}
+				location.href = location.pathname + search;
+				return; // 리로드 하니까 여기서 중단
+			} else {
+				// 언어는 같지만 저장값 업데이트
+				localStorage.setItem('kkutu_lang', newLang);
+			}
+		}
+
 		$data.opts = {
 			mb: $("#mute-bgm").is(":checked"),
 			me: $("#mute-effect").is(":checked"),
@@ -667,7 +794,7 @@ $(document).ready(function () {
 			su: $("#sort-user").is(":checked"),
 			ow: $("#only-waiting").is(":checked"),
 			ou: $("#only-unlock").is(":checked"),
-			sp: $("#sound-pack").val()
+			sp: newSoundPack
 		};
 
 		// localStorage에 볼륨 설정 저장
@@ -681,43 +808,31 @@ $(document).ready(function () {
 
 		$.cookie('kks', encodeURIComponent(JSON.stringify($data.opts)));
 		$stage.dialog.setting.hide();
+
+		// 사운드팩이 변경되었을 때 동적으로 사운드 로드
+		if (previousSoundPack !== newSoundPack) {
+			changeSoundPack(newSoundPack);
+		}
 	});
 	$("#mute-bgm").on('click', function () {
 		$data.muteBGM = !$data.muteBGM;
-		saveBGMMute($data.muteBGM); // localStorage에 즉시 저장
+		saveVolumeSettings({ bgmMute: $data.muteBGM }); // localStorage에 즉시 저장
 		updateBGMVol();
-		send("option", { mb: $data.muteBGM, bv: $data.BGMVolume, me: $data.muteEff, ev: $data.EffectVolume });
 	});
 	$(".bgmVolume").on('input change', function () {
 		$data.BGMVolume = $(this).val() / 100;
-		saveBGMVolume($data.BGMVolume); // localStorage에 즉시 저장
+		saveVolumeSettings({ bgmVolume: $data.BGMVolume }); // localStorage에 즉시 저장
 		updateBGMVol();
-	}).on('change', function () {
-		send("option", { mb: $data.muteBGM, bv: $data.BGMVolume, me: $data.muteEff, ev: $data.EffectVolume });
 	});
 	$("#mute-effect").on('click', function () {
 		$data.muteEff = !$data.muteEff;
-		saveEffectMute($data.muteEff); // localStorage에 즉시 저장
+		saveVolumeSettings({ effectMute: $data.muteEff }); // localStorage에 즉시 저장
 		updateEffectVol();
-		send("option", { mb: $data.muteBGM, bv: $data.BGMVolume, me: $data.muteEff, ev: $data.EffectVolume });
 	});
 	$(".effectVolume").on('input change', function () {
 		$data.EffectVolume = $(this).val() / 100;
-		saveEffectVolume($data.EffectVolume); // localStorage에 즉시 저장
+		saveVolumeSettings({ effectVolume: $data.EffectVolume }); // localStorage에 즉시 저장
 		updateEffectVol();
-	}).on('change', function () {
-		send("option", { mb: $data.muteBGM, bv: $data.BGMVolume, me: $data.muteEff, ev: $data.EffectVolume });
-	});
-
-	// 사운드팩 변경 핸들러
-	$("#sound-pack").on('change', function () {
-		var selectedPack = $(this).val();
-		saveSoundPack(selectedPack); // localStorage에 즉시 저장
-
-		// 사운드팩 변경 시 페이지 새로고침 안내
-		if (confirm("사운드팩을 변경하려면 페이지를 새로고침해야 합니다. 지금 새로고침하시겠습니까?")) {
-			location.reload();
-		}
 	});
 	$stage.dialog.profileLevel.on('click', function (e) {
 		$("#PracticeDiag .dialog-title").html(L['robot']);
@@ -859,8 +974,9 @@ $(document).ready(function () {
 		tryJoin($data._roominfo);
 	});
 	$stage.dialog.profileHandover.on('click', function (e) {
-		if (!confirm(L['sureHandover'])) return;
-		send('handover', { target: $data._profiled });
+		showConfirm(L['sureHandover'], function (res) {
+			if (res) send('handover', { target: $data._profiled });
+		});
 	});
 	$stage.dialog.profileKick.on('click', function (e) {
 		send('kick', { robot: $data.robots.hasOwnProperty($data._profiled), target: $data._profiled });
@@ -895,25 +1011,55 @@ $(document).ready(function () {
 		if ($("#dress-nickname").val() && $("#dress-nickname").val() !== $data.nickname) data.nickname = $("#dress-nickname").val();
 		if ($("#dress-exordial").val() !== undefined && $("#dress-exordial").val() !== $data.exordial) data.exordial = $("#dress-exordial").val();
 
-		if (data.nickname && $data.NICKNAME_LIMIT.REGEX && $data.NICKNAME_LIMIT.REGEX.test(data.nickname)) data.nickname = confirm(L.confirmNickPolicy) ? data.nickname.replace($data.NICKNAME_LIMIT.REGEX, "") : undefined;
-		if (!data.nickname && data.exordial === undefined) {
-			$stage.dialog.dressOK.attr("disabled", false);
-			$stage.dialog.dress.hide();
-			return;
-		}
-		if (confirm($data.NICKNAME_LIMIT.TERM > 0 ? L.confirmNickChangeLimit.replace("{V1}", $data.NICKNAME_LIMIT.TERM) : L.confirmNickChange)) $.post("/profile", data, function (res) {
-			const message = [];
-			if (data.nickname) {
-				$("#account-info").text($data.users[$data.id].nickname = $data.users[$data.id].profile.title = $data.users[$data.id].profile.name = $data.nickname = data.nickname);
-				message.push(L.nickChanged.replace("{V1}", data.nickname));
-			}
-			if (data.exordial !== undefined) message.push(L.exorChanged.replace("{V1}", $data.users[$data.id].exordial = $data.exordial = data.exordial));
 
-			send("updateProfile", data, true);
-			alert(message.join("\n"));
-		});
-		$stage.dialog.dressOK.attr("disabled", false);
-		$stage.dialog.dress.hide();
+		var processProfile = function (data) {
+			showConfirm($data.NICKNAME_LIMIT.TERM > 0 ? L.confirmNickChangeLimit.replace("{V1}", $data.NICKNAME_LIMIT.TERM) : L.confirmNickChange, function (res) {
+				if (res) {
+					$.post("/profile", data, function (res) {
+						const message = [];
+						if (data.nickname) {
+							$("#account-info").text($data.users[$data.id].nickname = $data.users[$data.id].profile.title = $data.users[$data.id].profile.name = $data.nickname = data.nickname);
+							message.push(L.nickChanged.replace("{V1}", data.nickname));
+						}
+						if (data.exordial !== undefined) message.push(L.exorChanged.replace("{V1}", $data.users[$data.id].exordial = $data.exordial = data.exordial));
+
+						send("updateProfile", data, true);
+						showAlert(message.join("\n"));
+					});
+					$stage.dialog.dressOK.attr("disabled", false);
+					$stage.dialog.dress.hide();
+				} else {
+					$stage.dialog.dressOK.attr("disabled", false);
+					$stage.dialog.dress.hide();
+				}
+			});
+		};
+
+		var checkEmpty = function () {
+			if (!data.nickname && data.exordial === undefined) {
+				$stage.dialog.dressOK.attr("disabled", false);
+				$stage.dialog.dress.hide();
+				return;
+			}
+			processProfile(data);
+		};
+
+
+		if (data.nickname && $data.NICKNAME_LIMIT.REGEX && $data.NICKNAME_LIMIT.REGEX.test(data.nickname)) {
+			data.rawNickname = data.nickname;
+			showConfirm(L.confirmNickPolicy, function (res) {
+				if (res) {
+					data.nickname = data.nickname.replace($data.NICKNAME_LIMIT.REGEX, "");
+					checkEmpty();
+				} else {
+					data.nickname = undefined;
+					checkEmpty();
+				}
+			});
+		} else {
+			if (data.nickname) data.rawNickname = data.nickname;
+			checkEmpty();
+		}
 	});
 	$("#DressDiag .dress-type").on('click', function (e) {
 		var $target = $(e.currentTarget);
@@ -930,21 +1076,23 @@ $(document).ready(function () {
 	});
 	$stage.dialog.cfCompose.on('click', function (e) {
 		if (!$stage.dialog.cfCompose.hasClass("cf-composable")) return fail(436);
-		if (!confirm(L['cfSureCompose'])) return;
+		showConfirm(L['cfSureCompose'], function (res) {
+			if (!res) return;
 
-		$.post("/cf", { tray: $data._tray.join('|') }, function (res) {
-			var i;
+			$.post("/cf", { tray: $data._tray.join('|') }, function (res) {
+				var i;
 
-			if (res.error) return fail(res.error);
-			send('refresh');
-			alert(L['cfComposed']);
-			$data.users[$data.id].money = res.money;
-			$data.box = res.box;
-			for (i in res.gain) queueObtain(res.gain[i]);
+				if (res.error) return fail(res.error);
+				send('refresh');
+				showAlert(L['cfComposed']);
+				$data.users[$data.id].money = res.money;
+				$data.box = res.box;
+				for (i in res.gain) queueObtain(res.gain[i]);
 
-			drawMyDress($data._avGroup);
-			updateMe();
-			drawCharFactory();
+				drawMyDress($data._avGroup);
+				updateMe();
+				drawCharFactory();
+			});
 		});
 	});
 	$("#room-injeong-pick").on('click', function (e) {
@@ -999,7 +1147,7 @@ $(document).ready(function () {
 			var my = $data.users[$data.id];
 
 			if (res.error) return fail(res.error);
-			alert(L['purchased']);
+			showAlert(L['purchased']);
 			my.money = res.money;
 			my.box = res.box;
 			updateMe();
@@ -1049,7 +1197,7 @@ $(document).ready(function () {
 					var $p;
 
 					$players.append($p = $("<div>").addClass("replay-player-bar ellipse")
-						.html(u.title)
+						.text(u.title)
 						.prepend(getLevelImage(u.data.score).addClass("users-level"))
 					);
 					if (u.id == data.me) $p.css('font-weight', "bold");
@@ -1058,7 +1206,7 @@ $(document).ready(function () {
 				$stage.dialog.replayView.attr('disabled', false);
 			} catch (ex) {
 				console.warn(ex);
-				return alert(L['replayError']);
+				return showAlert(L['replayError']);
 			}
 		};
 	});
@@ -1102,9 +1250,10 @@ $(document).ready(function () {
 
 			if (rws) rws.close();
 			stopAllSounds();
-			alert(ct);
-			$.get("/kkutu_notice.html", function (res) {
-				loading(res);
+			showAlert(ct, function () {
+				$.get("/kkutu_notice.html", function (res) {
+					loading(res);
+				});
 			});
 		};
 		ws.onerror = function (e) {

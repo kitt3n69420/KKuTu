@@ -25,7 +25,7 @@ $lib.Free.roundReady = function (data) {
 
     // Display "Free Mode" or similar. 
     // Since there is no specific theme, maybe just "아무거나" (Anything)
-    $stage.game.display.html($data._char = "<아무거나>");
+    $stage.game.display.html($data._char = "&lt;" + (L && L['anything'] ? L['anything'] : "아무거나") + "&gt;");
 
     $stage.game.chain.show().html($data.chain = 0);
     if ($data.room.opts.mission) {

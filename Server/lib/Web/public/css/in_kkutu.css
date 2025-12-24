@@ -2185,6 +2185,8 @@ iframe {
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	align-content: flex-start;
+	/* Attach from top */
 	flex-wrap: wrap;
 	/* Ensure normal mode works if items wrap, though normally they don't */
 	margin: 0px -1px;
@@ -2196,6 +2198,8 @@ iframe {
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	align-content: center;
+	/* Center for equal distribution */
 }
 
 .game-body.small-mode .game-user {
@@ -2354,4 +2358,5 @@ iframe {
 .game-body.small-mode .game-user-score-char {
 	width: auto;
 	display: inline-block;
+	text-align: center;
 }
