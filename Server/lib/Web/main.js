@@ -87,7 +87,7 @@ Server.use((req, res, next) => {
 	next();
 });
 Server.use((req, res, next) => {
-	if (Const.IS_SECURED) {
+	if (Const.IS_SECURED || Const.WAF) {
 		if (req.protocol == 'http') {
 			let url = 'https://' + req.hostname + ':' + Const.MAIN_PORTS[0] + req.path;
 			res.status(302).redirect(url);
@@ -146,7 +146,7 @@ DB.ready = function () {
 			}
 		}
 	});
-	if (Const.IS_SECURED) {
+	if (Const.IS_SECURED || Const.WAF) {
 		Server.listen(80); // HTTP Rewrite
 		const options = Secure();
 		https.createServer(options, Server).listen(Const.MAIN_PORTS[0]);
@@ -157,12 +157,8 @@ DB.ready = function () {
 Const.MAIN_PORTS.forEach(function (v, i) {
 	var KEY = process.env['WS_KEY'];
 	var protocol;
-	if (Const.IS_SECURED) {
-		protocol = 'wss';
-	} else {
-		protocol = 'ws';
-	}
-	gameServers[i] = new GameClient(KEY, `${protocol}://${GLOBAL.GAME_SERVER_HOST}:${v + 30}/${KEY}`);
+	var protocol = Const.IS_SECURED || Const.WAF ? 'wss' : 'ws';
+	gameServers[i] = new GameClient(KEY, `${protocol}://${GLOBAL.GAME_SERVER_HOST}:${(Const.MASTER_PORTS && Const.MASTER_PORTS[i]) || (v + 30)}/${KEY}`);
 });
 function GameClient(id, url) {
 	var my = this;
@@ -284,9 +280,10 @@ Server.get("/", function (req, res) {
 			'_page': "kkutu",
 			'_script': viewName == "kkutu" ? "game_kkutu" : undefined,
 			'_id': id,
-			'PORT': Const.MAIN_PORTS[server] + 30,
+			'PORT': (Const.MASTER_PORTS && Const.MASTER_PORTS[server]) || (Const.MAIN_PORTS[server] + 30),
+			'ROOM_PORT': Const.ROOM_PORTS[server],
 			'HOST': req.hostname,
-			'PROTOCOL': Const.IS_SECURED ? 'wss' : 'ws',
+			'PROTOCOL': Const.IS_SECURED || Const.WAF ? 'wss' : 'ws',
 			'TEST': req.query.test,
 			'MOREMI_PART': Const.MOREMI_PART,
 			'AVAIL_EQUIP': Const.AVAIL_EQUIP,

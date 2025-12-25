@@ -1,4 +1,14 @@
 {
+    "WAF": false,
+    "MAIN_PORTS": [
+        8080
+    ],
+    "MASTER_PORTS": [
+        8110
+    ],
+    "ROOM_PORTS": [
+        8496
+    ],
     "NICKNAME_LIMIT": {
         "TERM": 0,
         "REGEX": [
