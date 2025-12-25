@@ -89,7 +89,7 @@ Server.use((req, res, next) => {
 Server.use((req, res, next) => {
 	if (Const.IS_SECURED) {
 		if (req.protocol == 'http') {
-			let url = 'https://' + req.get('host') + req.path;
+			let url = 'https://' + req.hostname + ':' + Const.MAIN_PORTS[0] + req.path;
 			res.status(302).redirect(url);
 		} else {
 			next();
@@ -146,10 +146,12 @@ DB.ready = function () {
 			}
 		}
 	});
-	Server.listen(Const.MAIN_PORTS[0]); //HTTP 접속
 	if (Const.IS_SECURED) {
+		Server.listen(80); // HTTP Rewrite
 		const options = Secure();
-		https.createServer(options, Server).listen(443);
+		https.createServer(options, Server).listen(Const.MAIN_PORTS[0]);
+	} else {
+		Server.listen(Const.MAIN_PORTS[0]); //HTTP 접속
 	}
 };
 Const.MAIN_PORTS.forEach(function (v, i) {
