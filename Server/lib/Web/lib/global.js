@@ -150,9 +150,13 @@ var L;
 			$q.parent().addClass("expl-mother").on('mouseenter', function (e) {
 				var $e = $(e.currentTarget).children(".expl");
 
-				explSize = [$e.width(), $e.height()];
 				$(".expl-active").removeClass("expl-active");
 				$e.addClass("expl-active");
+				explSize = [$e.width(), $e.height()];
+				$e.css({
+					'left': Math.min(e.clientX + 5, size[0] - explSize[0] - 12),
+					'top': Math.min(e.clientY + 23, size[1] - explSize[1] - 12)
+				});
 			}).on('mouseleave', function (e) {
 				$(e.currentTarget).children(".expl").removeClass("expl-active");
 			});

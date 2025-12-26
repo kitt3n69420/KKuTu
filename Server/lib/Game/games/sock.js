@@ -72,7 +72,7 @@ exports.roundReady = function () {
 			}
 			words.sort(function (a, b) { return b.length - a.length; });
 			my.game.words = [];
-			my.game.board = getBoard(words, conf.len);
+			my.game.board = getBoard(words, my.opts.big ? 196 : 100);
 			my.byMaster('roundReady', {
 				round: my.game.round,
 				board: my.game.board

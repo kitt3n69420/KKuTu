@@ -172,6 +172,10 @@ iframe {
 	z-index: 1;
 }
 
+#AlertDiag {
+	z-index: 3000 !important;
+}
+
 .dialog-bar {
 	float: left;
 	margin: 3px 0px;
@@ -1136,6 +1140,7 @@ iframe {
 	border-radius: 10px;
 	width: calc(100% - 10px);
 	background-color: rgba(0, 0, 0, 0.7);
+	z-index: 1;
 }
 
 .game-input input {

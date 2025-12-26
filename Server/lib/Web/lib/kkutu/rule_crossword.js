@@ -92,6 +92,11 @@ $lib.Crossword.drawDisplay = function () {
 			if (word) $w[key] = word.charAt(j);
 			$bar.append($("<div>").addClass("cw-cell")
 				.attr('id', "cwc-" + key)
+				.css({
+					'box-sizing': 'border-box',
+					width: vert ? 'calc(100% - 6px)' : 'calc(' + (100 / len) + '% - 6px)',
+					height: vert ? 'calc(' + (100 / len) + '% - 6px)' : 'calc(100% - 6px)'
+				})
 				.html($w[key] || "")
 			);
 			if (vert) y++; else x++;

@@ -166,6 +166,10 @@ body {
 	z-index: 1;
 }
 
+#AlertDiag {
+	z-index: 3000 !important;
+}
+
 .dialog-bar {
 	float: left;
 	margin: 3px 0px;
@@ -301,6 +305,7 @@ body {
 	border-radius: 5px;
 	color: #222222;
 	background-color: #BBDEFB;
+	overflow: hidden;
 }
 
 .product-title i {
@@ -619,7 +624,7 @@ body {
 }
 
 .RoomBox .product-title {
-	height: 12px;
+	height: auto;
 }
 
 .RoomBox .product-title h5 {
@@ -782,7 +787,7 @@ body {
 }
 
 .GameBox .product-title {
-	height: 12px;
+	height: auto;
 }
 
 .GameBox .product-title h5 {
@@ -1189,6 +1194,7 @@ body {
 	border-radius: 10px;
 	width: calc(100% - 10px);
 	background-color: rgba(0, 0, 0, 0.7);
+	z-index: 1;
 }
 
 .game-input input {

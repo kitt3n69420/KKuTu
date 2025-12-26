@@ -185,7 +185,12 @@ $lib.Picture.drawDisplay = function () {
         'background-color': '#979797ff',
         'border': '2px solid #1565C0',
         'border-radius': '2px',
-        'margin': '0 auto'
+        'margin': '0 auto',
+        'user-select': 'none', // Prevent selection
+        '-webkit-user-drag': 'none', // Webkit specific
+        '-webkit-user-select': 'none',
+        '-moz-user-select': 'none',
+        '-ms-user-select': 'none'
     });
 
     for (y = 0; y < PQ_CANVAS_HEIGHT; y++) {
@@ -204,7 +209,8 @@ $lib.Picture.drawDisplay = function () {
                     });
 
                 if (isDrawer) {
-                    $cell.on('click', function () {
+                    $cell.on('mousedown', function (e) {
+                        e.preventDefault(); // Prevent drag start
                         $lib.Picture.onCellClick(px, py);
                     });
                     $cell.on('mouseenter', function (e) {

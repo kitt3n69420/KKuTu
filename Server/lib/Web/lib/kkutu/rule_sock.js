@@ -89,7 +89,7 @@ $lib.Sock.drawDisplay = function () {
 	var $a = $("<div>").css('height', "100%"), $c;
 	var va = $data._board.split("");
 	var len = Math.sqrt($data._board.length);
-	var size = (100 / len) + "%";
+	var size = (len >= 14) ? "7.1%" : "10%";
 	var fontSize = (len > 10) ? "15px" : "";
 
 	$a.css({ 'display': 'flex', 'flex-wrap': 'wrap', 'align-content': 'flex-start' });

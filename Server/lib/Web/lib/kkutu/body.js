@@ -1224,7 +1224,7 @@ function updateRoomList(refresh) {
 }
 function roomListBar(o) {
 	var $R, $ch;
-	var opts = getOptions(o.mode, o.opts);
+	var opts = getOptions(o.mode, o.opts, false, mobile);
 
 	$R = $("<div>").attr('id', "room-" + o.id).addClass("rooms-item")
 		.append($ch = $("<div>").addClass("rooms-channel channel-" + o.channel).on('click', function (e) { requestRoomInfo(o.id); }))
@@ -2804,20 +2804,20 @@ function getLevelImage(score) {
 function getImage(url) {
 	return $("<div>").addClass("jt-image").css('background-image', "url('" + url + "')");
 }
-function getOptions(mode, opts, hash) {
-	var R = [L["mode" + MODE[mode]]];
+function getOptions(mode, opts, hash, abbr) {
+	var R = [abbr && L["mode" + MODE[mode] + "_abbr"] ? L["mode" + MODE[mode] + "_abbr"] : L["mode" + MODE[mode]]];
 	var i, k;
 
 	for (i in OPTIONS) {
 		k = OPTIONS[i].name.toLowerCase();
-		if (opts[k]) R.push(L['opt' + OPTIONS[i].name]);
+		if (opts[k]) R.push(abbr && L['opt' + OPTIONS[i].name + "_abbr"] ? L['opt' + OPTIONS[i].name + "_abbr"] : L['opt' + OPTIONS[i].name]);
 	}
 	if (hash) R.push(opts.injpick.join('|'));
 
 	return hash ? R.toString() : R;
 }
 function setRoomHead($obj, room) {
-	var opts = getOptions(room.mode, room.opts);
+	var opts = getOptions(room.mode, room.opts, false, mobile);
 	var rule = RULE[MODE[room.mode]];
 	var $rm;
 

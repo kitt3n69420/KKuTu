@@ -240,6 +240,10 @@ iframe {
 	z-index: 2;
 }
 
+#AlertDiag {
+	z-index: 3000 !important;
+}
+
 .dialog-bar {
 	float: left;
 	margin: 3px 0px;
@@ -1368,7 +1372,7 @@ iframe {
 	padding: 5px;
 	border-radius: 10px;
 	background-color: rgba(0, 0, 0, 0.7);
-	z-index: 20;
+	z-index: 1;
 	/* Ensure it stays above player cards (level 5) */
 }
 
@@ -1404,6 +1408,16 @@ iframe {
 	margin: 1px;
 	width: 330px;
 	height: 22px;
+}
+
+.cw .game-user.game-user-current {
+	height: 22px;
+	background-color: #DDFFDD;
+	animation: CurrentBlink 2s linear infinite;
+}
+
+.cw .game-user.game-user-bomb {
+	border-color: #FF6666;
 }
 
 .game-user-current {

@@ -1675,6 +1675,11 @@ $lib.Crossword.drawDisplay = function () {
 			if (word) $w[key] = word.charAt(j);
 			$bar.append($("<div>").addClass("cw-cell")
 				.attr('id', "cwc-" + key)
+				.css({
+					'box-sizing': 'border-box',
+					width: vert ? 'calc(100% - 6px)' : 'calc(' + (100 / len) + '% - 6px)',
+					height: vert ? 'calc(' + (100 / len) + '% - 6px)' : 'calc(100% - 6px)'
+				})
 				.html($w[key] || "")
 			);
 			if (vert) y++; else x++;
@@ -2298,7 +2303,7 @@ $lib.Sock.drawDisplay = function () {
 	var $a = $("<div>").css('height', "100%"), $c;
 	var va = $data._board.split("");
 	var len = Math.sqrt($data._board.length);
-	var size = (100 / len) + "%";
+	var size = (len >= 14) ? "7.1%" : "10%";
 	var fontSize = (len > 10) ? "15px" : "";
 
 	$a.css({ 'display': 'flex', 'flex-wrap': 'wrap', 'align-content': 'flex-start' });
@@ -2512,7 +2517,12 @@ $lib.Picture.drawDisplay = function () {
         'background-color': '#979797ff',
         'border': '2px solid #1565C0',
         'border-radius': '2px',
-        'margin': '0 auto'
+        'margin': '0 auto',
+        'user-select': 'none', // Prevent selection
+        '-webkit-user-drag': 'none', // Webkit specific
+        '-webkit-user-select': 'none',
+        '-moz-user-select': 'none',
+        '-ms-user-select': 'none'
     });
 
     for (y = 0; y < PQ_CANVAS_HEIGHT; y++) {
@@ -2531,7 +2541,8 @@ $lib.Picture.drawDisplay = function () {
                     });
 
                 if (isDrawer) {
-                    $cell.on('click', function () {
+                    $cell.on('mousedown', function (e) {
+                        e.preventDefault(); // Prevent drag start
                         $lib.Picture.onCellClick(px, py);
                     });
                     $cell.on('mouseenter', function (e) {
@@ -4021,7 +4032,7 @@ function updateRoomList(refresh) {
 }
 function roomListBar(o) {
 	var $R, $ch;
-	var opts = getOptions(o.mode, o.opts);
+	var opts = getOptions(o.mode, o.opts, false, mobile);
 
 	$R = $("<div>").attr('id', "room-" + o.id).addClass("rooms-item")
 		.append($ch = $("<div>").addClass("rooms-channel channel-" + o.channel).on('click', function (e) { requestRoomInfo(o.id); }))
@@ -5601,20 +5612,20 @@ function getLevelImage(score) {
 function getImage(url) {
 	return $("<div>").addClass("jt-image").css('background-image', "url('" + url + "')");
 }
-function getOptions(mode, opts, hash) {
-	var R = [L["mode" + MODE[mode]]];
+function getOptions(mode, opts, hash, abbr) {
+	var R = [abbr && L["mode" + MODE[mode] + "_abbr"] ? L["mode" + MODE[mode] + "_abbr"] : L["mode" + MODE[mode]]];
 	var i, k;
 
 	for (i in OPTIONS) {
 		k = OPTIONS[i].name.toLowerCase();
-		if (opts[k]) R.push(L['opt' + OPTIONS[i].name]);
+		if (opts[k]) R.push(abbr && L['opt' + OPTIONS[i].name + "_abbr"] ? L['opt' + OPTIONS[i].name + "_abbr"] : L['opt' + OPTIONS[i].name]);
 	}
 	if (hash) R.push(opts.injpick.join('|'));
 
 	return hash ? R.toString() : R;
 }
 function setRoomHead($obj, room) {
-	var opts = getOptions(room.mode, room.opts);
+	var opts = getOptions(room.mode, room.opts, false, mobile);
 	var rule = RULE[MODE[room.mode]];
 	var $rm;
 

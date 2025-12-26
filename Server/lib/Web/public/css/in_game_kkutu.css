@@ -172,6 +172,10 @@ iframe {
 	z-index: 10;
 }
 
+#AlertDiag {
+	z-index: 3000 !important;
+}
+
 .dialog-bar {
 	float: left;
 	margin: 3px 0px;
@@ -803,6 +807,7 @@ iframe {
 }
 
 .room-user-team {
+
 	margin-left: 60%;
 	width: 40%;
 	text-align: center;
@@ -1268,6 +1273,7 @@ iframe {
 	padding: 5px;
 	border-radius: 10px;
 	background-color: rgba(0, 0, 0, 0.7);
+	z-index: 1;
 }
 
 #game-input {
@@ -2232,4 +2238,14 @@ iframe {
 .GameBox .bb {
 	width: 100%;
 	min-height: 450px;
+}
+
+.sock-char {
+	float: left;
+	box-sizing: border-box;
+	border: 1px solid #CCCCCC;
+	background-color: #FFFFFF;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
