@@ -172,9 +172,9 @@ function applyOptions(opt) {
 
 function loadVolumeSettings() {
 	try {
-		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null };
+		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null };
 	} catch (e) {
-		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null };
+		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null };
 	}
 }
 
@@ -1309,6 +1309,9 @@ function updateRoom(gaming) {
 
 	setRoomHead($(".RoomBox .product-title"), $data.room);
 	setRoomHead($(".GameBox .product-title"), $data.room);
+
+
+
 	if (gaming) {
 		$r = $(".GameBox .game-body").empty();
 		// Apply appropriate CSS class based on mode and player count
@@ -1405,6 +1408,113 @@ function updateRoom(gaming) {
 	}
 	if ($stage.dialog.profile.is(':visible')) {
 		requestProfile($data._profiled);
+	}
+
+	// Drug Mode: Rainbow Timer & Shake Elements (Independent)
+	if ($data.room.opts.drg) {
+		$(".GameBox").addClass("psychedelic-bg");
+		$(".jjo-turn-time .graph-bar, .jjo-round-time .graph-bar").addClass("rainbow");
+		if (!mobile) {
+			var $targets = $(".game-user, .jjoriping, .items, .clock-canvas, .game-input, .chain");
+			$targets.each(function () {
+				var $t = $(this);
+				if (!$t.hasClass("shake")) {
+					$t.addClass("shake").css("animation-duration", (Math.random() * 2 + 1) + "s");
+				}
+			});
+			$(".GameBox .game-head, .GameBox .game-body").removeClass("shake");
+		}
+
+		// Random Card Background
+		if (!$data._drgBgInterval) {
+			$data._drgBgInterval = addInterval(function () {
+				// Apply shake to dynamic elements
+				if (!mobile) {
+					$(".game-input, .chain, .history-item").each(function () {
+						var $t = $(this);
+						if (!$t.hasClass("shake")) {
+							$t.addClass("shake").css("animation-duration", (Math.random() * 2 + 1) + "s");
+						}
+					});
+				}
+
+				$(".game-user").each(function () {
+					var $t = $(this);
+					$t.css("background-color", "hsl(" + (Math.random() * 360) + ", 70%, 80%)");
+
+					// Random Moremi Item Update
+					if (!mobile) {
+						var id = $t.attr('id').replace('game-user-', '');
+						var user = $data.users[id] || $data.robots[id];
+						var equip = {};
+
+						// Generate Random Equip
+						var GROUPS = {
+							'head': ["blackbere", "black_mask", "blue_headphone", "brownbere", "haksamo", "hamster_G", "hamster_O", "miljip", "nekomimi", "orange_headphone", "redbere", "twoeight", "white_mask"],
+							'eye': ["bigeye", "brave_eyes", "close_eye", "cuspidal", "double_brows", "inverteye", "lazy_eye", "scouter", "sunglasses"],
+							'mouth': ["beardoll", "cat_mouth", "decayed_mouth", "laugh", "merong", "mustache", "oh"],
+							'clothes': ["blackrobe", "blue_vest", "medal", "orange_vest", "pants_china", "pants_japan", "pants_korea", "pink_vest", "sqpants", "water", "ilusweater", "kktpixel", "pixgradg", "pixgrado"],
+							'hs': ["bluecandy", "bokjori", "choco_ice", "lemoncandy", "melon_ice", "pinkcandy", "purple_ice", "black_oxford", "black_shoes", "brown_oxford", "loosesocks"],
+							'back': []
+						};
+						var PART_MAP = {
+							'head': 'head', 'eye': 'eye', 'mouth': 'mouth', 'clothes': 'clothes', 'back': 'back',
+							'shoes': 'hs', 'lhand': 'hs', 'rhand': 'hs'
+						};
+						var MOREMI_PART = ["back", "shoes", "clothes", "head", "eye", "mouth", "lhand", "rhand"];
+
+						for (var i in MOREMI_PART) {
+							var partName = MOREMI_PART[i];
+							var groupKey = PART_MAP[partName];
+							if (groupKey && GROUPS[groupKey] && Math.random() < 0.5) {
+								var group = GROUPS[groupKey];
+								equip['M' + partName] = group[Math.floor(Math.random() * group.length)];
+							}
+						}
+
+						renderMoremi($t.find('.moremi'), equip);
+					}
+				});
+			}, 500);
+		}
+		// Periodic Random Sound (1-5s)
+		if (!mobile && !$data._drgSoundLoop && $data.room.gaming) {
+			var playRandomSound = function () {
+				if (!$data.room || !$data.room.opts.drg || !$data.room.gaming) {
+					delete $data._drgSoundLoop;
+					return;
+				}
+
+				// 1~5초 사이 랜덤 간격
+				$data._drgSoundLoop = addTimeout(playRandomSound, Math.random() * 4000 + 1000);
+
+				// 무조건 소리 재생 (Common 1~30)
+				if (!$data.muteEff) {
+					var r = Math.floor(Math.random() * 30) + 1;
+					try {
+						var audio = new Audio('/media/common/' + r + '.mp3');
+						audio.volume = ($data.EffectVolume !== undefined) ? $data.EffectVolume : 0.5;
+						audio.play().catch(function (e) { });
+					} catch (e) { }
+				}
+			};
+			$data._drgSoundLoop = addTimeout(playRandomSound, Math.random() * 4000 + 1000);
+		}
+	} else {
+		$(".GameBox").removeClass("psychedelic-bg");
+		$(".jjo-turn-time .graph-bar, .jjo-round-time .graph-bar").removeClass("rainbow");
+		$(".jjo-display, .jjo-turn-time, .jjo-round-time, .jjoObj, .jjoriping, .items, .game-user, .moremi, .GameBox .game-head, .GameBox .game-body, .clock-canvas, .game-input, .chain, .history-item")
+			.removeClass("shake").css("animation-duration", "");
+
+		if ($data._drgBgInterval) {
+			clearInterval($data._drgBgInterval);
+			delete $data._drgBgInterval;
+			$(".game-user").css("background-color", "");
+		}
+		if ($data._drgSoundLoop) {
+			clearTimeout($data._drgSoundLoop);
+			delete $data._drgSoundLoop;
+		}
 	}
 }
 function onMasterSubJamsu() {
@@ -2576,7 +2686,10 @@ function vibrate(level) {
 		addTimeout(vibrate, 50, level * 0.7);
 	}, 50);
 }
-function pushDisplay(text, mean, theme, wc) {
+function getRandomColor() {
+	return "hsl(" + Math.floor(Math.random() * 360) + ", 100%, 85%)";
+}
+function pushDisplay(text, mean, theme, wc, isSumi) {
 	var len;
 	var mode = MODE[$data.room.mode];
 	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK";
@@ -2588,7 +2701,13 @@ function pushDisplay(text, mean, theme, wc) {
 	var tick = $data.turnTime / 96;
 	var sg = $data.turnTime / 12;
 
+	// Sumi-Sanggwan Highlight Index: Last Char for Normal, First Char for Reverse
+	var sumiIdx = isRev ? 0 : len - 1;
+
 	$stage.game.display.empty();
+	if ($data.room.opts.drg) $stage.game.display.css('box-shadow', '0px 0px 20px ' + getRandomColor());
+	else $stage.game.display.css('box-shadow', '');
+
 	if (beat) {
 		ta = 'As' + $data._speed;
 		beat = beat.split("");
@@ -2604,14 +2723,18 @@ function pushDisplay(text, mean, theme, wc) {
 		for (i in beat) {
 			if (beat[i] == "0") continue;
 
+			var charIdx = isRev ? len - j - 1 : j;
+			var isSumiChar = isSumi && (charIdx === sumiIdx);
+
 			$stage.game.display.append($l = $("<div>")
 				.addClass("display-text")
 				.css({ 'float': isRev ? "right" : "left", 'margin-top': -6, 'font-size': 36 })
 				.hide()
-				.html(isRev ? text.charAt(len - j - 1) : text.charAt(j))
+				.css('color', ($data.room.opts.drg) ? getRandomColor() : "")
+				.html(text.charAt(charIdx))
 			);
 			j++;
-			addTimeout(function ($l, snd) {
+			addTimeout(function ($l, snd, isSumiChar) {
 				var anim = { 'margin-top': 0 };
 
 				playSound(snd);
@@ -2619,39 +2742,53 @@ function pushDisplay(text, mean, theme, wc) {
 					playSound('mission');
 					$l.css({ 'color': "#66FF66" });
 					anim['font-size'] = 24;
+				} else if (isSumiChar) {
+					playSound('mission');
+					$l.css({ 'color': "#00FFFF" }); // Cyan
+					anim['font-size'] = 24;
 				} else {
 					anim['font-size'] = 20;
 				}
 				$l.show().animate(anim, 100);
-			}, Number(i) * tick, $l, ta);
+			}, Number(i) * tick, $l, ta, isSumiChar);
 		}
 		i = $stage.game.display.children("div").get(0);
 		$(i).css(isRev ? 'margin-right' : 'margin-left', ($stage.game.display.width() - 20 * len) * 0.5);
 	} else {
 		j = "";
 		if (isRev) for (i = 0; i < len; i++) {
-			addTimeout(function (t) {
+			addTimeout(function (t, idx) {
 				playSound(ta);
+				var isSumiChar = isSumi && (idx === sumiIdx);
+
 				if (t == $data.mission) {
 					playSound('mission');
 					j = "<label style='color: #66FF66;'>" + t + "</label>" + j;
+				} else if (isSumiChar) {
+					playSound('mission');
+					j = "<label style='color: #00FFFF;'>" + t + "</label>" + j;
 				} else {
-					j = t + j;
+					j = ($data.room.opts.drg ? ("<label style='color:" + getRandomColor() + "'>" + t + "</label>") : t) + j;
 				}
 				$stage.game.display.html(j);
-			}, Number(i) * sg / len, text[len - i - 1]);
+			}, Number(i) * sg / len, text[len - i - 1], len - i - 1);
 		}
 		else for (i = 0; i < len; i++) {
-			addTimeout(function (t) {
+			addTimeout(function (t, idx) {
 				playSound(ta);
+				var isSumiChar = isSumi && (idx === sumiIdx);
+
 				if (t == $data.mission) {
 					playSound('mission');
 					j += "<label style='color: #66FF66;'>" + t + "</label>";
+				} else if (isSumiChar) {
+					playSound('mission');
+					j += "<label style='color: #00FFFF;'>" + t + "</label>";
 				} else {
-					j += t;
+					j += ($data.room.opts.drg ? ("<label style='color:" + getRandomColor() + "'>" + t + "</label>") : t);
 				}
 				$stage.game.display.html(j);
-			}, Number(i) * sg / len, text[i]);
+			}, Number(i) * sg / len, text[i], i);
 		}
 	}
 	addTimeout(function () {
@@ -2691,6 +2828,7 @@ function pushHistory(text, mean, theme, wc) {
 		.addClass("ellipse history-item")
 		.width(0)
 		.animate({ width: 200 })
+		.css('color', ($data.room.opts.drg) ? getRandomColor() : "")
 		.html(text)
 	);
 	$w = $stage.game.history.children();
@@ -2776,6 +2914,19 @@ function processWord(word, _mean, _theme, _wcs) {
 function getCharText(char, subChar, wordLength) {
 	// subChar가 파이프로 구분된 경우 콤마로 표시
 	var displaySubChar = subChar ? subChar.split('|').join(', ') : null;
+
+	if ($data.room && $data.room.opts && $data.room.opts.drg) {
+		char = char.split('').map(function (c) {
+			return "<label style='color:" + getRandomColor() + "'>" + c + "</label>";
+		}).join('');
+
+		if (displaySubChar) {
+			displaySubChar = displaySubChar.split('').map(function (c) {
+				return "<label style='color:" + getRandomColor() + "'>" + c + "</label>";
+			}).join('');
+		}
+	}
+
 	var res = char + (displaySubChar ? ("(" + displaySubChar + ")") : "");
 
 	if (wordLength) res += "<label class='jjo-display-word-length'>(" + wordLength + ")</label>";
@@ -2844,11 +2995,22 @@ function setRoomHead($obj, room) {
 	}
 }
 function loadSounds(list, callback, silent) {
-	$data._lsRemain = list.length;
-	$data._lsSilent = silent || false;
+	var remain = list.length;
+	var onDone = function () {
+		if (--remain <= 0) {
+			if (callback) callback();
+		} else if (!silent) {
+			loading(L['loadRemain'] + remain);
+		}
+	};
+
+	if (remain === 0) {
+		if (callback) callback();
+		return;
+	}
 
 	list.forEach(function (v) {
-		getAudio(v.key, v.value, callback);
+		getAudio(v.key, v.value, onDone);
 	});
 }
 function getAudio(k, url, cb) {
@@ -2859,17 +3021,12 @@ function getAudio(k, url, cb) {
 	req.onload = function (e) {
 		if (audioContext) audioContext.decodeAudioData(e.target.response, function (buf) {
 			$sound[k] = buf;
-			done();
+			if (cb) cb();
 		}, onErr); else onErr();
 	};
 	function onErr(err) {
 		$sound[k] = new AudioSound(url);
-		done();
-	}
-	function done() {
-		if (--$data._lsRemain == 0) {
-			if (cb) cb();
-		} else if (!$data._lsSilent) loading(L['loadRemain'] + $data._lsRemain);
+		if (cb) cb();
 	}
 	function AudioSound(url) {
 		var my = this;
@@ -2887,15 +3044,26 @@ function getAudio(k, url, cb) {
 	req.send();
 }
 function playBGM(key, force) {
-	if ($data.bgm) $data.bgm.stop();
+	var old = $data.bgm;
+	$data.bgm = null;
+	if (old) old.stop();
+
+	if ($data.bgmList && $data.bgmList[key] && !$sound[key]) {
+		getAudio(key, $data.bgmList[key], function () {
+			// If different BGM was requested while loading, don't play this one
+			// However, we don't have a good way to track "requested" BGM here without more state.
+			// But since we just stopped previous BGM, let's assume if we match logic we play.
+			$data.bgm = playSound(key, true);
+		});
+		return;
+	}
 
 	return $data.bgm = playSound(key, true);
 }
 function stopBGM() {
-	if ($data.bgm) {
-		$data.bgm.stop();
-		delete $data.bgm;
-	}
+	var old = $data.bgm;
+	$data.bgm = null;
+	if (old) old.stop();
 }
 function playSound(key, loop) {
 	var src, sound;
@@ -2909,6 +3077,15 @@ function playSound(key, loop) {
 		src.startedAt = audioContext.currentTime;
 		src.loop = loop;
 		src.buffer = sound;
+		if (loop) {
+			src.loopStart = 0;
+			src.loopEnd = sound.duration;
+			src.onended = function () {
+				if ($data.bgm === src) {
+					$data.bgm = playSound(key, true);
+				}
+			};
+		}
 
 		var gain = audioContext.createGain();
 		gain.gain.value = mute ? 0 : vol;
@@ -2916,7 +3093,7 @@ function playSound(key, loop) {
 		gain.connect(audioContext.destination);
 		src.gainNode = gain;
 	} else {
-		if (sound.readyState) sound.audio.currentTime = 0;
+		if (sound.audio.readyState) sound.audio.currentTime = 0;
 		sound.audio.loop = loop || false;
 		sound.audio.volume = mute ? 0 : vol;
 		src = sound;
@@ -3248,6 +3425,9 @@ function renderMoremi(target, equip) {
 		equip['Mhead'] = 'nekomimi';
 	}
 
+	// Random Moremi Item (Drug Mode) Logic Removed - Handled in Interval
+
+
 	for (i in MOREMI_PART) {
 		key = 'M' + MOREMI_PART[i];
 
@@ -3296,3 +3476,45 @@ function yell(msg) {
 		}, 3000);
 	}, 1000);
 }
+
+// Override playSound for Random Type Sound (Drg Mode)
+(function () {
+	var checkAndOverride = function () {
+		if (typeof playSound === 'function' && !playSound._isOverridden) {
+			var originalPlaySound = playSound;
+			window.playSound = function (id, loop) {
+				var result = originalPlaySound(id, loop);
+
+				// Random Type Sound Logic
+				if ($data.room && $data.room.opts && $data.room.opts.drg) {
+					var triggers = ['chat', 'Al', 'fail', 'success'];
+					var isTrigger = false;
+
+					if (triggers.indexOf(id) >= 0) isTrigger = true;
+					// Check As0 ~ As10
+					else if (typeof id === 'string' && id.indexOf('As') === 0) {
+						var num = parseInt(id.substring(2));
+						if (!isNaN(num) && num >= 0 && num <= 10) isTrigger = true;
+					}
+
+					if (isTrigger) {
+						if (Math.random() < 0.20) {
+							var r = Math.floor(Math.random() * 30) + 1;
+							try {
+								var audio = new Audio('/media/common/' + r + '.mp3');
+								audio.volume = $data.muteEff ? 0 : (($data.EffectVolume !== undefined) ? $data.EffectVolume : 0.5);
+								audio.play().catch(function (e) { });
+							} catch (e) { }
+						}
+					}
+				}
+				return result;
+			};
+			window.playSound._isOverridden = true;
+		}
+	};
+
+	checkAndOverride();
+	setTimeout(checkAndOverride, 100);
+	setTimeout(checkAndOverride, 1000);
+})();

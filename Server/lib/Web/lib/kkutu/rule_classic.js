@@ -41,8 +41,9 @@ $lib.Classic.turnStart = function (data) {
 	if ($data._tid.robot) $data._tid = $data._tid.id;
 	data.id = $data._tid;
 
-	$stage.game.display.html($data._char = getCharText(data.char, data.subChar, data.wordLength));
-	$("#game-user-" + data.id).addClass("game-user-current");
+	$stage.game.display.html($data._char = getCharText(data.char, data.subChar, data.wordLength, data.sumiChar));
+	var $u = $("#game-user-" + data.id).addClass("game-user-current");
+	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
 	if (!$data._replay) {
 		$stage.game.here.css('display', (data.id == $data.id) ? "block" : "none");
 		if (data.id == $data.id) {
@@ -84,7 +85,7 @@ $lib.Classic.turnGoing = function () {
 $lib.Classic.turnEnd = function (id, data) {
 	var $sc = $("<div>")
 		.addClass("deltaScore")
-		.html((data.score > 0) ? ("+" + (data.score - data.bonus)) : data.score);
+		.html((data.score > 0) ? ("+" + (data.score - data.bonus - (data.speedToss || 0))) : data.score);
 	var $uc = $(".game-user-current");
 	var hi;
 
@@ -97,7 +98,7 @@ $lib.Classic.turnEnd = function (id, data) {
 		clearTimeout($data._fail);
 		$stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
-		pushDisplay(data.value, data.mean, data.theme, data.wc);
+		pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0);
 	} else {
 		checkFailCombo(id);
 		$sc.addClass("lost");
@@ -118,14 +119,25 @@ $lib.Classic.turnEnd = function (id, data) {
 			.append($("<label>").css('color', "#AAAAAA").html(data.hint.slice(hi + 1)));
 	}
 	if (data.bonus) {
-		mobile ? $sc.html("+" + (data.score - data.bonus) + "+" + data.bonus) : addTimeout(function () {
+		mobile ? $sc.html("+" + (data.score - data.bonus - (data.speedToss || 0)) + "+" + data.bonus) : addTimeout(function () {
 			var $bc = $("<div>")
 				.addClass("deltaScore bonus")
+				.css('color', '#66FF66')
 				.html("+" + data.bonus);
 
 			drawObtainedScore($uc, $bc);
 		}, 500);
 	}
-	drawObtainedScore($uc, $sc).removeClass("game-user-current");
+	if (data.speedToss) {
+		mobile ? $sc.append("+" + data.speedToss) : addTimeout(function () {
+			var $bc = $("<div>")
+				.addClass("deltaScore sumi-sanggwan")
+				.css('color', '#00FFFF') // Cyan
+				.html("+" + data.speedToss);
+
+			drawObtainedScore($uc, $bc);
+		}, 800);
+	}
+	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	updateScore(id, getScore(id));
 };

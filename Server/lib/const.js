@@ -61,7 +61,9 @@ exports.OPTIONS = {
 	'unl': { name: "Unlimited" },
 	'sur': { name: "Survival" },
 	'fdu': { name: "FreeDueum" },
-	'spd': { name: "Speed" }
+	'spd': { name: "Speed" },
+	'drg': { name: "Drg" },
+	'spt': { name: "SpeedToss" }
 
 };
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
@@ -84,10 +86,10 @@ exports.ROBOT_DEFEAT_MESSAGES = [ // 봇이 한방단어를 받았을 때 보내
 	"ㅁㄴㅇㄹ", "ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", "님아 제발", "아오 진짜",
 	"ㅠㅠ", "너무해", "선넘네", "이렇게 가는구나...", "이런!", "에라이", "하...", "엣?",
 	"아니 님아", "아 제발", "뿌에엥", "뾄!", "악", "안돼", "ㅠㅠ", "저기요?", "이럴수가",
-	"너 봇이지?", "치트 쓰지마", "사기치지마", "으아악", "어...?", "???", "야!!!"
+	"너 봇이지?", "치트 쓰지마", "사기치지마", "으아악", "어...?", "???"
 ];
 exports.ROBOT_ANGRY_MESSAGES = [
-	"나 안해", "이건 불공평해", "억까 제발좀", "아오!!!!!!", "개짜증나", "망겜", "○○"
+	"나 안해", "이건 불공평해", "억까 제발좀", "아오!!!!!!", "개짜증나", "망겜", "○○", "야!!!"
 ]
 exports.MOREMI_PART = ["back", "shoes", "clothes", "head", "eye", "mouth", "lhand", "rhand"];
 exports.CATEGORIES = ["all", "spec", "skin", "badge", "head", "eye", "mouth", "clothes", "hs", "back"];
@@ -128,7 +130,7 @@ exports.RULE = {
 	'EKT': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd"],
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -137,7 +139,7 @@ exports.RULE = {
 	'ESH': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd"],
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -146,7 +148,7 @@ exports.RULE = {
 	'KKT': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "k32", "unk", "one", "ret", "mid", "sch", "fdu", "spd"],
+		opts: ["man", "ext", "mis", "loa", "str", "k32", "unk", "one", "ret", "mid", "sch", "fdu", "spd", "drg", "spt"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -155,7 +157,7 @@ exports.RULE = {
 	'KSH': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "spd"],
+		opts: ["man", "ext", "mis", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "spd", "drg", "spt"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -164,7 +166,7 @@ exports.RULE = {
 	'CSQ': {
 		lang: "ko",
 		rule: "Jaqwi",
-		opts: ["ijp", "vow", "unl"],
+		opts: ["ijp", "vow", "unl", "drg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -173,7 +175,7 @@ exports.RULE = {
 	'KCW': {
 		lang: "ko",
 		rule: "Crossword",
-		opts: [],
+		opts: ["drg"],
 		time: 2,
 		ai: false,
 		big: true,
@@ -182,7 +184,7 @@ exports.RULE = {
 	'KTY': {
 		lang: "ko",
 		rule: "Typing",
-		opts: ["prv", "mir", "one", "lng"],
+		opts: ["prv", "mir", "one", "lng", "drg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -191,7 +193,7 @@ exports.RULE = {
 	'ETY': {
 		lang: "en",
 		rule: "Typing",
-		opts: ["prv", "mir", "one", "lng"],
+		opts: ["prv", "mir", "one", "lng", "drg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -200,7 +202,7 @@ exports.RULE = {
 	'KAP': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "spd"],
+		opts: ["man", "ext", "mis", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "spd", "drg", "spt"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -210,7 +212,7 @@ exports.RULE = {
 	'EAP': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd"],
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -221,7 +223,7 @@ exports.RULE = {
 	'HUN': {
 		lang: "ko",
 		rule: "Hunmin",
-		opts: ["ext", "mis", "loa", "str", "one", "ret", "spd"],
+		opts: ["ext", "mis", "loa", "str", "one", "ret", "spd", "drg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -230,7 +232,7 @@ exports.RULE = {
 	'KDA': {
 		lang: "ko",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "trp", "one", "ret", "spd"],
+		opts: ["ijp", "mis", "trp", "one", "ret", "spd", "drg"],
 		time: 1,
 		ai: true,
 		ewq: false
@@ -238,7 +240,7 @@ exports.RULE = {
 	'EDA': {
 		lang: "en",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "trp", "one", "ret", "spd"],
+		opts: ["ijp", "mis", "trp", "one", "ret", "spd", "drg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -247,7 +249,7 @@ exports.RULE = {
 	'KSS': {
 		lang: "ko",
 		rule: "Sock",
-		opts: ["no2", "big"],
+		opts: ["no2", "big", "drg"],
 		time: 1,
 		ai: false,
 		big: true,
@@ -256,7 +258,7 @@ exports.RULE = {
 	'ESS': {
 		lang: "en",
 		rule: "Sock",
-		opts: ["no2", "big"],
+		opts: ["no2", "big", "drg"],
 		time: 1,
 		ai: false,
 		big: true,
@@ -265,7 +267,7 @@ exports.RULE = {
 	'KPQ': {
 		lang: "ko",
 		rule: "Picture",
-		opts: ["ijp"],
+		opts: ["ijp", "drg"],
 		time: 2,
 		ai: false,
 		big: true,
@@ -274,7 +276,7 @@ exports.RULE = {
 	'KSC': {
 		lang: "ko",
 		rule: "Jaqwi",
-		opts: ["ijp", "unl"],
+		opts: ["ijp", "unl", "drg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -283,7 +285,7 @@ exports.RULE = {
 	'KFR': {
 		lang: "ko",
 		rule: "Free",
-		opts: ["ext", "mis", "one", "unk", "ret", "spd"],
+		opts: ["ext", "mis", "one", "unk", "ret", "spd", "drg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -292,7 +294,7 @@ exports.RULE = {
 	'EFR': {
 		lang: "en",
 		rule: "Free",
-		opts: ["ext", "mis", "one", "unk", "ret", "spd"],
+		opts: ["ext", "mis", "one", "unk", "ret", "spd", "drg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -301,7 +303,7 @@ exports.RULE = {
 	'EKK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd"],
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -310,7 +312,7 @@ exports.RULE = {
 	'EPQ': {
 		lang: "en",
 		rule: "Picture",
-		opts: ["ijp"],
+		opts: ["ijp", "drg"],
 		time: 2,
 		ai: false,
 		big: true,
@@ -319,7 +321,7 @@ exports.RULE = {
 	'KAK': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "k32", "unk", "one", "ret", "mid", "sch", "fdu", "spd"],
+		opts: ["man", "ext", "mis", "loa", "str", "k32", "unk", "one", "ret", "mid", "sch", "fdu", "spd", "drg", "spt"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -329,7 +331,7 @@ exports.RULE = {
 	'EAK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd"],
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt"],
 		time: 1,
 		ai: true,
 		big: false,

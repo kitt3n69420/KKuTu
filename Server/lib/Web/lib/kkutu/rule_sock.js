@@ -85,6 +85,7 @@ $lib.Sock.drawMaps = function () {
 
 		for (i = 0; i < len; i++) {
 			$R.append($c = $("<div>").addClass("bb-char").html(text.charAt(i)));
+			if ($data.room.opts.drg) $c.css('color', getRandomColor());
 			// if(text.charAt(i) != "？") $c.css('color', "#EEEEEE");
 		}
 		return $R;
@@ -101,6 +102,7 @@ $lib.Sock.drawDisplay = function () {
 
 	va.forEach(function (item, index) {
 		$a.append($c = $("<div>").addClass("sock-char sock-" + item).css({ width: size, height: size, 'font-size': fontSize }).html(item));
+		if ($data.room.opts.drg) $c.css('color', getRandomColor());
 		if ($data._va[index] && $data._va[index] != item) {
 			$c.html($data._va[index]).addClass("sock-picked").animate({ 'opacity': 0 }, 500);
 		}

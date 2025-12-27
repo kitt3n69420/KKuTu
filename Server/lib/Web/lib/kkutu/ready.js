@@ -237,47 +237,65 @@ $(document).ready(function () {
 		$data.muteBGM = savedSettings.bgmMute !== null ? savedSettings.bgmMute : ($data.opts.mb || false);
 		$data.muteEff = savedSettings.effectMute !== null ? savedSettings.effectMute : ($data.opts.me || false);
 
-		// 사운드팩 설정 (localStorage 우선)
-		var currentPackName = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts && $data.opts.sp);
-		var currentPack = packs.find(function (p) { return p.name === currentPackName; });
-		var packFiles = currentPack ? currentPack.files : [];
 
-		$data._soundList = [
-			{ key: "k", value: "/media/kkutu/k.mp3" },
-			{ key: "lobby", value: "/media/kkutu/LobbyBGM.mp3" },
-			{ key: "jaqwi", value: "/media/kkutu/JaqwiBGM.mp3" },
-			{ key: "jaqwiF", value: "/media/kkutu/JaqwiFastBGM.mp3" },
-			{ key: "game_start", value: "/media/kkutu/game_start.mp3" },
-			{ key: "round_start", value: "/media/kkutu/round_start.mp3" },
-			{ key: "fail", value: "/media/kkutu/fail.mp3" },
-			{ key: "timeout", value: "/media/kkutu/timeout.mp3" },
-			{ key: "lvup", value: "/media/kkutu/lvup.mp3" },
-			{ key: "Al", value: "/media/kkutu/Al.mp3" },
-			{ key: "success", value: "/media/kkutu/success.mp3" },
-			{ key: "missing", value: "/media/kkutu/missing.mp3" },
-			{ key: "mission", value: "/media/kkutu/mission.mp3" },
-			{ key: "kung", value: "/media/kkutu/kung.mp3" },
-			{ key: "horr", value: "/media/kkutu/horr.mp3" },
-		];
-		for (i = 0; i <= 10; i++) $data._soundList.push(
-			{ key: "T" + i, value: "/media/kkutu/T" + i + ".mp3" },
-			{ key: "K" + i, value: "/media/kkutu/K" + i + ".mp3" },
-			{ key: "As" + i, value: "/media/kkutu/As" + i + ".mp3" }
-		);
-
-		if (currentPack) {
-			$data._soundList.forEach(function (s) {
-				var filename = s.value.split('/').pop();
-				if (packFiles.indexOf(filename) != -1) {
-					s.value = "/media/kkutu/" + currentPack.name + "/" + filename;
-				}
+		// 로비 BGM 설정 가져오기
+		$.get("/bgm", function (bgms) {
+			console.log("Loaded bgms:", bgms);
+			var $bgmSel = $("#lobby-bgm");
+			bgms.forEach(function (bgm) {
+				$bgmSel.append($("<option>").val(bgm).text(bgm.replace(".mp3", "")));
 			});
-		}
 
-		loadSounds($data._soundList, function () {
-			processShop(connect);
+			// 사운드 리스트 초기화 후 로드
+			var currentPackName = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts && $data.opts.sp);
+			var currentPack = packs.find(function (p) { return p.name === currentPackName; });
+			var packFiles = currentPack ? currentPack.files : [];
+
+			$data._soundList = [
+				{ key: "k", value: "/media/kkutu/k.mp3" },
+				{ key: "lobby", value: "/media/kkutu/LobbyBGM.mp3" },
+				{ key: "jaqwi", value: "/media/kkutu/JaqwiBGM.mp3" },
+				{ key: "jaqwiF", value: "/media/kkutu/JaqwiFastBGM.mp3" },
+				{ key: "game_start", value: "/media/kkutu/game_start.mp3" },
+				{ key: "round_start", value: "/media/kkutu/round_start.mp3" },
+				{ key: "fail", value: "/media/kkutu/fail.mp3" },
+				{ key: "timeout", value: "/media/kkutu/timeout.mp3" },
+				{ key: "lvup", value: "/media/kkutu/lvup.mp3" },
+				{ key: "Al", value: "/media/kkutu/Al.mp3" },
+				{ key: "success", value: "/media/kkutu/success.mp3" },
+				{ key: "missing", value: "/media/kkutu/missing.mp3" },
+				{ key: "mission", value: "/media/kkutu/mission.mp3" },
+				{ key: "kung", value: "/media/kkutu/kung.mp3" },
+				{ key: "horr", value: "/media/kkutu/horr.mp3" },
+			];
+			for (i = 0; i <= 10; i++) $data._soundList.push(
+				{ key: "T" + i, value: "/media/kkutu/T" + i + ".mp3" },
+				{ key: "K" + i, value: "/media/kkutu/K" + i + ".mp3" },
+				{ key: "As" + i, value: "/media/kkutu/As" + i + ".mp3" }
+			);
+
+			if (currentPack) {
+				$data._soundList.forEach(function (s) {
+					var filename = s.value.split('/').pop();
+					if (packFiles.indexOf(filename) != -1) {
+						s.value = "/media/kkutu/" + currentPack.name + "/" + filename;
+					}
+				});
+			}
+
+			// 로비 BGM 설정 적용
+			if (savedSettings.lobbyBGM) {
+				var lobbySound = $data._soundList.find(function (s) { return s.key === "lobby"; });
+				if (lobbySound) {
+					lobbySound.value = "/media/bgm/" + savedSettings.lobbyBGM;
+				}
+			}
+
+			loadSounds($data._soundList, function () {
+				processShop(connect);
+			});
+			delete $data._soundList;
 		});
-		delete $data._soundList;
 	});
 
 	MOREMI_PART = $("#MOREMI_PART").html().split(',');
@@ -480,6 +498,9 @@ $(document).ready(function () {
 
 		// 사운드팩 선택 설정
 		$("#sound-pack").val(savedSettings.soundPack || "");
+
+		// 로비 BGM 선택 설정
+		$("#lobby-bgm").val(savedSettings.lobbyBGM || "");
 
 		// 현재 로드된 언어 감지
 		// L 객체로부터 실제 언어 감지 시도
@@ -793,6 +814,7 @@ $(document).ready(function () {
 		e.preventDefault();
 		var previousSoundPack = $data.opts.sp || "";
 		var newSoundPack = $("#sound-pack").val();
+		var newLobbyBGM = $("#lobby-bgm").val();
 		var newLang = $("#language-setting").val();
 		var savedLang = localStorage.getItem('kkutu_lang'); // 이전에 저장된 언어 확인
 
@@ -842,15 +864,57 @@ $(document).ready(function () {
 			effectVolume: $data.EffectVolume,
 			bgmMute: $data.opts.mb,
 			effectMute: $data.opts.me,
-			soundPack: $data.opts.sp
+			soundPack: $data.opts.sp,
+			lobbyBGM: newLobbyBGM
 		});
 
-		$.cookie('kks', encodeURIComponent(JSON.stringify($data.opts)));
+		$.cookie('kks', encodeURIComponent(JSON.stringify($data.opts)), { expires: 365, path: '/' });
 		$stage.dialog.setting.hide();
+
+		var updateLobbyBGM = function (bgmName, packName) {
+			var url;
+			if (bgmName) {
+				// 특정 BGM 선택됨
+				url = "/media/bgm/" + bgmName;
+				reloadBGM(url);
+			} else {
+				// '기본' 선택됨 -> 사운드팩의 BGM 또는 기본 BGM 사용
+				// 사운드팩 정보를 가져와야 함.
+				$.get("/soundpacks", function (packs) {
+					var pack = packs.find(function (p) { return p.name === packName; });
+					url = "/media/kkutu/LobbyBGM.mp3"; // Default fallback
+					if (pack && pack.files.indexOf("LobbyBGM.mp3") != -1) {
+						url = "/media/kkutu/" + packName + "/LobbyBGM.mp3";
+					}
+					reloadBGM(url);
+				});
+			}
+		};
+
+		var reloadBGM = function (url) {
+			// 현재 재생 중인 BGM 중지
+			var old = $data.bgm;
+			$data.bgm = null;
+			if (old) {
+				old.stop();
+			}
+
+			// $sound 캐시 업데이트
+			getAudio("lobby", url, function () {
+				// 로비에 있다면 재생
+				if (!$data._replay && (!$data.room || !$data.room.gaming)) {
+					playBGM("lobby");
+				}
+			});
+		};
 
 		// 사운드팩이 변경되었을 때 동적으로 사운드 로드
 		if (previousSoundPack !== newSoundPack) {
-			changeSoundPack(newSoundPack);
+			changeSoundPack(newSoundPack, function () {
+				updateLobbyBGM(newLobbyBGM, newSoundPack);
+			});
+		} else {
+			updateLobbyBGM(newLobbyBGM, newSoundPack);
 		}
 	});
 	$("#mute-bgm").on('click', function () {

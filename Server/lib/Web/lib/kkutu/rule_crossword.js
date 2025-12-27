@@ -95,7 +95,8 @@ $lib.Crossword.drawDisplay = function () {
 				.css({
 					'box-sizing': 'border-box',
 					width: vert ? 'calc(100% - 6px)' : 'calc(' + (100 / len) + '% - 6px)',
-					height: vert ? 'calc(' + (100 / len) + '% - 6px)' : 'calc(100% - 6px)'
+					height: vert ? 'calc(' + (100 / len) + '% - 6px)' : 'calc(100% - 6px)',
+					color: ($data.room.opts.drg ? getRandomColor() : '')
 				})
 				.html($w[key] || "")
 			);

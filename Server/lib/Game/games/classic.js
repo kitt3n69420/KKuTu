@@ -431,6 +431,7 @@ exports.turnStart = function (force) {
 		turnTime: my.game.turnTime,
 		mission: my.game.mission,
 		wordLength: my.game.wordLength,
+		sumiChar: my.game.sumiChar,
 		seq: force ? my.game.seq : undefined
 	}, true);
 	my.game.turnTimer = setTimeout(my.turnEnd, Math.min(my.game.roundTime, my.game.turnTime + 100));
@@ -606,6 +607,23 @@ exports.submit = function (client, text) {
 				t = tv - my.game.turnAt;
 				var isReturn = my.opts.return && my.game.chain.includes(text);
 				score = my.getScore(text, t, isReturn);
+
+				// Sumi-Sanggwan Check (SpeedToss)
+				var speedTossBonus = 0;
+				my.game.sumiChar = null;
+				if (my.opts.speedtoss) {
+					var matchingSumiChar = checkspeedToss(my.game.chain[my.game.chain.length - 1], text);
+					if (matchingSumiChar) {
+						// 50% Bonus
+						var bonusScore = Math.round(score * 0.5);
+						score += bonusScore;
+						speedTossBonus = bonusScore;
+						my.game.sumiChar = matchingSumiChar; // Store for turnStart highlighting
+					} else {
+						delete my.game.sumiChar;
+					}
+				}
+
 				if (isReturn) score = 0;
 				my.game.dic[text] = (my.game.dic[text] || 0) + 1;
 				my.game.chain.push(text);
@@ -621,6 +639,7 @@ exports.submit = function (client, text) {
 					wc: $doc.type,
 					score: score,
 					bonus: (my.game.mission === true) ? score - my.getScore(text, t, true) : 0,
+					speedToss: speedTossBonus, // Send bonus amount
 					baby: $doc.baby,
 					totalScore: client.game.score // 봇 점수 동기화용
 				}, true);
@@ -708,6 +727,68 @@ exports.submit = function (client, text) {
 		} else {
 			denied();
 		}
+	}
+
+	function checkspeedToss(prevWord, currentWord) {
+		if (!prevWord || !currentWord || currentWord.length < 3) return false;
+
+		var type = Const.GAME_TYPE[my.mode];
+		var isRev = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK');
+
+		// Normal: prev(Start) == curr(End) ? No, Sumi-Sanggwan is:
+		// Normal Word Chain: A -> B
+		// Sumi-Sanggwan: B's linking char (End) == A's first char (Start)
+
+		// Reverse Word Chain: A <- B
+		// Sumi-Sanggwan: B's linking char (Start) == A's last char (End)
+
+		var prevTargetChar, currLinkChar;
+
+		if (isRev) {
+			// Reverse Game (e.g. KAP):
+			// Previous Word: "기러기" (Ends with 기)
+			// Current Word: "기러기" (Starts with 기)
+			// Sumi-Sanggwan condition: Current Word's Start Char == Previous Word's End Char
+			// Use getChar logic for "Start Char" of Current Word in Reverse Game?
+			// getChar in Classic.js for KAP returns text.charAt(0) which is Start Char. Correct.
+
+			// Wait, the rule says:
+			// "Normal: Current Word's Linking Char matches Previous Word's Start Char"
+			// "Reverse: Current Word's First Char matches Previous Word's Last Char"
+
+			// Let's stick to the plan:
+			// Normal: currLinkChar (getChar(curr)) == prevTargetChar (prev.charAt(0))
+			// Reverse: currLinkChar (getChar(curr)) == prevTargetChar (prev.slice(-1))
+
+			// Check getChar implementation:
+			// KAP: returns text.charAt(0). Correct for "Current Word's First Char".
+
+			currLinkChar = getChar.call(my, currentWord);
+			prevTargetChar = prevWord.slice(-1); // Last char of previous word
+		} else {
+			// Normal Game (KKT):
+			// currLinkChar = getChar(curr). (e.g., KKT: text.slice(-1) or text.slice(text.length-3) for EKT)
+			// prevTargetChar = prevWord.charAt(0);
+
+			currLinkChar = getChar.call(my, currentWord);
+			prevTargetChar = prevWord.charAt(0);
+		}
+
+		// Apply Head Rule (SubChar) to Current Link Char
+		var subChars = getSubChar.call(my, currLinkChar);
+
+		// Check exact match
+		if (currLinkChar === prevTargetChar) return currLinkChar;
+
+		// Check Head Rule match
+		if (subChars) {
+			var subs = subChars.split('|');
+			for (var i = 0; i < subs.length; i++) {
+				if (subs[i] === prevTargetChar) return subs[i];
+			}
+		}
+
+		return false;
 	}
 
 	function isChainable() {

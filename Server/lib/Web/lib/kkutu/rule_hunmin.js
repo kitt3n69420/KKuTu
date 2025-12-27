@@ -22,7 +22,9 @@ $lib.Hunmin.roundReady = function (data) {
 
 	clearBoard();
 	$data._roundTime = $data.room.time * 1000;
-	$stage.game.display.html($data._char = "&lt;" + data.theme + "&gt;");
+	var tStr = "&lt;" + data.theme + "&gt;";
+	if ($data.room.opts.drg) tStr = "<label style='color:" + getRandomColor() + "'>" + tStr + "</label>";
+	$stage.game.display.html($data._char = tStr);
 	$stage.game.chain.show().html($data.chain = 0);
 	if ($data.room.opts.mission) {
 		$stage.game.items.show().css('opacity', 1).html($data.mission = data.mission);
@@ -39,7 +41,8 @@ $lib.Hunmin.turnStart = function (data) {
 	data.id = $data._tid;
 
 	$stage.game.display.html($data._char);
-	$("#game-user-" + data.id).addClass("game-user-current");
+	var $u = $("#game-user-" + data.id).addClass("game-user-current");
+	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
 	if (!$data._replay) {
 		$stage.game.here.css('display', (data.id == $data.id) ? "block" : "none");
 		if (data.id == $data.id) {
@@ -105,6 +108,6 @@ $lib.Hunmin.turnEnd = function (id, data) {
 			drawObtainedScore($uc, $bc);
 		}, 500);
 	}
-	drawObtainedScore($uc, $sc).removeClass("game-user-current");
+	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	updateScore(id, getScore(id));
 };

@@ -251,6 +251,35 @@ Server.get("/soundpacks", function (req, res) {
 	});
 });
 
+Server.get("/bgm", function (req, res) {
+	var fs = require('fs');
+	var path = require('path');
+	var bgmDir = path.join(__dirname, "public", "media", "bgm");
+
+	fs.readdir(bgmDir, function (err, files) {
+		if (err) {
+			// If directory doesn't exist or other error, return empty list
+			// console.error("Error reading bgm directory:", err); 
+			return res.send([]);
+		}
+		// Filter for audio files if necessary, or just send all
+		res.send(files);
+	});
+});
+
+Server.get("/common-sounds", function (req, res) {
+	var fs = require('fs');
+	var path = require('path');
+	var commonDir = path.join(__dirname, "public", "media", "common");
+
+	fs.readdir(commonDir, function (err, files) {
+		if (err) {
+			return res.send([]);
+		}
+		res.send(files);
+	});
+});
+
 Server.get("/", function (req, res) {
 	var server = req.query.server;
 

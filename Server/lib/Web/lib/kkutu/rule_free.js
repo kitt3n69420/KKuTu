@@ -25,7 +25,9 @@ $lib.Free.roundReady = function (data) {
 
     // Display "Free Mode" or similar. 
     // Since there is no specific theme, maybe just "아무거나" (Anything)
-    $stage.game.display.html($data._char = "&lt;" + (L && L['anything'] ? L['anything'] : "아무거나") + "&gt;");
+    var tStr = "&lt;" + (L && L['anything'] ? L['anything'] : "아무거나") + "&gt;";
+    if ($data.room.opts.drg) tStr = "<label style='color:" + getRandomColor() + "'>" + tStr + "</label>";
+    $stage.game.display.html($data._char = tStr);
 
     $stage.game.chain.show().html($data.chain = 0);
     if ($data.room.opts.mission) {
@@ -46,7 +48,8 @@ $lib.Free.turnStart = function (data) {
     // Keep the display as is (set in roundReady)
     $stage.game.display.html($data._char);
 
-    $("#game-user-" + data.id).addClass("game-user-current");
+    var $u = $("#game-user-" + data.id).addClass("game-user-current");
+    if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
     if (!$data._replay) {
         $stage.game.here.css('display', (data.id == $data.id) ? "block" : "none");
         if (data.id == $data.id) {
@@ -112,6 +115,6 @@ $lib.Free.turnEnd = function (id, data) {
             drawObtainedScore($uc, $bc);
         }, 500);
     }
-    drawObtainedScore($uc, $sc).removeClass("game-user-current");
+    drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
     updateScore(id, getScore(id));
 };

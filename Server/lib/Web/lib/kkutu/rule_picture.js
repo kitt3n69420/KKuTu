@@ -104,7 +104,7 @@ $lib.Picture.drawDisplay = function () {
     // Topic (Top Left)
     var themeText = L['theme_' + $data._pqTheme] || $data._pqTheme;
     var $topic = $("<div>").css({
-        'color': '#FFFFFF',
+        'color': ($data.room.opts.drg ? getRandomColor() : '#FFFFFF'),
         'font-size': '12px',
         'font-weight': 'bold',
         'text-shadow': '1px 1px 1px #000'
@@ -116,7 +116,7 @@ $lib.Picture.drawDisplay = function () {
     // Answer (Top Right) - Drawer only, Word only
     if (isDrawer && $data._pqAnswer) {
         var $answer = $("<div>").css({
-            'color': '#FFFFFF',
+            'color': ($data.room.opts.drg ? getRandomColor() : '#FFFFFF'),
             'font-size': '14px',
             'font-weight': 'bold',
             'text-shadow': '1px 1px 1px #000'
@@ -124,7 +124,7 @@ $lib.Picture.drawDisplay = function () {
         $header.append($answer);
     } else if ($data._pqAnswer) {
         var $answer = $("<div>").css({
-            'color': '#FFFFFF',
+            'color': ($data.room.opts.drg ? getRandomColor() : '#FFFFFF'),
             'font-size': '14px',
             'font-weight': 'bold',
             'text-shadow': '1px 1px 1px #000'

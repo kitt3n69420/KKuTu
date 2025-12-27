@@ -37,7 +37,9 @@ $lib.Jaqwi.turnStart = function (data) {
 	$(".game-user-current").removeClass("game-user-current");
 	$(".game-user-bomb").removeClass("game-user-bomb");
 	if ($data.room.game.seq.indexOf($data.id) >= 0) $stage.game.here.show();
-	$stage.game.display.html($data._char = data.char);
+	var tVal = data.char;
+	if ($data.room.opts.drg) tVal = "<label style='color:" + getRandomColor() + "'>" + tVal + "</label>";
+	$stage.game.display.html($data._char = tVal);
 	clearInterval($data._tTime);
 	$data._tTime = addInterval(turnGoing, TICK);
 	playBGM('jaqwi');
@@ -75,7 +77,8 @@ $lib.Jaqwi.turnEnd = function (id, data) {
 		$uc.addClass("game-user-bomb");
 	} else if (data.answer) {
 		$stage.game.here.hide();
-		$stage.game.display.html($("<label>").css('color', "#FFFF44").html(data.answer));
+		var ansColor = ($data.room.opts.drg) ? getRandomColor() : "#FFFF44";
+		$stage.game.display.html($("<label>").css('color', ansColor).html(data.answer));
 		stopBGM();
 		playSound('horr');
 	} else {

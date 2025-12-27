@@ -25,7 +25,9 @@ $lib.Daneo.roundReady = function (data) {
 	var theme = (typeof data.theme == "object")
 		? data.theme.map(function (e) { return L['theme_' + e]; }).join("/")
 		: L['theme_' + data.theme];
-	$stage.game.display.html($data._char = "&lt;" + theme + "&gt;");
+	var tStr = "&lt;" + theme + "&gt;";
+	if ($data.room.opts.drg) tStr = "<label style='color:" + getRandomColor() + "'>" + tStr + "</label>";
+	$stage.game.display.html($data._char = tStr);
 	$stage.game.chain.show().html($data.chain = 0);
 	if ($data.room.opts.mission) {
 		$stage.game.items.show().css('opacity', 1).html($data.mission = data.mission);
@@ -42,7 +44,8 @@ $lib.Daneo.turnStart = function (data) {
 	data.id = $data._tid;
 
 	$stage.game.display.html($data._char);
-	$("#game-user-" + data.id).addClass("game-user-current");
+	var $u = $("#game-user-" + data.id).addClass("game-user-current");
+	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
 	if (!$data._replay) {
 		$stage.game.here.css('display', (data.id == $data.id) ? "block" : "none");
 		if (data.id == $data.id) {
@@ -108,6 +111,6 @@ $lib.Daneo.turnEnd = function (id, data) {
 			drawObtainedScore($uc, $bc);
 		}, 500);
 	}
-	drawObtainedScore($uc, $sc).removeClass("game-user-current");
+	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	updateScore(id, getScore(id));
 };

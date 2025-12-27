@@ -50,7 +50,8 @@ function drawList() {
 	if (w0l >= 20) pts = "18px";
 	if (w0l >= 50) pts = "15px";
 	$stage.game.display.css('font-size', pts);
-	wl[0] = "<label style='color: #FFFF44;'>" + wl[0] + "</label>";
+	var wColor = ($data.room.opts.drg) ? getRandomColor() : "#FFFF44";
+	wl[0] = "<label style='color: " + wColor + ";'>" + wl[0] + "</label>";
 	$stage.game.display.html(wl.slice(0, lv).join(' '));
 	$stage.game.chain.show().html($data.chain);
 	$(".jjo-turn-time .graph-bar")
