@@ -1478,7 +1478,7 @@ function updateRoom(gaming) {
 			}, 500);
 		}
 		// Periodic Random Sound (1-5s)
-		if (!mobile && !$data._drgSoundLoop && $data.room.gaming) {
+		if (!$data._drgSoundLoop && $data.room.gaming) {
 			var playRandomSound = function () {
 				if (!$data.room || !$data.room.opts.drg || !$data.room.gaming) {
 					delete $data._drgSoundLoop;

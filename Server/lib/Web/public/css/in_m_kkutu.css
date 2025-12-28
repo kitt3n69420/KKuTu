@@ -1865,3 +1865,60 @@ body {
 		opacity: 0;
 	}
 }
+
+/* Psychedelic Background Animation for Mobile - No Gradient, Animation Only */
+@keyframes bg-scroll-psychedelic-mobile {
+	0% {
+		background-position: 0 0;
+	}
+
+	100% {
+		background-position: 100px 100px;
+	}
+}
+
+@keyframes color-cycle-psychedelic-mobile {
+	0% {
+		filter: hue-rotate(0deg) saturate(200%);
+	}
+
+	50% {
+		filter: hue-rotate(180deg) saturate(200%);
+	}
+
+	100% {
+		filter: hue-rotate(360deg) saturate(200%);
+	}
+}
+
+.psychedelic-bg {
+	background: none !important;
+	position: relative !important;
+	z-index: 0 !important;
+	overflow: hidden !important;
+}
+
+.psychedelic-bg::before {
+	/* Reduced Opacity Background Image Only */
+	content: "";
+	position: absolute;
+	top: -50%;
+	left: -50%;
+	width: 200%;
+	height: 200%;
+	z-index: -1;
+	opacity: 1;
+
+	background-image: url('/img/kkutu/gamebg.png');
+	background-repeat: repeat;
+	background-position: 0 0;
+
+	animation:
+		bg-scroll-psychedelic-mobile 0.3s linear infinite,
+		color-cycle-psychedelic-mobile 1s linear infinite;
+}
+
+.psychedelic-bg::after {
+	/* No Overlay for Mobile */
+	display: none;
+}
