@@ -2702,7 +2702,11 @@ function pushDisplay(text, mean, theme, wc, isSumi) {
 	var sg = $data.turnTime / 12;
 
 	// Sumi-Sanggwan Highlight Index: Last Char for Normal, First Char for Reverse
-	var sumiIdx = isRev ? 0 : len - 1;
+
+	var sumiIdx;
+	if ($data.room.opts.middle) sumiIdx = isRev ? Math.floor((len - 1) / 2) : Math.ceil((len - 1) / 2);
+	else if ($data.room.opts.second) sumiIdx = isRev ? 1 : len - 2;
+	else sumiIdx = isRev ? 0 : len - 1;
 
 	$stage.game.display.empty();
 	if ($data.room.opts.drg) $stage.game.display.css('box-shadow', '0px 0px 20px ' + getRandomColor());

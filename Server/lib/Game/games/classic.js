@@ -1022,6 +1022,12 @@ exports.readyRobot = function (robot) {
 				var maxLen = ROBOT_LENGTH_LIMIT[level];
 				if (maxLen > 50) maxLen = 50; // Increased cap to 50 for better long word support
 
+				// Fixed Word Length (KKT/Sami)
+				if (my.game.wordLength > 0) {
+					minLen = my.game.wordLength;
+					maxLen = my.game.wordLength;
+				}
+
 				// Optimization for "Second Only" rule (No Loop needed)
 				if (my.opts.second && !my.opts.middle) {
 					if (isRev) {
@@ -1129,6 +1135,7 @@ exports.readyRobot = function (robot) {
 				// Filter done words
 				if (list && list.length) {
 					list = list.filter(function (w) {
+						if (my.game.wordLength > 0 && w._id.length !== my.game.wordLength) return false;
 						return w._id.length <= ROBOT_LENGTH_LIMIT[level] && !robot._done.includes(w._id);
 					});
 				}
