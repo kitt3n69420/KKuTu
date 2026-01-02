@@ -1797,7 +1797,7 @@ exports.readyRobot = function (robot) {
 							if (subset.length === 0) return nextStepCallback();
 
 							var killerString = subset.join("").replace(/[\[\]\^\-\\]/g, "\\$&");
-							var adc = my.game.char + (my.game.subChar ? ("|" + my.game.subChar) : "");
+							var adc = escapeRegExp(my.game.char) + (my.game.subChar ? ("|" + my.game.subChar.split("|").map(escapeRegExp).join("|")) : "");
 							var regex;
 
 							if (my.opts.middle || my.opts.second) {
@@ -1920,7 +1920,7 @@ exports.readyRobot = function (robot) {
 							var subset = killers.slice(0, subsetSize);
 							if (subset.length === 0) return nextStepCallback();
 
-							var adc = my.game.char + (my.game.subChar ? ("|" + my.game.subChar) : "");
+							var adc = escapeRegExp(my.game.char) + (my.game.subChar ? ("|" + my.game.subChar.split("|").map(escapeRegExp).join("|")) : "");
 							var killerPattern = subset.join("|");
 
 							var regex;
@@ -2175,7 +2175,7 @@ exports.readyRobot = function (robot) {
 	function getWish(char) {
 		var R = new Lizard.Tail();
 
-		DB.kkutu[my.rule.lang].find(['_id', new RegExp(isRev ? `.${char}$` : `^${char}.`)]).limit(10).on(function ($res) {
+		DB.kkutu[my.rule.lang].find(['_id', new RegExp(isRev ? `.${escapeRegExp(char)}$` : `^${escapeRegExp(char)}.`)]).limit(10).on(function ($res) {
 			R.go({
 				char: char,
 				length: $res.length
@@ -2205,7 +2205,7 @@ function getAuto(char, subc, type, limit, sort) {
 	var bool = type == 1;
 	var isKAP = (gameType === 'KAP' || gameType === 'KAK' || gameType === 'EAP' || gameType === 'EAK');
 
-	adc = char + (subc ? ("|" + subc) : "");
+	adc = escapeRegExp(char) + (subc ? ("|" + subc.split("|").map(escapeRegExp).join("|")) : "");
 	switch (gameType) {
 		case 'EKK':
 			adv = `^(${adc}).{${my.game.wordLength - char.length}}$`;
@@ -2647,4 +2647,8 @@ function getRandomChar(text) {
 		if (type === 'EKT') return text.slice(idx, idx + 3);
 		return text.charAt(idx);
 	}
+}
+
+function escapeRegExp(string) {
+	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
