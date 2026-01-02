@@ -1514,7 +1514,10 @@ exports.Room = function (room, channel) {
 			}
 
 			if (my.gaming) {
-				my.route("onLeave", client.id);
+				// onLeave 함수가 게임 모드에 존재할 때만 호출 (picture.js 등에서만 정의됨)
+				if (Rule[my.rule.rule] && Rule[my.rule.rule].onLeave) {
+					my.route("onLeave", client.id);
+				}
 				x = my.game.seq.indexOf(client.id);
 				if (x != -1) {
 					if (my.game.seq.length <= 2) {
