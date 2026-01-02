@@ -47,6 +47,9 @@ exports.OPTIONS = {
 	'prv': { name: "Proverb" },
 	'str': { name: "Strict" },
 	'k32': { name: "Sami" },
+	'k22': { name: "Twotwo" },
+	'k44': { name: "Fourfour" },
+	'k43': { name: "Fourthree" },
 	'no2': { name: "No2" },
 	'unk': { name: "Unknown" },
 	'big': { name: "Big" },
@@ -63,7 +66,11 @@ exports.OPTIONS = {
 	'fdu': { name: "FreeDueum" },
 	'spd': { name: "Speed" },
 	'drg': { name: "Drg" },
-	'spt': { name: "SpeedToss" }
+	'spt': { name: "SpeedToss" },
+	'stt': { name: "Straight" },
+	'fir': { name: "First" },
+	'ran': { name: "Random" },
+	'vin': { name: "VowelInv" }
 
 };
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
@@ -130,7 +137,7 @@ exports.RULE = {
 	'EKT': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt"],
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -139,7 +146,7 @@ exports.RULE = {
 	'ESH': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt"],
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -148,7 +155,7 @@ exports.RULE = {
 	'KKT': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "k32", "unk", "one", "ret", "mid", "sch", "fdu", "spd", "drg", "spt"],
+		opts: ["man", "ext", "mis", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "fir", "ran"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -157,7 +164,7 @@ exports.RULE = {
 	'KSH': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "spd", "drg", "spt"],
+		opts: ["man", "ext", "mis", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "stt", "fir", "ran"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -202,7 +209,7 @@ exports.RULE = {
 	'KAP': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "spd", "drg", "spt"],
+		opts: ["man", "ext", "mis", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "stt", "fir", "ran"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -212,7 +219,7 @@ exports.RULE = {
 	'EAP': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt"],
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -232,7 +239,7 @@ exports.RULE = {
 	'KDA': {
 		lang: "ko",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "trp", "one", "ret", "spd", "drg"],
+		opts: ["ijp", "mis", "trp", "one", "ret", "spd", "drg", "stt"],
 		time: 1,
 		ai: true,
 		ewq: false
@@ -240,7 +247,7 @@ exports.RULE = {
 	'EDA': {
 		lang: "en",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "trp", "one", "ret", "spd", "drg"],
+		opts: ["ijp", "mis", "trp", "one", "ret", "spd", "drg", "stt"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -285,7 +292,7 @@ exports.RULE = {
 	'KFR': {
 		lang: "ko",
 		rule: "Free",
-		opts: ["ext", "mis", "one", "unk", "ret", "spd", "drg"],
+		opts: ["ext", "mis", "one", "unk", "ret", "spd", "drg", "stt"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -294,7 +301,7 @@ exports.RULE = {
 	'EFR': {
 		lang: "en",
 		rule: "Free",
-		opts: ["ext", "mis", "one", "unk", "ret", "spd", "drg"],
+		opts: ["ext", "mis", "one", "unk", "ret", "spd", "drg", "stt"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -303,7 +310,7 @@ exports.RULE = {
 	'EKK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt"],
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -321,7 +328,7 @@ exports.RULE = {
 	'KAK': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "k32", "unk", "one", "ret", "mid", "sch", "fdu", "spd", "drg", "spt"],
+		opts: ["man", "ext", "mis", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "fir", "ran"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -331,7 +338,7 @@ exports.RULE = {
 	'EAK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt"],
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -358,7 +365,7 @@ exports.getPreScore = function (text, chain, tr) {
 	return 2 * (Math.pow(5 + 7 * (text || "").length, 0.74) + 0.88 * (chain || []).length) * (0.5 + 0.5 * tr);
 };
 exports.getPenalty = function (chain, score) {
-	return -1 * Math.round(Math.max(100, 10 + (chain || []).length * 2.1 + score * 0.25));
+	return -1 * Math.round(Math.max(50, 10 + (chain || []).length * 3 + score * 0.2));
 };
 exports.GAME_TYPE = Object.keys(exports.RULE);
 exports.EXAMPLE_TITLE = {
@@ -427,7 +434,19 @@ exports.getRule = function (mode) {
 exports.BOT_NAME_TEMPLATES = [
 	"나는 {0}다", "{0} 끄돌이", "{0} 끄순이", "{0} 끄투 봇",
 	"끄투잘하고싶어요", "완전 물렙", "모레미귀여워", "모레미는 세계최강",
-	"유기농 감자", "평범한 끄투러", "끄투가좋아", "한판해요"
+	"유기농 감자", "평범한 끄투러", "끄투가좋아", "한판해요", "나는야끄투봇",
+	"빛과부", "궁민연금", "아침마담", "휴지필름", "태조샷건", "콩쥐들쥐",
+	"구타500", "브레드피토", "동생방신기", "피구왕한무", "피부암통키",
+	"산드라불독", "뇌출혈씨티", "존트럭불타", "백마탄환자", "EF손아파",
+	"추잡60분", "메뚜기쉰라면", "탈모엔안제모", "내자랑4가지", "추적60인분",
+	"니콜키크드만", "낙동강효리알", "모르는개산책", "축구왕숯갈비",
+	"옷삶아빛나데", "믹서기육천원", "투다리스머프", "이웃집또털어",
+	"아기공룡둘째", "집수리오형제", "카드값줘체리", "독수리오년째",
+	"출산드라블록", "명륜진샤오미", "브라운타이즈", "클레오파트너",
+	"인사없음트롤", "명랑소녀성기", "배숙희나빈손", "말죽거리잠옷사",
+	"백마타고온환자", "더블에스오지명", "그리움만싸인회", "노스트라단무지",
+	"소리없는정우성", "소년탐정김정일", "반지의제왕절개", "발리에서쌩깐일",
+	"태정태세문단속", "오른쪽이스웨인", "18K반지의제왕"
 ];
 
 exports.BOT_LEVEL_NAMES = {

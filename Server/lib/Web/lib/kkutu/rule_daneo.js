@@ -74,7 +74,7 @@ $lib.Daneo.turnGoing = $lib.Classic.turnGoing;
 $lib.Daneo.turnEnd = function (id, data) {
 	var $sc = $("<div>")
 		.addClass("deltaScore")
-		.html((data.score > 0) ? ("+" + (data.score - data.bonus)) : data.score);
+		.html((data.score > 0) ? ("+" + (data.score - data.bonus - (data.straightBonus || 0))) : data.score);
 	var $uc = $(".game-user-current");
 	var hi;
 
@@ -86,7 +86,7 @@ $lib.Daneo.turnEnd = function (id, data) {
 		clearTimeout($data._fail);
 		$stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
-		pushDisplay(data.value, data.mean, data.theme, data.wc);
+		pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0);
 	} else {
 		$sc.addClass("lost");
 		$(".game-user-current").addClass("game-user-bomb");
@@ -103,13 +103,23 @@ $lib.Daneo.turnEnd = function (id, data) {
 			.append($("<label>").css('color', "#AAAAAA").html(data.hint.slice(hi + 1)));
 	}
 	if (data.bonus) {
-		mobile ? $sc.html("+" + (data.score - data.bonus) + "+" + data.bonus) : addTimeout(function () {
+		mobile ? $sc.html("+" + (data.score - data.bonus - (data.straightBonus || 0)) + "+" + data.bonus) : addTimeout(function () {
 			var $bc = $("<div>")
 				.addClass("deltaScore bonus")
 				.html("+" + data.bonus);
 
 			drawObtainedScore($uc, $bc);
 		}, 500);
+	}
+	if (data.straightBonus) {
+		mobile ? $sc.append("+" + data.straightBonus) : addTimeout(function () {
+			var $bc = $("<div>")
+				.addClass("deltaScore straight-bonus")
+				.css('color', '#FFFF00') // Yellow
+				.html("+" + data.straightBonus);
+
+			drawObtainedScore($uc, $bc);
+		}, 800);
 	}
 	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	updateScore(id, getScore(id));

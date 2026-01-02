@@ -80,7 +80,7 @@ $lib.Free.turnGoing = $lib.Classic.turnGoing;
 $lib.Free.turnEnd = function (id, data) {
     var $sc = $("<div>")
         .addClass("deltaScore")
-        .html((data.score > 0) ? ("+" + (data.score - data.bonus)) : data.score);
+        .html((data.score > 0) ? ("+" + (data.score - data.bonus - (data.straightBonus || 0))) : data.score);
     var $uc = $(".game-user-current");
     var hi;
 
@@ -93,7 +93,7 @@ $lib.Free.turnEnd = function (id, data) {
         clearTimeout($data._fail);
         $stage.game.here.hide();
         $stage.game.chain.html(++$data.chain);
-        pushDisplay(data.value, data.mean, data.theme, data.wc);
+        pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0);
     } else {
         checkFailCombo(id);
         $sc.addClass("lost");

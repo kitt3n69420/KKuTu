@@ -386,7 +386,7 @@ $(document).ready(function () {
 			$data.rooms[id] = data;
 			if (isLobby) $("#room-" + id).replaceWith(roomListBar(data));
 		}
-		// updateRoomList();
+		updateRoomList();
 	};
 	$data.setUser = function (id, data) {
 		var only = getOnly();
@@ -561,6 +561,9 @@ $(document).ready(function () {
 		// 로비 BGM 선택 설정
 		$("#lobby-bgm").val(savedSettings.lobbyBGM || "");
 
+		// 규칙 카테고리 보기 설정
+		$("#show-rule-category").prop('checked', ($data.opts && $data.opts.src !== undefined) ? $data.opts.src : true);
+
 		// 현재 로드된 언어 감지
 		// L 객체로부터 실제 언어 감지 시도
 		var detectedLang = null;
@@ -579,6 +582,8 @@ $(document).ready(function () {
 		// 우선순위: URL locale > 감지된언어 > 저장된 언어 > 한국어
 		var currentLang = pageLang || detectedLang || savedLang || "ko_KR";
 		$("#language-setting").val(currentLang);
+
+
 
 		showDialog($stage.dialog.setting);
 	});
@@ -602,6 +607,7 @@ $(document).ready(function () {
 		$data.typeRoom = 'enter';
 		showDialog($d = $stage.dialog.room);
 		$d.find(".dialog-title").html(L['newRoom']);
+		$("#room-mode").trigger('change');
 	});
 	$stage.menu.setRoom.on('click', function (e) {
 		var $d;
@@ -619,6 +625,7 @@ $(document).ready(function () {
 			$("#room-" + k).attr('checked', $data.room.opts[k]);
 		}
 		$data._injpick = $data.room.opts.injpick;
+
 		showDialog($d = $stage.dialog.room);
 		$d.find(".dialog-title").html(L['setRoom']);
 	});
@@ -639,6 +646,7 @@ $(document).ready(function () {
 
 			if ($("#" + prefix + "-" + name).is(':checked')) opts[name] = true;
 		}
+
 		return opts;
 	}
 	function isRoomMatched(room, mode, opts, all) {
@@ -716,10 +724,10 @@ $(document).ready(function () {
 		var modeSelect = $("#room-mode");
 		var allowedModes = category === 'all' ? null : GAME_CATEGORIES[category].modes;
 
-		console.log("[Category Debug] Selected:", category);
-		console.log("[Category Debug] Allowed Modes:", allowedModes);
-		console.log("[Category Debug] MODE array:", MODE);
-		console.log("[Category Debug] Total Options found:", modeSelect.find("option").length);
+		//console.log("[Category Debug] Selected:", category);
+		//console.log("[Category Debug] Allowed Modes:", allowedModes);
+		//console.log("[Category Debug] MODE array:", MODE);
+		//console.log("[Category Debug] Total Options found:", modeSelect.find("option").length);
 
 		// Filter modes based on category
 		modeSelect.find("option").each(function () {
@@ -755,14 +763,106 @@ $(document).ready(function () {
 
 		updateGameOptions(rule.opts, 'room');
 
+
+		// Check if category view is enabled (default: true)
+		var showCategory = !($data.opts && $data.opts.src === false);
+
+		// Define option groups
+		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
+		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk'];
+		var bonusOpts = ['mis', 'spt', 'stt'];
+
+		if (showCategory) {
+			// Categorized view - hide flat panel, show category panels
+			$("#room-all-rules-panel").hide();
+
+			// Check and toggle Link Method panel
+			var hasLinkOpt = linkOpts.some(function (opt) { return rule.opts.indexOf(opt) !== -1; });
+			if (hasLinkOpt) $("#room-link-method-panel").show();
+			else $("#room-link-method-panel").hide();
+
+			// Check and toggle Length Limit panel
+			var hasLenOpt = lenOpts.some(function (opt) { return rule.opts.indexOf(opt) !== -1; });
+			if (hasLenOpt) $("#room-len-limit-panel").show();
+			else $("#room-len-limit-panel").hide();
+
+			// Check and toggle Word Scope panel
+			var hasScopeOpt = scopeOpts.some(function (opt) { return rule.opts.indexOf(opt) !== -1; });
+			if (hasScopeOpt) $("#room-word-settings-wrapper").show();
+			else $("#room-word-settings-wrapper").hide();
+
+			// Check if bonus panel should be shown
+			var hasBonusOpt = bonusOpts.some(function (opt) {
+				return rule.opts.indexOf(opt) !== -1;
+			});
+			if (hasBonusOpt) {
+				$("#room-bonus-panel").show();
+			} else {
+				$("#room-bonus-panel").hide();
+			}
+
+			// Check if special rules panel should be shown
+			var excludedOpts = linkOpts.concat(lenOpts).concat(scopeOpts).concat(bonusOpts);
+			var hasSpecialOpt = false;
+			for (var i in OPTIONS) {
+				if (excludedOpts.indexOf(i) === -1 && rule.opts.indexOf(i) !== -1) {
+					hasSpecialOpt = true;
+					break;
+				}
+			}
+			if (hasSpecialOpt) {
+				$("#room-misc-panel").show();
+			} else {
+				$("#room-misc-panel").hide();
+			}
+
+			// Show/hide injeong pick panel
+			if (rule.opts.indexOf("ijp") != -1) $("#room-injpick-panel").show();
+			else $("#room-injpick-panel").hide();
+			$("#room-injpick-panel-flat").hide();
+		} else {
+			// Flat view - hide all category panels, show flat panel
+			$("#room-link-method-panel").hide();
+			$("#room-len-limit-panel").hide();
+			$("#room-word-settings-wrapper").hide();
+			$("#room-bonus-panel").hide();
+			$("#room-misc-panel").hide();
+			$("#room-injpick-panel").hide();
+
+			// Show flat panel and update options visibility
+			$("#room-all-rules-panel").show();
+
+			// Update flat panel options visibility based on game mode
+			$("#room-all-rules-panel .dialog-opt").each(function () {
+				var id = $(this).attr('id');
+				if (!id) return;
+				var optKey = id.replace('room-', '').replace('-panel', '');
+				// Find the matching option key
+				for (var k in OPTIONS) {
+					if (OPTIONS[k].name.toLowerCase() === optKey) {
+						if (rule.opts.indexOf(k) !== -1) {
+							$(this).show();
+						} else {
+							$(this).hide();
+						}
+						break;
+					}
+				}
+			});
+
+			// Show/hide injeong pick panel in flat mode
+			if (rule.opts.indexOf("ijp") != -1) $("#room-injpick-panel-flat").show();
+			else $("#room-injpick-panel-flat").hide();
+		}
+
+		// Hide Special Rules Panel if empty
 		$data._injpick = [];
-		if (rule.opts.indexOf("ijp") != -1) $("#room-injpick-panel").show();
-		else $("#room-injpick-panel").hide();
 		if (rule.rule == "Typing") $("#room-round").val(3);
 		$("#room-time").children("option").each(function (i, o) {
 			$(o).html(Number($(o).val()) * rule.time + L['SECOND']);
 		});
-	}).trigger('change');
+	});
 	$stage.menu.spectate.on('click', function (e) {
 		var mode = $stage.menu.spectate.hasClass("toggled");
 
@@ -877,31 +977,7 @@ $(document).ready(function () {
 		var newLang = $("#language-setting").val();
 		var savedLang = localStorage.getItem('kkutu_lang'); // 이전에 저장된 언어 확인
 
-		// 언어 설정 저장
-		if (newLang) {
-			// 현재 페이지의 locale 파라미터 확인
-			var match = location.href.match(/[?&]locale=([^&]+)/);
-			var pageLang = match ? match[1] : null;
-
-			// locale 파라미터가 있고 새 언어와 다르면 리로드
-			if (pageLang && newLang !== pageLang) {
-				// 언어가 변경되었고 현재 페이지 언어와 다르면 리로드
-				localStorage.setItem('kkutu_lang', newLang);
-				// 쿼리 스트링 파싱 및 업데이트
-				var search = location.search;
-				if (search.indexOf('locale=') >= 0) {
-					search = search.replace(/locale=[^&]+/, 'locale=' + newLang);
-				} else {
-					search = search + (search ? '&' : '?') + 'locale=' + newLang;
-				}
-				location.href = location.pathname + search;
-				return; // 리로드 하니까 여기서 중단
-			} else {
-				// 언어는 같지만 저장값 업데이트
-				localStorage.setItem('kkutu_lang', newLang);
-			}
-		}
-
+		// 먼저 모든 설정을 저장 (언어 변경으로 리로드되더라도 설정이 보존되도록)
 		$data.opts = {
 			mb: $("#mute-bgm").is(":checked"),
 			me: $("#mute-effect").is(":checked"),
@@ -914,6 +990,7 @@ $(document).ready(function () {
 			su: $("#sort-user").is(":checked"),
 			ow: $("#only-waiting").is(":checked"),
 			ou: $("#only-unlock").is(":checked"),
+			src: $("#show-rule-category").is(":checked"),
 			sp: newSoundPack
 		};
 
@@ -927,7 +1004,29 @@ $(document).ready(function () {
 			lobbyBGM: newLobbyBGM
 		});
 
+		// 언어 설정 저장
+		if (newLang) {
+			localStorage.setItem('kkutu_lang', newLang);
+		}
+
+		// 쿠키에 설정 저장
 		$.cookie('kks', encodeURIComponent(JSON.stringify($data.opts)), { expires: 365, path: '/' });
+
+		// 언어 변경 로직 (페이지 리로드)
+		var match = location.href.match(/[?&]locale=([^&]+)/);
+		var pageLang = match ? match[1] : null;
+
+		if (newLang && newLang !== pageLang) {
+			var search = location.search;
+			if (search.indexOf('locale=') >= 0) {
+				search = search.replace(/locale=[^&]+/, 'locale=' + newLang);
+			} else {
+				search = search + (search ? '&' : '?') + 'locale=' + newLang;
+			}
+			location.href = location.pathname + search;
+			return; // 리로드 하니까 여기서 중단
+		}
+
 		$stage.dialog.setting.hide();
 
 		var updateLobbyBGM = function (bgmName, packName) {
@@ -1037,6 +1136,28 @@ $(document).ready(function () {
 			k = OPTIONS[i].name.toLowerCase();
 			opts[k] = $("#room-" + k).is(':checked');
 		}
+
+		// Read Linking Method Dropdown
+		var linkVal = $("#room-link-method").val();
+		if (linkVal == 'mid') opts['middle'] = true;
+		else if (linkVal == 'fir') opts['first'] = true;
+		else if (linkVal == 'ran') opts['random'] = true;
+
+		// Read Syllable Limit Dropdown
+		var lenVal = $("#room-len-limit").val();
+		if (lenVal == 'no2') opts['no2'] = true;
+		else if (lenVal == 'k32') opts['sami'] = true;
+		else if (lenVal == 'k22') opts['twotwo'] = true;
+		else if (lenVal == 'k44') opts['fourfour'] = true;
+		else if (lenVal == 'k43') opts['fourthree'] = true;
+		else if (lenVal == 'unl') opts['unlimited'] = true;
+
+		// Read Word Scope Dropdown
+		var scopeVal = $("#room-word-scope").val();
+		if (scopeVal == 'ext') opts['injeong'] = true;
+		else if (scopeVal == 'str') opts['strict'] = true;
+		else if (scopeVal == 'unk') opts['unknown'] = true;
+
 		send($data.typeRoom, {
 			title: $("#room-title").val().trim() || $("#room-title").attr('placeholder').trim(),
 			password: $("#room-pw").val(),
@@ -1275,6 +1396,24 @@ $(document).ready(function () {
 		}
 		showDialog($stage.dialog.injPick);
 	});
+	$("#room-injeong-pick-flat").on('click', function (e) {
+		var rule = RULE[MODE[$("#room-mode").val()]];
+		var i;
+
+		$("#injpick-list>div").hide();
+		if (rule.lang == "ko") {
+			$data._ijkey = "#ko-pick-";
+			$("#ko-pick-list").show();
+		} else if (rule.lang == "en") {
+			$data._ijkey = "#en-pick-";
+			$("#en-pick-list").show();
+		}
+		$stage.dialog.injPickNo.trigger('click');
+		for (i in $data._injpick) {
+			$($data._ijkey + $data._injpick[i]).prop('checked', true);
+		}
+		showDialog($stage.dialog.injPick);
+	});
 	$stage.dialog.injPickAll.on('click', function (e) {
 		$("#injpick-list input").prop('checked', true);
 	});
@@ -1382,6 +1521,48 @@ $(document).ready(function () {
 		else if (spamWarning > 0) spamWarning -= 0.03;
 	}, 1000);
 
+	// 상호 배제 규칙 적용
+	// 1. Unknown Word vs (Injeong, Strict, Loanword)
+	$("#room-unknown").on('change', function () {
+		if ($(this).is(':checked')) $("#room-injeong, #room-strict, #room-loanword").prop('checked', false);
+	});
+	$("#room-injeong, #room-strict, #room-loanword").on('change', function () {
+		if ($(this).is(':checked')) $("#room-unknown").prop('checked', false);
+	});
+
+	// 2. 가온잇기 vs 첫말잇기 vs 랜덤잇기
+	$("#room-middle").on('change', function () {
+		if ($(this).is(':checked')) $("#room-first, #room-random").prop('checked', false).trigger('change');
+	});
+	$("#room-first").on('change', function () {
+		if ($(this).is(':checked')) $("#room-middle, #room-random").prop('checked', false).trigger('change');
+	});
+
+	// 3. 랜덤잇기 vs (세컨드, 부메랑)
+	$("#room-random").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-middle, #room-first").prop('checked', false);
+			$("#room-second, #room-speedtoss").prop('checked', false).prop('disabled', true);
+		} else {
+			$("#room-second, #room-speedtoss").prop('disabled', false);
+		}
+	});
+
+	$("#room-second, #room-speedtoss").on('change', function () {
+		if ($("#room-second").is(':checked') || $("#room-speedtoss").is(':checked')) {
+			$("#room-random").prop('checked', false).prop('disabled', true);
+		} else {
+			$("#room-random").prop('disabled', false);
+		}
+	});
+
+	// 4. 글자수 제한 (3-2, 2-2, 4-4, 4-3)
+	$("#room-sami, #room-twotwo, #room-fourfour, #room-fourthree").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-sami, #room-twotwo, #room-fourfour, #room-fourthree").not(this).prop('checked', false);
+		}
+	});
+
 	// 웹소켓 연결
 	function connect() {
 		ws = new _WebSocket($data.URL);
@@ -1485,6 +1666,7 @@ $lib.Classic.turnStart = function (data) {
 	clearTrespasses();
 	$data._chars = [data.char, data.subChar];
 	$data._speed = data.speed;
+	$data._isHanbang = data.isHanbang || false; // 한방 여부 저장
 	$data._tTime = addInterval(turnGoing, TICK);
 	$data.turnTime = data.turnTime;
 	$data._turnTime = data.turnTime;
@@ -1511,7 +1693,7 @@ $lib.Classic.turnGoing = function () {
 $lib.Classic.turnEnd = function (id, data) {
 	var $sc = $("<div>")
 		.addClass("deltaScore")
-		.html((data.score > 0) ? ("+" + (data.score - data.bonus - (data.speedToss || 0))) : data.score);
+		.html((data.score > 0) ? ("+" + (data.score - data.bonus - (data.speedToss || 0) - (data.straightBonus || 0))) : data.score);
 	var $uc = $(".game-user-current");
 	var hi;
 
@@ -1524,7 +1706,7 @@ $lib.Classic.turnEnd = function (id, data) {
 		clearTimeout($data._fail);
 		$stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
-		pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0);
+		pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0, data.linkIndex, data.straightBonus > 0, data.isHanbang);
 	} else {
 		checkFailCombo(id);
 		$sc.addClass("lost");
@@ -1545,7 +1727,7 @@ $lib.Classic.turnEnd = function (id, data) {
 			.append($("<label>").css('color', "#AAAAAA").html(data.hint.slice(hi + 1)));
 	}
 	if (data.bonus) {
-		mobile ? $sc.html("+" + (data.score - data.bonus - (data.speedToss || 0)) + "+" + data.bonus) : addTimeout(function () {
+		mobile ? $sc.html("+" + (data.score - data.bonus - (data.speedToss || 0) - (data.straightBonus || 0)) + "+" + data.bonus) : addTimeout(function () {
 			var $bc = $("<div>")
 				.addClass("deltaScore bonus")
 				.css('color', '#66FF66')
@@ -1563,6 +1745,16 @@ $lib.Classic.turnEnd = function (id, data) {
 
 			drawObtainedScore($uc, $bc);
 		}, 800);
+	}
+	if (data.straightBonus) {
+		mobile ? $sc.append("+" + data.straightBonus) : addTimeout(function () {
+			var $bc = $("<div>")
+				.addClass("deltaScore straight-bonus")
+				.css('color', '#FFFF00') // Yellow
+				.html("+" + data.straightBonus);
+
+			drawObtainedScore($uc, $bc);
+		}, 1100);
 	}
 	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	updateScore(id, getScore(id));
@@ -2151,7 +2343,7 @@ $lib.Daneo.turnGoing = $lib.Classic.turnGoing;
 $lib.Daneo.turnEnd = function (id, data) {
 	var $sc = $("<div>")
 		.addClass("deltaScore")
-		.html((data.score > 0) ? ("+" + (data.score - data.bonus)) : data.score);
+		.html((data.score > 0) ? ("+" + (data.score - data.bonus - (data.straightBonus || 0))) : data.score);
 	var $uc = $(".game-user-current");
 	var hi;
 
@@ -2163,7 +2355,7 @@ $lib.Daneo.turnEnd = function (id, data) {
 		clearTimeout($data._fail);
 		$stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
-		pushDisplay(data.value, data.mean, data.theme, data.wc);
+		pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0);
 	} else {
 		$sc.addClass("lost");
 		$(".game-user-current").addClass("game-user-bomb");
@@ -2180,13 +2372,23 @@ $lib.Daneo.turnEnd = function (id, data) {
 			.append($("<label>").css('color', "#AAAAAA").html(data.hint.slice(hi + 1)));
 	}
 	if (data.bonus) {
-		mobile ? $sc.html("+" + (data.score - data.bonus) + "+" + data.bonus) : addTimeout(function () {
+		mobile ? $sc.html("+" + (data.score - data.bonus - (data.straightBonus || 0)) + "+" + data.bonus) : addTimeout(function () {
 			var $bc = $("<div>")
 				.addClass("deltaScore bonus")
 				.html("+" + data.bonus);
 
 			drawObtainedScore($uc, $bc);
 		}, 500);
+	}
+	if (data.straightBonus) {
+		mobile ? $sc.append("+" + data.straightBonus) : addTimeout(function () {
+			var $bc = $("<div>")
+				.addClass("deltaScore straight-bonus")
+				.css('color', '#FFFF00') // Yellow
+				.html("+" + data.straightBonus);
+
+			drawObtainedScore($uc, $bc);
+		}, 800);
 	}
 	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	updateScore(id, getScore(id));
@@ -2274,7 +2476,7 @@ $lib.Free.turnGoing = $lib.Classic.turnGoing;
 $lib.Free.turnEnd = function (id, data) {
     var $sc = $("<div>")
         .addClass("deltaScore")
-        .html((data.score > 0) ? ("+" + (data.score - data.bonus)) : data.score);
+        .html((data.score > 0) ? ("+" + (data.score - data.bonus - (data.straightBonus || 0))) : data.score);
     var $uc = $(".game-user-current");
     var hi;
 
@@ -2287,7 +2489,7 @@ $lib.Free.turnEnd = function (id, data) {
         clearTimeout($data._fail);
         $stage.game.here.hide();
         $stage.game.chain.html(++$data.chain);
-        pushDisplay(data.value, data.mean, data.theme, data.wc);
+        pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0);
     } else {
         checkFailCombo(id);
         $sc.addClass("lost");
@@ -3072,6 +3274,7 @@ function applyOptions(opt) {
 	$("#sort-user").attr('checked', $data.opts.su);
 	$("#only-waiting").attr('checked', $data.opts.ow);
 	$("#only-unlock").attr('checked', $data.opts.ou);
+	$("#show-rule-category").attr('checked', $data.opts.src === true);
 
 	// 사운드팩 설정 (localStorage에 값이 있으면 localStorage, 없으면 cookie)
 	var soundPack = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts.sp || "");
@@ -3174,8 +3377,8 @@ function addInterval(cb, v, a1, a2, a3, a4, a5) {
 	$data._timers.push(R);
 	return R;
 }
-function addTimeout(cb, v, a1, a2, a3, a4, a5) {
-	var R = _setTimeout(cb, v, a1, a2, a3, a4, a5);
+function addTimeout(cb, v, a1, a2, a3, a4, a5, a6, a7, a8) {
+	var R = _setTimeout(cb, v, a1, a2, a3, a4, a5, a6, a7, a8);
 
 	$data._timers.push(R);
 	return R;
@@ -3836,7 +4039,14 @@ function processRoom(data) {
 				$data._rMode = getOptions($data.room.mode, $data.room.opts, true);
 				$data._rLimit = $data.room.limit;
 				$data._rRound = $data.room.round;
-				$data._rTime = $data.room.time;
+				$data._injpick = $data.room.opts.injpick;
+
+				// Set Linking Method Dropdown
+				var linkVal = 'std';
+				if ($data.room.opts.middle) linkVal = 'mid';
+				else if ($data.room.opts.first) linkVal = 'fir';
+				else if ($data.room.opts.random) linkVal = 'ran';
+				$("#room-link-method").val(linkVal);
 			}
 			$data.room = data.room;
 			$data.place = $data.room.id;
@@ -3893,7 +4103,7 @@ function processRoom(data) {
 	}
 }
 function getOnly() {
-	return $data.place ? (($data.room.gaming || $data.resulting) ? "for-gaming" : ($data.master ? "for-master" : "for-normal")) : "for-lobby";
+	return $data.place ? (($data.room && $data.room.gaming || $data.resulting) ? "for-gaming" : ($data.master ? "for-master" : "for-normal")) : "for-lobby";
 }
 function updateUI(myRoom, refresh) {
 	/*
@@ -5605,7 +5815,7 @@ function vibrate(level) {
 function getRandomColor() {
 	return "hsl(" + Math.floor(Math.random() * 360) + ", 100%, 85%)";
 }
-function pushDisplay(text, mean, theme, wc, isSumi) {
+function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang) {
 	var len;
 	var mode = MODE[$data.room.mode];
 	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK";
@@ -5619,10 +5829,121 @@ function pushDisplay(text, mean, theme, wc, isSumi) {
 
 	// Sumi-Sanggwan Highlight Index: Last Char for Normal, First Char for Reverse
 
-	var sumiIdx;
-	if ($data.room.opts.middle) sumiIdx = isRev ? Math.floor((len - 1) / 2) : Math.ceil((len - 1) / 2);
-	else if ($data.room.opts.second) sumiIdx = isRev ? 1 : len - 2;
-	else sumiIdx = isRev ? 0 : len - 1;
+	var linkIdx = -1;
+	var linkingIndices = [];
+
+	// Priority 0: Random (Override)
+	if (typeof overrideLinkIndex !== 'undefined' && overrideLinkIndex !== null) {
+		linkIdx = overrideLinkIndex;
+	}
+	// Priority 1: Middle
+	else if ($data.room.opts.middle) {
+		if (isRev) {
+			linkIdx = Math.floor((len - 1) / 2); // Reverse: Middle
+		} else {
+			linkIdx = Math.ceil((len - 1) / 2); // Normal: Middle
+		}
+	}
+	// Priority 2: First
+	else if ($data.room.opts.first) {
+		if ($data.room.opts.second) {
+			// First + Second
+			if (isRev) linkIdx = len - 2; // KAP: Back-2
+			else linkIdx = 1; // Normal: Front-2 (Index 1)
+			if (mode == 'EKT') linkIdx = 1; // EKT: Front-2 (Start index 1)
+		} else {
+			// First Only
+			if (isRev) linkIdx = len - 1; // KAP: Back-1 (End)
+			else linkIdx = 0; // Normal: Front-1 (Start)
+		}
+	}
+	// Priority 3: Second
+	else if ($data.room.opts.second) {
+		if (isRev) linkIdx = 1; // KAP: Front-2
+		else linkIdx = len - 2; // Normal: Back-2
+	}
+	// Default
+	else {
+		if (isRev) linkIdx = 0; // KAP: Front-1
+		else linkIdx = len - 1; // Normal: Back-1
+	}
+
+	// [New Logic] Sumi-Sanggwan Highlight Index
+	var sumiIdx = linkIdx;
+
+	// [Exception] Boomerang Conflict with First Rule (Pure First Only)
+	if ($data.room.opts.first && !$data.room.opts.middle && !$data.room.opts.second) {
+		// If First rule is active (and no Middle/Second), linking is trivial (Start==Start).
+		// Force Boomerang to use Cyclic Linking (End<->Start).
+		if (isRev) sumiIdx = 0; // Reverse: Check Start (vs Prev End)
+		else sumiIdx = len - 1; // Normal: Check End (vs Prev Start)
+	}
+
+	// [New Logic] Linking Indices (Purple)
+	if (RULE[mode].lang == 'en' && mode == 'EKT') {
+		// EKT Special Multi-Char Logic
+		// EKT Linking usually length 3.
+		// If First rule active, starting from linkIdx (which is Start for First rule).
+		// If Second... 
+		// Wait, let's keep it simple based on the start index found.
+
+		var startK = linkIdx;
+		if (typeof overrideLinkIndex !== 'undefined' && overrideLinkIndex !== null) {
+			// If override is present (Random Rule), assume linkIdx is the correct start index
+			// Just highlight 3 chars from there.
+			for (var k = startK; k < startK + 3; k++) {
+				if (k >= 0 && k < len) linkingIndices.push(k);
+			}
+		}
+		else if ($data.room.opts.middle) {
+			// Middle for EKT (len dependent)
+			// Re-use linkIdx as center? No, classic.js returns slice.
+			// Let's approximate based on observed behavior or strict match.
+			// Middle EKT: slice(idx-1, idx+2). So 3 chars around center.
+			// If linkIdx was calculated as the "main" one...
+			// Middle EKT Logic in classic.js:
+			/*
+			if (len % 2 !== 0) idx = floor(len/2); -> slice(idx-1, idx+2)
+			else idx = len/2; -> slice(idx-1, idx+2)
+			*/
+			// My logic above:
+			/*
+			Normal: ceil((len-1)/2) -> if len=5, ceil(2)=2. idx=2. slice(1,4). Indices 1,2,3.
+			Reverse: floor -> if len=5, floor(2)=2.
+			*/
+			// Let's assume linkIdx points to the *middle* of the 3 chars?
+			// If linkIdx = 2. We want 1, 2, 3.
+			for (var k = startK - 1; k <= startK + 1; k++) {
+				if (k >= 0 && k < len) linkingIndices.push(k);
+			}
+		}
+		else if ($data.room.opts.first) {
+			// First Rule EKT: slice(0,3) or slice(1,4)
+			// linkIdx above: 0 (or 1 if Second).
+			for (var k = startK; k < startK + 3; k++) {
+				if (k >= 0 && k < len) linkingIndices.push(k);
+			}
+		}
+		else {
+			// Default EKT: slice(-3)
+			// linkIdx above: len-1.
+			// slice(-3) start index is len-3.
+			// Adjust linkIdx to be start?
+			// Default logic above gave len-1.
+			// Let's override for EKT default.
+			if (startK == len - 1) {
+				for (var k = 0; k < 3; k++) {
+					if (len - 1 - k >= 0) linkingIndices.push(len - 1 - k);
+				}
+			} else {
+				// Fallback
+				linkingIndices.push(startK);
+			}
+		}
+	} else {
+		// All others (1 char)
+		linkingIndices.push(linkIdx);
+	}
 
 	$stage.game.display.empty();
 	if ($data.room.opts.drg) $stage.game.display.css('box-shadow', '0px 0px 20px ' + getRandomColor());
@@ -5645,6 +5966,8 @@ function pushDisplay(text, mean, theme, wc, isSumi) {
 
 			var charIdx = isRev ? len - j - 1 : j;
 			var isSumiChar = isSumi && (charIdx === sumiIdx);
+			var isStraightChar = isStraight && (isRev ? (charIdx === 0) : (charIdx === len - 1));
+			var isLinking = (RULE[mode].rule === "Classic") && (linkingIndices.indexOf(charIdx) !== -1);
 
 			$stage.game.display.append($l = $("<div>")
 				.addClass("display-text")
@@ -5654,23 +5977,32 @@ function pushDisplay(text, mean, theme, wc, isSumi) {
 				.html(text.charAt(charIdx))
 			);
 			j++;
-			addTimeout(function ($l, snd, isSumiChar) {
+			addTimeout(function ($l, snd, isSumiChar, isStraightChar, isLinking, isHanbang) {
 				var anim = { 'margin-top': 0 };
 
 				playSound(snd);
-				if ($l.html() == $data.mission) {
+				if (isSumiChar) {
 					playSound('mission');
-					$l.css({ 'color': "#66FF66" });
+					$l.css({ 'color': "#00FFFF" }); // Cyan (Priority 1)
 					anim['font-size'] = 24;
-				} else if (isSumiChar) {
+				} else if (isStraightChar) {
 					playSound('mission');
-					$l.css({ 'color': "#00FFFF" }); // Cyan
+					$l.css({ 'color': "#FFFF00" }); // Yellow (Priority 2)
 					anim['font-size'] = 24;
+				} else if ($l.html() == $data.mission) {
+					playSound('mission');
+					$l.css({ 'color': "#66FF66" }); // Green (Priority 2 -> 3)
+					anim['font-size'] = 24;
+				} else if (isLinking) {
+					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
+					if (isHanbang) playSound('missing');
+					$l.css({ 'color': isHanbang ? "#FF6666" : "rgb(146, 203, 250)" });
+					if (!isSumiChar && !isStraightChar) anim['font-size'] = 20; // Normal size unless bonus
 				} else {
 					anim['font-size'] = 20;
 				}
 				$l.show().animate(anim, 100);
-			}, Number(i) * tick, $l, ta, isSumiChar);
+			}, Number(i) * tick, $l, ta, isSumiChar, isStraightChar, isLinking, isHanbang);
 		}
 		i = $stage.game.display.children("div").get(0);
 		$(i).css(isRev ? 'margin-right' : 'margin-left', ($stage.game.display.width() - 20 * len) * 0.5);
@@ -5680,35 +6012,63 @@ function pushDisplay(text, mean, theme, wc, isSumi) {
 			addTimeout(function (t, idx) {
 				playSound(ta);
 				var isSumiChar = isSumi && (idx === sumiIdx);
+				var isStraightChar = isStraight && (idx === 0); // Rev: Last char is idx 0 (visually first)? No inside loop text[len-i-1].
+				// In this loop: text[len-i-1]. idx is passed as len-i-1. 
+				// Rev logic: Visually First == String Index 0? 
+				// Rev: "고구마" -> "구마" -> "...구". Index 0 is "고". Back-linking.
+				// Straight: "Last Char" visually? Or "End of word"?
+				// "always highlight the last character (front-linking ... first)".
+				// Normal: Last char (Index len-1).
+				// Rev (Front-linking): First char (Index 0).
+				// So logic `isRev ? (idx === 0) : (idx === len - 1)` holds.
 
-				if (t == $data.mission) {
-					playSound('mission');
-					j = "<label style='color: #66FF66;'>" + t + "</label>" + j;
-				} else if (isSumiChar) {
+				var isLinking = linkingIndices.indexOf(idx) !== -1;
+				var isStraightChar = isStraight && (idx === 0);
+
+				if (isSumiChar) {
 					playSound('mission');
 					j = "<label style='color: #00FFFF;'>" + t + "</label>" + j;
+				} else if (isStraightChar) {
+					playSound('mission');
+					j = "<label style='color: #FFFF00;'>" + t + "</label>" + j;
+				} else if (t == $data.mission) {
+					playSound('mission');
+					j = "<label style='color: #66FF66;'>" + t + "</label>" + j;
+				} else if (isLinking) {
+					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
+					if (isHanbang) playSound('missing');
+					j = "<label style='color: " + (isHanbang ? "#FF6666" : "rgb(146, 203, 250)") + ";'>" + t + "</label>" + j;
 				} else {
 					j = ($data.room.opts.drg ? ("<label style='color:" + getRandomColor() + "'>" + t + "</label>") : t) + j;
 				}
 				$stage.game.display.html(j);
-			}, Number(i) * sg / len, text[len - i - 1], len - i - 1);
+			}, Number(i) * sg / len, text[len - i - 1], len - i - 1, isHanbang);
 		}
 		else for (i = 0; i < len; i++) {
 			addTimeout(function (t, idx) {
 				playSound(ta);
 				var isSumiChar = isSumi && (idx === sumiIdx);
+				var isStraightChar = isStraight && (idx === len - 1); // Normal: Last char
+				var isLinking = (RULE[mode].rule === "Classic") && (linkingIndices.indexOf(idx) !== -1);
 
-				if (t == $data.mission) {
-					playSound('mission');
-					j += "<label style='color: #66FF66;'>" + t + "</label>";
-				} else if (isSumiChar) {
+				if (isSumiChar) {
 					playSound('mission');
 					j += "<label style='color: #00FFFF;'>" + t + "</label>";
+				} else if (isStraightChar) {
+					playSound('mission');
+					j += "<label style='color: #FFFF00;'>" + t + "</label>";
+				} else if (t == $data.mission) {
+					playSound('mission');
+					j += "<label style='color: #66FF66;'>" + t + "</label>";
+				} else if (isLinking) {
+					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
+					if (isHanbang) playSound('missing');
+					j += "<label style='color: " + (isHanbang ? "#FF6666" : "rgb(146, 203, 250)") + ";'>" + t + "</label>";
 				} else {
 					j += ($data.room.opts.drg ? ("<label style='color:" + getRandomColor() + "'>" + t + "</label>") : t);
 				}
 				$stage.game.display.html(j);
-			}, Number(i) * sg / len, text[i], i);
+			}, Number(i) * sg / len, text[i], i, isHanbang);
 		}
 	}
 	addTimeout(function () {
@@ -5904,15 +6264,10 @@ function setRoomHead($obj, room) {
 		.append($("<h5>").addClass("room-head-title").text(badWords(room.title)))
 		.append($rm = $("<h5>").addClass("room-head-mode").html(opts.join(" / ")))
 		.append($("<h5>").addClass("room-head-limit").html((mobile ? "" : (L['players'] + " ")) + room.players.length + " / " + room.limit))
-		.append($("<h5>").addClass("room-head-round").html(L['rounds'] + " " + room.round))
 		.append($("<h5>").addClass("room-head-time").html(room.time + L['SECOND']));
 
-	if (rule.opts.indexOf("ijp") != -1) {
-		$rm.append($("<div>").addClass("expl").html("<h5>" + room.opts.injpick.map(function (item) {
-			return L["theme_" + item];
-		}) + "</h5>"));
-		global.expl($obj);
-	}
+
+	global.expl($obj);
 }
 function loadSounds(list, callback, silent) {
 	var remain = list.length;

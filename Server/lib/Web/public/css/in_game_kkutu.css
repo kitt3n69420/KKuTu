@@ -216,6 +216,19 @@ iframe {
 	width: 100px;
 }
 
+#RoomDiag .dialog-opt {
+	width: 75px;
+}
+
+#RoomDiag .dialog-opt label {
+	font-size: 11px;
+	letter-spacing: -0.5px;
+}
+
+#RoomDiag .dialog-opt input {
+	margin-top: 6px !important;
+}
+
 .tail-button {
 	margin-top: 7px;
 }

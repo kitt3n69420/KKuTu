@@ -482,4 +482,187 @@ TypeError: Cannot read properties of undefined (reading 'charCodeAt')
     at Connection.emit (node:events:518:28)
     at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12
     at Parser.parse (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\parser.js:40:17)
+    at Socket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\index.js:11:42):2083 [2025. 12. 28. 오후 7:53:02] ERROR: SyntaxError: Unexpected end of input
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2407
+	}
+	 
+
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2025. 12. 28. 오후 7:53:13] ERROR: SyntaxError: Unexpected end of input
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2407
+	}
+	 
+
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2025. 12. 28. 오후 8:03:05] ERROR: ReferenceError: shuffle is not defined
+ReferenceError: shuffle is not defined
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:247:5
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13)
+    at Query.preCB (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:298:6)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12)
+    at Client._handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\client.js:290:19)
+    at Connection.emit (node:events:518:28)
+    at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12
+    at Parser.parse (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\parser.js:40:17)
     at Socket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\index.js:11:42)
+    at Socket.emit (node:events:518:28):2083 [2025. 12. 28. 오후 8:05:24] ERROR: ReferenceError: getSubChar is not defined
+ReferenceError: getSubChar is not defined
+    at checkTitle (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:302:49)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:257:5
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13)
+    at Query.preCB (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:298:6)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12)
+    at Client._handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\client.js:290:19)
+    at Connection.emit (node:events:518:28)
+    at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12
+    at Parser.parse (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\parser.js:40:17)
+    at Socket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\index.js:11:42):2083 [2025. 12. 28. 오후 8:14:00] ERROR: ReferenceError: pickList is not defined
+ReferenceError: pickList is not defined
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1280:6
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13)
+    at Query.preCB (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:298:6)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12)
+    at Client._handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\client.js:290:19)
+    at Connection.emit (node:events:518:28)
+    at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12
+    at Parser.parse (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\parser.js:40:17)
+    at Socket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\index.js:11:42)
+    at Socket.emit (node:events:518:28):2083 [2025. 12. 28. 오후 8:30:00] ERROR: SyntaxError: Unexpected end of input
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2406
+	}
+	 
+
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2025. 12. 28. 오후 8:30:10] ERROR: SyntaxError: Unexpected end of input
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2406
+	}
+	 
+
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2025. 12. 28. 오후 8:30:21] ERROR: SyntaxError: Unexpected end of input
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2406
+	}
+	 
+
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2025. 12. 28. 오후 8:30:31] ERROR: SyntaxError: Unexpected end of input
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2406
+	}
+	 
+
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2025. 12. 28. 오후 8:30:42] ERROR: SyntaxError: Unexpected end of input
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2406
+	}
+	 
+
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2025. 12. 28. 오후 8:30:52] ERROR: SyntaxError: Unexpected end of input
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2406
+	}
+	 
+
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2025. 12. 28. 오후 8:31:02] ERROR: SyntaxError: Unexpected end of input
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2406
+	}
+	 
+
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2025. 12. 28. 오후 8:31:13] ERROR: SyntaxError: Unexpected end of input
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2406
+	}
+	 
+
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13)

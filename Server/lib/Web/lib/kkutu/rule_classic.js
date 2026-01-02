@@ -59,6 +59,7 @@ $lib.Classic.turnStart = function (data) {
 	clearTrespasses();
 	$data._chars = [data.char, data.subChar];
 	$data._speed = data.speed;
+	$data._isHanbang = data.isHanbang || false; // 한방 여부 저장
 	$data._tTime = addInterval(turnGoing, TICK);
 	$data.turnTime = data.turnTime;
 	$data._turnTime = data.turnTime;
@@ -85,7 +86,7 @@ $lib.Classic.turnGoing = function () {
 $lib.Classic.turnEnd = function (id, data) {
 	var $sc = $("<div>")
 		.addClass("deltaScore")
-		.html((data.score > 0) ? ("+" + (data.score - data.bonus - (data.speedToss || 0))) : data.score);
+		.html((data.score > 0) ? ("+" + (data.score - data.bonus - (data.speedToss || 0) - (data.straightBonus || 0))) : data.score);
 	var $uc = $(".game-user-current");
 	var hi;
 
@@ -98,7 +99,7 @@ $lib.Classic.turnEnd = function (id, data) {
 		clearTimeout($data._fail);
 		$stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
-		pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0);
+		pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0, data.linkIndex, data.straightBonus > 0, data.isHanbang);
 	} else {
 		checkFailCombo(id);
 		$sc.addClass("lost");
@@ -119,7 +120,7 @@ $lib.Classic.turnEnd = function (id, data) {
 			.append($("<label>").css('color', "#AAAAAA").html(data.hint.slice(hi + 1)));
 	}
 	if (data.bonus) {
-		mobile ? $sc.html("+" + (data.score - data.bonus - (data.speedToss || 0)) + "+" + data.bonus) : addTimeout(function () {
+		mobile ? $sc.html("+" + (data.score - data.bonus - (data.speedToss || 0) - (data.straightBonus || 0)) + "+" + data.bonus) : addTimeout(function () {
 			var $bc = $("<div>")
 				.addClass("deltaScore bonus")
 				.css('color', '#66FF66')
@@ -137,6 +138,16 @@ $lib.Classic.turnEnd = function (id, data) {
 
 			drawObtainedScore($uc, $bc);
 		}, 800);
+	}
+	if (data.straightBonus) {
+		mobile ? $sc.append("+" + data.straightBonus) : addTimeout(function () {
+			var $bc = $("<div>")
+				.addClass("deltaScore straight-bonus")
+				.css('color', '#FFFF00') // Yellow
+				.html("+" + data.straightBonus);
+
+			drawObtainedScore($uc, $bc);
+		}, 1100);
 	}
 	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	updateScore(id, getScore(id));

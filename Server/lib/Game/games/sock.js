@@ -149,23 +149,7 @@ exports.submit = function (client, text, data) {
 			client.chat(text);
 		}
 	});
-	/*if((i = my.game.words.indexOf(text)) != -1){
-		score = my.getScore(text);
-		my.game.words.splice(i, 1);
-		client.game.score += score;
-		client.publish('turnEnd', {
-			target: client.id,
-			value: text,
-			score: score
-		}, true);
-		if(!my.game.words.length){
-			clearTimeout(my.game.qTimer);
-			my.turnEnd();
-		}
-		client.invokeWordPiece(text, 1.4);
-	}else{
-		client.chat(text);
-	}*/
+
 };
 exports.getScore = function (text, delay) {
 	var my = this;

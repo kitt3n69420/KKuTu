@@ -327,7 +327,7 @@ $(document).ready(function () {
 			$data.rooms[id] = data;
 			if (isLobby) $("#room-" + id).replaceWith(roomListBar(data));
 		}
-		// updateRoomList();
+		updateRoomList();
 	};
 	$data.setUser = function (id, data) {
 		var only = getOnly();
@@ -502,6 +502,9 @@ $(document).ready(function () {
 		// 로비 BGM 선택 설정
 		$("#lobby-bgm").val(savedSettings.lobbyBGM || "");
 
+		// 규칙 카테고리 보기 설정
+		$("#show-rule-category").prop('checked', ($data.opts && $data.opts.src !== undefined) ? $data.opts.src : true);
+
 		// 현재 로드된 언어 감지
 		// L 객체로부터 실제 언어 감지 시도
 		var detectedLang = null;
@@ -520,6 +523,8 @@ $(document).ready(function () {
 		// 우선순위: URL locale > 감지된언어 > 저장된 언어 > 한국어
 		var currentLang = pageLang || detectedLang || savedLang || "ko_KR";
 		$("#language-setting").val(currentLang);
+
+
 
 		showDialog($stage.dialog.setting);
 	});
@@ -543,6 +548,7 @@ $(document).ready(function () {
 		$data.typeRoom = 'enter';
 		showDialog($d = $stage.dialog.room);
 		$d.find(".dialog-title").html(L['newRoom']);
+		$("#room-mode").trigger('change');
 	});
 	$stage.menu.setRoom.on('click', function (e) {
 		var $d;
@@ -560,6 +566,7 @@ $(document).ready(function () {
 			$("#room-" + k).attr('checked', $data.room.opts[k]);
 		}
 		$data._injpick = $data.room.opts.injpick;
+
 		showDialog($d = $stage.dialog.room);
 		$d.find(".dialog-title").html(L['setRoom']);
 	});
@@ -580,6 +587,7 @@ $(document).ready(function () {
 
 			if ($("#" + prefix + "-" + name).is(':checked')) opts[name] = true;
 		}
+
 		return opts;
 	}
 	function isRoomMatched(room, mode, opts, all) {
@@ -657,10 +665,10 @@ $(document).ready(function () {
 		var modeSelect = $("#room-mode");
 		var allowedModes = category === 'all' ? null : GAME_CATEGORIES[category].modes;
 
-		console.log("[Category Debug] Selected:", category);
-		console.log("[Category Debug] Allowed Modes:", allowedModes);
-		console.log("[Category Debug] MODE array:", MODE);
-		console.log("[Category Debug] Total Options found:", modeSelect.find("option").length);
+		//console.log("[Category Debug] Selected:", category);
+		//console.log("[Category Debug] Allowed Modes:", allowedModes);
+		//console.log("[Category Debug] MODE array:", MODE);
+		//console.log("[Category Debug] Total Options found:", modeSelect.find("option").length);
 
 		// Filter modes based on category
 		modeSelect.find("option").each(function () {
@@ -696,14 +704,106 @@ $(document).ready(function () {
 
 		updateGameOptions(rule.opts, 'room');
 
+
+		// Check if category view is enabled (default: true)
+		var showCategory = !($data.opts && $data.opts.src === false);
+
+		// Define option groups
+		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
+		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk'];
+		var bonusOpts = ['mis', 'spt', 'stt'];
+
+		if (showCategory) {
+			// Categorized view - hide flat panel, show category panels
+			$("#room-all-rules-panel").hide();
+
+			// Check and toggle Link Method panel
+			var hasLinkOpt = linkOpts.some(function (opt) { return rule.opts.indexOf(opt) !== -1; });
+			if (hasLinkOpt) $("#room-link-method-panel").show();
+			else $("#room-link-method-panel").hide();
+
+			// Check and toggle Length Limit panel
+			var hasLenOpt = lenOpts.some(function (opt) { return rule.opts.indexOf(opt) !== -1; });
+			if (hasLenOpt) $("#room-len-limit-panel").show();
+			else $("#room-len-limit-panel").hide();
+
+			// Check and toggle Word Scope panel
+			var hasScopeOpt = scopeOpts.some(function (opt) { return rule.opts.indexOf(opt) !== -1; });
+			if (hasScopeOpt) $("#room-word-settings-wrapper").show();
+			else $("#room-word-settings-wrapper").hide();
+
+			// Check if bonus panel should be shown
+			var hasBonusOpt = bonusOpts.some(function (opt) {
+				return rule.opts.indexOf(opt) !== -1;
+			});
+			if (hasBonusOpt) {
+				$("#room-bonus-panel").show();
+			} else {
+				$("#room-bonus-panel").hide();
+			}
+
+			// Check if special rules panel should be shown
+			var excludedOpts = linkOpts.concat(lenOpts).concat(scopeOpts).concat(bonusOpts);
+			var hasSpecialOpt = false;
+			for (var i in OPTIONS) {
+				if (excludedOpts.indexOf(i) === -1 && rule.opts.indexOf(i) !== -1) {
+					hasSpecialOpt = true;
+					break;
+				}
+			}
+			if (hasSpecialOpt) {
+				$("#room-misc-panel").show();
+			} else {
+				$("#room-misc-panel").hide();
+			}
+
+			// Show/hide injeong pick panel
+			if (rule.opts.indexOf("ijp") != -1) $("#room-injpick-panel").show();
+			else $("#room-injpick-panel").hide();
+			$("#room-injpick-panel-flat").hide();
+		} else {
+			// Flat view - hide all category panels, show flat panel
+			$("#room-link-method-panel").hide();
+			$("#room-len-limit-panel").hide();
+			$("#room-word-settings-wrapper").hide();
+			$("#room-bonus-panel").hide();
+			$("#room-misc-panel").hide();
+			$("#room-injpick-panel").hide();
+
+			// Show flat panel and update options visibility
+			$("#room-all-rules-panel").show();
+
+			// Update flat panel options visibility based on game mode
+			$("#room-all-rules-panel .dialog-opt").each(function () {
+				var id = $(this).attr('id');
+				if (!id) return;
+				var optKey = id.replace('room-', '').replace('-panel', '');
+				// Find the matching option key
+				for (var k in OPTIONS) {
+					if (OPTIONS[k].name.toLowerCase() === optKey) {
+						if (rule.opts.indexOf(k) !== -1) {
+							$(this).show();
+						} else {
+							$(this).hide();
+						}
+						break;
+					}
+				}
+			});
+
+			// Show/hide injeong pick panel in flat mode
+			if (rule.opts.indexOf("ijp") != -1) $("#room-injpick-panel-flat").show();
+			else $("#room-injpick-panel-flat").hide();
+		}
+
+		// Hide Special Rules Panel if empty
 		$data._injpick = [];
-		if (rule.opts.indexOf("ijp") != -1) $("#room-injpick-panel").show();
-		else $("#room-injpick-panel").hide();
 		if (rule.rule == "Typing") $("#room-round").val(3);
 		$("#room-time").children("option").each(function (i, o) {
 			$(o).html(Number($(o).val()) * rule.time + L['SECOND']);
 		});
-	}).trigger('change');
+	});
 	$stage.menu.spectate.on('click', function (e) {
 		var mode = $stage.menu.spectate.hasClass("toggled");
 
@@ -818,31 +918,7 @@ $(document).ready(function () {
 		var newLang = $("#language-setting").val();
 		var savedLang = localStorage.getItem('kkutu_lang'); // 이전에 저장된 언어 확인
 
-		// 언어 설정 저장
-		if (newLang) {
-			// 현재 페이지의 locale 파라미터 확인
-			var match = location.href.match(/[?&]locale=([^&]+)/);
-			var pageLang = match ? match[1] : null;
-
-			// locale 파라미터가 있고 새 언어와 다르면 리로드
-			if (pageLang && newLang !== pageLang) {
-				// 언어가 변경되었고 현재 페이지 언어와 다르면 리로드
-				localStorage.setItem('kkutu_lang', newLang);
-				// 쿼리 스트링 파싱 및 업데이트
-				var search = location.search;
-				if (search.indexOf('locale=') >= 0) {
-					search = search.replace(/locale=[^&]+/, 'locale=' + newLang);
-				} else {
-					search = search + (search ? '&' : '?') + 'locale=' + newLang;
-				}
-				location.href = location.pathname + search;
-				return; // 리로드 하니까 여기서 중단
-			} else {
-				// 언어는 같지만 저장값 업데이트
-				localStorage.setItem('kkutu_lang', newLang);
-			}
-		}
-
+		// 먼저 모든 설정을 저장 (언어 변경으로 리로드되더라도 설정이 보존되도록)
 		$data.opts = {
 			mb: $("#mute-bgm").is(":checked"),
 			me: $("#mute-effect").is(":checked"),
@@ -855,6 +931,7 @@ $(document).ready(function () {
 			su: $("#sort-user").is(":checked"),
 			ow: $("#only-waiting").is(":checked"),
 			ou: $("#only-unlock").is(":checked"),
+			src: $("#show-rule-category").is(":checked"),
 			sp: newSoundPack
 		};
 
@@ -868,7 +945,29 @@ $(document).ready(function () {
 			lobbyBGM: newLobbyBGM
 		});
 
+		// 언어 설정 저장
+		if (newLang) {
+			localStorage.setItem('kkutu_lang', newLang);
+		}
+
+		// 쿠키에 설정 저장
 		$.cookie('kks', encodeURIComponent(JSON.stringify($data.opts)), { expires: 365, path: '/' });
+
+		// 언어 변경 로직 (페이지 리로드)
+		var match = location.href.match(/[?&]locale=([^&]+)/);
+		var pageLang = match ? match[1] : null;
+
+		if (newLang && newLang !== pageLang) {
+			var search = location.search;
+			if (search.indexOf('locale=') >= 0) {
+				search = search.replace(/locale=[^&]+/, 'locale=' + newLang);
+			} else {
+				search = search + (search ? '&' : '?') + 'locale=' + newLang;
+			}
+			location.href = location.pathname + search;
+			return; // 리로드 하니까 여기서 중단
+		}
+
 		$stage.dialog.setting.hide();
 
 		var updateLobbyBGM = function (bgmName, packName) {
@@ -978,6 +1077,28 @@ $(document).ready(function () {
 			k = OPTIONS[i].name.toLowerCase();
 			opts[k] = $("#room-" + k).is(':checked');
 		}
+
+		// Read Linking Method Dropdown
+		var linkVal = $("#room-link-method").val();
+		if (linkVal == 'mid') opts['middle'] = true;
+		else if (linkVal == 'fir') opts['first'] = true;
+		else if (linkVal == 'ran') opts['random'] = true;
+
+		// Read Syllable Limit Dropdown
+		var lenVal = $("#room-len-limit").val();
+		if (lenVal == 'no2') opts['no2'] = true;
+		else if (lenVal == 'k32') opts['sami'] = true;
+		else if (lenVal == 'k22') opts['twotwo'] = true;
+		else if (lenVal == 'k44') opts['fourfour'] = true;
+		else if (lenVal == 'k43') opts['fourthree'] = true;
+		else if (lenVal == 'unl') opts['unlimited'] = true;
+
+		// Read Word Scope Dropdown
+		var scopeVal = $("#room-word-scope").val();
+		if (scopeVal == 'ext') opts['injeong'] = true;
+		else if (scopeVal == 'str') opts['strict'] = true;
+		else if (scopeVal == 'unk') opts['unknown'] = true;
+
 		send($data.typeRoom, {
 			title: $("#room-title").val().trim() || $("#room-title").attr('placeholder').trim(),
 			password: $("#room-pw").val(),
@@ -1216,6 +1337,24 @@ $(document).ready(function () {
 		}
 		showDialog($stage.dialog.injPick);
 	});
+	$("#room-injeong-pick-flat").on('click', function (e) {
+		var rule = RULE[MODE[$("#room-mode").val()]];
+		var i;
+
+		$("#injpick-list>div").hide();
+		if (rule.lang == "ko") {
+			$data._ijkey = "#ko-pick-";
+			$("#ko-pick-list").show();
+		} else if (rule.lang == "en") {
+			$data._ijkey = "#en-pick-";
+			$("#en-pick-list").show();
+		}
+		$stage.dialog.injPickNo.trigger('click');
+		for (i in $data._injpick) {
+			$($data._ijkey + $data._injpick[i]).prop('checked', true);
+		}
+		showDialog($stage.dialog.injPick);
+	});
 	$stage.dialog.injPickAll.on('click', function (e) {
 		$("#injpick-list input").prop('checked', true);
 	});
@@ -1322,6 +1461,48 @@ $(document).ready(function () {
 		if (spamCount > 0) spamCount = 0;
 		else if (spamWarning > 0) spamWarning -= 0.03;
 	}, 1000);
+
+	// 상호 배제 규칙 적용
+	// 1. Unknown Word vs (Injeong, Strict, Loanword)
+	$("#room-unknown").on('change', function () {
+		if ($(this).is(':checked')) $("#room-injeong, #room-strict, #room-loanword").prop('checked', false);
+	});
+	$("#room-injeong, #room-strict, #room-loanword").on('change', function () {
+		if ($(this).is(':checked')) $("#room-unknown").prop('checked', false);
+	});
+
+	// 2. 가온잇기 vs 첫말잇기 vs 랜덤잇기
+	$("#room-middle").on('change', function () {
+		if ($(this).is(':checked')) $("#room-first, #room-random").prop('checked', false).trigger('change');
+	});
+	$("#room-first").on('change', function () {
+		if ($(this).is(':checked')) $("#room-middle, #room-random").prop('checked', false).trigger('change');
+	});
+
+	// 3. 랜덤잇기 vs (세컨드, 부메랑)
+	$("#room-random").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-middle, #room-first").prop('checked', false);
+			$("#room-second, #room-speedtoss").prop('checked', false).prop('disabled', true);
+		} else {
+			$("#room-second, #room-speedtoss").prop('disabled', false);
+		}
+	});
+
+	$("#room-second, #room-speedtoss").on('change', function () {
+		if ($("#room-second").is(':checked') || $("#room-speedtoss").is(':checked')) {
+			$("#room-random").prop('checked', false).prop('disabled', true);
+		} else {
+			$("#room-random").prop('disabled', false);
+		}
+	});
+
+	// 4. 글자수 제한 (3-2, 2-2, 4-4, 4-3)
+	$("#room-sami, #room-twotwo, #room-fourfour, #room-fourthree").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-sami, #room-twotwo, #room-fourfour, #room-fourthree").not(this).prop('checked', false);
+		}
+	});
 
 	// 웹소켓 연결
 	function connect() {

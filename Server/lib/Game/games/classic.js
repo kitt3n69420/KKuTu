@@ -41,7 +41,14 @@ const DUBANG = ["괙", "귁", "껙", "꿕", "뀍", "늡", "릅", "돨", "똴", "
 const DUBANG_KAP = ["뒷", "쌩", "빤", "핫", "갤", "캘", "왱"];
 const PRIORITY_ATTACK_CHARS_EN = ["ght", "ock", "ick", "ird", "ert", "ork", "eck", "nds", "uck", "ond", "lue", "lls", "elt", "rds", "arp", "uff", "erm", "irl", "ilt", "ilk", "ods", "cks", "ays", "iff", "ett", "olt", "ors", "erb", "ohn", "erk", "awk", "nks", "irs", "irm", "urd", "ilm", "nue", "rks", "arf", "nyx", "erd", "ryx", "olk", "itt", "rys", "gie", "url", "nck", "ils", "avy", "ynx", "ews", "mie", "irk", "cht", "cue", "ulb", "onk", "elp", "urk", "ldt", "aws"];
 const PRIORITY_ATTACK_CHARS_MANNER_EN = ["ack", "ark", "ics", "orm", "ers", "ify", "ons", "omb", "ngs", "ump", "owl", "ift", "urn", "rie", "eek", "oud", "elf", "irt", "ild", "kie", "itz", "rld", "iew", "thm", "els", "awl", "awn", "rue", "yew", "eft", "oft", "ffy", "uld", "hew", "ivy", "rtz", "egs", "tew", "oux", "rns", "ebs", "tua", "tyl", "efy", "ohm", "omp", "bbs", "ltz", "ggs", "oek", "xxv", "few", "wyn", "orr", "utz", "enn", "ebb", "hns", "ogs", "ruz", "ibs", "uhr", "nyl"];
+const PRIORITY_KAP_ATTACK_CHARS_EN = ["j", "q", "x", "z"];
 const AVOID_FD = ["렁", "냑", "럿", "럴"];
+const AVOID_VI = ["렁", "냑", "럿", "럴", "륨", "늄", "윰", "켓", "껏", "귬"];
+const VOWEL_INV_MAP = {
+	0: 4, 4: 0, 1: 5, 5: 1, 2: 6, 6: 2, 3: 7, 7: 3,
+	8: 13, 13: 8, 9: 14, 14: 9, 10: 15, 15: 10, 11: 16, 16: 11,
+	12: 17, 17: 12
+};
 var AttackCache = {};
 
 function getAttackChars(my) {
@@ -50,9 +57,8 @@ function getAttackChars(my) {
 		if (!my.opts.injeong) state |= 1;
 		if (my.opts.strict) state |= 2;
 		if (my.opts.loanword) state |= 4;
-		if (my.opts.freedueum) state |= 8;
 
-		var isRev = Const.GAME_TYPE[my.mode] == "KAP";
+		var isRev = !!my.rule._back;
 		var col = isRev ? `end_${state}` : `start_${state}`;
 		var key = my.rule.lang + "_" + col;
 
@@ -61,7 +67,7 @@ function getAttackChars(my) {
 		var useCol = col;
 		if (isKo) {
 			var reqLen = getNextTurnLength.call(my);
-			var lenSuffix = (reqLen === 2) ? "2" : (reqLen === 3) ? "3" : "all";
+			var lenSuffix = (reqLen === 2) ? "2" : (reqLen === 3) ? "3" : (reqLen === 4) ? "4" : "all";
 			useCol = isRev ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
 		} else {
 			useCol = `count_${state}`;
@@ -78,8 +84,19 @@ function getAttackChars(my) {
 		// 1. Hard Killers (<= 2) - Tier 1 (One-shots)
 		// 2. Soft Killers (3-5) - Tier 2
 		// 3. Priority Lists (Manual) - Added to Tier 2
-		var priorityList = isRev ? PRIORITY_KAP_ATTACK_CHARS : PRIORITY_ATTACK_CHARS;
-		var priorityMannerList = isRev ? PRIORITY_KAP_ATTACK_CHARS_MANNER : PRIORITY_ATTACK_CHARS_MANNER;
+		var priorityList = [];
+		var priorityMannerList = [];
+		if (isKo) {
+			priorityList = isRev ? PRIORITY_KAP_ATTACK_CHARS : PRIORITY_ATTACK_CHARS;
+			priorityMannerList = isRev ? PRIORITY_KAP_ATTACK_CHARS_MANNER : PRIORITY_ATTACK_CHARS_MANNER;
+		} else {
+			if (!isRev) {
+				priorityList = PRIORITY_ATTACK_CHARS_EN;
+				priorityMannerList = PRIORITY_ATTACK_CHARS_MANNER_EN;
+			} else {
+				priorityList = PRIORITY_KAP_ATTACK_CHARS_EN;
+			}
+		}
 
 		var p1 = new Promise(function (res1) {
 			// Tier 1: One-shot killers (count 0-2)
@@ -317,7 +334,6 @@ exports.getTitle = function () {
 		if (!my.opts.injeong) state |= 1;
 		if (my.opts.strict) state |= 2;
 		if (my.opts.loanword) state |= 4;
-		if (my.opts.freedueum) state |= 8;
 
 		var col = isRev ? `end_${state}` : `start_${state}`;
 
@@ -343,7 +359,7 @@ exports.getTitle = function () {
 				// The game hasn't started, so wordLength might be default.
 				// For KKT, wordLength is 3.
 				var reqLen = my.game.wordLength || 0;
-				var lenSuffix = (reqLen === 2) ? "2" : (reqLen === 3) ? "3" : "all";
+				var lenSuffix = (reqLen === 2) ? "2" : (reqLen === 3) ? "3" : (reqLen === 4) ? "4" : "all";
 				colName = isRev ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
 			} else {
 				colName = `count_${state}`;
@@ -375,6 +391,17 @@ exports.roundReady = function () {
 
 	clearTimeout(my.game.turnTimer);
 	my.game.round++;
+
+	if (my.opts.straight && my.game.seq) {
+		var i, p;
+		for (i in my.game.seq) {
+			p = (typeof my.game.seq[i] === 'string') ? DIC[my.game.seq[i]] : my.game.seq[i];
+			if (p && p.game) {
+				p.game.straightStreak = 0;
+				delete p.game.lastWordLen;
+			}
+		}
+	}
 	my.game.roundTime = my.time * 1000;
 	if (my.game.round <= my.round) {
 		my.game.char = my.game.title[my.game.round - 1];
@@ -384,6 +411,18 @@ exports.roundReady = function () {
 		if (my.opts.sami) {
 			my.game.wordLength = 2;
 			my.game.samiCount = 0;
+		}
+		// 3-2 renamed to sami, but logic is same.
+		// New rules:
+		if (my.opts.twotwo) {
+			my.game.wordLength = 2;
+		}
+		if (my.opts.fourfour) {
+			my.game.wordLength = 4;
+		}
+		if (my.opts.fourthree) {
+			my.game.wordLength = 4;
+			my.game.samiCount = 0; // Reuse samiCount for alternating
 		}
 
 		my.byMaster('roundReady', {
@@ -410,6 +449,7 @@ exports.turnStart = function (force) {
 	my.game.late = false;
 	my.game.turnTime = 15000 - 1400 * speed;
 	my.game.turnAt = (new Date()).getTime();
+	//my.game.turnAt = (new Date()).getTime(); // 이건 콩의 저주야
 	if (my.opts.sami) {
 		var n = my.game.seq.length;
 		if (n % 2 !== 0) {
@@ -420,28 +460,105 @@ exports.turnStart = function (force) {
 			my.game.wordLength = (idx % 2 === 0) ? 3 : 2;
 			my.game.samiCount++;
 		}
+	} else if (my.opts.fourthree) {
+		var n = my.game.seq.length;
+		if (n % 2 !== 0) {
+			my.game.wordLength = (my.game.wordLength == 4) ? 3 : 4;
+		} else {
+			if (typeof my.game.samiCount === 'undefined') my.game.samiCount = 0;
+			var idx = my.game.samiCount % (n + 1);
+			my.game.wordLength = (idx % 2 === 0) ? 4 : 3;
+			my.game.samiCount++;
+		}
+	} else if (my.opts.twotwo) {
+		my.game.wordLength = 2;
+	} else if (my.opts.fourfour) {
+		my.game.wordLength = 4;
 	}
 
-	my.byMaster('turnStart', {
-		turn: my.game.turn,
-		char: my.game.char,
-		subChar: my.game.subChar,
-		speed: speed,
-		roundTime: my.game.roundTime,
-		turnTime: my.game.turnTime,
-		mission: my.game.mission,
-		wordLength: my.game.wordLength,
-		sumiChar: my.game.sumiChar,
-		seq: force ? my.game.seq : undefined
-	}, true);
-	my.game.turnTimer = setTimeout(my.turnEnd, Math.min(my.game.roundTime, my.game.turnTime + 100));
-	if (si = my.game.seq[my.game.turn])
-		if (si.robot) {
-			si._done = [];
-			if (si.data) delete si.data.retryCount; // Reset Retry Count for new turn
-			my.readyRobot(si);
-		}
+	// 한방 체크: 매너 체크에서 저장된 값 재사용 또는 새로 계산
+	if (typeof my.game.nextCharWordCount !== 'undefined') {
+		// 매너 체크에서 저장된 값이 있으면 재사용 (중복 쿼리 방지)
+		var isHanbang = (my.game.nextCharWordCount === 0);
+		delete my.game.nextCharWordCount; // 사용 후 삭제
+
+		my.byMaster('turnStart', {
+			turn: my.game.turn,
+			char: my.game.char,
+			subChar: my.game.subChar,
+			speed: speed,
+			roundTime: my.game.roundTime,
+			turnTime: my.game.turnTime,
+			mission: my.game.mission,
+			wordLength: my.game.wordLength,
+			sumiChar: my.game.sumiChar,
+			isHanbang: isHanbang,
+			seq: force ? my.game.seq : undefined
+		}, true);
+
+		my.game.turnTimer = setTimeout(my.turnEnd, Math.min(my.game.roundTime, my.game.turnTime + 100));
+		if (si = my.game.seq[my.game.turn])
+			if (si.robot) {
+				si._done = [];
+				if (si.data) delete si.data.retryCount;
+				my.readyRobot(si);
+			}
+	} else {
+		// 저장된 값이 없으면 새로 계산 (첫 턴 등)
+		getAuto.call(my, my.game.char, my.game.subChar, 1).then(function (w) {
+			var count = (typeof w === 'number') ? w : (w ? 1 : 0);
+			var used = 0;
+
+			// 이미 사용된 단어 개수 계산
+			if (my.game.chain) {
+				var checkChars = [my.game.char];
+				if (my.game.subChar) my.game.subChar.split("|").forEach(function (c) {
+					if (c && checkChars.indexOf(c) == -1) checkChars.push(c);
+				});
+				var type = Const.GAME_TYPE[my.mode];
+				var isKAP = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK');
+
+				my.game.chain.forEach(function (doneWord) {
+					var match = false;
+					checkChars.forEach(function (cc) {
+						if (isKAP) {
+							if (doneWord.slice(-cc.length) === cc) match = true;
+						} else {
+							if (doneWord.indexOf(cc) === 0) match = true;
+						}
+					});
+					if (match) used++;
+				});
+			}
+
+			// 남은 단어가 0개면 한방
+			var isHanbang = (count - used === 0);
+
+			my.byMaster('turnStart', {
+				turn: my.game.turn,
+				char: my.game.char,
+				subChar: my.game.subChar,
+				speed: speed,
+				roundTime: my.game.roundTime,
+				turnTime: my.game.turnTime,
+				mission: my.game.mission,
+				wordLength: my.game.wordLength,
+				sumiChar: my.game.sumiChar,
+				isHanbang: isHanbang,
+				seq: force ? my.game.seq : undefined
+			}, true);
+
+			my.game.turnTimer = setTimeout(my.turnEnd, Math.min(my.game.roundTime, my.game.turnTime + 100));
+			if (si = my.game.seq[my.game.turn])
+				if (si.robot) {
+					si._done = [];
+					if (si.data) delete si.data.retryCount; // Reset Retry Count for new turn
+					my.readyRobot(si);
+				}
+		});
+	}
 };
+
 
 function getNextTurnLength() {
 	var my = this;
@@ -454,6 +571,17 @@ function getNextTurnLength() {
 			return (nextIdx % 2 === 0) ? 3 : 2;
 		}
 	}
+	if (my.opts.fourthree) {
+		var n = my.game.seq.length;
+		if (n % 2 !== 0) {
+			return (my.game.wordLength == 4) ? 3 : 4;
+		} else {
+			var nextIdx = (my.game.samiCount + 1) % (n + 1);
+			return (nextIdx % 2 === 0) ? 4 : 3;
+		}
+	}
+	if (my.opts.twotwo) return 2;
+	if (my.opts.fourfour) return 4;
 	return my.game.wordLength || 0;
 }
 
@@ -611,11 +739,11 @@ exports.submit = function (client, text) {
 				// Sumi-Sanggwan Check (SpeedToss)
 				var speedTossBonus = 0;
 				my.game.sumiChar = null;
-				if (my.opts.speedtoss) {
+				if (my.opts.speedtoss && !my.opts.random) {
 					var matchingSumiChar = checkspeedToss(my.game.chain[my.game.chain.length - 1], text);
 					if (matchingSumiChar) {
-						// 50% Bonus
-						var bonusScore = Math.round(score * 0.5);
+						// 30% Bonus
+						var bonusScore = Math.round(score * 0.3);
 						score += bonusScore;
 						speedTossBonus = bonusScore;
 						my.game.sumiChar = matchingSumiChar; // Store for turnStart highlighting
@@ -624,45 +752,256 @@ exports.submit = function (client, text) {
 					}
 				}
 
+				// Straight Rule Logic
+				var straightBonus = 0;
+				if (my.opts.straight) {
+					var currentLen = text.length;
+					var prevLen = client.game.lastWordLen;
+
+					if (typeof prevLen === 'undefined') {
+						// First word for this player. Don't build streak.
+						client.game.straightStreak = 0;
+					} else if (currentLen - prevLen === 1) {
+						// Condition met: increment streak
+						client.game.straightStreak = (client.game.straightStreak || 0) + 1;
+					} else {
+						// Condition not met: reset streak
+						client.game.straightStreak = 0;
+					}
+
+					client.game.lastWordLen = currentLen;
+
+					if (client.game.straightStreak >= 2) {
+						var multiplier = (Math.log(client.game.straightStreak - 1) / Math.log(4)) + 0.5;
+						straightBonus = Math.round(score * multiplier);
+						score += straightBonus;
+					}
+				}
+
 				if (isReturn) score = 0;
 				my.game.dic[text] = (my.game.dic[text] || 0) + 1;
 				my.game.chain.push(text);
 				my.game.roundTime -= t;
-				my.game.char = preChar;
-				my.game.subChar = preSubChar;
-				client.game.score += score;
-				client.publish('turnEnd', {
-					ok: true,
-					value: text,
-					mean: $doc.mean,
-					theme: $doc.theme,
-					wc: $doc.type,
-					score: score,
-					bonus: (my.game.mission === true) ? score - my.getScore(text, t, true) : 0,
-					speedToss: speedTossBonus, // Send bonus amount
-					baby: $doc.baby,
-					totalScore: client.game.score // 봇 점수 동기화용
-				}, true);
-				if (my.game.mission === true) {
-					my.game.mission = getMission(my.rule.lang);
-				}
-				setTimeout(my.turnNext, my.game.turnTime / 6);
-				if (!client.robot) {
-					client.invokeWordPiece(text, 1);
-					DB.kkutu[l].update(['_id', text]).set(['hit', $doc.hit + 1]).on();
-				} else {
-					getAuto.call(my, my.game.char, my.game.subChar, 1).then(function (w) {
-						if (!w) {
-							setTimeout(function () {
-								if (!my.opts.unknown) client.chat(Const.ROBOT_VICTORY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_VICTORY_MESSAGES.length)]);
-							}, 500);
+
+				// Random Linking Logic
+				if (my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second) {
+					// Override preChar/preSubChar if Random Rule is active
+
+					getRandomChar.call(my, text).then(function (randomResult) {
+						if (randomResult) {
+							my.game.char = randomResult.char;
+							my.game.subChar = getSubChar.call(my, randomResult.char);
+							// Pass link index to client
+							finishTurn(randomResult.index);
+						} else {
+							// All chars bad (Manner Mode) -> Reject Word
+							// Undo chain push and score
+							my.game.chain.pop();
+							client.game.score -= score;
+							// Send error
+							client.publish('turnError', {
+								code: 403, // Forbidden
+								value: text
+							}, true);
+							if (my.opts.one) my.turnEnd();
+							else client.game.turnError = true; // Flag to stop processing if needed?
+							// Actually we should just return/stop. But code flow is tricky.
+							// Revert score/chain is done. Just exit.
 						}
 					});
+					return; // Stop synchronous flow, wait for promise
+				} else {
+					my.game.char = preChar;
+					my.game.subChar = preSubChar;
+					finishTurn();
+				}
+
+				function finishTurn(linkIdx) {
+					// 1. 한방 체크 (모든 턴)
+					// Random/Unknown 모드는 제외하는 것이 안전하지만, 여기서 my.game.char가 이미 설정되어 있으므로 괜찮음.
+					// 단, Unknown 모드는 한방 개념이 없으므로 제외.
+					if (!my.opts.unknown) {
+						getAuto.call(my, my.game.char, my.game.subChar, 1).then(function (w) {
+							var count = (typeof w === 'number') ? w : (w ? 1 : 0);
+							var used = 0;
+
+							// 이미 사용된 단어 계산
+							var debugCheckChars = [];
+							if (my.game.chain) {
+								var checkChars = [my.game.char];
+								if (my.game.subChar) my.game.subChar.split("|").forEach(function (c) {
+									if (c && checkChars.indexOf(c) == -1) checkChars.push(c);
+								});
+								debugCheckChars = checkChars;
+								var type = Const.GAME_TYPE[my.mode];
+								var isKAP = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK');
+
+								var checkChain = my.game.chain;
+								if (my.opts.return) checkChain = my.game.chain.slice(-5);
+
+								checkChain.forEach(function (doneWord) {
+									var match = false;
+									checkChars.forEach(function (cc) {
+										if (isKAP) {
+											if (doneWord.slice(-cc.length) === cc) match = true;
+										} else {
+											if (doneWord.indexOf(cc) === 0) match = true;
+										}
+									});
+									if (match) used++;
+								});
+							}
+
+							var isHanbang = (count - used === 0);
+							console.log(`[DEBUG] Hanbang Check: char=${my.game.char}, sub=${my.game.subChar}, count=${count}, used=${used}, isHanbang=${isHanbang}, checkChars=${debugCheckChars.join(",")}`);
+
+							// 결과 저장 (turnStart에서도 재사용 가능)
+							my.game.nextCharWordCount = count - used;
+
+							finalizeTurn(isHanbang);
+
+							// 봇 승리 메시지
+							if (client.robot && isHanbang) {
+								setTimeout(function () {
+									if (!my.opts.unknown) client.chat(Const.ROBOT_VICTORY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_VICTORY_MESSAGES.length)]);
+								}, 500);
+							}
+						});
+					} else {
+						// 체크하지 않는 경우 (Unknown 등)
+						finalizeTurn(false);
+					}
+
+					function finalizeTurn(isHanbang) {
+						client.game.score += score;
+						client.publish('turnEnd', {
+							ok: true,
+							value: text,
+							mean: $doc.mean,
+							theme: $doc.theme,
+							wc: $doc.type,
+							score: score,
+							bonus: (my.game.mission === true) ? score - my.getScore(text, t, true) : 0,
+							speedToss: speedTossBonus,
+							straightBonus: straightBonus, // Send Straight Bonus
+							baby: $doc.baby,
+							totalScore: client.game.score,
+							linkIndex: linkIdx, // Send Link Index
+							isHanbang: isHanbang // 한방 여부 전송!
+						}, true);
+
+						if (my.game.mission === true) {
+							my.game.mission = getMission(my.rule.lang);
+						}
+						setTimeout(my.turnNext, my.game.turnTime / 6);
+
+						if (!client.robot) {
+							client.invokeWordPiece(text, 1);
+							DB.kkutu[l].update(['_id', text]).set(['hit', $doc.hit + 1]).on();
+						}
+					}
 				}
 			}
-			if ((firstMove || my.opts.manner) && !my.opts.unknown) getAuto.call(my, preChar, preSubChar, 1).then(function (w) {
-				if (w) approved();
-				else {
+			if (!my.opts.unknown && !(my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second)) getAuto.call(my, preChar, preSubChar, 1).then(function (w) {
+				var count = (typeof w === 'number') ? w : (w ? 1 : 0);
+				var used = 0;
+				if (my.game.chain) {
+					var checkChars = [preChar];
+					if (preSubChar) preSubChar.split("|").forEach(function (c) { if (c && checkChars.indexOf(c) == -1) checkChars.push(c); });
+					var type = Const.GAME_TYPE[my.mode];
+					var isKAP = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK');
+
+					var checkChain = my.game.chain;
+					if (my.opts.return) checkChain = my.game.chain.slice(-5);
+
+					checkChain.forEach(function (doneWord) {
+						var match = false;
+						checkChars.forEach(function (cc) {
+							if (isKAP) {
+								if (doneWord.slice(-cc.length) === cc) match = true;
+							} else {
+								if (doneWord.indexOf(cc) === 0) match = true;
+							}
+						});
+						if (match) used++;
+					});
+				}
+
+				// 남은 단어 수를 저장하여 turnStart에서 재사용
+				my.game.nextCharWordCount = count - used;
+
+				if ((firstMove || my.opts.manner) && count - used > 0) {
+					// Stack Kill Prevention for Manner Mode/First Turn (SafeGuard)
+					// If the pool is small, check if it's a "Dead End Stack" (Recursive Trap)
+					if (count - used <= 10) {
+						getAuto.call(my, preChar, preSubChar, 2).then(function (list) {
+							if (!list || list.length === 0) {
+								// Treat as Trap because Real DB found no words (contradicting Stats)
+								my.game.loading = false;
+								client.publish('turnError', {
+									code: 403, // Forbidden (Trap)
+									value: text
+								}, true);
+								if (client.robot) my.readyRobot(client);
+								if (my.opts.one) my.turnEnd();
+								return;
+							}
+
+							var isStack = true;
+							var i, w, nc, ns;
+
+							// Prepare valid start characters (Original + Dueum Variations)
+							var startChars = [preChar];
+							if (preSubChar) {
+								preSubChar.split('|').forEach(function (sc) {
+									if (sc && startChars.indexOf(sc) === -1) startChars.push(sc);
+								});
+							}
+
+							for (i = 0; i < list.length; i++) {
+								w = list[i]._id;
+								nc = getChar.call(my, w);
+								ns = getSubChar.call(my, nc);
+
+								var linksToSelf = false;
+
+								// Check if nc matches any start char
+								if (startChars.indexOf(nc) !== -1) linksToSelf = true;
+								// Check if any subchar of nc matches any start char
+								else if (ns) {
+									var parts = ns.split('|');
+									for (var k = 0; k < parts.length; k++) {
+										if (startChars.indexOf(parts[k]) !== -1) {
+											linksToSelf = true;
+											break;
+										}
+									}
+								}
+
+								if (!linksToSelf) {
+									isStack = false; // Found an escape!
+									break;
+								}
+							}
+
+							if (isStack && list.length > 0) {
+								// Block!
+								my.game.loading = false;
+								client.publish('turnError', {
+									code: 403, // Forbidden (Trap)
+									value: text
+								}, true);
+								if (client.robot) my.readyRobot(client);
+								if (my.opts.one) my.turnEnd();
+							} else {
+								approved();
+							}
+						});
+					} else {
+						approved();
+					}
+				}
+				else if (firstMove || my.opts.manner) {
 					my.game.loading = false;
 					client.publish('turnError', {
 						code: firstMove ? 402 : 403,
@@ -672,6 +1011,8 @@ exports.submit = function (client, text) {
 						my.readyRobot(client);
 					}
 					if (my.opts.one) my.turnEnd();
+				} else {
+					approved();
 				}
 			});
 			else approved();
@@ -745,33 +1086,29 @@ exports.submit = function (client, text) {
 		var prevTargetChar, currLinkChar;
 
 		if (isRev) {
-			// Reverse Game (e.g. KAP):
-			// Previous Word: "기러기" (Ends with 기)
-			// Current Word: "기러기" (Starts with 기)
-			// Sumi-Sanggwan condition: Current Word's Start Char == Previous Word's End Char
-			// Use getChar logic for "Start Char" of Current Word in Reverse Game?
-			// getChar in Classic.js for KAP returns text.charAt(0) which is Start Char. Correct.
-
-			// Wait, the rule says:
-			// "Normal: Current Word's Linking Char matches Previous Word's Start Char"
-			// "Reverse: Current Word's First Char matches Previous Word's Last Char"
-
-			// Let's stick to the plan:
-			// Normal: currLinkChar (getChar(curr)) == prevTargetChar (prev.charAt(0))
-			// Reverse: currLinkChar (getChar(curr)) == prevTargetChar (prev.slice(-1))
-
-			// Check getChar implementation:
-			// KAP: returns text.charAt(0). Correct for "Current Word's First Char".
-
-			currLinkChar = getChar.call(my, currentWord);
-			prevTargetChar = prevWord.slice(-1); // Last char of previous word
+			if (my.opts.first && !my.opts.middle && !my.opts.second) {
+				// First Rule ONLY in Reverse (Link: Back->Back)
+				// Bonus: Start == Back
+				currLinkChar = currentWord.charAt(0);
+				prevTargetChar = prevWord.slice(-1);
+			} else {
+				currLinkChar = getChar.call(my, currentWord);
+				prevTargetChar = prevWord.slice(-1); // Last char of previous word
+			}
 		} else {
 			// Normal Game (KKT):
 			// currLinkChar = getChar(curr). (e.g., KKT: text.slice(-1) or text.slice(text.length-3) for EKT)
 			// prevTargetChar = prevWord.charAt(0);
 
-			currLinkChar = getChar.call(my, currentWord);
-			prevTargetChar = prevWord.charAt(0);
+			if (my.opts.first && !my.opts.middle && !my.opts.second) {
+				// First Rule ONLY in Normal (Link: Front->Front)
+				// Bonus: End == Front
+				currLinkChar = currentWord.slice(-1);
+				prevTargetChar = prevWord.charAt(0);
+			} else {
+				currLinkChar = getChar.call(my, currentWord);
+				prevTargetChar = prevWord.charAt(0);
+			}
 		}
 
 		// Apply Head Rule (SubChar) to Current Link Char
@@ -872,12 +1209,6 @@ exports.readyRobot = function (robot) {
 				var lenSuffix = (nextLen === 2) ? "2" : (nextLen === 3) ? "3" : "all";
 				col = isRev ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
 			} else {
-				// English: Use simplified 'count' columns (Start stats only)
-				// Note: Stats only track words starting with the char. 
-				// If isRev (KAP), this is technically checking if words START with the char, 
-				// which is not what KAP needs (words ENDING with the char). 
-				// But user specified English manner is for KKuTu (Standard) only.
-				// If KAP, this might return irrelevant counts, but typically EN KAP is rare/not focused.
 				col = `count_${state}`;
 			}
 
@@ -1168,6 +1499,20 @@ exports.readyRobot = function (robot) {
 		}
 
 		// Mode Constraints
+		if (my.opts.manner) { // 매너모드: 공격 금지
+			strategy = "NORMAL";
+			decided = true;
+		}
+
+		// First/Random Rules: Disable Attack
+		if (!decided && (my.opts.first || my.opts.random)) {
+			console.log("[BOT] First/Random Rule detected. Disabling Attack Strategy and Special Moves.");
+			strategy = "NORMAL"; // Always Normal
+			decided = true;
+			// Personality Override if Aggressive (>0 -> 0)
+			if (personality > 0) personality = 0;
+		}
+
 		var effPersonality = personality;
 		if (isKKT && effPersonality < 0) effPersonality = 0; // KKT: No Long Word personality
 
@@ -1277,8 +1622,19 @@ exports.readyRobot = function (robot) {
 						// Shuffle Tiers but keeping Priority Chars at the front
 						// This ensures that when we slice (e.g. top 150), the Priority chars are included.
 						function postShuffle(list) {
-							var pList = isRev ? PRIORITY_KAP_ATTACK_CHARS : PRIORITY_ATTACK_CHARS;
-							var mList = isRev ? PRIORITY_KAP_ATTACK_CHARS_MANNER : PRIORITY_ATTACK_CHARS_MANNER;
+							var pList = [];
+							var mList = [];
+							if (my.rule.lang === 'ko') {
+								pList = isRev ? PRIORITY_KAP_ATTACK_CHARS : PRIORITY_ATTACK_CHARS;
+								mList = isRev ? PRIORITY_KAP_ATTACK_CHARS_MANNER : PRIORITY_ATTACK_CHARS_MANNER;
+							} else {
+								if (isRev) {
+									pList = PRIORITY_KAP_ATTACK_CHARS_EN;
+								} else {
+									pList = PRIORITY_ATTACK_CHARS_EN;
+									mList = PRIORITY_ATTACK_CHARS_MANNER_EN;
+								}
+							}
 
 							var pSlice = pList ? pList.slice(0, Math.ceil(pList.length * heuristicRatio)) : [];
 							var mSlice = mList ? mList.slice(0, Math.ceil(mList.length * heuristicRatio)) : [];
@@ -1301,8 +1657,21 @@ exports.readyRobot = function (robot) {
 						// Initialize Priority Set for Smart Shuffle
 						var prioritySet = new Set();
 						(function initPrioritySet() {
-							var pList = isRev ? PRIORITY_KAP_ATTACK_CHARS : PRIORITY_ATTACK_CHARS;
-							var mList = isRev ? PRIORITY_KAP_ATTACK_CHARS_MANNER : PRIORITY_ATTACK_CHARS_MANNER;
+							var pList = [];
+							var mList = [];
+
+							if (my.rule.lang === 'ko') {
+								pList = isRev ? PRIORITY_KAP_ATTACK_CHARS : PRIORITY_ATTACK_CHARS;
+								mList = isRev ? PRIORITY_KAP_ATTACK_CHARS_MANNER : PRIORITY_ATTACK_CHARS_MANNER;
+							} else {
+								if (isRev) {
+									pList = PRIORITY_KAP_ATTACK_CHARS_EN;
+								} else {
+									pList = PRIORITY_ATTACK_CHARS_EN;
+									mList = PRIORITY_ATTACK_CHARS_MANNER_EN;
+								}
+							}
+
 							var pSlice = pList ? pList.slice(0, Math.ceil(pList.length * heuristicRatio)) : [];
 							var mSlice = mList ? mList.slice(0, Math.ceil(mList.length * heuristicRatio)) : [];
 							pSlice.forEach(c => prioritySet.add(c));
@@ -1414,6 +1783,12 @@ exports.readyRobot = function (robot) {
 							// 자유 두음법칙 + KSH: AVOID_FD 글자 제외
 							if ((Const.GAME_TYPE[my.mode] === "KSH" || Const.GAME_TYPE[my.mode] === "KKT") && my.opts.freedueum) {
 								killers = killers.filter(k => !AVOID_FD.includes(k));
+								if (killers.length === 0) return nextStepCallback();
+							}
+
+							// 모음 반전: AVOID_VI 글자 제외
+							if (my.opts.vowelinv) {
+								killers = killers.filter(k => !AVOID_VI.includes(k));
 								if (killers.length === 0) return nextStepCallback();
 							}
 
@@ -1629,7 +2004,11 @@ exports.readyRobot = function (robot) {
 
 								}
 
-								regex = `^(${adc})${middlePattern}(${killerPattern})$`;
+								if (isRev) {
+									regex = `^(${killerPattern})${middlePattern}(${adc})$`;
+								} else {
+									regex = `^(${adc})${middlePattern}(${killerPattern})$`;
+								}
 							}
 
 							console.log(`[BOT] ATTACK EN: Optimized Query with ${subset.length} random killers...`);
@@ -1829,7 +2208,7 @@ function getAuto(char, subc, type, limit, sort) {
 	adc = char + (subc ? ("|" + subc) : "");
 	switch (gameType) {
 		case 'EKK':
-			adv = `^(${adc}).{${my.game.wordLength - 1}}$`;
+			adv = `^(${adc}).{${my.game.wordLength - char.length}}$`;
 			break;
 		case 'EKT':
 			adv = `^(${adc})..`;
@@ -1841,7 +2220,7 @@ function getAuto(char, subc, type, limit, sort) {
 			adv = `^(${adc})...`;
 			break;
 		case 'KKT':
-			adv = `^(${adc}).{${my.game.wordLength - 1}}$`;
+			adv = `^(${adc}).{${my.game.wordLength - char.length}}$`;
 			break;
 		case 'KAP':
 		case 'EAP':
@@ -1849,7 +2228,7 @@ function getAuto(char, subc, type, limit, sort) {
 			break;
 		case 'KAK':
 		case 'EAK':
-			adv = `^.{${my.game.wordLength - 1}}(${adc})$`;
+			adv = `^.{${my.game.wordLength - char.length}}(${adc})$`;
 			break;
 	}
 	if (!char) {
@@ -1858,12 +2237,12 @@ function getAuto(char, subc, type, limit, sort) {
 
 	// type=1 (존재 여부 확인 Check): kkutu_stats table check
 	if (bool && char) {
-		// Bitmask State
+		// Bitmask State (통계 테이블은 0-7만 지원, freedueum 비트 제외)
 		var state = 0;
 		if (!my.opts.injeong) state |= 1;
 		if (my.opts.strict) state |= 2;
 		if (my.opts.loanword) state |= 4;
-		if (my.opts.freedueum) state |= 8;
+		// freedueum(bit 3)은 통계 테이블에 없으므로 제외
 
 		var isKo = my.rule.lang === 'ko';
 		var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
@@ -1887,16 +2266,18 @@ function getAuto(char, subc, type, limit, sort) {
 
 		var pending = charsToCheck.length;
 		var totalCount = 0;
+		var debugCounts = [];
 
 		charsToCheck.forEach(function (c) {
 			table.findOne(['_id', c]).on(function ($st) {
-				if ($st && $st[col]) {
-					totalCount += $st[col];
-				}
+				var charCount = ($st && $st[col]) ? $st[col] : 0;
+				totalCount += charCount;
+				debugCounts.push(`${c}:${charCount}`);
+
 				if (--pending === 0) {
-					// Done
+					console.log(`[DEBUG] getAuto stats: col=${col}, total=${totalCount}, details=[${debugCounts.join(", ")}]`);
 					if (totalCount > 0) {
-						R.go(true);
+						R.go(totalCount);
 					} else {
 						// Fallback to real DB check if stats say 0 (or cache miss)
 						produce();
@@ -1904,8 +2285,10 @@ function getAuto(char, subc, type, limit, sort) {
 				}
 			}, null, function () {
 				// Error/Empty
+				debugCounts.push(`${c}:ERR`);
 				if (--pending === 0) {
-					if (totalCount > 0) R.go(true);
+					console.log(`[DEBUG] getAuto stats (with errors): col=${col}, total=${totalCount}, details=[${debugCounts.join(", ")}]`);
+					if (totalCount > 0) R.go(totalCount);
 					else produce();
 				}
 			});
@@ -1944,7 +2327,7 @@ function getAuto(char, subc, type, limit, sort) {
 				break;
 			case 1:
 				aft = function ($md) {
-					R.go($md.length ? true : false);
+					R.go($md.length);
 				};
 				break;
 			case 2:
@@ -1984,14 +2367,17 @@ function getChar(text) {
 	var idx = -1;
 	var isKAP = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK');
 
-	if (type === 'EKT' && my.rule.lang === 'en' && (my.opts.middle || my.opts.second)) {
+	if (type === 'EKT' && my.rule.lang === 'en') {
 		my._lastWordLen = len;
-		if (len === 2) {
-			if (my.opts.second) return text.charAt(0);
-			return text.slice(-1);
-		}
+	}
 
-		if (my.opts.middle) {
+	// Priority 1: Middle Rule
+	if (my.opts.middle) {
+		if (type === 'EKT' && my.rule.lang === 'en') {
+			if (len === 2) {
+				if (my.opts.second) return text.charAt(0);
+				return text.slice(-1);
+			}
 			if (len % 2 !== 0) {
 				idx = Math.floor(len / 2);
 				return text.slice(idx - 1, idx + 2);
@@ -2001,26 +2387,42 @@ function getChar(text) {
 			}
 		}
 
+		// Generic Middle (including Middle+Second)
 		if (my.opts.second) {
-			if (len >= 4) return text.slice(len - 4, len - 1);
-			else if (len === 3) return text;
-		}
-	}
-
-	if (my.opts.middle || my.opts.second) {
-		if (my.opts.middle && my.opts.second) {
 			if (len % 2 !== 0) idx = Math.floor(len / 2);
 			else idx = isKAP ? (len / 2) : (len / 2 - 1);
-		} else if (my.opts.middle) {
+		} else {
 			if (len % 2 !== 0) idx = Math.floor(len / 2);
 			else idx = isKAP ? (len / 2 - 1) : (len / 2);
-		} else {
-			idx = isKAP ? 1 : (len - 2);
 		}
-
 		if (idx >= 0 && idx < len) return text.charAt(idx);
 	}
 
+	// Priority 2: First Rule
+	if (my.opts.first) {
+		if (my.opts.second) {
+			if (isKAP) return text.slice(-2, -1);
+			if (type === 'EKT') return text.slice(1, 4);
+			return text.charAt(1);
+		}
+		if (isKAP) return text.slice(-1);
+		if (type === 'EKT') return text.slice(0, 3);
+		return text.charAt(0);
+	}
+
+	// Priority 3: Second Rule
+	if (my.opts.second) {
+		if (type === 'EKT' && my.rule.lang === 'en') {
+			if (len === 2) return text.charAt(0);
+			if (len >= 4) return text.slice(len - 4, len - 1);
+			else if (len === 3) return text;
+		}
+
+		idx = isKAP ? 1 : (len - 2);
+		if (idx >= 0 && idx < len) return text.charAt(idx);
+	}
+
+	// Default
 	switch (type) {
 		case 'EKT':
 			return text.slice(text.length - 3);
@@ -2040,6 +2442,7 @@ function getChar(text) {
 function getSubChar(char) {
 	var my = this;
 	var r;
+	if (char.length > 1 && Const.GAME_TYPE[my.mode] !== "EKT") return r;
 	var c = char.charCodeAt();
 	var k;
 	var ca, cb, cc;
@@ -2066,64 +2469,78 @@ function getSubChar(char) {
 		case "KKT":
 		case "KSH":
 		case "KAP":
+		case "KAK":
 			k = c - 0xAC00;
 			if (k < 0 || k > 11171) break;
-			ca = [Math.floor(k / 28 / 21), Math.floor(k / 28) % 21, k % 28];
-			cb = [ca[0] + 0x1100, ca[1] + 0x1161, ca[2] + 0x11A7];
-			cc = false;
 
-			// Helper to build a character from initial, medial, final
-			function buildChar(initial, medial, final) {
-				return String.fromCharCode(((initial * 21) + medial) * 28 + final + 0xAC00);
+			var srcCodes = [c];
+			if (my.opts.vowelinv) {
+				var medial = Math.floor(k / 28) % 21;
+				if (VOWEL_INV_MAP[medial] !== undefined) {
+					var initial = Math.floor(k / 588);
+					var final = k % 28;
+					var invCode = ((initial * 21) + VOWEL_INV_MAP[medial]) * 28 + final + 0xAC00;
+					srcCodes.push(invCode);
+				}
 			}
 
-			if (my.opts.freedueum) {
-				// 자유 두음법칙: 모음 조건 무시, 두 번째 변환까지 모두 포함
-				var results = [];
-				var medial = ca[1];
-				var final = ca[2];
+			var resSet = new Set();
 
-				if (isKAP) {
-					// 앞말잇기: ㅇ→ㄴ|ㄹ, ㄴ→ㄹ
-					if (cb[0] === 4363) { // ㅇ -> ㄴ, ㄹ
-						results.push(buildChar(2, medial, final)); // ㄴ (initial index 2)
-						results.push(buildChar(5, medial, final)); // ㄹ (initial index 5)
-					} else if (cb[0] === 4354) { // ㄴ -> ㄹ
-						results.push(buildChar(5, medial, final)); // ㄹ (initial index 5)
+			srcCodes.forEach(function (cd) {
+				if (cd !== c) resSet.add(String.fromCharCode(cd));
+
+				var k_sub = cd - 0xAC00;
+				var ca = [Math.floor(k_sub / 588), Math.floor(k_sub / 28) % 21, k_sub % 28];
+				var cb = [ca[0] + 0x1100, ca[1] + 0x1161, ca[2] + 0x11A7];
+
+				function buildChar(initial, medial, final) {
+					return String.fromCharCode(((initial * 21) + medial) * 28 + final + 0xAC00);
+				}
+
+				if (my.opts.freedueum) {
+					if (isKAP) {
+						if (cb[0] === 4363) {
+							resSet.add(buildChar(2, ca[1], ca[2]));
+							resSet.add(buildChar(5, ca[1], ca[2]));
+						} else if (cb[0] === 4354) {
+							resSet.add(buildChar(5, ca[1], ca[2]));
+						}
+					} else {
+						if (cb[0] === 4357) {
+							resSet.add(buildChar(2, ca[1], ca[2]));
+							resSet.add(buildChar(11, ca[1], ca[2]));
+						} else if (cb[0] === 4354) {
+							resSet.add(buildChar(11, ca[1], ca[2]));
+						}
 					}
 				} else {
-					// 끝말잇기/쿵쿵따: ㄹ→ㄴ|ㅇ, ㄴ→ㅇ
-					if (cb[0] === 4357) { // ㄹ -> ㄴ, ㅇ
-						results.push(buildChar(2, medial, final)); // ㄴ (initial index 2)
-						results.push(buildChar(11, medial, final)); // ㅇ (initial index 11)
-					} else if (cb[0] === 4354) { // ㄴ -> ㅇ
-						results.push(buildChar(11, medial, final)); // ㅇ (initial index 11)
+					if (isKAP) {
+						if (cb[0] === 4363 && NIEUN_TO_IEUNG.indexOf(cb[1]) !== -1) {
+							resSet.add(buildChar(2, ca[1], ca[2]));
+						}
+						if (cb[0] === 4363 && RIEUL_TO_IEUNG.indexOf(cb[1]) !== -1) {
+							resSet.add(buildChar(5, ca[1], ca[2]));
+						}
+						if (cb[0] === 4354 && RIEUL_TO_NIEUN.indexOf(cb[1]) !== -1) {
+							resSet.add(buildChar(5, ca[1], ca[2]));
+						}
+					} else {
+						if (cb[0] === 4357) {
+							if (RIEUL_TO_NIEUN.includes(cb[1])) {
+								resSet.add(buildChar(2, ca[1], ca[2]));
+							} else if (RIEUL_TO_IEUNG.includes(cb[1])) {
+								resSet.add(buildChar(11, ca[1], ca[2]));
+							}
+						} else if (cb[0] === 4354) {
+							if (NIEUN_TO_IEUNG.indexOf(cb[1]) != -1) {
+								resSet.add(buildChar(11, ca[1], ca[2]));
+							}
+						}
 					}
 				}
+			});
 
-				if (results.length > 0) {
-					r = results.join("|");
-				}
-			} else {
-				// 기존 두음법칙 로직 (모음 조건 적용)
-				if (cb[0] == 4357) { // ㄹ에서 ㄴ, ㅇ
-					cc = true;
-					if (RIEUL_TO_NIEUN.includes(cb[1])) cb[0] = 4354;
-					else if (RIEUL_TO_IEUNG.includes(cb[1])) cb[0] = 4363;
-					else cc = false;
-				} else if (cb[0] == 4354) { // ㄴ에서 ㅇ
-					if (NIEUN_TO_IEUNG.indexOf(cb[1]) != -1) {
-						cb[0] = 4363;
-						cc = true;
-					}
-				}
-				if (cc) {
-					cb[0] -= 0x1100;
-					cb[1] -= 0x1161;
-					cb[2] -= 0x11A7;
-					r = String.fromCharCode(((cb[0] * 21) + cb[1]) * 28 + cb[2] + 0xAC00);
-				}
-			}
+			if (resSet.size > 0) r = Array.from(resSet).join("|");
 			break;
 		case "ESH":
 		default:
@@ -2161,4 +2578,73 @@ function getReverseDueumChars(char) {
 	}
 
 	return results;
+}
+
+function getRandomChar(text) {
+	var my = this;
+	var type = Const.GAME_TYPE[my.mode];
+	var len = text.length;
+	var indices = [];
+
+	// EKT Logic: 3-grams
+	if (type === 'EKT') {
+		// Valid indices for 3-gram starts: 0 to len-3
+		for (var i = 0; i <= len - 3; i++) {
+			if (!/[0-9\s]/.test(text.slice(i, i + 3))) indices.push(i);
+		}
+	} else {
+		// General Logic: All single characters
+		for (var i = 0; i < len; i++) {
+			if (!/[0-9\s]/.test(text.charAt(i))) indices.push(i);
+		}
+	}
+
+	// Shuffle indices -> Deleted. We will pick randomly.
+	// indices = shuffle(indices);
+
+	return new Promise(function (resolve) {
+		if (!my.opts.manner) {
+			// If not Manner mode, pick first random
+			if (indices.length > 0) {
+				var randIdx = Math.floor(Math.random() * indices.length);
+				return resolve({ index: indices[randIdx], char: getCharFromIndex(indices[randIdx]) });
+			}
+			return resolve(null);
+		}
+
+		// Manner Mode Check
+		var checkNext = function () {
+			if (indices.length === 0) return resolve(null); // No valid chars found
+
+			// Pick random index and remove it from pool
+			var randPoolIdx = Math.floor(Math.random() * indices.length);
+			var idx = indices.splice(randPoolIdx, 1)[0];
+
+			var char = getCharFromIndex(idx);
+			var subChar = getSubChar.call(my, char);
+
+			// Check if this char has valid connecting words (Tier 1 check)
+			getAuto.call(my, char, subChar, 1).then(function (res) {
+				// res is count (number) or possibly boolean from cache
+				var count = (typeof res === 'number') ? res : (res ? 1 : 0);
+
+				console.log(`[RandomDebug] Word: ${text}, Idx: ${idx}, Char: ${char}, Count: ${count}`);
+
+				if (count > 0) {
+					// Found valid char
+					resolve({ index: idx, char: char });
+				} else {
+					// Invalid (Bad Manner), try next
+					checkNext();
+				}
+			});
+		};
+
+		checkNext();
+	});
+
+	function getCharFromIndex(idx) {
+		if (type === 'EKT') return text.slice(idx, idx + 3);
+		return text.charAt(idx);
+	}
 }

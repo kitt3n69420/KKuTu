@@ -156,6 +156,7 @@ function applyOptions(opt) {
 	$("#sort-user").attr('checked', $data.opts.su);
 	$("#only-waiting").attr('checked', $data.opts.ow);
 	$("#only-unlock").attr('checked', $data.opts.ou);
+	$("#show-rule-category").attr('checked', $data.opts.src === true);
 
 	// 사운드팩 설정 (localStorage에 값이 있으면 localStorage, 없으면 cookie)
 	var soundPack = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts.sp || "");
@@ -258,8 +259,8 @@ function addInterval(cb, v, a1, a2, a3, a4, a5) {
 	$data._timers.push(R);
 	return R;
 }
-function addTimeout(cb, v, a1, a2, a3, a4, a5) {
-	var R = _setTimeout(cb, v, a1, a2, a3, a4, a5);
+function addTimeout(cb, v, a1, a2, a3, a4, a5, a6, a7, a8) {
+	var R = _setTimeout(cb, v, a1, a2, a3, a4, a5, a6, a7, a8);
 
 	$data._timers.push(R);
 	return R;
@@ -920,7 +921,14 @@ function processRoom(data) {
 				$data._rMode = getOptions($data.room.mode, $data.room.opts, true);
 				$data._rLimit = $data.room.limit;
 				$data._rRound = $data.room.round;
-				$data._rTime = $data.room.time;
+				$data._injpick = $data.room.opts.injpick;
+
+				// Set Linking Method Dropdown
+				var linkVal = 'std';
+				if ($data.room.opts.middle) linkVal = 'mid';
+				else if ($data.room.opts.first) linkVal = 'fir';
+				else if ($data.room.opts.random) linkVal = 'ran';
+				$("#room-link-method").val(linkVal);
 			}
 			$data.room = data.room;
 			$data.place = $data.room.id;
@@ -977,7 +985,7 @@ function processRoom(data) {
 	}
 }
 function getOnly() {
-	return $data.place ? (($data.room.gaming || $data.resulting) ? "for-gaming" : ($data.master ? "for-master" : "for-normal")) : "for-lobby";
+	return $data.place ? (($data.room && $data.room.gaming || $data.resulting) ? "for-gaming" : ($data.master ? "for-master" : "for-normal")) : "for-lobby";
 }
 function updateUI(myRoom, refresh) {
 	/*
@@ -2689,7 +2697,7 @@ function vibrate(level) {
 function getRandomColor() {
 	return "hsl(" + Math.floor(Math.random() * 360) + ", 100%, 85%)";
 }
-function pushDisplay(text, mean, theme, wc, isSumi) {
+function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang) {
 	var len;
 	var mode = MODE[$data.room.mode];
 	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK";
@@ -2703,10 +2711,121 @@ function pushDisplay(text, mean, theme, wc, isSumi) {
 
 	// Sumi-Sanggwan Highlight Index: Last Char for Normal, First Char for Reverse
 
-	var sumiIdx;
-	if ($data.room.opts.middle) sumiIdx = isRev ? Math.floor((len - 1) / 2) : Math.ceil((len - 1) / 2);
-	else if ($data.room.opts.second) sumiIdx = isRev ? 1 : len - 2;
-	else sumiIdx = isRev ? 0 : len - 1;
+	var linkIdx = -1;
+	var linkingIndices = [];
+
+	// Priority 0: Random (Override)
+	if (typeof overrideLinkIndex !== 'undefined' && overrideLinkIndex !== null) {
+		linkIdx = overrideLinkIndex;
+	}
+	// Priority 1: Middle
+	else if ($data.room.opts.middle) {
+		if (isRev) {
+			linkIdx = Math.floor((len - 1) / 2); // Reverse: Middle
+		} else {
+			linkIdx = Math.ceil((len - 1) / 2); // Normal: Middle
+		}
+	}
+	// Priority 2: First
+	else if ($data.room.opts.first) {
+		if ($data.room.opts.second) {
+			// First + Second
+			if (isRev) linkIdx = len - 2; // KAP: Back-2
+			else linkIdx = 1; // Normal: Front-2 (Index 1)
+			if (mode == 'EKT') linkIdx = 1; // EKT: Front-2 (Start index 1)
+		} else {
+			// First Only
+			if (isRev) linkIdx = len - 1; // KAP: Back-1 (End)
+			else linkIdx = 0; // Normal: Front-1 (Start)
+		}
+	}
+	// Priority 3: Second
+	else if ($data.room.opts.second) {
+		if (isRev) linkIdx = 1; // KAP: Front-2
+		else linkIdx = len - 2; // Normal: Back-2
+	}
+	// Default
+	else {
+		if (isRev) linkIdx = 0; // KAP: Front-1
+		else linkIdx = len - 1; // Normal: Back-1
+	}
+
+	// [New Logic] Sumi-Sanggwan Highlight Index
+	var sumiIdx = linkIdx;
+
+	// [Exception] Boomerang Conflict with First Rule (Pure First Only)
+	if ($data.room.opts.first && !$data.room.opts.middle && !$data.room.opts.second) {
+		// If First rule is active (and no Middle/Second), linking is trivial (Start==Start).
+		// Force Boomerang to use Cyclic Linking (End<->Start).
+		if (isRev) sumiIdx = 0; // Reverse: Check Start (vs Prev End)
+		else sumiIdx = len - 1; // Normal: Check End (vs Prev Start)
+	}
+
+	// [New Logic] Linking Indices (Purple)
+	if (RULE[mode].lang == 'en' && mode == 'EKT') {
+		// EKT Special Multi-Char Logic
+		// EKT Linking usually length 3.
+		// If First rule active, starting from linkIdx (which is Start for First rule).
+		// If Second... 
+		// Wait, let's keep it simple based on the start index found.
+
+		var startK = linkIdx;
+		if (typeof overrideLinkIndex !== 'undefined' && overrideLinkIndex !== null) {
+			// If override is present (Random Rule), assume linkIdx is the correct start index
+			// Just highlight 3 chars from there.
+			for (var k = startK; k < startK + 3; k++) {
+				if (k >= 0 && k < len) linkingIndices.push(k);
+			}
+		}
+		else if ($data.room.opts.middle) {
+			// Middle for EKT (len dependent)
+			// Re-use linkIdx as center? No, classic.js returns slice.
+			// Let's approximate based on observed behavior or strict match.
+			// Middle EKT: slice(idx-1, idx+2). So 3 chars around center.
+			// If linkIdx was calculated as the "main" one...
+			// Middle EKT Logic in classic.js:
+			/*
+			if (len % 2 !== 0) idx = floor(len/2); -> slice(idx-1, idx+2)
+			else idx = len/2; -> slice(idx-1, idx+2)
+			*/
+			// My logic above:
+			/*
+			Normal: ceil((len-1)/2) -> if len=5, ceil(2)=2. idx=2. slice(1,4). Indices 1,2,3.
+			Reverse: floor -> if len=5, floor(2)=2.
+			*/
+			// Let's assume linkIdx points to the *middle* of the 3 chars?
+			// If linkIdx = 2. We want 1, 2, 3.
+			for (var k = startK - 1; k <= startK + 1; k++) {
+				if (k >= 0 && k < len) linkingIndices.push(k);
+			}
+		}
+		else if ($data.room.opts.first) {
+			// First Rule EKT: slice(0,3) or slice(1,4)
+			// linkIdx above: 0 (or 1 if Second).
+			for (var k = startK; k < startK + 3; k++) {
+				if (k >= 0 && k < len) linkingIndices.push(k);
+			}
+		}
+		else {
+			// Default EKT: slice(-3)
+			// linkIdx above: len-1.
+			// slice(-3) start index is len-3.
+			// Adjust linkIdx to be start?
+			// Default logic above gave len-1.
+			// Let's override for EKT default.
+			if (startK == len - 1) {
+				for (var k = 0; k < 3; k++) {
+					if (len - 1 - k >= 0) linkingIndices.push(len - 1 - k);
+				}
+			} else {
+				// Fallback
+				linkingIndices.push(startK);
+			}
+		}
+	} else {
+		// All others (1 char)
+		linkingIndices.push(linkIdx);
+	}
 
 	$stage.game.display.empty();
 	if ($data.room.opts.drg) $stage.game.display.css('box-shadow', '0px 0px 20px ' + getRandomColor());
@@ -2729,6 +2848,8 @@ function pushDisplay(text, mean, theme, wc, isSumi) {
 
 			var charIdx = isRev ? len - j - 1 : j;
 			var isSumiChar = isSumi && (charIdx === sumiIdx);
+			var isStraightChar = isStraight && (isRev ? (charIdx === 0) : (charIdx === len - 1));
+			var isLinking = (RULE[mode].rule === "Classic") && (linkingIndices.indexOf(charIdx) !== -1);
 
 			$stage.game.display.append($l = $("<div>")
 				.addClass("display-text")
@@ -2738,23 +2859,32 @@ function pushDisplay(text, mean, theme, wc, isSumi) {
 				.html(text.charAt(charIdx))
 			);
 			j++;
-			addTimeout(function ($l, snd, isSumiChar) {
+			addTimeout(function ($l, snd, isSumiChar, isStraightChar, isLinking, isHanbang) {
 				var anim = { 'margin-top': 0 };
 
 				playSound(snd);
-				if ($l.html() == $data.mission) {
+				if (isSumiChar) {
 					playSound('mission');
-					$l.css({ 'color': "#66FF66" });
+					$l.css({ 'color': "#00FFFF" }); // Cyan (Priority 1)
 					anim['font-size'] = 24;
-				} else if (isSumiChar) {
+				} else if (isStraightChar) {
 					playSound('mission');
-					$l.css({ 'color': "#00FFFF" }); // Cyan
+					$l.css({ 'color': "#FFFF00" }); // Yellow (Priority 2)
 					anim['font-size'] = 24;
+				} else if ($l.html() == $data.mission) {
+					playSound('mission');
+					$l.css({ 'color': "#66FF66" }); // Green (Priority 2 -> 3)
+					anim['font-size'] = 24;
+				} else if (isLinking) {
+					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
+					if (isHanbang) playSound('missing');
+					$l.css({ 'color': isHanbang ? "#FF6666" : "rgb(146, 203, 250)" });
+					if (!isSumiChar && !isStraightChar) anim['font-size'] = 20; // Normal size unless bonus
 				} else {
 					anim['font-size'] = 20;
 				}
 				$l.show().animate(anim, 100);
-			}, Number(i) * tick, $l, ta, isSumiChar);
+			}, Number(i) * tick, $l, ta, isSumiChar, isStraightChar, isLinking, isHanbang);
 		}
 		i = $stage.game.display.children("div").get(0);
 		$(i).css(isRev ? 'margin-right' : 'margin-left', ($stage.game.display.width() - 20 * len) * 0.5);
@@ -2764,35 +2894,63 @@ function pushDisplay(text, mean, theme, wc, isSumi) {
 			addTimeout(function (t, idx) {
 				playSound(ta);
 				var isSumiChar = isSumi && (idx === sumiIdx);
+				var isStraightChar = isStraight && (idx === 0); // Rev: Last char is idx 0 (visually first)? No inside loop text[len-i-1].
+				// In this loop: text[len-i-1]. idx is passed as len-i-1. 
+				// Rev logic: Visually First == String Index 0? 
+				// Rev: "고구마" -> "구마" -> "...구". Index 0 is "고". Back-linking.
+				// Straight: "Last Char" visually? Or "End of word"?
+				// "always highlight the last character (front-linking ... first)".
+				// Normal: Last char (Index len-1).
+				// Rev (Front-linking): First char (Index 0).
+				// So logic `isRev ? (idx === 0) : (idx === len - 1)` holds.
 
-				if (t == $data.mission) {
-					playSound('mission');
-					j = "<label style='color: #66FF66;'>" + t + "</label>" + j;
-				} else if (isSumiChar) {
+				var isLinking = linkingIndices.indexOf(idx) !== -1;
+				var isStraightChar = isStraight && (idx === 0);
+
+				if (isSumiChar) {
 					playSound('mission');
 					j = "<label style='color: #00FFFF;'>" + t + "</label>" + j;
+				} else if (isStraightChar) {
+					playSound('mission');
+					j = "<label style='color: #FFFF00;'>" + t + "</label>" + j;
+				} else if (t == $data.mission) {
+					playSound('mission');
+					j = "<label style='color: #66FF66;'>" + t + "</label>" + j;
+				} else if (isLinking) {
+					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
+					if (isHanbang) playSound('missing');
+					j = "<label style='color: " + (isHanbang ? "#FF6666" : "rgb(146, 203, 250)") + ";'>" + t + "</label>" + j;
 				} else {
 					j = ($data.room.opts.drg ? ("<label style='color:" + getRandomColor() + "'>" + t + "</label>") : t) + j;
 				}
 				$stage.game.display.html(j);
-			}, Number(i) * sg / len, text[len - i - 1], len - i - 1);
+			}, Number(i) * sg / len, text[len - i - 1], len - i - 1, isHanbang);
 		}
 		else for (i = 0; i < len; i++) {
 			addTimeout(function (t, idx) {
 				playSound(ta);
 				var isSumiChar = isSumi && (idx === sumiIdx);
+				var isStraightChar = isStraight && (idx === len - 1); // Normal: Last char
+				var isLinking = (RULE[mode].rule === "Classic") && (linkingIndices.indexOf(idx) !== -1);
 
-				if (t == $data.mission) {
-					playSound('mission');
-					j += "<label style='color: #66FF66;'>" + t + "</label>";
-				} else if (isSumiChar) {
+				if (isSumiChar) {
 					playSound('mission');
 					j += "<label style='color: #00FFFF;'>" + t + "</label>";
+				} else if (isStraightChar) {
+					playSound('mission');
+					j += "<label style='color: #FFFF00;'>" + t + "</label>";
+				} else if (t == $data.mission) {
+					playSound('mission');
+					j += "<label style='color: #66FF66;'>" + t + "</label>";
+				} else if (isLinking) {
+					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
+					if (isHanbang) playSound('missing');
+					j += "<label style='color: " + (isHanbang ? "#FF6666" : "rgb(146, 203, 250)") + ";'>" + t + "</label>";
 				} else {
 					j += ($data.room.opts.drg ? ("<label style='color:" + getRandomColor() + "'>" + t + "</label>") : t);
 				}
 				$stage.game.display.html(j);
-			}, Number(i) * sg / len, text[i], i);
+			}, Number(i) * sg / len, text[i], i, isHanbang);
 		}
 	}
 	addTimeout(function () {
@@ -2988,15 +3146,10 @@ function setRoomHead($obj, room) {
 		.append($("<h5>").addClass("room-head-title").text(badWords(room.title)))
 		.append($rm = $("<h5>").addClass("room-head-mode").html(opts.join(" / ")))
 		.append($("<h5>").addClass("room-head-limit").html((mobile ? "" : (L['players'] + " ")) + room.players.length + " / " + room.limit))
-		.append($("<h5>").addClass("room-head-round").html(L['rounds'] + " " + room.round))
 		.append($("<h5>").addClass("room-head-time").html(room.time + L['SECOND']));
 
-	if (rule.opts.indexOf("ijp") != -1) {
-		$rm.append($("<div>").addClass("expl").html("<h5>" + room.opts.injpick.map(function (item) {
-			return L["theme_" + item];
-		}) + "</h5>"));
-		global.expl($obj);
-	}
+
+	global.expl($obj);
 }
 function loadSounds(list, callback, silent) {
 	var remain = list.length;

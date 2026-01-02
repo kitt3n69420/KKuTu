@@ -155,6 +155,33 @@ exports.submit = function (client, text) {
                 t = tv - my.game.turnAt;
                 var isReturn = my.opts.return && my.game.chain.includes(text);
                 score = my.getScore(text, t, isReturn);
+
+                // Straight Rule Logic
+                var straightBonus = 0;
+                if (my.opts.straight) {
+                    var currentLen = text.length;
+                    var prevLen = client.game.lastWordLen;
+
+                    if (typeof prevLen === 'undefined') {
+                        // First word for this player. Don't build streak.
+                        client.game.straightStreak = 0;
+                    } else if (currentLen - prevLen === 1) {
+                        // Condition met: increment streak
+                        client.game.straightStreak = (client.game.straightStreak || 0) + 1;
+                    } else {
+                        // Condition not met: reset streak
+                        client.game.straightStreak = 0;
+                    }
+
+                    client.game.lastWordLen = currentLen;
+
+                    if (client.game.straightStreak >= 2) {
+                        var multiplier = (client.game.straightStreak - 1) / 2;
+                        straightBonus = Math.round(score * multiplier);
+                        score += straightBonus;
+                    }
+                }
+
                 if (isReturn) score = 0;
                 my.game.chain.push(text);
                 my.game.roundTime -= t;
@@ -167,6 +194,7 @@ exports.submit = function (client, text) {
                     wc: $doc.type,
                     score: score,
                     bonus: (my.game.mission === true) ? score - my.getScore(text, t, true) : 0,
+                    straightBonus: straightBonus, // Send Straight Bonus
                     baby: $doc.baby,
                     totalScore: client.game.score
                 }, true);
@@ -373,11 +401,7 @@ function getAuto(char, type) {
         aqs.push(['_id', Const.ENG_ID]);
     }
 
-    // In Free mode, we just want *any* word. 
-    // But for 'getAuto' type 2 (list), we might want a random selection or sorted by length.
-    // Since we can't fetch ALL words, we'll fetch a random subset or use a regex to get a variety.
-    // Actually, fetching *any* word efficiently is tricky if we just do find({}).
-    // Let's try to fetch words starting with a random character to distribute load.
+    // In Free mode, fetch words starting with a random character to distribute load and get variety.
 
     if (type === 2) {
         // For bot list, pick a random start char to get a variety of words

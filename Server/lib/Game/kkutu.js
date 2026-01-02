@@ -671,9 +671,14 @@ exports.Client = function (socket, profile, sid) {
 			my.pracRoom.go(my);
 			if ($room) my.send('room', { target: my.id, room: $room.getData() });
 			my.publish('user', my.getData());
-			// 버그 수정: 연습 종료 후 본 방의 잠수 상태 재확인
+			// 버그 수정: 연습 종료 전에 먼저 타이머 정리, 그 후 isPracticing=false
 			if ($room) {
+				// 타이머 먼저 정리 (isPracticing=true 상태에서)
+				if ($room._adt) { clearTimeout($room._adt); delete $room._adt; }
+				if ($room._jst) { clearTimeout($room._jst); delete $room._jst; }
+				// 그 다음 isPracticing 해제
 				$room.isPracticing = false;
+				// 잠수 체크 및 타이머 재설정
 				$room.checkJamsu();
 				if ($room.master === my.id) $room.setAutoDelete();
 			}
@@ -789,7 +794,14 @@ exports.Client = function (socket, profile, sid) {
 		my.team = 0;
 		my.ready = false;
 		ud = my.getData();
-		my.pracRoom = new exports.Room($room.getData());
+		// 연습방 데이터 생성 시 practice=true를 미리 설정
+		var pracRoomData = $room.getData();
+		pracRoomData.practice = true;  // Room 생성자에서 setAutoDelete() 호출 방지
+		my.pracRoom = new exports.Room(pracRoomData);
+		// 버그 수정: 연습방은 생성 직후 practice=true 확인 (이미 위에서 설정됨)
+		// 추가 안전장치: 타이머가 있으면 클리어
+		if (my.pracRoom._adt) { clearTimeout(my.pracRoom._adt); delete my.pracRoom._adt; }
+		if (my.pracRoom._jst) { clearTimeout(my.pracRoom._jst); delete my.pracRoom._jst; }
 		my.pracRoom.id = $room.id + 1000;
 		ud.game.practice = my.pracRoom.id;
 		if (pr = $room.preReady()) return my.sendError(pr);
@@ -797,10 +809,10 @@ exports.Client = function (socket, profile, sid) {
 		my.pracRoom.time /= my.pracRoom.rule.time;
 		my.pracRoom.limit = 1;
 		my.pracRoom.password = "";
-		my.pracRoom.practice = true;
+		// practice는 이미 위에서 설정했으므로 제거
 		my.subPlace = my.pracRoom.id;
 		my.pracRoom.come(my);
-		$room.checkJamsu();
+		// 연습 중에는 checkJamsu 호출하지 않음 (isPracticing=true 상태)
 		my.pracRoom.start(data.level, data.personality, data.preferredChar);
 		my.pracRoom.game.hum = 1;
 
@@ -915,8 +927,16 @@ exports.Room = function (room, channel) {
 	my.game = {};
 
 	my.setAutoDelete = function (stage) {
+		// 마스터 프로세스에서는 타이머 설정하지 않음 (워커에서만 실행)
+		if (Cluster.isMaster) return;
+
 		if (my.practice) return;
-		if (my.isPracticing) return;
+		// 연습 중이거나 게임 중이면 기존 타이머 정리 후 return
+		if (my.isPracticing || my.gaming) {
+			if (my._adt) { clearTimeout(my._adt); delete my._adt; }
+			if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+			return;
+		}
 		if (my.password) return;
 
 		if (my._adt) clearTimeout(my._adt);
@@ -928,7 +948,11 @@ exports.Room = function (room, channel) {
 		if (stage === 'destroy') {
 			// 폭파 단계: 1분 후 방 삭제
 			my._adt = setTimeout(function () {
-				if (my.gaming) return;
+				// 게임 중이면 타이머 삭제 후 게임 종료 시 재설정됨
+				if (my.gaming) {
+					delete my._adt;
+					return;
+				}
 
 				// Phantom Player Cleanup
 				var i, p;
@@ -948,7 +972,15 @@ exports.Room = function (room, channel) {
 					return;
 				}
 
+				// 연습 중이면 타이머 삭제 후 연습 종료 시 재설정됨
 				if (my.isPracticing) {
+					delete my._adt;
+					return;
+				}
+
+				// 방 삭제 직전 한번 더 상태 확인
+				if (my.gaming || my.isPracticing) {
+					delete my._adt;
 					return;
 				}
 
@@ -991,7 +1023,11 @@ exports.Room = function (room, channel) {
 			}, boomTime);
 		} else {
 			my._adt = setTimeout(function () {
-				if (my.gaming) return;
+				// 게임 중이면 타이머 삭제 후 게임 종료 시 재설정됨
+				if (my.gaming) {
+					delete my._adt;
+					return;
+				}
 
 				// Fix: Phantom Player Cleanup
 				var i, p;
@@ -1011,7 +1047,15 @@ exports.Room = function (room, channel) {
 					return;
 				}
 
+				// 연습 중이면 타이머 삭제 후 연습 종료 시 재설정됨
 				if (my.isPracticing) {
+					delete my._adt;
+					return;
+				}
+
+				// 메시지 전송 직전 한번 더 상태 확인
+				if (my.gaming || my.isPracticing) {
+					delete my._adt;
 					return;
 				}
 
@@ -1022,18 +1066,21 @@ exports.Room = function (room, channel) {
 	};
 
 	my.checkJamsu = function () {
+		// 마스터 프로세스에서는 잠수 체크하지 않음 (워커에서만 실행)
+		if (Cluster.isMaster) return;
 		if (my.password) return;
-		var i, o, allReady = true;
-		var h_count = 0; // Human count (including master)
-		var b_count = 0; // Bot count
-		var waitingHumans = 0;
-		if (my.gaming) {
+		// 게임 중이거나 연습 중이면 잠수 체크 안 함
+		if (my.gaming || my.isPracticing) {
 			if (my._jst) {
 				clearTimeout(my._jst);
 				delete my._jst;
 			}
 			return;
 		}
+		var i, o, allReady = true;
+		var h_count = 0; // Human count (including master)
+		var b_count = 0; // Bot count
+		var waitingHumans = 0;
 
 
 
@@ -1548,6 +1595,8 @@ exports.Room = function (room, channel) {
 		my.rule = Const.getRule(room.mode);
 		my.round = Math.round(room.round);
 		my.time = room.time * my.rule.time;
+		// 연습방 플래그 설정
+		if (room.practice) my.practice = true;
 		if (room.opts && my.opts) {
 			for (i in Const.OPTIONS) {
 				k = Const.OPTIONS[i].name.toLowerCase();
@@ -1630,7 +1679,7 @@ exports.Room = function (room, channel) {
 		} else DIC[my.master].sendError(412);
 	};
 	my.start = function (pracLevel, personality, preferredChar) {
-		if (my._adt) clearTimeout(my._adt);
+		if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 		if (my._jst) { clearTimeout(my._jst); delete my._jst; }
 		console.log("[DEBUG] my.start called with:", pracLevel, personality, preferredChar);
 		var i, j, o, hum = 0;
@@ -2058,7 +2107,11 @@ exports.Room = function (room, channel) {
 		return c[func];
 	};
 	my.set(room);
-	my.setAutoDelete();
+	// 연습방이 아닌 경우에만 자동 삭제 타이머 시작
+	// (연습방은 생성 후 practice=true로 설정되므로 여기서 체크해도 안전)
+	if (!room.practice && !my.practice) {
+		my.setAutoDelete();
+	}
 };
 function getFreeChannel() {
 	var i, list = {};

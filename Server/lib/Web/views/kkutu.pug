@@ -120,6 +120,8 @@ block Middle
 			+SettingOption('only-waiting', L('onlyWaiting'), "width: 200px;")
 			h4
 			+SettingOption('only-unlock', L('onlyUnlock'), "width: 200px;")
+			h4
+			+SettingOption('show-rule-category', L('showRuleCategory'), "width: 200px;")
 		div.dialog-bar
 			h4= L('language')
 			select#language-setting(style="width: 150px;")
@@ -172,26 +174,26 @@ block Middle
 			h4(style='width: 100%; height: 20px;')#quick-queue
 		div.dialog-bar.tail-button
 			button#quick-ok= L('OK')
-	+Dialog('RoomDiag', 400, 450)
+	+Dialog('RoomDiag', 415, 450)
 		div.dialog-bar
 			h4= L('roomTitle')
-			input#room-title(placeholder=(nick || L('guest'))+L('roomDefault'), maxlength=20)
+			input#room-title(placeholder=(nick || L('guest'))+L('roomDefault'), maxlength=20, style="width: 283px;")
 		div.dialog-bar
 			h4= L('password')
-			input#room-pw(type='password', placeholder=L('password'), maxlength=20)
+			input#room-pw(type='password', placeholder=L('password'), maxlength=20, style="width: 283px;")
 		div.dialog-bar
 			h4= L('userLimit')
-			input#room-limit(type='number', min=2, max=12, step=1, value=8)
+			input#room-limit(type='number', min=2, max=12, step=1, value=8, style="width: 283px;")
 		div.dialog-bar
 			h4= L('gameCategory')
-			select#room-category
+			select#room-category(style="width: 283px;")
 				option(value='all')= L('categoryAll')
 				option(value='classic')= L('categoryClassic')
 				option(value='quiz')= L('categoryQuiz')
 				option(value='other')= L('categoryOther')
 		div.dialog-bar
 			h4= L('gameMode')
-			select#room-mode
+			select#room-mode(style="width: 283px;")
 				optgroup(label=L('mcKorean'))
 					option(value=3)= L('modeKSH')
 					option(value=2)= L('modeKKT')
@@ -217,15 +219,13 @@ block Middle
 					option(value=14)= L('modeESS')
 					option(value=20)= L('modeEPQ')
 					option(value=18)= L('modeEFR')
-		div.dialog-bar(style='margin-top: -5px; height: 50px;')
+		div.dialog-bar(style='margin-top: -5px; margin-bottom: 5px; height: auto;')
 			h4
 			h4#game-mode-expl.dialog-bar-value(style='width: 100%; font-size: 11px;')
-		div.dialog-bar
-			h4= L('numRound')
-			input#room-round(type='number', min=1, max=10, step=1, value=5)
-		div.dialog-bar
-			h4= L('roundTime')
-			select#room-time
+		div.dialog-bar(style='overflow: hidden;')
+			h4= L('roundSetting')
+			input#room-round(type='number', min=1, max=10, step=1, value=5, style="float: left; width: 133px;")
+			select#room-time(style="float: left; width: 133px; margin-left: 5px;")
 				option(value=5, style='color: #FF4444')
 				option(value=10, style='color: #FF4444')
 				option(value=30)
@@ -233,14 +233,53 @@ block Middle
 				option(value=90)
 				option(value=120)
 				option(value=150)
-		div.dialog-bar(style='height: 120px;')
+		div.dialog-bar#room-word-settings-wrapper(style='height: auto; overflow: hidden; display: none;')
+			h4= L('wordScope')
+			div(style='float: left; width: 300px;')
+				- var scopeOpts = ['ext', 'loa', 'str', 'unk'];
+				- for(var i in locals.OPTIONS)
+					- if(scopeOpts.indexOf(i) === -1) continue;
+					+GameOption(i, 'room')
+		div.dialog-bar#room-link-method-panel(style='display: none;')
+			h4= L('linkMethod')
+			div(style='float: left; width: 300px;')
+				- var linkOpts = ['mid', 'fir', 'ran', 'sch'];
+				- for(var i in locals.OPTIONS)
+					- if(linkOpts.indexOf(i) === -1) continue;
+					+GameOption(i, 'room')
+		div.dialog-bar#room-len-limit-panel(style='display: none;')
+			h4= L('lenLimit')
+			div(style='float: left; width: 300px;')
+				- var lenOpts = ['k32', 'k22', 'k44', 'k43','unl','no2'];
+				- for(var i in locals.OPTIONS)
+					- if(lenOpts.indexOf(i) === -1) continue;
+					+GameOption(i, 'room')
+		div.dialog-bar#room-bonus-panel(style='height: auto; display: none;')
+			h4(style='height: auto;')= L('bonus')
+			div(style='float: left; width: 300px;')
+				- var bonusOpts = ['mis', 'spt', 'stt'];
+				- for(var i in locals.OPTIONS)
+					- if(bonusOpts.indexOf(i) === -1) continue;
+					+GameOption(i, 'room')
+		div.dialog-bar#room-misc-panel(style='height: auto; display: none;')
 			h4(style='height: 45px;')= L('misc')
 			div(style='float: left; width: 300px;')
+				- var bonusOpts = ['mis', 'spt', 'stt'];
 				- for(var i in locals.OPTIONS)
+					- if(['mid', 'fir', 'ran', 'sch', 'k32', 'k22', 'k44', 'k43', 'unl', 'no2', 'ext', 'loa', 'str', 'unk'].indexOf(i) !== -1) continue;
+					- if(bonusOpts.indexOf(i) !== -1) continue;
 					+GameOption(i, 'room')
+
 			div.dialog-opt#room-injpick-panel
 				button#room-injeong-pick(style='font-size: 11px;')= L('pickInjeong')
-		div.dialog-bar.tail-button
+		div.dialog-bar#room-all-rules-panel(style='height: auto;')
+			h4(style='height: 45px;')= L('misc')
+			div(style='float: left; width: 315px;')
+				- for(var i in locals.OPTIONS)
+					+GameOption(i, 'room')
+			div.dialog-opt#room-injpick-panel-flat
+				button#room-injeong-pick-flat(style='font-size: 11px;')= L('pickInjeong')
+		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; left: 5px; width: calc(100% - 10px);')
 			button#room-ok= L('OK')
 	+Dialog('InjPickDiag', 200, 400, L('pickInjeong'))
 		h4= L('explInjPick')
@@ -448,7 +487,7 @@ block Middle
 		div.dialog-bar#alert-text(style='text-align: center; height: 60px; padding: 10px; overflow-y: auto; white-space: pre-wrap;')
 		div.dialog-bar.tail-button
 			button#alert-ok= L('OK')
-	+Dialog('InputDiag', 300, 150, L('notice'), true)
+	+Dialog('InputDiag', 300, 180, L('notice'), true)
 		div.dialog-bar#input-text(style='text-align: center; height: 50px; padding: 10px; overflow-y: auto; white-space: pre-wrap;')
 		div.dialog-bar(style='text-align: center;')
 			input#input-input(type='text', style='width: 90%;', maxlength=50)
@@ -514,7 +553,7 @@ block Middle
 		div#Chat
 		input#Talk(maxlength=200)
 		button#ChatBtn= L('send')
-	+Product('AD')
+
 
 block Bottom
 	div.bottom-legal!= L('dictionarySupport')

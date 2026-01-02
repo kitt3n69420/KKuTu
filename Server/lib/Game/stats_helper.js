@@ -40,7 +40,7 @@ function populateStats() {
                 if (lang === 'ko') {
                     // Korean Logic
                     // No Dueum Law applied here (Raw Stats)
-                    // Length Categories: 2 (>=2), 3 (>=3), All (>=2)
+                    // Length Categories: 2 (>=2), 3 (>=3), 4 (>=4), All (>=2)
                     var startChar = w.charAt(0);
                     var endChar = w.charAt(w.length - 1);
 
@@ -49,29 +49,10 @@ function populateStats() {
                     if (!statsKo[startChar]) statsKo[startChar] = createEmptyStatsKo();
                     if (!statsKo[endChar]) statsKo[endChar] = createEmptyStatsKo();
 
-                    for (var state = 0; state < 16; state++) {
+                    for (var state = 0; state < 8; state++) {
                         var reqNoInjeong = (state & 1);
                         var reqStrict = (state & 2);
                         var reqNoLoan = (state & 4);
-                        // State bit 3 used to be FreeDueum, checking if we still need to differentiate logic here?
-                        // Ideally FreeDueum logic is handled at Read-Time too for Korean.
-                        // But the 'state' loop is mainly for filtering words based on flags.
-                        // FreeDueum bit (8) doesn't change WHICH words are valid in the dictionary, 
-                        // it only changes WHICH columns we look at or how we connect them.
-                        // So for stats generation, the word is valid regardless of FreeDueum setting?
-                        // Wait, previous code used state & 8 to switch between different startOriginLists.
-                        // Now we only store Raw Char. So FreeDueum bit in state is redundant for *storage* if we only store for the exact char.
-                        // However, to maintain 16-state compatibility with existing query logic:
-                        // The 'valid' check determines if this word contributes to the count for this state.
-
-                        // NOTE: If FreeDueum option (bit 8) is ON, it doesn't affect the validity of the word itself.
-                        // It affects whether N->R connections are allowed.
-                        // So the count for specific char 'N' should be the same regardless of FreeDueum bit?
-                        // Actually, previous code: if (state & 8) used 'startOriginListFree'.
-                        // Now we only use Raw Char. So the count for 'N' is just the count of words starting with 'N'.
-                        // The Read-Time logic will query 'N' and 'R' separately and sum them if FreeDueum is on.
-                        // So we can populate the same value for both state X and state X+8?
-                        // YES. 
 
                         var valid = true;
                         if (reqNoInjeong && isInjeong) valid = false;
@@ -88,11 +69,13 @@ function populateStats() {
                             statsKo[startChar].startall[state]++;
                             if (len === 2) statsKo[startChar].start2[state]++;
                             if (len === 3) statsKo[startChar].start3[state]++;
+                            if (len === 4) statsKo[startChar].start4[state]++;
 
                             // End Stats
                             statsKo[endChar].endall[state]++;
                             if (len === 2) statsKo[endChar].end2[state]++;
                             if (len === 3) statsKo[endChar].end3[state]++;
+                            if (len === 4) statsKo[endChar].end4[state]++;
                         }
                     }
 
@@ -147,12 +130,14 @@ function populateStats() {
 
 function createEmptyStatsKo() {
     return {
-        start2: new Array(16).fill(0),
-        start3: new Array(16).fill(0),
-        startall: new Array(16).fill(0),
-        end2: new Array(16).fill(0),
-        end3: new Array(16).fill(0),
-        endall: new Array(16).fill(0)
+        start2: new Array(8).fill(0),
+        start3: new Array(8).fill(0),
+        start4: new Array(8).fill(0),
+        startall: new Array(8).fill(0),
+        end2: new Array(8).fill(0),
+        end3: new Array(8).fill(0),
+        end4: new Array(8).fill(0),
+        endall: new Array(8).fill(0)
     };
 }
 
@@ -170,62 +155,74 @@ function saveStatsKo(stats) {
 
         // Generate Columns String
         var cols = [];
-        for (let i = 0; i < 16; i++) {
+        for (let i = 0; i < 8; i++) {
             cols.push(`start2_${i} INTEGER DEFAULT 0`);
             cols.push(`start3_${i} INTEGER DEFAULT 0`);
+            cols.push(`start4_${i} INTEGER DEFAULT 0`);
             cols.push(`startall_${i} INTEGER DEFAULT 0`);
             cols.push(`end2_${i} INTEGER DEFAULT 0`);
             cols.push(`end3_${i} INTEGER DEFAULT 0`);
+            cols.push(`end4_${i} INTEGER DEFAULT 0`);
             cols.push(`endall_${i} INTEGER DEFAULT 0`);
         }
 
-        var createTableQuery = `
-            CREATE TABLE IF NOT EXISTS kkutu_stats_ko (
-                _id VARCHAR(10) PRIMARY KEY,
-                ${cols.join(', ')}
-            );
-        `;
-
-        // Direct query to create table
-        DB.kkutu_stats_ko.direct(createTableQuery, function (err, res) {
-            if (err) {
-                console.error("Failed to create table kkutu_stats_ko:", err);
-                process.exit(1);
+        // Drop existing table first to apply new schema
+        DB.kkutu_stats_ko.direct("DROP TABLE IF EXISTS kkutu_stats_ko", function (err) {
+            if (err && err.code) { // Ignore error if table doesn't exist? But IF EXISTS should handle it.
+                // Just log
+                console.log("Notice during DROP TABLE:", err);
             }
 
-            console.log("Table kkutu_stats_ko verified. Inserting data...");
-            if (total === 0) {
-                resolveMain();
-                return;
-            }
+            var createTableQuery = `
+                CREATE TABLE IF NOT EXISTS kkutu_stats_ko (
+                    _id VARCHAR(10) PRIMARY KEY,
+                    ${cols.join(', ')}
+                );
+            `;
 
-            var promises = keys.map(function (key) {
-                return new Promise(function (resolve, reject) {
-                    var d = stats[key];
-                    var data = { _id: key };
+            // Direct query to create table
+            DB.kkutu_stats_ko.direct(createTableQuery, function (err, res) {
+                if (err) {
+                    console.error("Failed to create table kkutu_stats_ko:", err);
+                    process.exit(1);
+                }
 
-                    for (let i = 0; i < 16; i++) {
-                        data[`start2_${i}`] = d.start2[i];
-                        data[`start3_${i}`] = d.start3[i];
-                        data[`startall_${i}`] = d.startall[i];
-                        data[`end2_${i}`] = d.end2[i];
-                        data[`end3_${i}`] = d.end3[i];
-                        data[`endall_${i}`] = d.endall[i];
-                    }
+                console.log("Table kkutu_stats_ko verified. Inserting data...");
+                if (total === 0) {
+                    resolveMain();
+                    return;
+                }
 
-                    DB.kkutu_stats_ko.upsert(['_id', key]).set(data).on(function (res) {
-                        process.stdout.write(`\r[KO] Progress: ${++current}/${total}`);
-                        resolve();
-                    }, null, function (err) {
-                        console.error(`Error saving ${key}:`, err);
-                        resolve();
+                var promises = keys.map(function (key) {
+                    return new Promise(function (resolve, reject) {
+                        var d = stats[key];
+                        var data = { _id: key };
+
+                        for (let i = 0; i < 8; i++) {
+                            data[`start2_${i}`] = d.start2[i];
+                            data[`start3_${i}`] = d.start3[i];
+                            data[`start4_${i}`] = d.start4[i];
+                            data[`startall_${i}`] = d.startall[i];
+                            data[`end2_${i}`] = d.end2[i];
+                            data[`end3_${i}`] = d.end3[i];
+                            data[`end4_${i}`] = d.end4[i];
+                            data[`endall_${i}`] = d.endall[i];
+                        }
+
+                        DB.kkutu_stats_ko.upsert(['_id', key]).set(data).on(function (res) {
+                            process.stdout.write(`\r[KO] Progress: ${++current}/${total}`);
+                            resolve();
+                        }, null, function (err) {
+                            console.error(`Error saving ${key}:`, err);
+                            resolve();
+                        });
                     });
                 });
-            });
 
-            Promise.all(promises).then(function () {
-                console.log("\nKO Stats Saved.");
-                resolveMain();
+                Promise.all(promises).then(function () {
+                    console.log("\nKO Stats Saved.");
+                    resolveMain();
+                });
             });
         });
     });
@@ -248,12 +245,6 @@ function saveStatsEn(stats) {
                 ${cols.join(', ')}
             );
         `;
-
-        // Since we changed schema, we might need to drop or handle existing table?
-        // Ideally user should drop table manually or we assume fresh start. 
-        // We'll proceed with IF NOT EXISTS. If it exists with 32 columns, this query won't reshape it, 
-        // but 'upsert' below will fail if columns don't match.
-        // But since this is a dev task, I'll assume I can just run this.
 
         DB.kkutu_stats_en.direct(createTableQuery, function (err, res) {
             if (err) {
@@ -293,5 +284,3 @@ function saveStatsEn(stats) {
         });
     });
 }
-
-// Dueum helper functions removed as they are no longer needed for Write-Time logic

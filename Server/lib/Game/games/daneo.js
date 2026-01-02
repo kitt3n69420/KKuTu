@@ -151,6 +151,33 @@ exports.submit = function (client, text, data) {
 				t = tv - my.game.turnAt;
 				var isReturn = my.opts.return && my.game.chain.includes(text);
 				score = my.getScore(text, t, isReturn);
+
+				// Straight Rule Logic
+				var straightBonus = 0;
+				if (my.opts.straight) {
+					var currentLen = text.length;
+					var prevLen = client.game.lastWordLen;
+
+					if (typeof prevLen === 'undefined') {
+						// First word for this player. Don't build streak.
+						client.game.straightStreak = 0;
+					} else if (currentLen - prevLen === 1) {
+						// Condition met: increment streak
+						client.game.straightStreak = (client.game.straightStreak || 0) + 1;
+					} else {
+						// Condition not met: reset streak
+						client.game.straightStreak = 0;
+					}
+
+					client.game.lastWordLen = currentLen;
+
+					if (client.game.straightStreak >= 2) {
+						var multiplier = (client.game.straightStreak - 1) / 2;
+						straightBonus = Math.round(score * multiplier);
+						score += straightBonus;
+					}
+				}
+
 				if (isReturn) score = 0;
 				my.game.chain.push(text);
 				my.game.roundTime -= t;
@@ -163,6 +190,7 @@ exports.submit = function (client, text, data) {
 					wc: $doc.type,
 					score: score,
 					bonus: (my.game.mission === true) ? score - my.getScore(text, t, true) : 0,
+					straightBonus: straightBonus, // Send Straight Bonus
 					baby: $doc.baby,
 					totalScore: client.game.score
 				}, true);
@@ -228,8 +256,7 @@ exports.readyRobot = function (robot) {
 
 	function decideStrategy() {
 		var strategy = "NORMAL";
-		// Daneo is effectively a "Word Battle" type (no attack in the sense of difficult next char, but long words are good)
-		// User said: "Word Battle and Free... Special Move is always Long Word... Personality > 0 is treated as 0"
+		// Strategy logic: Attack matches are invalid here; default to Long Word strategy if personality triggers.
 
 		var effPersonality = personality;
 		if (effPersonality > 0) effPersonality = 0; // Treat attack personality as 0

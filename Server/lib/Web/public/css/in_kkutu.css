@@ -246,7 +246,7 @@ iframe {
 
 .dialog-bar {
 	float: left;
-	margin: 3px 0px;
+	margin: 1px 0px;
 	width: 100%;
 }
 
@@ -282,6 +282,21 @@ iframe {
 .dialog-opt {
 	float: left;
 	width: 100px;
+}
+
+#RoomDiag .dialog-opt {
+	width: 75px;
+}
+
+#RoomDiag .dialog-opt label {
+	font-size: 12px;
+	letter-spacing: -0.5px;
+	position: relative;
+	top: 2px;
+}
+
+#RoomDiag .dialog-opt input {
+	margin-top: 6px !important;
 }
 
 .tail-button {

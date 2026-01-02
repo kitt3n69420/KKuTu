@@ -172,19 +172,19 @@ body {
 
 .dialog-bar {
 	float: left;
-	margin: 3px 0px;
+	margin: 1px 0px;
 	width: 100%;
 }
 
 .dialog-bar h4 {
 	float: left;
 	padding-top: 6px;
-	width: 100px;
+	width: 80px;
 	text-align: center;
 }
 
 .dialog-bar-value {
-	width: calc(100% - 100px) !important;
+	width: calc(100% - 80px) !important;
 	text-align: left !important;
 }
 
@@ -1921,4 +1921,21 @@ body {
 .psychedelic-bg::after {
 	/* No Overlay for Mobile */
 	display: none;
+}
+
+#room-bonus-panel .dialog-opt,
+#room-misc-panel .dialog-opt,
+#room-link-method-panel .dialog-opt,
+#room-len-limit-panel .dialog-opt,
+#room-word-settings-wrapper .dialog-opt {
+	width: 50px;
+}
+
+#RoomDiag .dialog-opt label {
+	font-size: 11px;
+	letter-spacing: -0.5px;
+}
+
+#RoomDiag .dialog-opt input {
+	margin-top: 6px !important;
 }
