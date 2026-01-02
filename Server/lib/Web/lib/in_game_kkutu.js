@@ -623,6 +623,7 @@ $(document).ready(function () {
 		for (i in OPTIONS) {
 			k = OPTIONS[i].name.toLowerCase();
 			$("#room-" + k).attr('checked', $data.room.opts[k]);
+			$("#room-flat-" + k).attr('checked', $data.room.opts[k]);
 		}
 		$data._injpick = $data.room.opts.injpick;
 
@@ -762,6 +763,7 @@ $(document).ready(function () {
 		$("#game-mode-expl").html(L['modex' + v]);
 
 		updateGameOptions(rule.opts, 'room');
+		updateGameOptions(rule.opts, 'room-flat');
 
 
 		// Check if category view is enabled (default: true)
@@ -832,24 +834,6 @@ $(document).ready(function () {
 
 			// Show flat panel and update options visibility
 			$("#room-all-rules-panel").show();
-
-			// Update flat panel options visibility based on game mode
-			$("#room-all-rules-panel .dialog-opt").each(function () {
-				var id = $(this).attr('id');
-				if (!id) return;
-				var optKey = id.replace('room-', '').replace('-panel', '');
-				// Find the matching option key
-				for (var k in OPTIONS) {
-					if (OPTIONS[k].name.toLowerCase() === optKey) {
-						if (rule.opts.indexOf(k) !== -1) {
-							$(this).show();
-						} else {
-							$(this).hide();
-						}
-						break;
-					}
-				}
-			});
 
 			// Show/hide injeong pick panel in flat mode
 			if (rule.opts.indexOf("ijp") != -1) $("#room-injpick-panel-flat").show();
@@ -1521,45 +1505,100 @@ $(document).ready(function () {
 		else if (spamWarning > 0) spamWarning -= 0.03;
 	}, 1000);
 
+	// 규칙 옵션 동기화 (Category View <-> Flat View)
+	$(document).on('change', '.game-option', function (e) {
+		var id = $(this).attr('id');
+		if (!id || (id.indexOf('room-') !== 0 && id.indexOf('room-flat-') !== 0)) return;
+
+		var isFlat = id.indexOf('room-flat-') === 0;
+		var key = id.replace(isFlat ? 'room-flat-' : 'room-', '');
+		var targetId = isFlat ? 'room-' + key : 'room-flat-' + key;
+		var $target = $("#" + targetId);
+
+		if ($target.length && $target.prop('checked') !== $(this).prop('checked')) {
+			$target.prop('checked', $(this).prop('checked'));
+			// room-flat-* 변경 시 room-* 변경을 트리거하여 상호 배제 로직 등이 실행되도록 함
+			// room-* 변경 시에는 무한 루프 방지를 위해 트리거하지 않음 (상호 배제 로직은 room-* 기준으로 동작)
+			if (isFlat) $target.trigger('change');
+		}
+	});
+
 	// 상호 배제 규칙 적용
 	// 1. Unknown Word vs (Injeong, Strict, Loanword)
 	$("#room-unknown").on('change', function () {
-		if ($(this).is(':checked')) $("#room-injeong, #room-strict, #room-loanword").prop('checked', false);
+		if ($(this).is(':checked')) {
+			$("#room-injeong, #room-strict, #room-loanword").prop('checked', false);
+			$("#room-flat-injeong, #room-flat-strict, #room-flat-loanword").prop('checked', false);
+		}
 	});
 	$("#room-injeong, #room-strict, #room-loanword").on('change', function () {
-		if ($(this).is(':checked')) $("#room-unknown").prop('checked', false);
+		if ($(this).is(':checked')) {
+			$("#room-unknown").prop('checked', false);
+			$("#room-flat-unknown").prop('checked', false);
+		}
 	});
 
 	// 2. 가온잇기 vs 첫말잇기 vs 랜덤잇기
 	$("#room-middle").on('change', function () {
-		if ($(this).is(':checked')) $("#room-first, #room-random").prop('checked', false).trigger('change');
+		if ($(this).is(':checked')) {
+			$("#room-first, #room-random").prop('checked', false).trigger('change');
+			$("#room-flat-first, #room-flat-random").prop('checked', false);
+		}
 	});
 	$("#room-first").on('change', function () {
-		if ($(this).is(':checked')) $("#room-middle, #room-random").prop('checked', false).trigger('change');
+		if ($(this).is(':checked')) {
+			$("#room-middle, #room-random").prop('checked', false).trigger('change');
+			$("#room-flat-middle, #room-flat-random").prop('checked', false);
+		}
 	});
 
 	// 3. 랜덤잇기 vs (세컨드, 부메랑)
 	$("#room-random").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-middle, #room-first").prop('checked', false);
+			$("#room-flat-middle, #room-flat-first").prop('checked', false);
 			$("#room-second, #room-speedtoss").prop('checked', false).prop('disabled', true);
+			$("#room-flat-second, #room-flat-speedtoss").prop('checked', false).prop('disabled', true);
 		} else {
 			$("#room-second, #room-speedtoss").prop('disabled', false);
+			$("#room-flat-second, #room-flat-speedtoss").prop('disabled', false);
 		}
 	});
 
 	$("#room-second, #room-speedtoss").on('change', function () {
 		if ($("#room-second").is(':checked') || $("#room-speedtoss").is(':checked')) {
 			$("#room-random").prop('checked', false).prop('disabled', true);
+			$("#room-flat-random").prop('checked', false).prop('disabled', true);
 		} else {
 			$("#room-random").prop('disabled', false);
+			$("#room-flat-random").prop('disabled', false);
 		}
 	});
 
 	// 4. 글자수 제한 (3-2, 2-2, 4-4, 4-3)
+	// 4. 글자수 제한 (3-2, 2-2, 4-4, 4-3)
 	$("#room-sami, #room-twotwo, #room-fourfour, #room-fourthree").on('change', function () {
 		if ($(this).is(':checked')) {
-			$("#room-sami, #room-twotwo, #room-fourfour, #room-fourthree").not(this).prop('checked', false);
+			var ids = ["room-sami", "room-twotwo", "room-fourfour", "room-fourthree"];
+			var flatIds = ["room-flat-sami", "room-flat-twotwo", "room-flat-fourfour", "room-flat-fourthree"];
+
+			// Uncheck other options in same group (Category View)
+			$("#" + ids.join(", #")).not(this).prop('checked', false);
+
+			// Uncheck all in Flat View then re-sync or just uncheck others?
+			// Simpler: Uncheck all flat counterparts of the group, then check the one corresponding to 'this'.
+			// But 'this' sync is handled by global listener. So we just need to uncheck others in Flat View.
+
+			// Get current ID
+			var currentId = $(this).attr('id');
+			var currentFlatId = currentId.replace('room-', 'room-flat-');
+
+			// Uncheck others in Flat View
+			for (var i = 0; i < flatIds.length; i++) {
+				if (flatIds[i] !== currentFlatId) {
+					$("#" + flatIds[i]).prop('checked', false);
+				}
+			}
 		}
 	});
 

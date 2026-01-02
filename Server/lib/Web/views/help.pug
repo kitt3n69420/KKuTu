@@ -24,11 +24,12 @@ mixin Img(name, w, h)
 		img(src=path)
 
 block JS
-	script(type='text/javascript', src='/js/jquery.js')
-	script(type='text/javascript', src='/js/in_game_kkutu_help.min.js')
+	- var v = locals.appVersion || '1.0.0'
+	script(type='text/javascript', src='/js/jquery.js?v=' + v)
+	script(type='text/javascript', src='/js/in_game_kkutu_help.min.js?v=' + v)
 
 block CSS
-	link(rel='stylesheet', href='/css/in_game_kkutu_help.css')
+	link(rel='stylesheet', href='/css/in_game_kkutu_help.css?v=' + v)
 
 block Middle
 	div#index

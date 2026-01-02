@@ -276,7 +276,7 @@ block Middle
 			h4(style='height: 45px;')= L('misc')
 			div(style='float: left; width: 315px;')
 				- for(var i in locals.OPTIONS)
-					+GameOption(i, 'room')
+					+GameOption(i, 'room-flat')
 			div.dialog-opt#room-injpick-panel-flat
 				button#room-injeong-pick-flat(style='font-size: 11px;')= L('pickInjeong')
 		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; left: 5px; width: calc(100% - 10px);')

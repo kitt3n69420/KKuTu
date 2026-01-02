@@ -88,23 +88,24 @@ mixin separator(len)
 	div(style="float: left; width: 100%; margin: "+len+"px 0px;")
 	
 mixin PageHead(min)
+	- var v = locals.appVersion || '1.0.0'
 	if !min
-		link(rel='stylesheet', href=(locals.mobile && !locals.as_pc) ? '/css/m_style.css' : '/css/style.css')
-		link(rel='stylesheet', href='/css/fa.css')
-		link(rel='stylesheet', href='/css/expl.css')
-	script(type='text/javascript', src='/js/jquery.js')
-	script(type='text/javascript', src='/language/'+locals.page.replace("/", "_")+'/'+locals.lang)
+		link(rel='stylesheet', href=((locals.mobile && !locals.as_pc) ? '/css/m_style.css' : '/css/style.css') + '?v=' + v)
+		link(rel='stylesheet', href='/css/fa.css?v=' + v)
+		link(rel='stylesheet', href='/css/expl.css?v=' + v)
+	script(type='text/javascript', src='/js/jquery.js?v=' + v)
+	script(type='text/javascript', src='/language/'+locals.page.replace("/", "_")+'/'+locals.lang + '?v=' + v)
 	
 	if PUBLIC && !SESSION.admin
 		//script(type='text/javascript', src='/js/google.js')
-	script(type='text/javascript', src='/js/global.min.js')
-	script(type='text/javascript', src='/js/volume-persistence.js')
+	script(type='text/javascript', src='/js/global.min.js?v=' + v)
+	script(type='text/javascript', src='/js/volume-persistence.js?v=' + v)
 	if !min
 		//script(type='text/javascript', src='/js/facebook.js')
 	if block
 		block
-	link(rel='stylesheet', href='/css/in_'+locals.page.replace("/", "_")+'.css?v=20251213')
-	script(type='text/javascript', src='/js/in_'+(locals._script || locals.page.replace("/", "_"))+'.min.js')
+	link(rel='stylesheet', href='/css/in_'+locals.page.replace("/", "_")+'.css?v=' + v)
+	script(type='text/javascript', src='/js/in_'+(locals._script || locals.page.replace("/", "_"))+'.min.js?v=' + v)
 	
 mixin SearchBox(arg1, arg2)
 	meta(name='description', content=L('meta_desc', arg1, arg2))

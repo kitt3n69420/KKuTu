@@ -18,6 +18,8 @@
 
 var GLOBAL = require("./global.json");
 var JLog = require("./jjlog");
+var PKG = require("../../package.json");
+var PKG_VERSION = PKG.version || Date.now().toString();
 var Language = {
 	'ko_KR': require("../Web/lang/ko_KR.json"),
 	'en_US': require("../Web/lang/en_US.json"),
@@ -59,6 +61,7 @@ function page(req, res, file, data) {
 	var sid = req.session.id || "";
 
 	data.published = global.isPublic;
+	data.appVersion = PKG_VERSION;
 	data.lang = req.query.locale || "ko_KR";
 	if (!Language[data.lang]) data.lang = "ko_KR";
 	// URL ...?locale=en_US will show the page in English
