@@ -362,7 +362,7 @@ exports.GAME_CATEGORIES = {
 	}
 };
 exports.getPreScore = function (text, chain, tr) {
-	return 2 * (Math.pow(5 + 7 * (text || "").length, 0.74) + 0.88 * (chain || []).length) * (0.5 + 0.5 * tr);
+	return 2 * (Math.pow(5 + 7 * (text || "").length, 0.74) + 1.18 * (chain || []).length) * (0.5 + 0.5 * tr);
 };
 exports.getPenalty = function (chain, score) {
 	return -1 * Math.round(Math.max(50, 10 + (chain || []).length * 3 + score * 0.2));
