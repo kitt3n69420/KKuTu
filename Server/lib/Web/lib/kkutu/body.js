@@ -2708,6 +2708,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 	var $l;
 	var tick = $data.turnTime / 96;
 	var sg = $data.turnTime / 12;
+	var displayText = text.replace(/</g, '〈').replace(/>/g, '〉');
 
 	// Sumi-Sanggwan Highlight Index: Last Char for Normal, First Char for Reverse
 
@@ -2856,10 +2857,10 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				.css({ 'float': isRev ? "right" : "left", 'margin-top': -6, 'font-size': 36 })
 				.hide()
 				.css('color', ($data.room.opts.drg) ? getRandomColor() : "")
-				.html(text.charAt(charIdx))
+				.html(displayText.charAt(charIdx))
 			);
 			j++;
-			addTimeout(function ($l, snd, isSumiChar, isStraightChar, isLinking, isHanbang) {
+			addTimeout(function ($l, snd, isSumiChar, isStraightChar, isLinking, isHanbang, originalChar) {
 				var anim = { 'margin-top': 0 };
 
 				playSound(snd);
@@ -2871,7 +2872,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 					playSound('mission');
 					$l.css({ 'color': "#FFFF00" }); // Yellow (Priority 2)
 					anim['font-size'] = 24;
-				} else if ($l.html() == $data.mission) {
+				} else if (originalChar == $data.mission) {
 					playSound('mission');
 					$l.css({ 'color': "#66FF66" }); // Green (Priority 2 -> 3)
 					anim['font-size'] = 24;
@@ -2884,14 +2885,14 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 					anim['font-size'] = 20;
 				}
 				$l.show().animate(anim, 100);
-			}, Number(i) * tick, $l, ta, isSumiChar, isStraightChar, isLinking, isHanbang);
+			}, Number(i) * tick, $l, ta, isSumiChar, isStraightChar, isLinking, isHanbang, text.charAt(charIdx));
 		}
 		i = $stage.game.display.children("div").get(0);
 		$(i).css(isRev ? 'margin-right' : 'margin-left', ($stage.game.display.width() - 20 * len) * 0.5);
 	} else {
 		j = "";
 		if (isRev) for (i = 0; i < len; i++) {
-			addTimeout(function (t, idx) {
+			addTimeout(function (t, idx, _h, t_disp) {
 				playSound(ta);
 				var isSumiChar = isSumi && (idx === sumiIdx);
 				var isStraightChar = isStraight && (idx === 0); // Rev: Last char is idx 0 (visually first)? No inside loop text[len-i-1].
@@ -2909,25 +2910,25 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 
 				if (isSumiChar) {
 					playSound('mission');
-					j = "<label style='color: #00FFFF;'>" + t + "</label>" + j;
+					j = "<label style='color: #00FFFF;'>" + t_disp + "</label>" + j;
 				} else if (isStraightChar) {
 					playSound('mission');
-					j = "<label style='color: #FFFF00;'>" + t + "</label>" + j;
+					j = "<label style='color: #FFFF00;'>" + t_disp + "</label>" + j;
 				} else if (t == $data.mission) {
 					playSound('mission');
-					j = "<label style='color: #66FF66;'>" + t + "</label>" + j;
+					j = "<label style='color: #66FF66;'>" + t_disp + "</label>" + j;
 				} else if (isLinking) {
 					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
 					if (isHanbang) playSound('missing');
-					j = "<label style='color: " + (isHanbang ? "#FF6666" : "rgb(146, 203, 250)") + ";'>" + t + "</label>" + j;
+					j = "<label style='color: " + (isHanbang ? "#FF6666" : "rgb(146, 203, 250)") + ";'>" + t_disp + "</label>" + j;
 				} else {
-					j = ($data.room.opts.drg ? ("<label style='color:" + getRandomColor() + "'>" + t + "</label>") : t) + j;
+					j = ($data.room.opts.drg ? ("<label style='color:" + getRandomColor() + "'>" + t_disp + "</label>") : t_disp) + j;
 				}
 				$stage.game.display.html(j);
-			}, Number(i) * sg / len, text[len - i - 1], len - i - 1, isHanbang);
+			}, Number(i) * sg / len, text[len - i - 1], len - i - 1, isHanbang, displayText[len - i - 1]);
 		}
 		else for (i = 0; i < len; i++) {
-			addTimeout(function (t, idx) {
+			addTimeout(function (t, idx, _h, t_disp) {
 				playSound(ta);
 				var isSumiChar = isSumi && (idx === sumiIdx);
 				var isStraightChar = isStraight && (idx === len - 1); // Normal: Last char
@@ -2935,22 +2936,22 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 
 				if (isSumiChar) {
 					playSound('mission');
-					j += "<label style='color: #00FFFF;'>" + t + "</label>";
+					j += "<label style='color: #00FFFF;'>" + t_disp + "</label>";
 				} else if (isStraightChar) {
 					playSound('mission');
-					j += "<label style='color: #FFFF00;'>" + t + "</label>";
+					j += "<label style='color: #FFFF00;'>" + t_disp + "</label>";
 				} else if (t == $data.mission) {
 					playSound('mission');
-					j += "<label style='color: #66FF66;'>" + t + "</label>";
+					j += "<label style='color: #66FF66;'>" + t_disp + "</label>";
 				} else if (isLinking) {
 					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
 					if (isHanbang) playSound('missing');
-					j += "<label style='color: " + (isHanbang ? "#FF6666" : "rgb(146, 203, 250)") + ";'>" + t + "</label>";
+					j += "<label style='color: " + (isHanbang ? "#FF6666" : "rgb(146, 203, 250)") + ";'>" + t_disp + "</label>";
 				} else {
-					j += ($data.room.opts.drg ? ("<label style='color:" + getRandomColor() + "'>" + t + "</label>") : t);
+					j += ($data.room.opts.drg ? ("<label style='color:" + getRandomColor() + "'>" + t_disp + "</label>") : t_disp);
 				}
 				$stage.game.display.html(j);
-			}, Number(i) * sg / len, text[i], i, isHanbang);
+			}, Number(i) * sg / len, text[i], i, isHanbang, displayText[i]);
 		}
 	}
 	addTimeout(function () {
@@ -2965,7 +2966,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 					.animate({ 'font-size': 20 }, tick);
 			}, i * tick * 2, i);
 		}
-		addTimeout(pushHistory, tick * 4, text, mean, theme, wc);
+		addTimeout(pushHistory, tick * 4, displayText, mean, theme, wc);
 		if (!isKKT) playSound(kkt);
 	}, sg);
 }
