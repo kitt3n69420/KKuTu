@@ -58,10 +58,12 @@ $lib.Jaqwi.turnGoing = function () {
 		.html(tt);
 
 	if (!$rtb.hasClass("round-extreme")) if ($data._roundTime <= $data._fastTime) {
-		bRate = $data.bgm.currentTime / $data.bgm.duration;
-		if ($data.bgm.paused) stopBGM();
-		else playBGM('jaqwiF');
-		$data.bgm.currentTime = $data.bgm.duration * bRate;
+		if ($data.bgm) {
+			bRate = $data.bgm.currentTime / $data.bgm.duration;
+			if ($data.bgm.paused) stopBGM();
+			else playBGM('jaqwiF');
+			$data.bgm.currentTime = $data.bgm.duration * bRate;
+		}
 		$rtb.addClass("round-extreme");
 	}
 };

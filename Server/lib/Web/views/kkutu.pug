@@ -236,7 +236,7 @@ block Middle
 		div.dialog-bar#room-word-settings-wrapper(style='height: auto; overflow: hidden; display: none;')
 			h4= L('wordScope')
 			div(style='float: left; width: 300px;')
-				- var scopeOpts = ['ext', 'loa', 'str', 'unk'];
+				- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng'];
 				- for(var i in locals.OPTIONS)
 					- if(scopeOpts.indexOf(i) === -1) continue;
 					+GameOption(i, 'room')
@@ -250,7 +250,7 @@ block Middle
 		div.dialog-bar#room-len-limit-panel(style='display: none;')
 			h4= L('lenLimit')
 			div(style='float: left; width: 300px;')
-				- var lenOpts = ['k32', 'k22', 'k44', 'k43','unl','no2'];
+				- var lenOpts = ['k32', 'k22', 'k44', 'k43','unl','no2','ln3', 'ln4', 'ln5', 'ln6', 'ln7'];
 				- for(var i in locals.OPTIONS)
 					- if(lenOpts.indexOf(i) === -1) continue;
 					+GameOption(i, 'room')
@@ -266,7 +266,7 @@ block Middle
 			div(style='float: left; width: 300px;')
 				- var bonusOpts = ['mis', 'spt', 'stt'];
 				- for(var i in locals.OPTIONS)
-					- if(['mid', 'fir', 'ran', 'sch', 'k32', 'k22', 'k44', 'k43', 'unl', 'no2', 'ext', 'loa', 'str', 'unk'].indexOf(i) !== -1) continue;
+					- if(['mid', 'fir', 'ran', 'sch', 'k32', 'k22', 'k44', 'k43', 'unl', 'no2', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'].indexOf(i) !== -1) continue;
 					- if(bonusOpts.indexOf(i) !== -1) continue;
 					+GameOption(i, 'room')
 
@@ -479,19 +479,19 @@ block Middle
 	+Dialog('HelpDiag', 550, 400, L('helpText'))
 		iframe#help-board(width=550, height=375)
 	+Dialog('ConfirmDiag', 300, 150, L('notice'), true)
-		div.dialog-bar#confirm-text(style='text-align: center; height: 60px; padding: 10px; overflow-y: auto; white-space: pre-wrap;')
-		div.dialog-bar.tail-button
+		div.dialog-bar#confirm-text(style='text-align: center; height: 90px; padding: 10px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; box-sizing: border-box;')
+		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; right: 10px; width: calc(100% - 20px);')
 			button#confirm-no= L('NO')
 			button#confirm-ok= L('OK')
 	+Dialog('AlertDiag', 300, 150, L('notice'), true)
-		div.dialog-bar#alert-text(style='text-align: center; height: 60px; padding: 10px; overflow-y: auto; white-space: pre-wrap;')
-		div.dialog-bar.tail-button
+		div.dialog-bar#alert-text(style='text-align: center; height: 90px; padding: 10px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; box-sizing: border-box;')
+		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; right: 10px; width: calc(100% - 20px);')
 			button#alert-ok= L('OK')
 	+Dialog('InputDiag', 300, 180, L('notice'), true)
-		div.dialog-bar#input-text(style='text-align: center; height: 50px; padding: 10px; overflow-y: auto; white-space: pre-wrap;')
+		div.dialog-bar#input-text(style='text-align: center; height: 50px; padding: 10px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; box-sizing: border-box;')
 		div.dialog-bar(style='text-align: center;')
 			input#input-input(type='text', style='width: 90%;', maxlength=50)
-		div.dialog-bar.tail-button
+		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; right: 10px; width: calc(100% - 20px);')
 			button#input-no= L('NO')
 			button#input-ok= L('OK')
 	+Product('UserList')

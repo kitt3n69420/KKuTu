@@ -119,7 +119,8 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 
 	my.id = target + place + Math.floor(Math.random() * 1000000000);
 	my.robot = true;
-	my.game = {};
+	my.game = { score: 0, bonus: 0, team: 0 };
+	console.log("[DEBUG Robot Constructor] Bot", my.id, "created with game.score=", my.game.score);
 	my.data = {};
 	my.place = place;
 	my.target = target;
@@ -1393,9 +1394,10 @@ exports.Room = function (room, channel) {
 		return false;
 	};
 	my.removeAI = function (target, noEx) {
-		var i, j;
+		var j;
 
-		for (i in my.players) {
+		// Fix: 역순 for 루프 사용 (splice 시 인덱스 문제 방지)
+		for (var i = my.players.length - 1; i >= 0; i--) {
 			if (!my.players[i]) continue;
 			if (!my.players[i].robot) continue;
 			if (!target || my.players[i].id == target) {
@@ -1701,6 +1703,8 @@ exports.Room = function (room, channel) {
 			for (i in my.players) {
 				if (my.players[i].robot) {
 					my.game.robots.push(my.players[i]);
+					// Ensure bot game state is reset for new game
+					my.players[i].game = { score: 0, bonus: 0, team: my.players[i].game ? my.players[i].game.team : 0 };
 				} else {
 					if (!(o = DIC[my.players[i]])) continue;
 					if (o.form != "J") continue;
@@ -1782,6 +1786,13 @@ exports.Room = function (room, channel) {
 						my.game.seq.push(p);
 					}
 				}
+				// Fix: 누락된 봇 추가 (비동기로 늦게 추가되었거나 team 0인 봇)
+				for (var bi = 0; bi < my.players.length; bi++) {
+					var bot = my.players[bi];
+					if (bot && bot.robot && my.game.seq.indexOf(bot) === -1) {
+						my.game.seq.push(bot);
+					}
+				}
 			} else {
 				my.game.seq = shuffle(my.game.seq);
 			}
@@ -1794,10 +1805,12 @@ exports.Room = function (room, channel) {
 
 			o.playAt = now;
 			o.ready = false;
+			console.log("[DEBUG start] Setting score for", o.id, "robot=", o.robot, "game.score before=", o.game.score);
 			o.game.score = 0;
 			o.game.bonus = 0;
 			o.game.item = [/*0, 0, 0, 0, 0, 0*/];
 			o.game.wpc = [];
+			console.log("[DEBUG start] After setting, game.score=", o.game.score);
 		}
 		my.game.hum = hum;
 		my.getTitle().then(function (title) {
@@ -1869,28 +1882,50 @@ exports.Room = function (room, channel) {
 			o = DIC[my.game.seq[i]] || my.game.seq[i];
 			if (!o) continue;
 			if (!o.game) continue; // Fix: o.game이 없으면 스킵
-			sumScore += o.game.score;
+
+			// DEBUG: 봇 객체 참조 추적
+			if (o.robot) {
+				var inPlayers = my.players.indexOf(o) !== -1;
+				var inRobots = my.game.robots ? my.game.robots.indexOf(o) !== -1 : false;
+				console.log("[DEBUG roundEnd] Bot", o.id, "score=", o.game.score, "inPlayers=", inPlayers, "inRobots=", inRobots);
+			}
+
+			// Fix: null/undefined 점수를 0으로 처리
+			var playerScore = (typeof o.game.score === 'number') ? o.game.score : 0;
+			sumScore += playerScore;
 
 			var actualTeam = o.robot ? o.game.team : o.team;
+			var teamScoreVal = playerScore; // 기본값은 개인 점수
+			if (actualTeam && Array.isArray(teams[actualTeam]) && teams[actualTeam].length === 2) {
+				teamScoreVal = teams[actualTeam][1];
+			}
 
 			res.push({
 				id: o.id,
-				score: o.game.score, // Display Score: Individual
-				teamScore: actualTeam ? teams[actualTeam][1] : o.game.score, // Sorting Score: Team Total
-				dim: actualTeam ? teams[actualTeam][0] : 1,
+				score: playerScore, // Display Score: Individual
+				teamScore: teamScoreVal, // Sorting Score: Team Total
+				dim: (actualTeam && Array.isArray(teams[actualTeam]) && teams[actualTeam].length === 2) ? teams[actualTeam][0] : 1,
 				robot: o.robot,
 				team: actualTeam
 			});
 		}
 
 		// Sort: 1. Team Score (Desc), 2. Team ID (Group ties), 3. Individual Score (Desc)
+		console.log("[DEBUG roundEnd] Before sort:", JSON.stringify(res.map(function (r) { return { id: r.id, score: r.score, teamScore: r.teamScore, team: r.team }; })));
 		res.sort(function (a, b) {
-			if (a.teamScore != b.teamScore) return b.teamScore - a.teamScore;
+			// Ensure scores are numbers to prevent undefined comparison issues
+			var aTeamScore = typeof a.teamScore === 'number' ? a.teamScore : 0;
+			var bTeamScore = typeof b.teamScore === 'number' ? b.teamScore : 0;
+			var aScore = typeof a.score === 'number' ? a.score : 0;
+			var bScore = typeof b.score === 'number' ? b.score : 0;
+
+			if (aTeamScore != bTeamScore) return bTeamScore - aTeamScore;
 			var tA = a.team || 0;
 			var tB = b.team || 0;
 			if (tA != tB) return tB - tA;
-			return b.score - a.score;
+			return bScore - aScore;
 		});
+		console.log("[DEBUG roundEnd] After sort:", JSON.stringify(res.map(function (r) { return { id: r.id, score: r.score, teamScore: r.teamScore, team: r.team }; })));
 		rl = res.length;
 
 
@@ -2012,7 +2047,11 @@ exports.Room = function (room, channel) {
 			}
 			obj.spec = {};
 			for (i in my.game.seq) {
-				if (o = DIC[my.game.seq[i]]) obj.spec[o.id] = o.game.score;
+				// Fix: 봇도 포함하도록 수정
+				o = DIC[my.game.seq[i]] || my.game.seq[i];
+				if (o && o.id) {
+					obj.spec[o.id] = o.game ? o.game.score : 0;
+				}
 			}
 		}
 		if (my.practice) {

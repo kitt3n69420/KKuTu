@@ -85,6 +85,8 @@ function populateStats() {
                     // Store 1~3 char n-grams (prefixes)
                     // 16 Columns (Start counts only)
 
+                    if (w.indexOf(' ') >= 0) return;
+
                     if (w.length >= 4) {
                         var prefixes = [];
                         if (w.length >= 1) prefixes.push(w.substring(0, 1));

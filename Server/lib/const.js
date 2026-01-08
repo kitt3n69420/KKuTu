@@ -61,6 +61,11 @@ exports.OPTIONS = {
 	'sch': { name: "Second" },
 	'vow': { name: "Vowel" },
 	'lng': { name: "Long" },
+	'ln3': { name: "Length3" },
+	'ln4': { name: "Length4" },
+	'ln5': { name: "Length5" },
+	'ln6': { name: "Length6" },
+	'ln7': { name: "Length7" }, //3, 4, 6, 7글자는 영어 쿵쿵따에 쓸 예정
 	'unl': { name: "Unlimited" },
 	'sur': { name: "Survival" },
 	'fdu': { name: "FreeDueum" },
@@ -230,7 +235,7 @@ exports.RULE = {
 	'HUN': {
 		lang: "ko",
 		rule: "Hunmin",
-		opts: ["ext", "mis", "loa", "str", "one", "ret", "spd", "drg"],
+		opts: ["ext", "mis", "loa", "str", "one", "ret", "spd", "drg", "ln3"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -310,7 +315,7 @@ exports.RULE = {
 	'EKK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran"],
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -338,7 +343,7 @@ exports.RULE = {
 	'EAK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran"],
+		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -369,8 +374,8 @@ exports.getPenalty = function (chain, score) {
 };
 exports.GAME_TYPE = Object.keys(exports.RULE);
 exports.EXAMPLE_TITLE = {
-	'ko': "일이삼사오육칠팔구십",
-	'en': "twofivesix"
+	'ko': "이기자도지사리스트법",
+	'en': "demography"
 };
 exports.INIT_SOUNDS = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
 exports.VOWEL_SOUNDS = ["ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", "ㅗ", "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"];
@@ -384,7 +389,7 @@ exports.KO_INJEONG = [
 	"MOB", "HYK", "CYP", "HRH", "STA", "OIJ",
 	"KGR", "ESB", "ELW", "OIM", "OVW", "NEX", /*"WOW",*/ //얘는 왜 주석임?
 	"YRY", "KPO", "JLN", "JAN", "ZEL", "POK", "HAI",
-	"HSS", "KMV", "HDC", "HOS", "FRC", "TPW", "MCJ"
+	"HSS", "KMV", "HDC", "HOS", "FRC", "TPW", "MCJ", "WMV"
 ];
 exports.EN_INJEONG = [
 	"LOL", "MCJ"

@@ -58,16 +58,6 @@ exports.roundReady = function () {
 
 			// $ans가 null인 경우 done 목록 무시하고 재시도
 			if (!$ans) {
-				console.warn("[JAQWI] getAnswer returned null, retrying without done list...");
-				console.warn("[JAQWI] Debug Info:");
-				console.warn("  - Theme: " + my.game.theme);
-				console.warn("  - Round: " + my.game.round + " / " + my.round);
-				console.warn("  - Mode: " + my.mode);
-				console.warn("  - Game Type: " + Const.GAME_TYPE[my.mode]);
-				console.warn("  - Done words count: " + (my.game.done ? my.game.done.length : 0));
-				console.warn("  - Options: " + JSON.stringify(my.opts));
-				console.warn("  - KOR_GROUP regex: " + Const.KOR_GROUP);
-
 				// done 목록 무시하고 재시도
 				getAnswer.call(my, my.game.theme, false, true).then(function ($ans2) {
 					if (!my.game.done) return;
@@ -80,7 +70,6 @@ exports.roundReady = function () {
 						return;
 					}
 
-					console.warn("[JAQWI] Retry succeeded with word: " + $ans2._id);
 					processAnswer.call(my, $ans2);
 				});
 				return;
@@ -152,15 +141,29 @@ exports.submit = function (client, text) {
 			for (i in my.game.robots) {
 				if (my.game.roundTime > my.game.robots[i]._delay) {
 					clearTimeout(my.game.robots[i]._timer);
-					if (client != my.game.robots[i]) if (Math.random() < ROBOT_CATCH_RATE[my.game.robots[i].level])
-						my.game.robots[i]._timer = setTimeout(my.turnRobot, ROBOT_TYPE_COEF[my.game.robots[i].level], my.game.robots[i], text);
+					if (client != my.game.robots[i]) if (Math.random() < ROBOT_CATCH_RATE[my.game.robots[i].level]) {
+						// Race condition 방지: 각 봇마다 10~100ms 랜덤 지연 추가
+						var randomDelay = Math.floor(Math.random() * 90) + 10;
+						my.game.robots[i]._timer = setTimeout(my.turnRobot, ROBOT_TYPE_COEF[my.game.robots[i].level] + randomDelay, my.game.robots[i], text);
+					}
 				}
 			}
 		}
 		clearTimeout(my.game.hintTimer);
 		score = my.getScore(text, t);
+		// 방어 코드: score가 유효한 숫자인지 확인
+		if (typeof score !== 'number' || isNaN(score)) {
+			score = 0;
+		}
 		my.game.primary++;
 		my.game.winner.push(client.id);
+		// 방어 코드: client.game 및 client.game.score 확인
+		if (!client.game) {
+			client.game = { score: 0, bonus: 0, team: 0 };
+		}
+		if (typeof client.game.score !== 'number' || isNaN(client.game.score)) {
+			client.game.score = 0;
+		}
 		client.game.score += score;
 		client.publish('turnEnd', {
 			target: client.id,
@@ -199,11 +202,22 @@ exports.submit = function (client, text) {
 };
 exports.getScore = function (text, delay) {
 	var my = this;
-	var rank = my.game.hum - my.game.primary + 3;
-	var tr = 1 - delay / my.game.roundTime;
-	var score = 10 * Math.pow(rank, 1.4) * (0.5 + 0.5 * tr);
+	// 방어 코드: 필수 값들의 유효성 검증
+	var hum = (typeof my.game.hum === 'number') ? my.game.hum : 1;
+	var primary = (typeof my.game.primary === 'number') ? my.game.primary : 0;
+	var roundTime = (typeof my.game.roundTime === 'number' && my.game.roundTime > 0) ? my.game.roundTime : 1;
+	var themeBonus = (typeof my.game.themeBonus === 'number' && !isNaN(my.game.themeBonus)) ? my.game.themeBonus : 1;
 
-	return Math.round(score * my.game.themeBonus);
+	var rank = Math.max(1, hum - primary + 3); // 최소 1 보장
+	var tr = 1 - delay / roundTime;
+	if (isNaN(tr) || tr < 0) tr = 0;
+	if (tr > 1) tr = 1;
+
+	var score = 10 * Math.pow(rank, 1.4) * (0.5 + 0.5 * tr);
+	var result = Math.round(score * themeBonus);
+
+	// NaN 방어
+	return isNaN(result) ? 0 : result;
 };
 exports.readyRobot = function (robot) {
 	var my = this;
@@ -217,7 +231,9 @@ exports.readyRobot = function (robot) {
 	for (i = 0; i < 2; i++) {
 		if (Math.random() < ROBOT_CATCH_RATE[level]) {
 			text = my.game.answer._id;
-			delay = my.game.roundTime / 3 * i + text.length * ROBOT_TYPE_COEF[level];
+			// Race condition 방지: 각 봇마다 10~100ms 랜덤 지연 추가
+			var randomDelay = Math.floor(Math.random() * 90) + 10;
+			delay = my.game.roundTime / 3 * i + text.length * ROBOT_TYPE_COEF[level] + randomDelay;
 			robot._timer = setTimeout(my.turnRobot, delay, robot, text);
 			robot._delay = delay;
 			break;

@@ -28,6 +28,7 @@ const ROBOT_HIT_LIMIT = [8, 4, 2, 1, 0];
 const ROBOT_CANDIDATE_LIMIT = [10, 20, 40, 80, 40];
 // ㄱ, ㄴ, ㄷ, ㅁ, ㅂ, ㅅ, ㅇ, ㅈ, ㅊ, ㅌ, ㅍ, ㅎ
 const HUNMIN_LIST = [4352, 4354, 4355, 4358, 4359, 4361, 4363, 4364, 4366, 4368, 4369, 4370];
+const HUNMIN_LIST_3 = ["ᄋᄉᄀ", "ᄋᄉᄌ", "ᄀᄉᄌ", "ᄋᄀᄌ", "ᄀᄌᄀ", "ᄀᄋᄌ", "ᄋᄋᄉ", "ᄀᄉᄀ", "ᄋᄉᄋ", "ᄀᄋᄉ", "ᄀᄀᄌ", "ᄋᄋᄌ", "ᄋᄀᄉ", "ᄀᄌᄋ", "ᄉᄋᄌ", "ᄋᄋᄀ", "ᄉᄀᄌ", "ᄀᄉᄋ", "ᄋᄌᄀ", "ᄀᄋᄀ", "ᄀᄌᄉ", "ᄉᄋᄀ", "ᄋᄉᄅ", "ᄀᄀᄉ", "ᄌᄀᄌ", "ᄌᄌᄀ", "ᄋᄀᄅ", "ᄀᄌᄌ", "ᄌᄉᄀ", "ᄌᄋᄉ", "ᄋᄌᄉ", "ᄉᄉᄀ", "ᄋᄉᄉ", "ᄋᄌᄋ", "ᄋᄋᄋ", "ᄀᄉᄉ", "ᄋᄀᄋ", "ᄌᄋᄀ", "ᄉᄌᄀ", "ᄌᄀᄉ", "ᄀᄉᄅ", "ᄋᄋᄅ", "ᄌᄋᄌ", "ᄉᄀᄅ", "ᄉᄀᄋ", "ᄀᄀᄋ", "ᄇᄉᄀ", "ᄋᄌᄌ", "ᄉᄀᄉ", "ᄉᄋᄉ", "ᄌᄌᄉ", "ᄌᄉᄌ", "ᄀᄅᄌ", "ᄉᄉᄌ", "ᄋᄀᄀ", "ᄇᄋᄉ", "ᄌᄀᄅ", "ᄉᄀᄀ", "ᄌᄉᄋ", "ᄇᄋᄀ", "ᄇᄋᄌ", "ᄌᄉᄉ", "ᄀᄀᄀ", "ᄉᄌᄉ", "ᄌᄀᄋ", "ᄀᄋᄅ", "ᄀᄋᄋ", "ᄉᄉᄅ", "ᄋᄋᄃ", "ᄀᄌᄅ", "ᄀᄀᄅ", "ᄉᄋᄅ", "ᄉᄉᄋ", "ᄋᄃᄅ", "ᄋᄌᄅ", "ᄉᄌᄋ", "ᄌᄀᄀ", "ᄀᄉᄇ", "ᄌᄌᄋ", "ᄒᄉᄀ", "ᄇᄌᄀ", "ᄇᄀᄌ", "ᄉᄋᄋ", "ᄉᄀᄃ", "ᄀᄅᄉ", "ᄋᄅᄀ", "ᄀᄅᄀ", "ᄇᄉᄋ", "ᄋᄒᄉ", "ᄋᄉᄃ", "ᄋᄅᄉ", "ᄋᄀᄃ", "ᄉᄌᄌ", "ᄌᄌᄌ", "ᄋᄃᄀ", "ᄋᄃᄋ", "ᄇᄉᄌ", "ᄌᄋᄋ", "ᄋᄅᄋ", "ᄉᄉᄉ"];
 
 exports.init = function (_DB, _DIC) {
 	DB = _DB;
@@ -50,7 +51,8 @@ exports.roundReady = function () {
 	my.game.round++;
 	my.game.roundTime = my.time * 1000;
 	if (my.game.round <= my.round) {
-		my.game.theme = getTheme(2, my.game.done);
+		if (my.opts.length3) my.game.theme = getTheme3(my.game.done);
+		else my.game.theme = getTheme(2, my.game.done);
 		my.game.chain = [];
 		if (my.opts.mission) my.game.mission = getMission(my.game.theme);
 		my.game.done.push(my.game.theme);
@@ -260,8 +262,8 @@ function getMission(theme) {
 	var flag;
 
 	if (!theme) return;
-	if (Math.random() < 0.5) flag = 0;
-	else flag = 1;
+	if (!theme) return;
+	flag = Math.floor(Math.random() * theme.length);
 
 	return String.fromCharCode(44032 + 588 * (theme.charCodeAt(flag) - 4352));
 }
@@ -318,6 +320,15 @@ function getTheme(len, ex) {
 		res = d;
 		len--;
 	}
+	return res;
+}
+function getTheme3(ex) {
+	var res;
+
+	do {
+		res = HUNMIN_LIST_3[Math.floor(Math.random() * HUNMIN_LIST_3.length)];
+	} while (ex.includes(res));
+
 	return res;
 }
 function shuffle(arr) {

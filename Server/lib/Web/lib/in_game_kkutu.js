@@ -21,7 +21,7 @@ var BEAT = [null,
 	"10000000",
 	"10001000",
 	"10101000",
-	"10111000",
+	"11101000",
 	"11111000",
 	"11111010",
 	"11111110",
@@ -79,8 +79,15 @@ $(document).ready(function () {
 	// 언어 설정 확인 및 리다이렉트
 	try {
 		var savedLang = localStorage.getItem('kkutu_lang');
-		var match = location.href.match(/[?&]locale=([^&]+)/);
-		var currentLang = match ? match[1] : "ko_KR";
+		var match = location.href.match(/[?&]locale=([^&#]+)/);
+		var urlLang = match ? match[1] : null;
+		var currentLang = urlLang || "ko_KR";
+
+		// localStorage에 저장된 언어가 없으면 현재 URL의 언어를 저장
+		if (!savedLang && urlLang) {
+			localStorage.setItem('kkutu_lang', urlLang);
+			savedLang = urlLang;
+		}
 
 		if (savedLang && savedLang !== currentLang) {
 			// URL에 locale 파라미터가 없거나 다른 경우 리다이렉트
@@ -575,12 +582,12 @@ $(document).ready(function () {
 		} catch (e) { }
 
 		// URL locale 파라미터 확인
-		var match = location.href.match(/[?&]locale=([^&]+)/);
+		var match = location.href.match(/[?&]locale=([^&#]+)/);
 		var pageLang = match ? match[1] : null;
 		var savedLang = localStorage.getItem('kkutu_lang');
 
-		// 우선순위: URL locale > 감지된언어 > 저장된 언어 > 한국어
-		var currentLang = pageLang || detectedLang || savedLang || "ko_KR";
+		// 우선순위: URL locale > 저장된 언어 > 감지된언어 > 한국어
+		var currentLang = pageLang || savedLang || detectedLang || "ko_KR";
 		$("#language-setting").val(currentLang);
 
 
@@ -771,8 +778,8 @@ $(document).ready(function () {
 
 		// Define option groups
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
-		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl'];
-		var scopeOpts = ['ext', 'str', 'loa', 'unk'];
+		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv'];
 		var bonusOpts = ['mis', 'spt', 'stt'];
 
 		if (showCategory) {
@@ -997,10 +1004,12 @@ $(document).ready(function () {
 		$.cookie('kks', encodeURIComponent(JSON.stringify($data.opts)), { expires: 365, path: '/' });
 
 		// 언어 변경 로직 (페이지 리로드)
-		var match = location.href.match(/[?&]locale=([^&]+)/);
+		var match = location.href.match(/[?&]locale=([^&#]+)/);
 		var pageLang = match ? match[1] : null;
+		// 현재 페이지의 실제 언어 (URL에 locale이 없으면 기본 ko_KR)
+		var actualCurrentLang = pageLang || "ko_KR";
 
-		if (newLang && newLang !== pageLang) {
+		if (newLang && newLang !== actualCurrentLang) {
 			var search = location.search;
 			if (search.indexOf('locale=') >= 0) {
 				search = search.replace(/locale=[^&]+/, 'locale=' + newLang);
@@ -1576,11 +1585,11 @@ $(document).ready(function () {
 	});
 
 	// 4. 글자수 제한 (3-2, 2-2, 4-4, 4-3)
-	// 4. 글자수 제한 (3-2, 2-2, 4-4, 4-3)
-	$("#room-sami, #room-twotwo, #room-fourfour, #room-fourthree").on('change', function () {
+	// 4. 글자수 제한 (3-2, 2-2, 4-4, 4-3, 3, 4, 5, 6, 7)
+	$("#room-sami, #room-twotwo, #room-fourfour, #room-fourthree, #room-length3, #room-length4, #room-length5, #room-length6, #room-length7").on('change', function () {
 		if ($(this).is(':checked')) {
-			var ids = ["room-sami", "room-twotwo", "room-fourfour", "room-fourthree"];
-			var flatIds = ["room-flat-sami", "room-flat-twotwo", "room-flat-fourfour", "room-flat-fourthree"];
+			var ids = ["room-sami", "room-twotwo", "room-fourfour", "room-fourthree", "room-length3", "room-length4", "room-length5", "room-length6", "room-length7"];
+			var flatIds = ["room-flat-sami", "room-flat-twotwo", "room-flat-fourfour", "room-flat-fourthree", "room-flat-length3", "room-flat-length4", "room-flat-length5", "room-flat-length6", "room-flat-length7"];
 
 			// Uncheck other options in same group (Category View)
 			$("#" + ids.join(", #")).not(this).prop('checked', false);
@@ -1599,6 +1608,20 @@ $(document).ready(function () {
 					$("#" + flatIds[i]).prop('checked', false);
 				}
 			}
+		}
+	});
+
+	// 5. 속담 vs 장문
+	$("#room-proverb").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-long").prop('checked', false);
+			$("#room-flat-long").prop('checked', false);
+		}
+	});
+	$("#room-long").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-proverb").prop('checked', false);
+			$("#room-flat-proverb").prop('checked', false);
 		}
 	});
 
@@ -1859,10 +1882,12 @@ $lib.Jaqwi.turnGoing = function () {
 		.html(tt);
 
 	if (!$rtb.hasClass("round-extreme")) if ($data._roundTime <= $data._fastTime) {
-		bRate = $data.bgm.currentTime / $data.bgm.duration;
-		if ($data.bgm.paused) stopBGM();
-		else playBGM('jaqwiF');
-		$data.bgm.currentTime = $data.bgm.duration * bRate;
+		if ($data.bgm) {
+			bRate = $data.bgm.currentTime / $data.bgm.duration;
+			if ($data.bgm.paused) stopBGM();
+			else playBGM('jaqwiF');
+			$data.bgm.currentTime = $data.bgm.duration * bRate;
+		}
 		$rtb.addClass("round-extreme");
 	}
 };
@@ -6304,6 +6329,7 @@ function setRoomHead($obj, room) {
 		.append($("<h5>").addClass("room-head-title").text(badWords(room.title)))
 		.append($rm = $("<h5>").addClass("room-head-mode").html(opts.join(" / ")))
 		.append($("<h5>").addClass("room-head-limit").html((mobile ? "" : (L['players'] + " ")) + room.players.length + " / " + room.limit))
+		.append($("<h5>").addClass("room-head-round").html(room.round + " " + L['rounds']))
 		.append($("<h5>").addClass("room-head-time").html(room.time + L['SECOND']));
 
 

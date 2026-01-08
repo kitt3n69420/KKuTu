@@ -665,4 +665,1778 @@ SyntaxError: Unexpected end of input
     at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
     at Module.require (node:internal/modules/cjs/loader:1487:12)
     at require (node:internal/modules/helpers:135:16)
-    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:22:14] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:22:24] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:22:35] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:22:45] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:22:56] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:23:06] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:23:17] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:23:27] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:23:37] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:23:48] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:23:58] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:24:09] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:24:19] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:24:30] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:24:40] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:24:51] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:25:01] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:25:12] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:25:22] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:25:33] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:25:43] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:25:53] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:26:04] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:26:14] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:26:25] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:26:35] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:26:46] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:26:56] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:27:07] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:27:17] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:27:28] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:27:38] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:27:48] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:27:59] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:28:09] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:28:20] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:28:30] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:28:41] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:28:51] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:29:02] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:29:12] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:29:22] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:29:33] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:29:43] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:29:54] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:30:04] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:30:15] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:30:25] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:30:36] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:30:46] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:30:57] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:31:07] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:31:18] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:31:28] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:31:38] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:31:49] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:31:59] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:32:10] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:32:20] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:32:31] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:32:41] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:32:51] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:33:02] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:33:12] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:33:23] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:33:33] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:33:44] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:33:54] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:34:04] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:34:15] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:34:25] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:34:36] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:34:46] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:34:57] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:35:07] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:35:18] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:35:28] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1284
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:35:39] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1284
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:35:49] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1284
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:35:59] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1284
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:36:10] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:36:20] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:36:31] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:36:41] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:36:52] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:37:02] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:37:13] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:37:23] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:37:33] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:37:44] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:37:54] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:38:05] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:38:15] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:38:26] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:38:36] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:38:46] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:38:57] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:39:07] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:39:18] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:39:28] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1226
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:39:39] ERROR: SyntaxError: Unexpected token ','
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:36
+const PRIORITY_ATTACK_CHARS = ["??, "??, "釉?, "??, "苡?, "??, "??, "??, "裕?, "??, "??, "??, "??, "??, "??, "??, "??];
+                                       ^
+
+SyntaxError: Unexpected token ','
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:39:49] ERROR: SyntaxError: Unexpected token ','
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:36
+const PRIORITY_ATTACK_CHARS = ["??, "??, "釉?, "??, "苡?, "??, "??, "??, "裕?, "??, "??, "??, "??, "??, "??, "??, "??];
+                                       ^
+
+SyntaxError: Unexpected token ','
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:40:00] ERROR: SyntaxError: Unexpected token ','
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:36
+const PRIORITY_ATTACK_CHARS = ["??, "??, "釉?, "??, "苡?, "??, "??, "??, "裕?, "??, "??, "??, "??, "??, "??, "??, "??];
+                                       ^
+
+SyntaxError: Unexpected token ','
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:40:10] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:40:21] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:40:31] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:40:42] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:40:52] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:41:02] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:41:13] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:41:23] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:41:34] ERROR: SyntaxError: Unexpected token '}'
+C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1310
+};
+^
+
+SyntaxError: Unexpected token '}'
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 9:56:35] ERROR: ReferenceError: $doc is not defined
+ReferenceError: $doc is not defined
+    at exports.submit (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1214:9)
+    at my.route.my.routeSync (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:2102:13)
+    at my.submit (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:2062:13)
+    at my.turnRobot [as _onTimeout] (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:2037:6)
+    at listOnTimeout (node:internal/timers:590:11)
+    at process.processTimers (node:internal/timers:523:7):2083 [2026. 1. 6. 오후 10:04:35] ERROR: TypeError: Cannot read properties of undefined (reading 'kkutu')
+TypeError: Cannot read properties of undefined (reading 'kkutu')
+    at Object.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1307:4)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 10:04:46] ERROR: TypeError: Cannot read properties of undefined (reading 'kkutu')
+TypeError: Cannot read properties of undefined (reading 'kkutu')
+    at Object.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1307:4)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 10:04:56] ERROR: TypeError: Cannot read properties of undefined (reading 'kkutu')
+TypeError: Cannot read properties of undefined (reading 'kkutu')
+    at Object.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1307:4)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at exports.init (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:61:13):2083 [2026. 1. 6. 오후 10:05:37] ERROR: ReferenceError: $doc is not defined
+ReferenceError: $doc is not defined
+    at exports.submit (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1214:9)
+    at my.route.my.routeSync (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:2102:13)
+    at my.submit (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:2062:13)
+    at my.turnRobot [as _onTimeout] (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:2037:6)
+    at listOnTimeout (node:internal/timers:590:11)
+    at process.processTimers (node:internal/timers:523:7):2083 [2026. 1. 6. 오후 10:08:32] ERROR: ReferenceError: approved is not defined
+ReferenceError: approved is not defined
+    at checkMannerAndProceed (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1124:7)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1166:5
+    at exports.Tail.go (C:\myKKuTu\KKuTu-master\Server\lib\sub\lizard.js:43:16)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2469:7
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13)
+    at Query.preCB (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:298:6)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12)
+    at Client._handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\client.js:290:19)
+    at Connection.emit (node:events:518:28)
+    at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12:2083 [2026. 1. 6. 오후 10:13:56] ERROR: ReferenceError: linkIdx is not defined
+ReferenceError: linkIdx is not defined
+    at finalizeTurn (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:983:18)
+    at finishTurn (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:905:7)
+    at approved (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:885:6)
+    at checkMannerAndProceed (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1124:8)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1166:6
+    at exports.Tail.go (C:\myKKuTu\KKuTu-master\Server\lib\sub\lizard.js:43:16)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2470:7
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13)
+    at Query.preCB (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:298:6)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12):2083 [2026. 1. 7. 오후 6:30:21] ERROR: TypeError: Cannot read properties of undefined (reading 'length')
+TypeError: Cannot read properties of undefined (reading 'length')
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2184:25
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5):2083 [2026. 1. 7. 오후 8:03:09] ERROR: TypeError: Cannot read properties of undefined (reading 'replace')
+TypeError: Cannot read properties of undefined (reading 'replace')
+    at escapeRegExp (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:3043:16)
+    at exports.Room.getAuto (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2360:8)
+    at executeStrategy (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1719:11)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2212:9
+    at processList (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1892:9)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:2042:9
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13)
+    at Query.preCB (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:298:6)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12)
+    at Client._handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\client.js:290:19):2083 [2026. 1. 7. 오후 8:03:18] ERROR: TypeError: Cannot read properties of null (reading 'handleRowDescription')
+TypeError: Cannot read properties of null (reading 'handleRowDescription')
+    at Client._handleRowDescription (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\client.js:340:22)
+    at Connection.emit (node:events:518:28)
+    at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12
+    at Parser.parse (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\parser.js:40:17)
+    at Socket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\index.js:11:42)
+    at Socket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TCP.onStreamRead (node:internal/stream_base_commons:189:23)

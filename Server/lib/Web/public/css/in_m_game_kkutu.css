@@ -725,6 +725,41 @@ iframe {
 	font-weight: bold;
 }
 
+/* Room Users Container - Scrollable area for player list */
+.room-users {
+	float: left;
+	width: 100%;
+	max-height: 320px;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding-bottom: 10px;
+	box-sizing: border-box;
+}
+
+/* Small mode for 9+ players - compact layout */
+.room-users.small-mode .room-user {
+	height: 20px;
+	margin: 2px 3px;
+	padding: 2px;
+}
+
+.room-users.small-mode .room-user-stat {
+	width: 60px;
+	font-size: 13px;
+	padding: 1px 3px;
+}
+
+.room-users.small-mode .room-user-title {
+	font-size: 13px;
+	padding-top: 1px;
+	width: calc(100% - 70px);
+}
+
+.room-users.small-mode .room-user-level {
+	width: 16px;
+	height: 16px;
+}
+
 .GameBox {
 	width: calc(100% - 10px);
 	height: 410px;

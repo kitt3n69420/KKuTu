@@ -254,9 +254,20 @@ exports.submit = function (client, text) {
         }
 
         score = my.getScore(text, t);
+        // 방어 코드: score가 유효한 숫자인지 확인
+        if (typeof score !== 'number' || isNaN(score)) {
+            score = 0;
+        }
         my.game.primary++;
         my.game.winner.push(client.id);
         my.game.scores[client.id] = score;
+        // 방어 코드: client.game 및 client.game.score 확인
+        if (!client.game) {
+            client.game = { score: 0, bonus: 0, team: 0 };
+        }
+        if (typeof client.game.score !== 'number' || isNaN(client.game.score)) {
+            client.game.score = 0;
+        }
         client.game.score += score;
 
         client.publish('turnEnd', {
@@ -314,11 +325,21 @@ exports.onLeave = function (clientId) {
 
 exports.getScore = function (text, delay) {
     var my = this;
-    var rank = my.game.hum - my.game.primary + 3;
-    var tr = 1 - delay / my.game.roundTime;
-    var score = 10 * Math.pow(rank, 1.4) * (0.5 + 0.5 * tr);
+    // 방어 코드: 필수 값들의 유효성 검증
+    var hum = (typeof my.game.hum === 'number') ? my.game.hum : 1;
+    var primary = (typeof my.game.primary === 'number') ? my.game.primary : 0;
+    var roundTime = (typeof my.game.roundTime === 'number' && my.game.roundTime > 0) ? my.game.roundTime : 1;
 
-    return Math.round(score);
+    var rank = Math.max(1, hum - primary + 3); // 최소 1 보장
+    var tr = 1 - delay / roundTime;
+    if (isNaN(tr) || tr < 0) tr = 0;
+    if (tr > 1) tr = 1;
+
+    var score = 10 * Math.pow(rank, 1.4) * (0.5 + 0.5 * tr);
+    var result = Math.round(score);
+
+    // NaN 방어
+    return isNaN(result) ? 0 : result;
 };
 
 // Handle drawing from client

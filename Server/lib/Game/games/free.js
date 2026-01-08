@@ -24,7 +24,11 @@ exports.getTitle = function () {
     var my = this;
 
     setTimeout(function () {
-        R.go(Const.EXAMPLE_TITLE[my.rule.lang]);
+        if (Const.GAME_TYPE[my.mode] === 'KFR' || Const.GAME_TYPE[my.mode] === 'EFR') {
+            R.go("①②③④⑤⑥⑦⑧⑨⑩");
+        } else {
+            R.go(Const.EXAMPLE_TITLE[my.rule.lang]);
+        }
     }, 100);
 
     return R;

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Rule the words! KKuTu Online
  * Copyright (C) 2017 JJoriping(op@jjo.kr)
  * 
@@ -37,13 +37,14 @@ const PRIORITY_ATTACK_CHARS = ["렁", "듈", "븐", "튬", "쾃", "럿", "듐", 
 const PRIORITY_ATTACK_CHARS_MANNER = ["릇", "륨", "늄", "럴", "텝", "슭", "픈", "깟", "왑", "켓", "븨", "껏"];
 const PRIORITY_KAP_ATTACK_CHARS = ["녈", "맞", "흰", "뉸", "뒷", "헛", "붉", "뻐", "첫", "룍", "뇩", "넓", "홑", "맆", "렾", "녚", "갯", "받", "뉼", "앉", "높", "롶", "돼", "윗", "넙", "랼", "된", "뾰", "햇", "엑", "좁", "굳", "왼", "뻔", "빤", "륽", "늙", "뺑", "엎", "같", "띾", "꺾", "닫", "랕", "뙤", "돋", "쨍", "씽", "꽈", "귓", "므", "쌩", "샐", "잦", "섞", "덮", "맏", "얽", "왱", "긁", "짧", "걷", "헥", "잿"];
 const PRIORITY_KAP_ATTACK_CHARS_MANNER = ["겉", "쩔", "떠", "녑", "훌", "숫", "붙", "곧", "랒", "쫄", "쏠", "녓", "갸", "콧", "갖", "썰", "뻥", "삥", "쩌", "뗑", "꺄", "쐐", "헝", "갤", "촬", "옵", "찡", "믿", "줴", "촐", "놓", "쓴", "맑", "칡", "핸", "힌", "싀", "깁", "씀", "뭍"];
-const DUBANG = ["괙", "귁", "껙", "꿕", "뀍", "늡", "릅", "돨", "똴", "뙁", "뛸", "뜩", "띡", "띨", "멫", "몇", "뱍", "뷩", "뷩", "븩", "뽓", "뿅", "솰", "쏼", "었", "쟘", "좍", "좜", "좸", "줅", "줍", "쥄", "쫙", "챱", "홱"]
-const DUBANG_KAP = ["뒷", "쌩", "빤", "핫", "갤", "캘", "왱"];
+const DUBANG = ["괙", "귁", "껙", "꿕", "뀍", "늡", "릅", "돨", "똴", "뙁", "뛸", "뜩", "띡", "띨", "멫", "몇", "뱍", "뷩", "뷩", "븩", "뽓", "뿅", "솰", "쏼", "었", "쟘", "좍", "좜", "좸", "줅", "줍", "쥄", "쫙", "챱", "홱", "깟", "팅"]
+const DUBANG_KAP = ["뒷", "쌩", "빤", "핫", "갤", "캘", "왱", "헛"];
 const PRIORITY_ATTACK_CHARS_EN = ["ght", "ock", "ick", "ird", "ert", "ork", "eck", "nds", "uck", "ond", "lue", "lls", "elt", "rds", "arp", "uff", "erm", "irl", "ilt", "ilk", "ods", "cks", "ays", "iff", "ett", "olt", "ors", "erb", "ohn", "erk", "awk", "nks", "irs", "irm", "urd", "ilm", "nue", "rks", "arf", "nyx", "erd", "ryx", "olk", "itt", "rys", "gie", "url", "nck", "ils", "avy", "ynx", "ews", "mie", "irk", "cht", "cue", "ulb", "onk", "elp", "urk", "ldt", "aws"];
 const PRIORITY_ATTACK_CHARS_MANNER_EN = ["ack", "ark", "ics", "orm", "ers", "ify", "ons", "omb", "ngs", "ump", "owl", "ift", "urn", "rie", "eek", "oud", "elf", "irt", "ild", "kie", "itz", "rld", "iew", "thm", "els", "awl", "awn", "rue", "yew", "eft", "oft", "ffy", "uld", "hew", "ivy", "rtz", "egs", "tew", "oux", "rns", "ebs", "tua", "tyl", "efy", "ohm", "omp", "bbs", "ltz", "ggs", "oek", "xxv", "few", "wyn", "orr", "utz", "enn", "ebb", "hns", "ogs", "ruz", "ibs", "uhr", "nyl"];
 const PRIORITY_KAP_ATTACK_CHARS_EN = ["j", "q", "x", "z"];
 const AVOID_FD = ["렁", "냑", "럿", "럴"];
 const AVOID_VI = ["렁", "냑", "럿", "럴", "륨", "늄", "윰", "켓", "껏", "귬"];
+const EKT_BIGRAMS = ["co", "un", "in", "re", "ca", "de", "ma", "pr", "di", "st", "pa", "ch", "se", "an", "ba", "pe", "tr", "su", "me", "ha", "sa", "po", "mo", "mi", "he", "sp", "la", "br", "no", "sh", "be", "ho", "sc", "cr", "li", "th", "te", "bo", "ar", "al", "gr", "ta", "fo", "so", "ex", "ra", "en", "lo", "ac", "si", "le", "ne", "pl", "pi", "bu", "to", "ga", "bl", "cl", "do", "bi", "hy", "fa", "fi", "ph", "fl", "ro", "im", "wa", "mu", "as", "vi", "fr", "pu", "am", "da", "ap", "ce", "cu", "ve", "ad", "na", "wi", "go", "ab", "ge", "hi", "va", "ti", "ov", "qu", "dr", "fe", "or", "sl", "ri", "gl", "au", "we", "tu", "wo", "sy", "ni", "fu", "hu", "el", "ru", "lu", "wh", "cy", "at", "gu", "du", "em", "ci", "ki", "ka", "ag", "my"];
 const VOWEL_INV_MAP = {
 	0: 4, 4: 0, 1: 5, 5: 1, 2: 6, 6: 2, 3: 7, 7: 3,
 	8: 13, 13: 8, 9: 14, 14: 9, 10: 15, 15: 10, 11: 16, 16: 11,
@@ -219,18 +220,38 @@ exports.getTitle = function () {
 		R.go("undefinedd");
 		return R;
 	}
+
 	EXAMPLE = Const.EXAMPLE_TITLE[l.lang];
 	my.game.dic = {};
 
+	// EKT: 타이틀을 단어가 아니라 1~10 동그라미 숫자로 표시
+	if (l.lang === 'en' && Const.GAME_TYPE[my.mode] === 'EKT') {
+		R.go("①②③④⑤⑥⑦⑧⑨⑩");
+		return R;
+	}
+
 	switch (Const.GAME_TYPE[my.mode]) {
 		case 'EKK':
-			my.game.wordLength = 5;
-		case 'EKT':
+			if (my.opts.length7) my.game.wordLength = 7;
+			else if (my.opts.length6) my.game.wordLength = 6;
+			else if (my.opts.length5) my.game.wordLength = 5;
+			else if (my.opts.length4) my.game.wordLength = 4;
+			else if (my.opts.length3) my.game.wordLength = 3;
+			else my.game.wordLength = 5;
 		case 'ESH':
 			eng = "^" + String.fromCharCode(97 + Math.floor(Math.random() * 26));
 			break;
+		case 'EKT':
+			// EKT: 2글자 bigram 리스트에서 랜덤 선택
+			eng = "^" + EKT_BIGRAMS[Math.floor(Math.random() * EKT_BIGRAMS.length)];
+			break;
 		case 'EAK':
-			my.game.wordLength = 5;
+			if (my.opts.length7) my.game.wordLength = 7;
+			else if (my.opts.length6) my.game.wordLength = 6;
+			else if (my.opts.length5) my.game.wordLength = 5;
+			else if (my.opts.length4) my.game.wordLength = 4;
+			else if (my.opts.length3) my.game.wordLength = 3;
+			else my.game.wordLength = 5;
 			eng = String.fromCharCode(97 + Math.floor(Math.random() * 26)) + "$";
 			break;
 		case 'KKT':
@@ -404,9 +425,15 @@ exports.roundReady = function () {
 	}
 	my.game.roundTime = my.time * 1000;
 	if (my.game.round <= my.round) {
-		my.game.char = my.game.title[my.game.round - 1];
+		// EKT: 매 라운드마다 EKT_BIGRAMS에서 랜덤 bigram 직접 선택
+		if (Const.GAME_TYPE[my.mode] === 'EKT') {
+			my.game.char = EKT_BIGRAMS[Math.floor(Math.random() * EKT_BIGRAMS.length)];
+		} else {
+			my.game.char = my.game.title[my.game.round - 1];
+		}
 		my.game.subChar = getSubChar.call(my, my.game.char);
 		my.game.chain = [];
+		my.game.ektTrigramMode = (Const.GAME_TYPE[my.mode] === 'EKT'); // EKT: 항상 3-gram 모드 활성화
 		if (my.opts.mission) my.game.mission = getMission(my.rule.lang);
 		if (my.opts.sami) {
 			my.game.wordLength = 2;
@@ -424,6 +451,13 @@ exports.roundReady = function () {
 			my.game.wordLength = 4;
 			my.game.samiCount = 0; // Reuse samiCount for alternating
 		}
+
+		// New Length Rules (Priority: 7 > 6 > 5 > 4 > 3)
+		if (my.opts.length7) my.game.wordLength = 7;
+		else if (my.opts.length6) my.game.wordLength = 6;
+		else if (my.opts.length5) my.game.wordLength = 5;
+		else if (my.opts.length4) my.game.wordLength = 4;
+		else if (my.opts.length3) my.game.wordLength = 3;
 
 		my.byMaster('roundReady', {
 			round: my.game.round,
@@ -475,6 +509,13 @@ exports.turnStart = function (force) {
 	} else if (my.opts.fourfour) {
 		my.game.wordLength = 4;
 	}
+
+	// New Length Rules (Priority: 7 > 6 > 5 > 4 > 3)
+	if (my.opts.length7) my.game.wordLength = 7;
+	else if (my.opts.length6) my.game.wordLength = 6;
+	else if (my.opts.length5) my.game.wordLength = 5;
+	else if (my.opts.length4) my.game.wordLength = 4;
+	else if (my.opts.length3) my.game.wordLength = 3;
 
 	// 한방 체크: 매너 체크에서 저장된 값 재사용 또는 새로 계산
 	if (typeof my.game.nextCharWordCount !== 'undefined') {
@@ -582,6 +623,14 @@ function getNextTurnLength() {
 	}
 	if (my.opts.twotwo) return 2;
 	if (my.opts.fourfour) return 4;
+
+	// New Length Rules (Priority: 7 > 6 > 5 > 4 > 3)
+	if (my.opts.length7) return 7;
+	if (my.opts.length6) return 6;
+	if (my.opts.length5) return 5;
+	if (my.opts.length4) return 4;
+	if (my.opts.length3) return 3;
+
 	return my.game.wordLength || 0;
 }
 
@@ -675,6 +724,12 @@ exports.submit = function (client, text) {
 	if (!my.game.char) return;
 
 	if (!isChainable(text, my.mode, my.game.char, my.game.subChar)) return client.chat(text);
+
+	// EKT 3-gram 모드에서 3글자 이하 단어 입력 시 채팅으로 처리 (게임 진행 안함)
+	if (Const.GAME_TYPE[my.mode] === 'EKT' && my.game.ektTrigramMode && text.length < 4) {
+		return client.chat(text);
+	}
+
 	if (my.game.chain.indexOf(text) != -1) {
 		var isRecentDuplicate = my.opts.return && my.game.chain.slice(-5).indexOf(text) != -1;
 
@@ -722,6 +777,16 @@ exports.submit = function (client, text) {
 		var preChar = getChar.call(my, text);
 		var preSubChar = getSubChar.call(my, preChar);
 		var firstMove = my.game.chain.length < 1;
+
+		// EKT: 3글자 이상 단어 입력 시, trigram 모드가 활성화될 것을 미리 예상하여 3-gram으로 매너 체크
+		var gameType = Const.GAME_TYPE[my.mode];
+		if (gameType === 'EKT' && text.length >= 3 && !my.game.ektTrigramMode) {
+			preChar = text.slice(-3); // 강제로 마지막 3글자 사용
+			preSubChar = preChar.slice(1); // 2-gram subChar
+			console.log(`[EKT] PreManner: Forcing trigram check for word "${text}" -> preChar=${preChar}, preSubChar=${preSubChar}`);
+		}
+
+
 
 		function preApproved() {
 			function approved() {
@@ -780,97 +845,125 @@ exports.submit = function (client, text) {
 
 				if (isReturn) score = 0;
 				my.game.dic[text] = (my.game.dic[text] || 0) + 1;
+
+				// EKT 모드 활성화는 단어가 완전히 승인된 후로 이동 (랜덤 체크 통과 후)
+
 				my.game.chain.push(text);
 				my.game.roundTime -= t;
 
 				// Random Linking Logic
 				if (my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second) {
-					// Override preChar/preSubChar if Random Rule is active
+					// 매너 체크는 preApproved에서 완료되었으므로 저장된 결과 사용
+					var randomResult = my.game._pendingRandomResult;
+					delete my.game._pendingRandomResult;
 
-					getRandomChar.call(my, text).then(function (randomResult) {
-						if (randomResult) {
-							my.game.char = randomResult.char;
-							my.game.subChar = getSubChar.call(my, randomResult.char);
-							// Pass link index to client
-							finishTurn(randomResult.index);
-						} else {
-							// All chars bad (Manner Mode) -> Reject Word
-							// Undo chain push and score
-							my.game.chain.pop();
-							client.game.score -= score;
-							// Send error
-							client.publish('turnError', {
-								code: 403, // Forbidden
-								value: text
-							}, true);
-							if (my.opts.one) my.turnEnd();
-							else client.game.turnError = true; // Flag to stop processing if needed?
-							// Actually we should just return/stop. But code flow is tricky.
-							// Revert score/chain is done. Just exit.
-						}
-					});
-					return; // Stop synchronous flow, wait for promise
+					// EKT: 3글자 이상 단어 사용 시 3-gram 모드 활성화
+					var type = Const.GAME_TYPE[my.mode];
+					if (type === 'EKT' && text.length >= 3 && !my.game.ektTrigramMode) {
+						my.game.ektTrigramMode = true;
+						console.log(`[EKT] Trigram mode activated by word: ${text}`);
+					}
+					my.game.char = randomResult.char;
+					my.game.subChar = getSubChar.call(my, randomResult.char);
+					// Pass link index to client
+					finishTurn(randomResult.index);
 				} else {
+					// EKT: 3글자 이상 단어 사용 시 3-gram 모드 활성화 (비랜덤 모드)
+					var type = Const.GAME_TYPE[my.mode];
+					if (type === 'EKT' && text.length >= 3 && !my.game.ektTrigramMode) {
+						my.game.ektTrigramMode = true;
+						console.log(`[EKT] Trigram mode activated by word: ${text}`);
+						// 모드 전환 후 preChar 재계산
+						preChar = getChar.call(my, text);
+						preSubChar = getSubChar.call(my, preChar);
+						console.log(`[EKT] Recalculated preChar after mode activation: ${preChar}`);
+					}
 					my.game.char = preChar;
 					my.game.subChar = preSubChar;
-					finishTurn();
+					// 서버에서 linkIndex 계산하여 클라이언트에 전달 (하이라이팅 위치 일원화)
+					finishTurn(getLinkIndex.call(my, text));
 				}
 
 				function finishTurn(linkIdx) {
 					// 1. 한방 체크 (모든 턴)
-					// Random/Unknown 모드는 제외하는 것이 안전하지만, 여기서 my.game.char가 이미 설정되어 있으므로 괜찮음.
-					// 단, Unknown 모드는 한방 개념이 없으므로 제외.
-					if (!my.opts.unknown) {
-						getAuto.call(my, my.game.char, my.game.subChar, 1).then(function (w) {
-							var count = (typeof w === 'number') ? w : (w ? 1 : 0);
-							var used = 0;
+					// 최적화: 매너 체크에서 저장된 nextCharWordCount를 재사용하여 중복 쿼리 방지
+					// 매너 모드 활성화 시 한방 단어는 이미 거부되었으므로 isHanbang = false
 
-							// 이미 사용된 단어 계산
-							var debugCheckChars = [];
-							if (my.game.chain) {
-								var checkChars = [my.game.char];
-								if (my.game.subChar) my.game.subChar.split("|").forEach(function (c) {
-									if (c && checkChars.indexOf(c) == -1) checkChars.push(c);
-								});
-								debugCheckChars = checkChars;
-								var type = Const.GAME_TYPE[my.mode];
-								var isKAP = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK');
-
-								var checkChain = my.game.chain;
-								if (my.opts.return) checkChain = my.game.chain.slice(-5);
-
-								checkChain.forEach(function (doneWord) {
-									var match = false;
-									checkChars.forEach(function (cc) {
-										if (isKAP) {
-											if (doneWord.slice(-cc.length) === cc) match = true;
-										} else {
-											if (doneWord.indexOf(cc) === 0) match = true;
-										}
-									});
-									if (match) used++;
-								});
-							}
-
-							var isHanbang = (count - used === 0);
-							console.log(`[DEBUG] Hanbang Check: char=${my.game.char}, sub=${my.game.subChar}, count=${count}, used=${used}, isHanbang=${isHanbang}, checkChars=${debugCheckChars.join(",")}`);
-
-							// 결과 저장 (turnStart에서도 재사용 가능)
-							my.game.nextCharWordCount = count - used;
-
-							finalizeTurn(isHanbang);
-
-							// 봇 승리 메시지
-							if (client.robot && isHanbang) {
-								setTimeout(function () {
-									if (!my.opts.unknown) client.chat(Const.ROBOT_VICTORY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_VICTORY_MESSAGES.length)]);
-								}, 500);
-							}
-						});
-					} else {
-						// 체크하지 않는 경우 (Unknown 등)
+					if (my.opts.unknown) {
+						// Unknown 모드는 한방 개념이 없음
 						finalizeTurn(false);
+						return;
 					}
+
+					// 매너 체크에서 저장된 결과가 있으면 재사용 (중복 쿼리 제거)
+					if (typeof my.game.nextCharWordCount !== 'undefined') {
+						// 매너 모드가 활성화되었다면 한방 단어는 이미 거부되었으므로 isHanbang = false
+						// 매너 모드가 비활성화되었을 때만 실제 한방 여부 표시
+						var isHanbang = !my.opts.manner && (my.game.nextCharWordCount <= 0);
+						console.log(`[DEBUG] Hanbang Check (cached): nextCharWordCount=${my.game.nextCharWordCount}, manner=${my.opts.manner}, isHanbang=${isHanbang}`);
+
+						finalizeTurn(isHanbang);
+
+						// 봇 승리 메시지
+						if (client.robot && isHanbang) {
+							setTimeout(function () {
+								client.chat(Const.ROBOT_VICTORY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_VICTORY_MESSAGES.length)]);
+							}, 500);
+						}
+						return;
+					}
+
+					// Fallback: 캐시된 결과가 없으면 직접 계산 (첫 턴 등)
+					getAuto.call(my, my.game.char, my.game.subChar, 1).then(function (w) {
+						var count = (typeof w === 'number') ? w : (w ? 1 : 0);
+						var used = 0;
+
+						// 이미 사용된 단어 계산
+						var debugCheckChars = [];
+						if (my.game.chain) {
+							var checkChars = [my.game.char];
+							if (my.game.subChar) my.game.subChar.split("|").forEach(function (c) {
+								if (c && checkChars.indexOf(c) == -1) checkChars.push(c);
+							});
+							debugCheckChars = checkChars;
+							var type = Const.GAME_TYPE[my.mode];
+							var isKAP = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK');
+
+							// 현재 단어는 이미 chain에 push되었으므로 제외 (마지막 요소)
+							var checkChain = my.game.chain.slice(0, -1);
+							if (my.opts.return) checkChain = checkChain.slice(-5);
+
+							checkChain.forEach(function (doneWord) {
+								var match = false;
+								checkChars.forEach(function (cc) {
+									if (isKAP) {
+										if (doneWord.slice(-cc.length) === cc) match = true;
+									} else {
+										if (doneWord.indexOf(cc) === 0) match = true;
+									}
+								});
+								if (match) used++;
+							});
+						}
+
+						// 남은 단어가 0개 이하면 한방 (음수일 수도 있음)
+						// 매너 모드가 활성화되었으면 isHanbang = false
+						var remaining = count - used;
+						var isHanbang = !my.opts.manner && (remaining <= 0);
+						console.log(`[DEBUG] Hanbang Check (fallback): char=${my.game.char}, sub=${my.game.subChar}, count=${count}, used=${used}, remaining=${remaining}, manner=${my.opts.manner}, isHanbang=${isHanbang}, checkChars=${debugCheckChars.join(",")}`);
+
+						// 결과 저장 (turnStart에서도 재사용 가능)
+						my.game.nextCharWordCount = remaining;
+
+						finalizeTurn(isHanbang);
+
+						// 봇 승리 메시지
+						if (client.robot && isHanbang) {
+							setTimeout(function () {
+								client.chat(Const.ROBOT_VICTORY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_VICTORY_MESSAGES.length)]);
+							}, 500);
+						}
+					});
 
 					function finalizeTurn(isHanbang) {
 						client.game.score += score;
@@ -902,7 +995,23 @@ exports.submit = function (client, text) {
 					}
 				}
 			}
-			if (!my.opts.unknown && !(my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second)) getAuto.call(my, preChar, preSubChar, 1).then(function (w) {
+			// 랜덤 모드: getRandomChar로 매너 체크
+			var isRandomMode = my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second;
+			if (!my.opts.unknown && isRandomMode) {
+				// 랜덤 모드 매너 체크를 preApproved에서 실행
+				getRandomChar.call(my, text).then(function (randomResult) {
+					if (randomResult) {
+						// 유효한 연결 글자 저장 (approved에서 사용)
+						my.game._pendingRandomResult = randomResult;
+						approved();
+					} else {
+						// 매너 실패
+						denied(firstMove ? 402 : 403);
+					}
+				});
+			}
+			// 비랜덤 모드: 기존 매너 체크
+			else if (!my.opts.unknown) getAuto.call(my, preChar, preSubChar, 1).then(function (w) {
 				var count = (typeof w === 'number') ? w : (w ? 1 : 0);
 				var used = 0;
 				if (my.game.chain) {
@@ -927,92 +1036,107 @@ exports.submit = function (client, text) {
 					});
 				}
 
-				// 남은 단어 수를 저장하여 turnStart에서 재사용
-				my.game.nextCharWordCount = count - used;
+				// 매너 한도: 최소 1단어
+				var minRemaining = 1;
+				var trigramRemaining = count - used;
 
-				if ((firstMove || my.opts.manner) && count - used > 0) {
-					// Stack Kill Prevention for Manner Mode/First Turn (SafeGuard)
-					// If the pool is small, check if it's a "Dead End Stack" (Recursive Trap)
-					if (count - used <= 10) {
-						getAuto.call(my, preChar, preSubChar, 2).then(function (list) {
-							if (!list || list.length === 0) {
-								// Treat as Trap because Real DB found no words (contradicting Stats)
-								my.game.loading = false;
-								client.publish('turnError', {
-									code: 403, // Forbidden (Trap)
-									value: text
-								}, true);
-								if (client.robot) my.readyRobot(client);
-								if (my.opts.one) my.turnEnd();
-								return;
-							}
+				// EKT 3-gram 모드: 3-gram과 2-gram 개수의 합으로 매너 체크
+				function checkMannerAndProceed(totalRemaining) {
+					// 남은 단어 수를 저장하여 turnStart에서 재사용
+					my.game.nextCharWordCount = totalRemaining;
 
-							var isStack = true;
-							var i, w, nc, ns;
+					if ((firstMove || my.opts.manner) && totalRemaining >= minRemaining) {
+						// Stack Kill Prevention for Manner Mode/First Turn (SafeGuard)
+						// If the pool is small, check if it's a "Dead End Stack" (Recursive Trap)
+						if (totalRemaining <= 10) {
+							getAuto.call(my, preChar, preSubChar, 2).then(function (list) {
+								if (!list || list.length === 0) {
+									// Treat as Trap because Real DB found no words (contradicting Stats)
+									denied(403);
+									return;
+								}
 
-							// Prepare valid start characters (Original + Dueum Variations)
-							var startChars = [preChar];
-							if (preSubChar) {
-								preSubChar.split('|').forEach(function (sc) {
-									if (sc && startChars.indexOf(sc) === -1) startChars.push(sc);
-								});
-							}
+								var isStack = true;
+								var i, w, nc, ns;
 
-							for (i = 0; i < list.length; i++) {
-								w = list[i]._id;
-								nc = getChar.call(my, w);
-								ns = getSubChar.call(my, nc);
+								// Prepare valid start characters (Original + Dueum Variations)
+								var startChars = [preChar];
+								if (preSubChar) {
+									preSubChar.split('|').forEach(function (sc) {
+										if (sc && startChars.indexOf(sc) === -1) startChars.push(sc);
+									});
+								}
 
-								var linksToSelf = false;
+								for (i = 0; i < list.length; i++) {
+									w = list[i]._id;
+									nc = getChar.call(my, w);
+									ns = getSubChar.call(my, nc);
 
-								// Check if nc matches any start char
-								if (startChars.indexOf(nc) !== -1) linksToSelf = true;
-								// Check if any subchar of nc matches any start char
-								else if (ns) {
-									var parts = ns.split('|');
-									for (var k = 0; k < parts.length; k++) {
-										if (startChars.indexOf(parts[k]) !== -1) {
-											linksToSelf = true;
-											break;
+									var linksToSelf = false;
+
+									// Check if nc matches any start char
+									if (startChars.indexOf(nc) !== -1) linksToSelf = true;
+									// Check if any subchar of nc matches any start char
+									else if (ns) {
+										var parts = ns.split('|');
+										for (var k = 0; k < parts.length; k++) {
+											if (startChars.indexOf(parts[k]) !== -1) {
+												linksToSelf = true;
+												break;
+											}
 										}
+									}
+
+									if (!linksToSelf) {
+										isStack = false; // Found an escape!
+										break;
 									}
 								}
 
-								if (!linksToSelf) {
-									isStack = false; // Found an escape!
-									break;
+								if (isStack && list.length > 0) {
+									// Block!
+									denied(403);
+								} else {
+									approved();
 								}
-							}
-
-							if (isStack && list.length > 0) {
-								// Block!
-								my.game.loading = false;
-								client.publish('turnError', {
-									code: 403, // Forbidden (Trap)
-									value: text
-								}, true);
-								if (client.robot) my.readyRobot(client);
-								if (my.opts.one) my.turnEnd();
-							} else {
-								approved();
-							}
-						});
+							});
+						} else {
+							approved();
+						}
+					}
+					else if (firstMove || my.opts.manner) {
+						denied(firstMove ? 402 : 403);
 					} else {
 						approved();
 					}
 				}
-				else if (firstMove || my.opts.manner) {
-					my.game.loading = false;
-					client.publish('turnError', {
-						code: firstMove ? 402 : 403,
-						value: text
-					}, true);
-					if (client.robot) {
-						my.readyRobot(client);
-					}
-					if (my.opts.one) my.turnEnd();
+
+				// EKT 3-gram 모드: 2-gram도 함께 조회하여 합산
+				if (gameType === 'EKT' && preChar.length >= 3) {
+					var bigramChar = preChar.slice(1); // 맨 앞 글자 제외한 2-gram
+					getAuto.call(my, bigramChar, null, 1).then(function (bigramRes) {
+						var bigramCount = (typeof bigramRes === 'number') ? bigramRes : (bigramRes ? 1 : 0);
+						var bigramUsed = 0;
+
+						// 2-gram 사용된 단어 계산
+						if (my.game.chain) {
+							var checkChain = my.game.chain;
+							if (my.opts.return) checkChain = my.game.chain.slice(-5);
+
+							checkChain.forEach(function (doneWord) {
+								if (doneWord.indexOf(bigramChar) === 0) bigramUsed++;
+							});
+						}
+
+						var bigramRemaining = bigramCount - bigramUsed;
+						var totalRemaining = trigramRemaining + bigramRemaining;
+
+						console.log(`[MannerDebug] Combined Check: 3-gram=${preChar}(${trigramRemaining}), 2-gram=${bigramChar}(${bigramRemaining}), total=${totalRemaining}`);
+
+						checkMannerAndProceed(totalRemaining);
+					});
 				} else {
-					approved();
+					checkMannerAndProceed(trigramRemaining);
 				}
 			});
 			else approved();
@@ -1240,6 +1364,96 @@ exports.readyRobot = function (robot) {
 		});
 	}
 
+	// EKT 매너 필터: 연결 가능한 단어가 있는 단어만 반환
+	// 기존 플레이어 매너 체크 로직 (preApproved의 EKT 3-gram 체크)과 동일한 방식 사용
+	function filterEKTManner(list) {
+		return new Promise(function (resolve) {
+			if (!list || list.length === 0) return resolve([]);
+
+			var state = 0;
+			if (!my.opts.injeong) state |= 1;
+			if (my.opts.strict) state |= 2;
+			if (my.opts.loanword) state |= 4;
+
+			var table = DB.kkutu_stats_en;
+			var col = `count_${state}`;
+
+			var results = [];
+			var pending = list.length;
+
+			list.forEach(function (w) {
+				var word = w._id;
+				if (word.length < 4) {
+					// EKT 3-gram 모드에서 4글자 미만은 이미 필터됨 (검사 불필요)
+					results.push(w);
+					if (--pending === 0) resolve(results);
+					return;
+				}
+
+				// getChar를 사용하여 실제 연결 위치 결정 (EKT trigram 모드에서는 마지막 3글자)
+				var trigram = getChar.call(my, word);
+				// 2-gram subChar: trigram의 맨 앞 글자 제외 (플레이어 매너 체크와 동일)
+				var bigram = trigram.slice(1);
+
+				var trigramCount = 0;
+				var bigramCount = 0;
+				var checks = 2;
+
+				// 3-gram 조회
+				table.findOne(['_id', trigram]).on(function (doc) {
+					trigramCount = (doc && doc[col]) ? doc[col] : 0;
+					if (--checks === 0) checkResult();
+				}, null, function () {
+					if (--checks === 0) checkResult();
+				});
+
+				// 2-gram 조회
+				table.findOne(['_id', bigram]).on(function (doc) {
+					bigramCount = (doc && doc[col]) ? doc[col] : 0;
+					if (--checks === 0) checkResult();
+				}, null, function () {
+					if (--checks === 0) checkResult();
+				});
+
+				function checkResult() {
+					var totalCount = trigramCount + bigramCount;
+
+					// 사용된 단어 수 계산 (플레이어 매너 체크와 동일한 로직)
+					var trigramUsed = 0;
+					var bigramUsed = 0;
+
+					if (my.game.chain) {
+						var checkChain = my.game.chain;
+						if (my.opts.return) checkChain = my.game.chain.slice(-5);
+
+						checkChain.forEach(function (doneWord) {
+							// 3-gram으로 시작하는 단어
+							if (doneWord.indexOf(trigram) === 0) trigramUsed++;
+							// 2-gram으로 시작하는 단어
+							if (doneWord.indexOf(bigram) === 0) bigramUsed++;
+						});
+					}
+
+					// 주의: 현재 단어 자체는 카운트하지 않음
+					// 봇이 선택한 단어는 "다음 턴에 상대가 이어야 할 글자"를 결정하는 것이지
+					// 자신이 다시 그 글자로 시작하는 단어를 쓰는 게 아님
+
+					var trigramRemaining = trigramCount - trigramUsed;
+					var bigramRemaining = bigramCount - bigramUsed;
+					var remaining = trigramRemaining + bigramRemaining;
+
+					console.log(`[BOT] EKT Manner Check: word=${word}, trigram=${trigram}(${trigramCount}-${trigramUsed}=${trigramRemaining}), bigram=${bigram}(${bigramCount}-${bigramUsed}=${bigramRemaining}), remaining=${remaining}`);
+
+					// 매너 조건: 최소 1단어 남아야 함
+					if (remaining >= 1) {
+						results.push(w);
+					}
+
+					if (--pending === 0) resolve(results);
+				}
+			});
+		});
+	}
 	if (my.opts.unknown) {
 		var gen = "";
 		var len;
@@ -1488,7 +1702,7 @@ exports.readyRobot = function (robot) {
 
 	function decideStrategy() {
 		var strategy = "NORMAL";
-		var isKKT = (Const.GAME_TYPE[my.mode] == "KKT" || Const.GAME_TYPE[my.mode] == "EKK");
+		var isKKT = (Const.GAME_TYPE[my.mode] == "KKT" || Const.GAME_TYPE[my.mode] == "EKK" || Const.GAME_TYPE[my.mode] == "KAK" || Const.GAME_TYPE[my.mode] == "EAK");
 		var decided = false;
 
 		// Force Retry Logic
@@ -1572,10 +1786,16 @@ exports.readyRobot = function (robot) {
 
 		getAuto.call(my, my.game.char, my.game.subChar, 2, limitMultiplier, sort).then(function (list) {
 			console.log(`[BOT] executeStrategy: ${strategy}, fetched ${list ? list.length : 0} words`);
-			if (list && list.length) {
+			if (list) {
 				// Filter by length limit and done list
+				// EKT 3-gram 모드: 최소 4글자 이상 필터 추가
+				var minLen = 1;
+				if (Const.GAME_TYPE[my.mode] === 'EKT' && my.game.ektTrigramMode) {
+					minLen = 4;
+				}
 				list = list.filter(function (w) {
-					return w._id.length <= ROBOT_LENGTH_LIMIT[level] && !robot._done.includes(w._id);
+					if (my.game.wordLength > 0 && w._id.length !== my.game.wordLength) return false;
+					return w._id.length >= minLen && w._id.length <= ROBOT_LENGTH_LIMIT[level] && !robot._done.includes(w._id);
 				});
 
 				if (list.length === 0) {
@@ -1597,7 +1817,6 @@ exports.readyRobot = function (robot) {
 					// Just pick top ones.
 					var top = list.slice(0, 30);
 					pickList(shuffle(top)); // Pick randomly from top 30
-
 				} else if (strategy === "ATTACK") {
 					// Optimized Attack Strategy: Tiered Reverse Search
 					// Tier 1: Priority + One-shots (Count 0)
@@ -1686,7 +1905,10 @@ exports.readyRobot = function (robot) {
 						function processList(list, nextStepCallback) {
 							if (list && list.length) {
 								list = list.filter(function (w) {
-									return w._id.length <= ROBOT_LENGTH_LIMIT[level] && !robot._done.includes(w._id);
+									// EKT 3-gram 모드: 최소 4글자 이상 필터
+									var minLen = (Const.GAME_TYPE[my.mode] === 'EKT' && my.game.ektTrigramMode) ? 4 : 1;
+									if (my.game.wordLength > 0 && w._id.length !== my.game.wordLength) return false;
+									return w._id.length >= minLen && w._id.length <= ROBOT_LENGTH_LIMIT[level] && !robot._done.includes(w._id);
 								});
 
 								if (list.length > 0) {
@@ -1991,23 +2213,21 @@ exports.readyRobot = function (robot) {
 							} else {
 								// End-to-End Attack (Normal)
 								var middlePattern = ".*";
+								var lenCheck = ""; // Lookahead length check
 
 								// Fixed Word Length (EKK/Sami/KKT)
 								if (my.game.wordLength > 0) {
-									// Assumes killer is 1 char (Simple Logic) or EKT uses 3 char logic (but EKT has no wordLimit usually)
-									// For EKK, killers are 1 char.
-									// Length = 1(adc) + Mid + 1(killer) = wordLength
-									// Mid = wordLength - 2
-									var midLen = Math.max(0, my.game.wordLength - 2);
-									middlePattern = `.{${midLen}}`;
+									// Use Lookahead to strictly enforce length
+									lenCheck = `(?=.{${my.game.wordLength}}$)`;
+									middlePattern = ".*";
 								} else if (Const.GAME_TYPE[my.mode] === "EKT") {
 
 								}
 
 								if (isRev) {
-									regex = `^(${killerPattern})${middlePattern}(${adc})$`;
+									regex = `^${lenCheck}(${killerPattern})${middlePattern}(${adc})$`;
 								} else {
-									regex = `^(${adc})${middlePattern}(${killerPattern})$`;
+									regex = `^${lenCheck}(${adc})${middlePattern}(${killerPattern})$`;
 								}
 							}
 
@@ -2029,7 +2249,7 @@ exports.readyRobot = function (robot) {
 						// If Normal Turn: Start Tier 1.
 
 						var startTier1 = true;
-						if (my.game.chain.length === 0 || my.opts.manner) {
+						if (!my.game.chain || my.game.chain.length === 0 || my.opts.manner) {
 							console.log("[BOT] First Turn or Manner Mode detected. Skipping Tier 1 (Killer word unavailable).");
 							startTier1 = false;
 						} else if (Math.random() < tier2StartProb) {
@@ -2073,7 +2293,22 @@ exports.readyRobot = function (robot) {
 					var top = list.slice(0, ROBOT_CANDIDATE_LIMIT[level]);
 					var rest = list.slice(ROBOT_CANDIDATE_LIMIT[level]);
 					list = shuffle(top).concat(rest);
-					pickList(list);
+
+					// EKT 매너 모드: 연결 가능한 단어가 있는 단어만 선택
+					if (my.opts.manner && Const.GAME_TYPE[my.mode] === 'EKT' && my.game.ektTrigramMode) {
+						console.log(`[BOT] EKT Manner Filter: Checking ${list.length} words...`);
+						filterEKTManner(list).then(function (filtered) {
+							if (filtered.length > 0) {
+								console.log(`[BOT] EKT Manner Filter: ${filtered.length}/${list.length} words passed`);
+								pickList(filtered);
+							} else {
+								console.log(`[BOT] EKT Manner Filter: No valid words found`);
+								denied();
+							}
+						});
+					} else {
+						pickList(list);
+					}
 				}
 			} else {
 				denied();
@@ -2211,8 +2446,16 @@ function getAuto(char, subc, type, limit, sort) {
 			adv = `^(${adc}).{${my.game.wordLength - char.length}}$`;
 			break;
 		case 'EKT':
-			adv = `^(${adc})..`;
-			break;
+			// EKT 3-gram 모드: 최소 4글자 이상 단어만 검색
+			// char.length >= 2이면 trigram 모드 여부와 무관하게 4글자 최소 강제
+			// (매너 체크 시 ektTrigramMode가 아직 false여도 4글자 기준 적용)
+			if (my.game.ektTrigramMode || char.length >= 2) {
+				var minExtraChars = Math.max(1, 4 - char.length);
+				adv = `^(${adc})${'.'.repeat(minExtraChars)}`;
+			} else {
+				adv = `^(${adc}).`; // 비활성화 시 1글자 char: 2글자 이상
+			}
+			break;;
 		case 'KSH':
 			adv = `^(${adc}).`;
 			break;
@@ -2264,6 +2507,7 @@ function getAuto(char, subc, type, limit, sort) {
 			});
 		}
 
+		// 다중 findOne 병렬 호출 (안정성을 위해 $in 대신 사용)
 		var pending = charsToCheck.length;
 		var totalCount = 0;
 		var debugCounts = [];
@@ -2276,20 +2520,15 @@ function getAuto(char, subc, type, limit, sort) {
 
 				if (--pending === 0) {
 					console.log(`[DEBUG] getAuto stats: col=${col}, total=${totalCount}, details=[${debugCounts.join(", ")}]`);
-					if (totalCount > 0) {
-						R.go(totalCount);
-					} else {
-						// Fallback to real DB check if stats say 0 (or cache miss)
-						produce();
-					}
+					// 통계에 없으면 해당 글자로 시작/끝나는 단어가 없음 → 0 반환 (fallback 불필요)
+					R.go(totalCount);
 				}
 			}, null, function () {
-				// Error/Empty
-				debugCounts.push(`${c}:ERR`);
+				// Error/Empty - 통계에 없으면 0으로 처리
+				debugCounts.push(`${c}:0(missing)`);
 				if (--pending === 0) {
-					console.log(`[DEBUG] getAuto stats (with errors): col=${col}, total=${totalCount}, details=[${debugCounts.join(", ")}]`);
-					if (totalCount > 0) R.go(totalCount);
-					else produce();
+					console.log(`[DEBUG] getAuto stats: col=${col}, total=${totalCount}, details=[${debugCounts.join(", ")}]`);
+					R.go(totalCount);
 				}
 			});
 		});
@@ -2378,54 +2617,82 @@ function getChar(text) {
 				if (my.opts.second) return text.charAt(0);
 				return text.slice(-1);
 			}
+			// EKT Middle: 한국어처럼 가운데 글자 기준으로 양옆 포함 3글자
+			// Middle+Second (홀수): 가운데 3글자
+			// Middle+Second (짝수): 인덱스를 하나 앞으로 (앞쪽 가운데 3글자)
 			if (len % 2 !== 0) {
+				// 홀수: 정확한 가운데 3글자
 				idx = Math.floor(len / 2);
 				return text.slice(idx - 1, idx + 2);
 			} else {
-				idx = len / 2;
+				// 짝수
+				if (my.opts.second) {
+					// Middle+Second: 앞쪽 가운데 3글자 (인덱스 앞으로 당김)
+					idx = len / 2 - 1;
+				} else {
+					// Middle only: 뒤쪽 가운데 3글자
+					idx = len / 2;
+				}
 				return text.slice(idx - 1, idx + 2);
 			}
 		}
 
-		// Generic Middle (including Middle+Second)
-		if (my.opts.second) {
-			if (len % 2 !== 0) idx = Math.floor(len / 2);
-			else idx = isKAP ? (len / 2) : (len / 2 - 1);
+		// Generic Middle (1글자 연결, 비-EKT 모드)
+		// 홀수: 정확한 가운데 글자
+		// 짝수 + 끝말: 뒤쪽 가운데 (len / 2)
+		// 짝수 + 앞말(isKAP): 앞쪽 가운데 (len / 2 - 1)
+		// Second: 반대
+		if (len % 2 !== 0) {
+			idx = Math.floor(len / 2);
 		} else {
-			if (len % 2 !== 0) idx = Math.floor(len / 2);
-			else idx = isKAP ? (len / 2 - 1) : (len / 2);
+			// 짝수
+			if (isKAP) {
+				idx = my.opts.second ? (len / 2) : (len / 2 - 1);     // 앞말: 기본 앞쪽, 세컨드면 뒤쪽
+			} else {
+				idx = my.opts.second ? (len / 2 - 1) : (len / 2);     // 끝말: 기본 뒤쪽, 세컨드면 앞쪽
+			}
 		}
 		if (idx >= 0 && idx < len) return text.charAt(idx);
 	}
 
-	// Priority 2: First Rule
+	// Priority 2: First Rule (첫말잇기)
+	// 끝말: 앞에서 연결 / 앞말(isKAP): 뒤에서 연결
+	// Second: 인덱스를 하나 당김
 	if (my.opts.first) {
 		if (my.opts.second) {
-			if (isKAP) return text.slice(-2, -1);
-			if (type === 'EKT') return text.slice(1, 4);
-			return text.charAt(1);
+			// First+Second
+			if (type === 'EKT') return text.slice(1, 4); // EKT: 1~3번째 3글자
+			if (isKAP) return text.charAt(len - 2);       // 앞말: 끝에서 2번째
+			return text.charAt(1);                         // 끝말: 앞에서 2번째
 		}
-		if (isKAP) return text.slice(-1);
-		if (type === 'EKT') return text.slice(0, 3);
-		return text.charAt(0);
+		// First only
+		if (type === 'EKT') return text.slice(0, 3);      // EKT: 0~2번째 3글자
+		if (isKAP) return text.charAt(len - 1);           // 앞말: 마지막
+		return text.charAt(0);                             // 끝말: 첫번째
 	}
 
-	// Priority 3: Second Rule
+	// Priority 3: Second Rule (세컨드)
+	// 끝말: 끝에서 2번째 / 앞말(isKAP): 앞에서 2번째
 	if (my.opts.second) {
 		if (type === 'EKT' && my.rule.lang === 'en') {
+			// EKT: 마지막 3글자 → 끝에서 4~2번째
 			if (len === 2) return text.charAt(0);
 			if (len >= 4) return text.slice(len - 4, len - 1);
 			else if (len === 3) return text;
 		}
-
-		idx = isKAP ? 1 : (len - 2);
-		if (idx >= 0 && idx < len) return text.charAt(idx);
+		// 1글자 연결
+		if (isKAP) return text.charAt(1);                  // 앞말: 앞에서 2번째
+		return text.charAt(len - 2);                       // 끝말: 끝에서 2번째
 	}
 
 	// Default
 	switch (type) {
 		case 'EKT':
-			return text.slice(text.length - 3);
+			// EKT: 3-gram 모드가 활성화되지 않았으면 마지막 1글자, 활성화되었으면 마지막 3글자
+			if (!my.game.ektTrigramMode) {
+				return text.slice(-1);
+			}
+			return text.slice(-3);
 		case 'EKK':
 		case 'ESH':
 		case 'KKT':
@@ -2439,6 +2706,91 @@ function getChar(text) {
 	}
 };
 
+// 연결 글자의 시작 인덱스를 반환 (클라이언트 하이라이팅용)
+// getChar와 동일한 로직을 사용하되, 글자 대신 인덱스를 반환
+function getLinkIndex(text) {
+	var my = this;
+	var type = Const.GAME_TYPE[my.mode];
+	var len = text.length;
+	var idx = -1;
+	var isKAP = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK');
+
+	// Priority 1: Middle Rule
+	if (my.opts.middle) {
+		if (type === 'EKT' && my.rule.lang === 'en') {
+			if (len === 2) {
+				return my.opts.second ? 0 : 1;
+			}
+			// EKT Middle: 가운데 3글자의 시작 인덱스
+			if (len % 2 !== 0) {
+				idx = Math.floor(len / 2);
+				return idx - 1; // 3글자의 시작 인덱스
+			} else {
+				if (my.opts.second) {
+					idx = len / 2 - 1;
+				} else {
+					idx = len / 2;
+				}
+				return idx - 1;
+			}
+		}
+
+		// Generic Middle (1글자)
+		if (len % 2 !== 0) {
+			return Math.floor(len / 2);
+		} else {
+			if (isKAP) {
+				return my.opts.second ? (len / 2) : (len / 2 - 1);
+			} else {
+				return my.opts.second ? (len / 2 - 1) : (len / 2);
+			}
+		}
+	}
+
+	// Priority 2: First Rule
+	if (my.opts.first) {
+		if (my.opts.second) {
+			if (type === 'EKT') return 1; // EKT: 1~3번째 시작
+			if (isKAP) return len - 2;
+			return 1;
+		}
+		if (type === 'EKT') return 0; // EKT: 0~2번째 시작
+		if (isKAP) return len - 1;
+		return 0;
+	}
+
+	// Priority 3: Second Rule
+	if (my.opts.second) {
+		if (type === 'EKT' && my.rule.lang === 'en') {
+			if (len === 2) return 0;
+			if (len >= 4) return len - 4; // 끝에서 4~2번째 시작
+			else if (len === 3) return 0;
+		}
+		if (isKAP) return 1;
+		return len - 2;
+	}
+
+	// Default
+	switch (type) {
+		case 'EKT':
+			if (!my.game.ektTrigramMode) {
+				return len - 1;
+			}
+			return len - 3; // 마지막 3글자 시작 인덱스
+		case 'EKK':
+		case 'ESH':
+		case 'KKT':
+		case 'KSH':
+			return len - 1;
+		case 'KAP':
+		case 'EAP':
+		case 'KAK':
+		case 'EAK':
+			return 0;
+	}
+	return -1;
+}
+
 function getSubChar(char) {
 	var my = this;
 	var r;
@@ -2450,20 +2802,13 @@ function getSubChar(char) {
 
 	switch (Const.GAME_TYPE[my.mode]) {
 		case "EKT":
-			if (my.rule.lang === 'en' && (my.opts.middle || my.opts.second)) {
-				var len = my._lastWordLen;
-				if (len && len !== 2) {
-					if (my.opts.middle) {
-						if (len % 2 !== 0) r = char.slice(1);
-						else r = char.slice(1);
-					} else if (my.opts.second) {
-						if (len >= 4) r = char.slice(1);
-						else if (len === 3) r = char.slice(0, 2);
-					}
-				}
-				if (r) break;
+			// EKT 3-gram subChar 계산
+			// char이 3글자인 경우, subChar는 앞 1글자를 제외한 2글자 (2-gram)
+			if (char.length >= 3) {
+				r = char.slice(1); // 기본: 앞 1글자 제외한 2글자
 			}
-			if (char.length > 2) r = char.slice(1);
+			// Middle/Second/First 규칙에 따른 subChar 조정은 불필요
+			// getChar에서 이미 올바른 3-gram을 반환하고, subChar는 항상 마지막 2글자
 			break;
 		case "EKK":
 		case "KKT":
@@ -2585,12 +2930,26 @@ function getRandomChar(text) {
 	var type = Const.GAME_TYPE[my.mode];
 	var len = text.length;
 	var indices = [];
+	var isEKT = (type === 'EKT');
+	// 참고: getRandomChar 호출 시점에 현재 단어가 이미 chain에 push된 상태
+	// 그래서 첫 턴인지 확인하려면 chain.length <= 1 체크 필요
+	var firstMove = my.game.chain.length <= 1;
 
-	// EKT Logic: 3-grams
-	if (type === 'EKT') {
-		// Valid indices for 3-gram starts: 0 to len-3
-		for (var i = 0; i <= len - 3; i++) {
-			if (!/[0-9\s]/.test(text.slice(i, i + 3))) indices.push(i);
+	// 게임 단위 글자별 캐시 초기화 (매너 체크용)
+	if (!my.game._charCountCache) {
+		my.game._charCountCache = {};
+	}
+
+	// EKT 모드 로직
+	if (isEKT) {
+		if (len === 2) {
+			// 2글자 단어: 첫 글자(0) 또는 끝 글자(1) 중 선택
+			indices = [0, 1];
+		} else if (len >= 3) {
+			// 3글자 이상: 3-gram 슬라이딩 윈도우
+			for (var i = 0; i <= len - 3; i++) {
+				if (!/[0-9\s]/.test(text.slice(i, i + 3))) indices.push(i);
+			}
 		}
 	} else {
 		// General Logic: All single characters
@@ -2599,12 +2958,15 @@ function getRandomChar(text) {
 		}
 	}
 
-	// Shuffle indices -> Deleted. We will pick randomly.
-	// indices = shuffle(indices);
-
 	return new Promise(function (resolve) {
-		if (!my.opts.manner) {
-			// If not Manner mode, pick first random
+		// EKT 2글자 단어: 매너 체크 불필요 (다음 턴이 1글자 모드)
+		if (isEKT && len === 2) {
+			var randIdx = Math.floor(Math.random() * 2);
+			return resolve({ index: randIdx, char: text.charAt(randIdx) });
+		}
+
+		// 매너 모드가 아니고 첫 턴도 아닌 경우: 랜덤 선택
+		if (!my.opts.manner && !firstMove) {
 			if (indices.length > 0) {
 				var randIdx = Math.floor(Math.random() * indices.length);
 				return resolve({ index: indices[randIdx], char: getCharFromIndex(indices[randIdx]) });
@@ -2612,39 +2974,140 @@ function getRandomChar(text) {
 			return resolve(null);
 		}
 
-		// Manner Mode Check
+		// 매너 모드 또는 첫 턴: 셔플 후 순차 체크
+		indices = shuffle(indices);
+		var currentIndex = 0;
+
 		var checkNext = function () {
-			if (indices.length === 0) return resolve(null); // No valid chars found
+			if (currentIndex >= indices.length) return resolve(null); // 모든 체크 실패 → 비매너 처리
 
-			// Pick random index and remove it from pool
-			var randPoolIdx = Math.floor(Math.random() * indices.length);
-			var idx = indices.splice(randPoolIdx, 1)[0];
-
+			var idx = indices[currentIndex++];
 			var char = getCharFromIndex(idx);
 			var subChar = getSubChar.call(my, char);
 
-			// Check if this char has valid connecting words (Tier 1 check)
+			// 캐시 키 생성 (char + subChar 조합)
+			var cacheKey = char + (subChar ? '|' + subChar : '');
+
+			// 캐시된 결과가 있으면 사용
+			if (my.game._charCountCache.hasOwnProperty(cacheKey)) {
+				var cachedCount = my.game._charCountCache[cacheKey];
+				processCount(cachedCount, idx, char, subChar, cacheKey, true);
+				return;
+			}
+
+			// 해당 글자로 연결 가능한 단어 체크
 			getAuto.call(my, char, subChar, 1).then(function (res) {
-				// res is count (number) or possibly boolean from cache
 				var count = (typeof res === 'number') ? res : (res ? 1 : 0);
 
-				console.log(`[RandomDebug] Word: ${text}, Idx: ${idx}, Char: ${char}, Count: ${count}`);
+				// EKT 3-gram 모드: 3-gram과 2-gram 개수의 합으로 캐시
+				if (isEKT && char.length >= 3) {
+					var bigramChar = char.slice(1); // 맨 앞 글자 제외한 2-gram
+					var bigramCacheKey = bigramChar;
 
-				if (count > 0) {
-					// Found valid char
-					resolve({ index: idx, char: char });
+					// 2-gram도 캐시 확인
+					if (my.game._charCountCache.hasOwnProperty(bigramCacheKey)) {
+						var bigramCount = my.game._charCountCache[bigramCacheKey];
+						var totalCount = count + bigramCount;
+						// 3-gram에 2-gram을 포함한 총합을 캐시
+						my.game._charCountCache[cacheKey] = totalCount;
+						console.log(`[RandomDebug] Cache HIT (2-gram): ${bigramCacheKey}=${bigramCount}, combined=${totalCount}`);
+						processCount(totalCount, idx, char, subChar, cacheKey, false);
+					} else {
+						// 2-gram도 조회 필요
+						getAuto.call(my, bigramChar, null, 1).then(function (bigramRes) {
+							var bigramCount = (typeof bigramRes === 'number') ? bigramRes : (bigramRes ? 1 : 0);
+							// 2-gram 캐시 저장
+							my.game._charCountCache[bigramCacheKey] = bigramCount;
+							var totalCount = count + bigramCount;
+							// 3-gram에 2-gram을 포함한 총합을 캐시
+							my.game._charCountCache[cacheKey] = totalCount;
+							console.log(`[RandomDebug] Cache MISS (2-gram): ${bigramCacheKey}=${bigramCount}, combined=${totalCount}`);
+							processCount(totalCount, idx, char, subChar, cacheKey, false);
+						});
+					}
 				} else {
-					// Invalid (Bad Manner), try next
-					checkNext();
+					// 비 EKT 또는 non-trigram: 단일 값 캐시
+					my.game._charCountCache[cacheKey] = count;
+					processCount(count, idx, char, subChar, cacheKey, false);
 				}
 			});
 		};
+
+		function processCount(count, idx, char, subChar, cacheKey, isCached) {
+			var used = 0;
+
+			// 이미 사용된 단어 계산 (한국어 끝말잇기와 동일한 로직)
+			var checkChars = [char];
+			if (subChar) subChar.split("|").forEach(function (c) {
+				if (c && checkChars.indexOf(c) == -1) checkChars.push(c);
+			});
+			var gameType = Const.GAME_TYPE[my.mode];
+			var isKAP = (gameType === 'KAP' || gameType === 'KAK' || gameType === 'EAP' || gameType === 'EAK');
+
+			if (my.game.chain) {
+				var checkChain = my.game.chain;
+				if (my.opts.return) checkChain = my.game.chain.slice(-5);
+
+				checkChain.forEach(function (doneWord) {
+					var match = false;
+					checkChars.forEach(function (cc) {
+						if (isKAP) {
+							if (doneWord.slice(-cc.length) === cc) match = true;
+						} else {
+							if (doneWord.indexOf(cc) === 0) match = true;
+						}
+					});
+					if (match) used++;
+				});
+			}
+
+			// 제출할 단어 자체도 연결 글자로 시작하면 used로 카운트
+			checkChars.forEach(function (cc) {
+				if (isKAP) {
+					if (text.slice(-cc.length) === cc) used++;
+				} else {
+					if (text.indexOf(cc) === 0) used++;
+				}
+			});
+
+			// EKT 3-gram: 2-gram 사용된 단어도 계산
+			if (isEKT && char.length >= 3) {
+				var bigramChar = char.slice(1);
+				if (my.game.chain) {
+					var checkChain = my.game.chain;
+					if (my.opts.return) checkChain = my.game.chain.slice(-5);
+					checkChain.forEach(function (doneWord) {
+						if (doneWord.indexOf(bigramChar) === 0) used++;
+					});
+				}
+				if (text.indexOf(bigramChar) === 0) used++;
+			}
+
+			var remaining = count - used;
+			console.log(`[RandomDebug] Word: ${text}, Idx: ${idx}, Char: ${char}, Count: ${count}, Used: ${used}, Remaining: ${remaining}, Cached: ${isCached}, FirstMove: ${firstMove}`);
+
+			// 매너 한도: 최소 1단어
+			var minRemaining = 1;
+			if (remaining >= minRemaining) {
+				// 성공한 글자의 남은 단어 수를 저장 (finishTurn에서 재사용)
+				my.game.nextCharWordCount = remaining;
+				resolve({ index: idx, char: char });
+			} else {
+				// 한방 (비매너), 다음 후보 체크
+				checkNext();
+			}
+		}
 
 		checkNext();
 	});
 
 	function getCharFromIndex(idx) {
-		if (type === 'EKT') return text.slice(idx, idx + 3);
+		if (isEKT) {
+			if (len === 2) {
+				return text.charAt(idx); // 1글자
+			}
+			return text.slice(idx, idx + 3); // 3-gram
+		}
 		return text.charAt(idx);
 	}
 }
