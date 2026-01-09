@@ -129,13 +129,13 @@ block Middle
 				option(value="en_US") English
 				option(value="nya") ???
 		div.dialog-bar
-			h4 사운드팩
+			h4= L('soundPack')
 			select#sound-pack(style="width: 150px;")
-				option(value="") 기본
+				option(value="")= L('default')
 		div.dialog-bar
-			h4 로비 BGM
+			h4= L('lobbyBgm')
 			select#lobby-bgm(style="width: 150px;")
-				option(value="") 기본
+				option(value="")= L('default')
 		div.dialog-bar.tail-button
 			button#setting-ok= L('save')
 			button#setting-server= L('changeServer')
@@ -157,23 +157,45 @@ block Middle
 			button#lb-next(style='margin-right: 6px;')= L('nextPage')
 			button#lb-me= L('myRank')
 			button#lb-prev= L('prevPage')
-	+Dialog('QuickDiag', 300, 300, L('quickRoom'))
-		div.dialog-bar
-			h4= L('gameMode')
-			select#quick-mode
-				- for(var i in locals.MODE)
-					option(value=Number(i))= L('mode' + locals.MODE[i])
-		div.dialog-bar(style='height: 120px;')
-			h4(style='height: 45px;')= L('misc')
-			div(style='float: left; width: 200px;')
-				- for(var i in locals.OPTIONS)
-					+GameOption(i, 'quick')
-		div.dialog-bar
-			h4(style='width: 100%; height: 20px;')#quick-status
-		div.dialog-bar
-			h4(style='width: 100%; height: 20px;')#quick-queue
-		div.dialog-bar.tail-button
-			button#quick-ok= L('OK')
+	+Dialog('QuickDiag', 415, 280, L('quickRoom'))
+		div(style='height: 200px; overflow-y: auto; overflow-x: hidden;')
+			div.dialog-bar
+				h4= L('gameMode')
+				select#quick-mode(style='width: 283px;')
+					optgroup(label=L('mcKorean'))
+						option(value=3)= L('modeKSH')
+						option(value=2)= L('modeKKT')
+						option(value=8)= L('modeKAP')
+						option(value=21)= L('modeKAK')
+						option(value=11)= L('modeKDA')
+						option(value=6)= L('modeKTY')
+						option(value=5)= L('modeKCW')
+						option(value=13)= L('modeKSS')
+						option(value=4)= L('modeCSQ')
+						option(value=16)= L('modeKSC')
+						option(value=10)= L('modeHUN')
+						option(value=15)= L('modeKPQ')
+						option(value=17)= L('modeKFR')
+					optgroup(label=L('mcEnglish'))
+						option(value=1)= L('modeESH')
+						option(value=19)= L('modeEKK')
+						option(value=0)= L('modeEKT')
+						option(value=9)= L('modeEAP')
+						option(value=22)= L('modeEAK')
+						option(value=12)= L('modeEDA')
+						option(value=7)= L('modeETY')
+						option(value=14)= L('modeESS')
+						option(value=20)= L('modeEPQ')
+						option(value=18)= L('modeEFR')
+			div.dialog-bar#quick-rules-panel(style='height: auto;')
+				h4= L('misc')
+				div(style='float: left; width: 300px;')
+					- for(var i in locals.OPTIONS)
+						+GameOption(i, 'quick')
+		div.dialog-bar#quick-queue(style='height: 20px;')
+		div(style='position: absolute; bottom: 10px; left: 10px; right: 10px;')
+			h4(style='float: left; font-size: 12px; padding-top: 5px;')#quick-status
+			button#quick-ok(style='float: right; width: 80px; height: 20px;')= L('OK')
 	+Dialog('RoomDiag', 415, 450)
 		div.dialog-bar
 			h4= L('roomTitle')

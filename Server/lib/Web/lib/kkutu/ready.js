@@ -1596,11 +1596,17 @@ $(document).ready(function () {
 
 			if (rws) rws.close();
 			stopAllSounds();
-			showAlert(ct, function () {
-				$.get("/kkutu_notice.html", function (res) {
-					loading(res);
+
+			// 1004, 1005, 1006 에러 코드는 일반적인 연결 끊김이므로 alert 대신 오버레이로 표시
+			if (e.code === 1004 || e.code === 1005 || e.code === 1006) {
+				loading(ct);
+			} else {
+				showAlert(ct, function () {
+					$.get("/kkutu_notice.html", function (res) {
+						loading(res);
+					});
 				});
-			});
+			}
 		};
 		ws.onerror = function (e) {
 			console.warn(L['error'], e);

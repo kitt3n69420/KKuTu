@@ -27,8 +27,8 @@ exports.SPAM_LIMIT = 7;
 exports.BLOCKED_LENGTH = 10000;
 exports.KICK_BY_SPAM = 9;
 exports.MAX_OBSERVER = 8;
-exports.JAMSU_WARN_TIME = 240000;
-exports.JAMSU_BOOM_TIME = 60000;
+exports.JAMSU_WARN_TIME = 150000;
+exports.JAMSU_BOOM_TIME = 30000;
 exports.TESTER = GLOBAL.ADMIN.concat([
 	"Input tester id here"
 ]);
@@ -85,13 +85,13 @@ exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 
 exports.ROBOT_DEFEAT_MESSAGES_2 = [ // 남은 단어가 없으면 봇이 보내는 메시지
 	"뭐였더라?", "단어가 생각이 안나", "아 까먹었다", "GG", "모르겠어",
 	"기억이 안 나...", "아 뭐지?", "생각이 안 나네", "단어 더 없나?",
-	"에라이", "으앙", "ㅇㅅㅇ", "ㅁㄴㅇㄹ", "님들 헬프"
+	"에라이", "으앙", "ㅇㅅㅇ", "ㅁㄴㅇㄹ", "님들 헬프", "???"
 ];
 exports.ROBOT_VICTORY_MESSAGES = [ // 봇이 한방단어를 주고 보내는 메시지
 	"ㄴㅇㅅ", "ㅅㄱ", "ㅂㅂ", "잘가시게", "이거나 먹어라", ":3", ":)", "^-^", "OwO",
 	"ㅋㅋㅋㅋ", "나이스~", "한번 당해봐라!", "바이바이~", "ㅋㅋㅋㅋㅋㅋ", "ㅎㅎ",
 	"즐~", "ㅃㅃ", "ㅋㅋㅋㅋㅋㅋㅋㅋ", "수고~", "안녕은 영원한 헤어짐은 아니겠지요~",
-	"이얍!", "이건 못 참지"
+	"이얍!", "이건 못 참지", "메롱~"
 ];
 exports.ROBOT_DEFEAT_MESSAGES = [ // 봇이 한방단어를 받았을 때 보내는 메시지
 	"아니", "살살 좀 해", "짜증나", "이건 너무하잖아...", "으앙", "히잉", "아놔...",
@@ -389,7 +389,7 @@ exports.KO_INJEONG = [
 	"MOB", "HYK", "CYP", "HRH", "STA", "OIJ",
 	"KGR", "ESB", "ELW", "OIM", "OVW", "NEX", /*"WOW",*/ //얘는 왜 주석임?
 	"YRY", "KPO", "JLN", "JAN", "ZEL", "POK", "HAI",
-	"HSS", "KMV", "HDC", "HOS", "FRC", "TPW", "MCJ", "WMV"
+	"HSS", "KMV", "HDC", "HOS", "FRC", "TPW", "MCJ" //,"WMV" // 아 까먹었다
 ];
 exports.EN_INJEONG = [
 	"LOL", "MCJ"

@@ -956,7 +956,7 @@ function processRoom(data) {
 					$lib.Crossword.turnStart(data, true);
 				}
 				for (i in data.spec) {
-					$data.users[i].game.score = data.spec[i];
+					if ($data.users[i]) $data.users[i].game.score = data.spec[i];
 				}
 			}
 		}
@@ -1154,7 +1154,7 @@ function updateUserList(refresh) {
 	if ($data.opts.su) {
 		arr = [];
 		for (i in $data.users) {
-			len++;
+			if (!$data.users[i].robot) len++;
 			arr.push($data.users[i]);
 		}
 		arr.sort(function (a, b) { return b.data.score - a.data.score; });
@@ -1162,7 +1162,9 @@ function updateUserList(refresh) {
 	} else {
 		arr = $data.users;
 
-		for (i in $data.users) len++;
+		for (i in $data.users) {
+			if (!$data.users[i].robot) len++;
+		}
 	}
 	$stage.lobby.userListTitle.html("<i class='fa fa-users'></i>"
 		+ "&lt;<b>" + L['server_' + $data.server] + "</b>&gt; "

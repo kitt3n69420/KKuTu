@@ -237,7 +237,7 @@ iframe {
 	color: #111111;
 	box-shadow: 0px 1px 1px #141414;
 	background-color: #FFFFFF;
-	z-index: 2;
+	z-index: 10;
 }
 
 #AlertDiag {
@@ -417,7 +417,7 @@ iframe {
 }
 
 .dialog-front {
-	z-index: 3;
+	z-index: 20;
 }
 
 #comm-friends div {
@@ -1387,8 +1387,8 @@ iframe {
 	padding: 5px;
 	border-radius: 10px;
 	background-color: rgba(0, 0, 0, 0.7);
-	z-index: 1;
-	/* Ensure it stays above player cards (level 5) */
+	z-index: 10;
+	/* Ensure it stays above player cards (z-index: 5) */
 }
 
 #game-input {
@@ -2369,7 +2369,9 @@ iframe {
 .game-body.small-mode .game-user-score {
 	width: 85%;
 	/* Proportional width as requested */
-	display: block;
+	display: flex;
+	justify-content: center;
+	/* Center score characters horizontally */
 	font-size: min(16px, 18cqw);
 	/* Dynamic size based on card width */
 	padding: 0px 0px;
@@ -2388,4 +2390,38 @@ iframe {
 	width: auto;
 	display: inline-block;
 	text-align: center;
+}
+
+/* QuickDiag - Special Rules Grid Layout (4 columns like room settings) */
+#QuickDiag .dialog-bar h4 {
+	float: left;
+	width: 100px;
+	text-align: center;
+	padding-top: 6px;
+}
+
+#QuickDiag .dialog-opt {
+	float: left;
+	width: 25%;
+	box-sizing: border-box;
+}
+
+#QuickDiag .dialog-opt label {
+	font-size: 11px;
+	letter-spacing: -0.5px;
+	position: relative;
+	top: 2px;
+}
+
+#QuickDiag .dialog-opt input {
+	margin-top: 6px !important;
+}
+
+#quick-rules-panel {
+	overflow: hidden;
+}
+
+#quick-rules-panel>div {
+	display: flex;
+	flex-wrap: wrap;
 }

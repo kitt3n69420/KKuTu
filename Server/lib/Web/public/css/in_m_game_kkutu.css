@@ -169,7 +169,7 @@ iframe {
 	color: #111111;
 	box-shadow: 0px 1px 1px #141414;
 	background-color: #FFFFFF;
-	z-index: 1;
+	z-index: 10;
 }
 
 #AlertDiag {
@@ -318,7 +318,7 @@ iframe {
 }
 
 .dialog-front {
-	z-index: 2;
+	z-index: 20;
 }
 
 #ProfileDiag .dialog-body div {
@@ -1175,7 +1175,7 @@ iframe {
 	border-radius: 10px;
 	width: calc(100% - 10px);
 	background-color: rgba(0, 0, 0, 0.7);
-	z-index: 1;
+	z-index: 10;
 }
 
 .game-input input {

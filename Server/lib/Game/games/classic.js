@@ -725,6 +725,13 @@ exports.submit = function (client, text) {
 
 	if (!isChainable(text, my.mode, my.game.char, my.game.subChar)) return client.chat(text);
 
+	// Surrogate character check: reject inputs containing surrogates (e.g., emojis)
+	if (/[\uD800-\uDFFF]/.test(text)) {
+		client.publish('turnError', { code: 404, value: text }, true);
+		if (my.opts.one) my.turnEnd();
+		return;
+	}
+
 	// EKT 3-gram 모드에서 3글자 이하 단어 입력 시 채팅으로 처리 (게임 진행 안함)
 	if (Const.GAME_TYPE[my.mode] === 'EKT' && my.game.ektTrigramMode && text.length < 4) {
 		return client.chat(text);

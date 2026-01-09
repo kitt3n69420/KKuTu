@@ -23,7 +23,69 @@ html
 	head
 		block Subject
 		meta(charset='utf-8')
-		meta(name='viewport', content='width=device-width, initial-scale=1.0,maximum-scale=1.0, user-scalable=no')
+		meta(name='viewport', content='width=device-width, initial-scale=1.0,maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content')
+		script(type='text/javascript').
+			// Mobile viewport height fix for virtual keyboard
+			(function() {
+				var lastViewportHeight = 0;
+				var isKeyboardOpen = false;
+				
+				function setViewportHeight() {
+					var vv = window.visualViewport;
+					var currentHeight = vv ? vv.height : window.innerHeight;
+					var vh = currentHeight * 0.01;
+					
+					document.documentElement.style.setProperty('--vh', vh + 'px');
+					
+					// Detect keyboard close (viewport height increased significantly)
+					if (lastViewportHeight > 0 && currentHeight > lastViewportHeight * 1.3) {
+						isKeyboardOpen = false;
+						// Reset scroll position when keyboard closes
+						window.scrollTo(0, 0);
+						document.body.scrollTop = 0;
+						document.documentElement.scrollTop = 0;
+					} else if (currentHeight < lastViewportHeight * 0.7) {
+						isKeyboardOpen = true;
+					}
+					
+					lastViewportHeight = currentHeight;
+					
+					// Compensate for visualViewport offset (keyboard scroll issue)
+					if (vv && vv.offsetTop > 0) {
+						window.scrollTo(0, 0);
+					}
+				}
+				
+				// Initial set
+				setViewportHeight();
+				
+				// Update on resize and orientation change
+				window.addEventListener('resize', setViewportHeight);
+				window.addEventListener('orientationchange', function() {
+					setTimeout(setViewportHeight, 100);
+				});
+				
+				// Use visualViewport API for more accurate keyboard handling
+				if (window.visualViewport) {
+					window.visualViewport.addEventListener('resize', setViewportHeight);
+					window.visualViewport.addEventListener('scroll', function() {
+						// Reset scroll offset caused by keyboard
+						if (window.visualViewport.offsetTop > 0) {
+							window.scrollTo(0, 0);
+						}
+						setViewportHeight();
+					});
+				}
+				
+				// Additional: reset scroll on focusout (when keyboard closes)
+				document.addEventListener('focusout', function() {
+					setTimeout(function() {
+						window.scrollTo(0, 0);
+						document.body.scrollTop = 0;
+						document.documentElement.scrollTop = 0;
+					}, 100);
+				});
+			})();
 		script(type='text/javascript').
 			function getObject(v, i) {
 				Object.defineProperty(v, i, {value: v[i], writable: false});
@@ -68,5 +130,8 @@ html
 				br
 				a.bottom-contact(href='https://discord.gg/aEAVmrtU4w', target='_blank')= '디스코드'
 				a.bottom-contact(href='mailto:kitt3n69420@gmail.com', target='_blank')= '이메일 문의'
+				br
+				a.bottom-contact(href='/legal/terms', target='_blank')= '이용약관'
+				a.bottom-contact(href='/legal/privacy', target='_blank')= '개인정보처리방침'
 			div.bottom-legal!= L('GPL')
 			+separator(40)

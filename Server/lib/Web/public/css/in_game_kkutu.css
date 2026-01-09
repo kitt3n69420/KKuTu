@@ -347,7 +347,7 @@ iframe {
 }
 
 .dialog-front {
-	z-index: 11;
+	z-index: 20;
 }
 
 #ProfileDiag .dialog-body div {
@@ -1285,7 +1285,7 @@ iframe {
 	padding: 5px;
 	border-radius: 10px;
 	background-color: rgba(0, 0, 0, 0.7);
-	z-index: 1;
+	z-index: 10;
 }
 
 #game-input {
@@ -2128,10 +2128,12 @@ iframe {
 
 .game-body.small-mode .game-user-score {
 	clear: both;
-	width: 65px;
+	width: 100%;
 	font-size: 16px;
 	padding: 0px 1px;
-	text-align: center;
+	margin: 0 auto;
+	display: flex;
+	justify-content: center;
 }
 
 .game-body.small-mode .game-user-score-char {

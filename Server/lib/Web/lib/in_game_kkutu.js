@@ -1655,11 +1655,17 @@ $(document).ready(function () {
 
 			if (rws) rws.close();
 			stopAllSounds();
-			showAlert(ct, function () {
-				$.get("/kkutu_notice.html", function (res) {
-					loading(res);
+
+			// 1004, 1005, 1006 에러 코드는 일반적인 연결 끊김이므로 alert 대신 오버레이로 표시
+			if (e.code === 1004 || e.code === 1005 || e.code === 1006) {
+				loading(ct);
+			} else {
+				showAlert(ct, function () {
+					$.get("/kkutu_notice.html", function (res) {
+						loading(res);
+					});
 				});
-			});
+			}
 		};
 		ws.onerror = function (e) {
 			console.warn(L['error'], e);
@@ -4138,7 +4144,7 @@ function processRoom(data) {
 					$lib.Crossword.turnStart(data, true);
 				}
 				for (i in data.spec) {
-					$data.users[i].game.score = data.spec[i];
+					if ($data.users[i]) $data.users[i].game.score = data.spec[i];
 				}
 			}
 		}
@@ -4336,7 +4342,7 @@ function updateUserList(refresh) {
 	if ($data.opts.su) {
 		arr = [];
 		for (i in $data.users) {
-			len++;
+			if (!$data.users[i].robot) len++;
 			arr.push($data.users[i]);
 		}
 		arr.sort(function (a, b) { return b.data.score - a.data.score; });
@@ -4344,7 +4350,9 @@ function updateUserList(refresh) {
 	} else {
 		arr = $data.users;
 
-		for (i in $data.users) len++;
+		for (i in $data.users) {
+			if (!$data.users[i].robot) len++;
+		}
 	}
 	$stage.lobby.userListTitle.html("<i class='fa fa-users'></i>"
 		+ "&lt;<b>" + L['server_' + $data.server] + "</b>&gt; "

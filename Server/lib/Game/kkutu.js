@@ -37,6 +37,14 @@ const GUEST_IMAGE = "/img/kkutu/guest.png";
 const MAX_OKG = 63;
 const PER_OKG = 600000;
 
+// AI 봇 이름 캐시 (DB 조회 횟수 최소화)
+var aiNameCacheSingle = []; // 단일 단어용 (2~7글자)
+var aiNameCacheFirst = [];  // 두 단어 조합용 첫 번째 (2~5글자)
+var aiNameCacheSecond = []; // 두 단어 조합용 두 번째 (2~5글자)
+var aiNameCacheRefilling = false; // 리필 중 플래그
+const AI_NAME_CACHE_SIZE = 100;  // 한 번에 가져올 단어 수
+const AI_NAME_CACHE_THRESHOLD = 20; // 리필 시작 임계값
+
 exports.NIGHT = false;
 exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 	var i, k;
@@ -61,7 +69,69 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 		Rule[k] = require(`./games/${k.toLowerCase()}`);
 		Rule[k].init(DB, DIC);
 	}
+
+	// AI 이름 캐시 초기화
+	refillAiNameCache();
 };
+
+// AI 이름 캐시 리필 함수
+function refillAiNameCache() {
+	if (aiNameCacheRefilling) return;
+	aiNameCacheRefilling = true;
+
+	var pending = 0;
+
+	// 단일 단어 캐시 리필 (2~7글자)
+	if (aiNameCacheSingle.length < AI_NAME_CACHE_THRESHOLD) {
+		pending++;
+		var q1 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 7 ORDER BY RANDOM() LIMIT ${AI_NAME_CACHE_SIZE}`;
+		DB.kkutu['ko'].direct(q1, function (err, res) {
+			if (!err && res && res.rows) {
+				res.rows.forEach(function (row) {
+					aiNameCacheSingle.push(row._id);
+				});
+				JLog.info(`[AI_NAME_CACHE] Single cache refilled: ${aiNameCacheSingle.length} words`);
+			}
+			pending--;
+			if (pending === 0) aiNameCacheRefilling = false;
+		});
+	}
+
+	// 첫 번째 단어 캐시 리필 (2~5글자)
+	if (aiNameCacheFirst.length < AI_NAME_CACHE_THRESHOLD) {
+		pending++;
+		var q2 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 ORDER BY RANDOM() LIMIT ${AI_NAME_CACHE_SIZE}`;
+		DB.kkutu['ko'].direct(q2, function (err, res) {
+			if (!err && res && res.rows) {
+				res.rows.forEach(function (row) {
+					aiNameCacheFirst.push(row._id);
+				});
+				JLog.info(`[AI_NAME_CACHE] First cache refilled: ${aiNameCacheFirst.length} words`);
+			}
+			pending--;
+			if (pending === 0) aiNameCacheRefilling = false;
+		});
+	}
+
+	// 두 번째 단어 캐시 리필 (2~5글자)
+	if (aiNameCacheSecond.length < AI_NAME_CACHE_THRESHOLD) {
+		pending++;
+		var q3 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 ORDER BY RANDOM() LIMIT ${AI_NAME_CACHE_SIZE}`;
+		DB.kkutu['ko'].direct(q3, function (err, res) {
+			if (!err && res && res.rows) {
+				res.rows.forEach(function (row) {
+					aiNameCacheSecond.push(row._id);
+				});
+				JLog.info(`[AI_NAME_CACHE] Second cache refilled: ${aiNameCacheSecond.length} words`);
+			}
+			pending--;
+			if (pending === 0) aiNameCacheRefilling = false;
+		});
+	}
+
+	// 모든 캐시가 충분하면 플래그 해제
+	if (pending === 0) aiNameCacheRefilling = false;
+}
 /* 망할 셧다운제
 exports.processAjae = function(){
 	var i;
@@ -943,8 +1013,8 @@ exports.Room = function (room, channel) {
 		if (my._adt) clearTimeout(my._adt);
 		// 버그 수정: _jst 타이머도 함께 정리하여 중복 알림 방지
 		if (my._jst) { clearTimeout(my._jst); delete my._jst; }
-		var warnTime = Const.JAMSU_WARN_TIME; // 4 minutes
-		var boomTime = Const.JAMSU_BOOM_TIME;  // 1 minute
+		var warnTime = Const.JAMSU_WARN_TIME; // 2.5 minutes (before TLS 180s timeout)
+		var boomTime = Const.JAMSU_BOOM_TIME;  // 30 seconds
 
 		if (stage === 'destroy') {
 			// 폭파 단계: 1분 후 방 삭제
@@ -1314,59 +1384,93 @@ exports.Room = function (room, channel) {
 			return caller.sendError(415);
 		}
 
-
-
 		// 95% chance to use a custom bot name from the dictionary
 		if (Math.random() < 0.95) {
 			if (Math.random() < 0.5) {
-				// Logic 1: Single word 2~7 chars
-				var q = "SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 7 ORDER BY RANDOM() LIMIT 1";
-				DB.kkutu['ko'].direct(q, function (err, res) {
-					if (my.players.length >= my.limit) return;
-					var name;
-
-					if (!err && res && res.rows && res.rows.length > 0) {
-						name = res.rows[0]._id;
-					}
-
-					// Fallback to default if name is undefined (handled by Robot constructor if null/undefined is passed as customName, but explicit check or passing it is fine)
+				// Logic 1: Single word 2~7 chars - USE CACHE
+				var name = aiNameCacheSingle.pop();
+				if (name) {
+					// 캐시에서 가져옴
 					my.players.push(new exports.Robot(null, my.id, 2, name));
 					my.export();
 					my.checkJamsu();
-				});
-			} else {
-				// Logic 2: Two words, combined length max 7
-				// Step 1: First word 2~5 chars
-				var q1 = "SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 ORDER BY RANDOM() LIMIT 1";
-				DB.kkutu['ko'].direct(q1, function (err, res) {
-					if (my.players.length >= my.limit) return;
-
-					if (err || !res || !res.rows || res.rows.length === 0) {
-						my.players.push(new exports.Robot(null, my.id, 2));
-						my.export();
-						my.checkJamsu();
-						return;
+					// 캐시 부족 시 백그라운드 리필
+					if (aiNameCacheSingle.length < AI_NAME_CACHE_THRESHOLD) {
+						refillAiNameCache();
 					}
-
-					var w1 = res.rows[0]._id;
-					var rem = 7 - w1.length;
-
-					// Step 2: Second word 2~rem chars
-					// Since w1 is 2~5, rem is 5~2. So rem >= 2 is valid.
-					var q2 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND ${rem} ORDER BY RANDOM() LIMIT 1`;
-					DB.kkutu['ko'].direct(q2, function (err2, res2) {
+				} else {
+					// 캐시 비어있음 - DB에서 조회
+					var q = "SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 7 ORDER BY RANDOM() LIMIT 1";
+					DB.kkutu['ko'].direct(q, function (err, res) {
 						if (my.players.length >= my.limit) return;
+						var dbName;
 
-						var name = w1;
-						if (!err2 && res2 && res2.rows && res2.rows.length > 0) {
-							name += res2.rows[0]._id;
+						if (!err && res && res.rows && res.rows.length > 0) {
+							dbName = res.rows[0]._id;
 						}
 
-						my.players.push(new exports.Robot(null, my.id, 2, name));
+						my.players.push(new exports.Robot(null, my.id, 2, dbName));
 						my.export();
 						my.checkJamsu();
+						// 리필 트리거
+						refillAiNameCache();
 					});
-				});
+				}
+			} else {
+				// Logic 2: Two words, combined length max 7 - USE CACHE
+				var w1 = aiNameCacheFirst.pop();
+				if (w1) {
+					// 첫 번째 단어 캐시에서 가져옴
+					var rem = 7 - w1.length;
+					// 두 번째 단어도 캐시에서 가져옴 (길이 체크)
+					var w2 = null;
+					for (var i = aiNameCacheSecond.length - 1; i >= 0; i--) {
+						if (aiNameCacheSecond[i].length <= rem) {
+							w2 = aiNameCacheSecond.splice(i, 1)[0];
+							break;
+						}
+					}
+					var combinedName = w1 + (w2 || '');
+					my.players.push(new exports.Robot(null, my.id, 2, combinedName));
+					my.export();
+					my.checkJamsu();
+					// 캐시 부족 시 백그라운드 리필
+					if (aiNameCacheFirst.length < AI_NAME_CACHE_THRESHOLD || aiNameCacheSecond.length < AI_NAME_CACHE_THRESHOLD) {
+						refillAiNameCache();
+					}
+				} else {
+					// 캐시 비어있음 - DB에서 조회
+					var q1 = "SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 ORDER BY RANDOM() LIMIT 1";
+					DB.kkutu['ko'].direct(q1, function (err, res) {
+						if (my.players.length >= my.limit) return;
+
+						if (err || !res || !res.rows || res.rows.length === 0) {
+							my.players.push(new exports.Robot(null, my.id, 2));
+							my.export();
+							my.checkJamsu();
+							refillAiNameCache();
+							return;
+						}
+
+						var dbW1 = res.rows[0]._id;
+						var dbRem = 7 - dbW1.length;
+
+						var q2 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND ${dbRem} ORDER BY RANDOM() LIMIT 1`;
+						DB.kkutu['ko'].direct(q2, function (err2, res2) {
+							if (my.players.length >= my.limit) return;
+
+							var dbName = dbW1;
+							if (!err2 && res2 && res2.rows && res2.rows.length > 0) {
+								dbName += res2.rows[0]._id;
+							}
+
+							my.players.push(new exports.Robot(null, my.id, 2, dbName));
+							my.export();
+							my.checkJamsu();
+							refillAiNameCache();
+						});
+					});
+				}
 			}
 		} else {
 			my.players.push(new exports.Robot(null, my.id, 2));
@@ -1374,6 +1478,7 @@ exports.Room = function (room, channel) {
 			my.checkJamsu();
 		}
 	};
+
 	my.setAI = function (target, level, team, personality, preferredChar) {
 		var i;
 		console.log(`[ROOM] setAI: Target=${target}, Level=${level}, Team=${team}, Personality=${personality}, PrefChar=${preferredChar}`);

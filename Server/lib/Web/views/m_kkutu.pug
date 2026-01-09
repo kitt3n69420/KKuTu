@@ -156,21 +156,23 @@ block Middle
 			button#lb-next(style='margin-right: 6px;')= L('nextPage')
 			button#lb-me= L('myRank')
 			button#lb-prev= L('prevPage')
-	+Dialog('QuickDiag', 300, 230, L('quickRoom'))
-		div.dialog-bar
-			h4= L('gameMode')
-			select#quick-mode
-				- for(var i in locals.MODE)
-					option(value=Number(i))= L('mode' + locals.MODE[i])
-		div.dialog-bar(style='height: 59px;')
-			h4(style='height: 45px;')= L('misc')
-			- for(var i in locals.OPTIONS)
-				+GameOption(i, 'quick')
-		div.dialog-bar
-			h4(style='width: 100%; height: 20px;')#quick-status
-		div.dialog-bar
-			h4(style='width: 100%; height: 20px;')#quick-queue
-		div.dialog-bar.tail-button
+	+Dialog('QuickDiag', 300, 280, L('quickRoom'))
+		div(style='height: 200px; overflow-y: auto; overflow-x: hidden;')
+			div.dialog-bar
+				h4= L('gameMode')
+				select#quick-mode
+					- for(var i in locals.MODE)
+						option(value=Number(i))= L('mode' + locals.MODE[i])
+			div.dialog-bar#quick-rules-panel(style='height: auto;')
+				h4(style='height: 20px;')= L('misc')
+				div(style='float: left; width: calc(100% - 80px);')
+					- for(var i in locals.OPTIONS)
+						+GameOption(i, 'quick')
+			div.dialog-bar
+				h4(style='width: 100%; height: 20px;')#quick-status
+			div.dialog-bar
+				h4(style='width: 100%; height: 20px;')#quick-queue
+		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; right: 10px; width: auto;')
 			button#quick-ok= L('OK')
 	+Dialog('RoomDiag', 300, 500)
 		div(style='height: 440px; overflow-y: auto; overflow-x: hidden;')

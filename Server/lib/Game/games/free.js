@@ -120,6 +120,13 @@ exports.submit = function (client, text) {
     if (!mgt) return;
     if (!mgt.robot) if (mgt != client.id) return;
 
+    // Surrogate character check: reject inputs containing surrogates (e.g., emojis)
+    if (/[\uD800-\uDFFF]/.test(text)) {
+        client.publish('turnError', { code: 404, value: text }, true);
+        if (my.opts.one) my.turnEnd();
+        return;
+    }
+
     // No chaining check needed for Free mode
 
     if (my.game.chain.indexOf(text) != -1) {
