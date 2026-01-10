@@ -2789,23 +2789,44 @@ $lib.Sock.roundReady = function (data, spec) {
 		console.log("[APL] APL mode detected! Starting Bad Apple...");
 		$data._aplMode = true;
 		stopBGM();
-		$.getScript('/js/bad_apple_data.js', function () {
-			console.log("[APL] Script loaded, frames:", window.badAppleFrames ? window.badAppleFrames.length : "undefined");
-			loadSounds([{ key: 'apple', value: '/media/common/apple.mp3' }], function () {
-				console.log("[APL] Sound loaded, starting playback...");
-				var frameIdx = 0;
-				stopBGM();
-				playSound('apple');
-				$data._aplInterval = _setInterval(function () {
-					if (frameIdx >= window.badAppleFrames.length) {
-						clearInterval($data._aplInterval);
-						return;
-					}
-					$data._board = window.badAppleFrames[frameIdx];
-					while ($data._board.length < 196) $data._board += ".";
-					$lib.Sock.drawDisplay();
-					frameIdx++;
-				}, 100);
+
+		// 먼저 LZ-String 라이브러리 로드
+		$.getScript('/js/lz-string.min.js', function () {
+			console.log("[APL] LZ-String library loaded");
+
+			// 압축된 배드 애플 데이터 로드
+			$.getScript('/js/bad_apple_data.js', function () {
+				console.log("[APL] Compressed data loaded, decompressing...");
+
+				// 압축 해제
+				if (window.badAppleCompressed && window.LZString) {
+					var decompressed = LZString.decompressFromBase64(window.badAppleCompressed);
+					window.badAppleFrames = decompressed.split('|');
+					console.log("[APL] Decompressed frames:", window.badAppleFrames.length);
+				} else if (window.badAppleFrames) {
+					// 이미 압축 해제된 데이터가 있는 경우 (하위 호환성)
+					console.log("[APL] Using uncompressed frames:", window.badAppleFrames.length);
+				} else {
+					console.error("[APL] No frame data available!");
+					return;
+				}
+
+				loadSounds([{ key: 'apple', value: '/media/common/apple.mp3' }], function () {
+					console.log("[APL] Sound loaded, starting playback...");
+					var frameIdx = 0;
+					stopBGM();
+					playSound('apple');
+					$data._aplInterval = _setInterval(function () {
+						if (frameIdx >= window.badAppleFrames.length) {
+							clearInterval($data._aplInterval);
+							return;
+						}
+						$data._board = window.badAppleFrames[frameIdx];
+						while ($data._board.length < 196) $data._board += ".";
+						$lib.Sock.drawDisplay();
+						frameIdx++;
+					}, 100);
+				});
 			});
 		});
 	}
