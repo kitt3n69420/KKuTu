@@ -45,11 +45,13 @@ $lib.Classic.turnStart = function (data) {
 	var $u = $("#game-user-" + data.id).addClass("game-user-current");
 	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
 	if (!$data._replay) {
-		$stage.game.here.css('display', (data.id == $data.id) ? "block" : "none");
+		// 입력창은 항상 표시, 자기 턴일 때만 불투명 (비활성: 모바일 0.5, 데스크톱 0)
+		var inactiveOpacity = mobile ? 0.5 : 0;
+		$stage.game.here.css('opacity', (data.id == $data.id) ? 1 : inactiveOpacity).show();
 		if (data.id == $data.id) {
 			$data._relay = true;
-			$stage.game.hereText.val("");
-			$stage.talk.focus();
+			// 입력창 클리어 제거 - 사용자가 입력 중인 내용 유지
+			mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
 		}
 	}
 	$stage.game.items.html($data.mission = data.mission);
@@ -97,14 +99,14 @@ $lib.Classic.turnEnd = function (id, data) {
 	if (data.ok) {
 		checkFailCombo();
 		clearTimeout($data._fail);
-		$stage.game.here.hide();
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		$stage.game.chain.html(++$data.chain);
 		pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0, data.linkIndex, data.straightBonus > 0, data.isHanbang);
 	} else {
 		checkFailCombo(id);
 		$sc.addClass("lost");
 		$(".game-user-current").addClass("game-user-bomb");
-		$stage.game.here.hide();
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		playSound('timeout');
 	}
 	if (data.hint) {

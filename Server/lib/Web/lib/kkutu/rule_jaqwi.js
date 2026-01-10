@@ -36,7 +36,11 @@ $lib.Jaqwi.roundReady = function (data) {
 $lib.Jaqwi.turnStart = function (data) {
 	$(".game-user-current").removeClass("game-user-current");
 	$(".game-user-bomb").removeClass("game-user-bomb");
-	if ($data.room.game.seq.indexOf($data.id) >= 0) $stage.game.here.show();
+	if ($data.room.game.seq.indexOf($data.id) >= 0) {
+		$stage.game.here.css('opacity', 1).show();
+	} else {
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0).show();
+	}
 	var tVal = data.char;
 	if ($data.room.opts.drg) tVal = "<label style='color:" + getRandomColor() + "'>" + tVal + "</label>";
 	$stage.game.display.html($data._char = tVal);
@@ -78,14 +82,14 @@ $lib.Jaqwi.turnEnd = function (id, data) {
 	if (data.giveup) {
 		$uc.addClass("game-user-bomb");
 	} else if (data.answer) {
-		$stage.game.here.hide();
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		var ansColor = ($data.room.opts.drg) ? getRandomColor() : "#FFFF44";
 		$stage.game.display.html($("<label>").css('color', ansColor).html(data.answer));
 		stopBGM();
 		playSound('horr');
 	} else {
 		// if(data.mean) turnHint(data);
-		if (id == $data.id) $stage.game.here.hide();
+		if (id == $data.id) $stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		addScore(id, data.score, data.totalScore);
 		if ($data._roundTime > 10000) $data._roundTime = 10000;
 		drawObtainedScore($uc, $sc);

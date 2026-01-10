@@ -60,6 +60,7 @@ $lib.Picture.roundReady = function (data, spec) {
     });
     $stage.game.items.hide();
     $stage.game.bb.hide(); // Hide bb (used in Sock mode), not needed for Picture Quiz
+    // 그림퀴즈는 채팅창으로 입력하므로 게임 입력창 숨김
     $stage.game.here.hide();
 
     $lib.Picture.drawDisplay();
@@ -379,6 +380,7 @@ $lib.Picture.turnStart = function (data, spec) {
     $(".game-user-current").removeClass("game-user-current");
     $("#game-user-" + data.drawer).addClass("game-user-current");
 
+    // 그림퀴즈는 채팅창으로 입력하므로 게임 입력창 숨김
     $stage.game.here.hide();
 };
 

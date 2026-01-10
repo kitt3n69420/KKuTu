@@ -75,7 +75,8 @@ exports.OPTIONS = {
 	'stt': { name: "Straight" },
 	'fir': { name: "First" },
 	'ran': { name: "Random" },
-	'vin': { name: "VowelInv" }
+	'vin': { name: "VowelInv" },
+	'apl': { name: "Apple" }
 
 };
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
@@ -261,7 +262,7 @@ exports.RULE = {
 	'KSS': {
 		lang: "ko",
 		rule: "Sock",
-		opts: ["no2", "big", "drg"],
+		opts: ["no2", "big", "drg", "apl"],
 		time: 1,
 		ai: false,
 		big: true,

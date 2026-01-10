@@ -371,7 +371,7 @@ $(document).ready(function () {
 	GAME_CATEGORIES = JSON.parse($("#GAME_CATEGORIES").html());
 	MODE = Object.keys(RULE);
 	mobile = $("#mobile").html() == "true";
-	if (mobile) TICK = 200;
+	if (mobile) TICK = 60;
 	$data.NICKNAME_LIMIT = JSON.parse($("#NICKNAME_LIMIT").html() || "{}");
 	if ($data.NICKNAME_LIMIT.REGEX) $data.NICKNAME_LIMIT.REGEX = new RegExp($data.NICKNAME_LIMIT.REGEX[0], $data.NICKNAME_LIMIT.REGEX[1]);
 	$data._timePercent = false ? function () {
@@ -453,9 +453,8 @@ $(document).ready(function () {
 	$stage.chatBtn.on('click', function (e) {
 		checkInput();
 
-		var value = (mobile && $stage.game.here.is(':visible'))
-			? $stage.game.hereText.val()
-			: $stage.talk.val();
+		// hereText를 메인 입력창으로 사용 (talk와 동기화됨)
+		var value = $stage.game.hereText.val() || $stage.talk.val();
 		if (!value) return;
 		var o = { value: value.trim() };
 		if (o.value[0] == "/") {
@@ -469,26 +468,81 @@ $(document).ready(function () {
 		}
 		if ($data._whisper) {
 			$stage.talk.val("/e " + $data._whisper + " ");
+			$stage.game.hereText.val("/e " + $data._whisper + " ");
 			delete $data._whisper;
 		} else {
 			$stage.talk.val("");
+			$stage.game.hereText.val("");
 		}
-		$stage.game.hereText.val("");
 	}).hotkey($stage.talk, 13).hotkey($stage.game.hereText, 13);
-	$("#cw-q-input").on('keydown', function (e) {
-		if (e.keyCode == 13) {
-			var $target = $(e.currentTarget);
-			var value = $target.val();
-			var o = { relay: true, data: $data._sel, value: value };
+	// 십자말풀이 입력창 처리
+	(function() {
+		var $cwInput = $("#cw-q-input");
+		var cwIsComposing = false;
 
+		// 정답 제출 함수
+		function submitCwAnswer() {
+			var value = $cwInput.val();
 			if (!value) return;
+			var o = { relay: true, data: $data._sel, value: value };
 			send('talk', o);
-			$target.val("");
+			$cwInput.val("");
+			// 제출 후에도 포커스 유지 (오답이면 계속 입력 가능)
+			$cwInput.focus();
 		}
-	}).on('focusout', function (e) {
-		$(".cw-q-body").empty();
-		$stage.game.cwcmd.css('opacity', 0);
-	});
+
+		// IME composition 상태 추적
+		$cwInput.on('compositionstart', function() {
+			cwIsComposing = true;
+		});
+		$cwInput.on('compositionend', function() {
+			cwIsComposing = false;
+		});
+
+		// keydown 엔터 처리
+		$cwInput.on('keydown', function (e) {
+			if (!cwIsComposing && (e.keyCode == 13 || e.key == 'Enter') && !e.shiftKey) {
+				e.preventDefault();
+				e.stopPropagation();
+				submitCwAnswer();
+				return false;
+			}
+		});
+
+		// beforeinput 폴백 (모바일)
+		if ($cwInput[0]) {
+			$cwInput[0].addEventListener('beforeinput', function(e) {
+				if (e.inputType === 'insertLineBreak') {
+					e.preventDefault();
+					submitCwAnswer();
+				}
+			});
+		}
+
+		// input 폴백 (개행 문자 감지)
+		$cwInput.on('input.newline', function() {
+			var val = $(this).val();
+			if (val.indexOf('\n') !== -1 || val.indexOf('\r') !== -1) {
+				$(this).val(val.replace(/[\r\n]/g, ''));
+				submitCwAnswer();
+			}
+		});
+
+		// focusout: cwcmd 영역 외부로 나갈 때만 숨김
+		$cwInput.on('focusout', function (e) {
+			// relatedTarget이 cwcmd 내부이면 숨기지 않음
+			var $related = $(e.relatedTarget);
+			if ($related.closest($stage.game.cwcmd).length > 0) {
+				return;
+			}
+			// cwcmd 외부로 포커스가 나가면 숨김
+			$(".cw-q-body").empty();
+			$stage.game.cwcmd.css('opacity', 0);
+		});
+
+		// HTML 속성 설정
+		$cwInput.attr('enterkeyhint', 'send');
+	})();
 	$("#room-limit").on('change', function (e) {
 		var $target = $(e.currentTarget);
 		var value = $target.val();
@@ -510,11 +564,91 @@ $(document).ready(function () {
 		}
 	});
 	$stage.game.here.on('click', function (e) {
-		mobile || $stage.talk.focus();
+		// 모바일에서도 게임 입력창 클릭 시 포커스
+		if (mobile) {
+			$stage.game.hereText.focus();
+		} else {
+			$stage.talk.focus();
+		}
 	});
-	$stage.talk.on('keyup', function (e) {
+	// 양방향 실시간 입력 동기화
+	$stage.talk.on('input', function (e) {
 		$stage.game.hereText.val($stage.talk.val());
 	});
+	$stage.game.hereText.on('input', function (e) {
+		$stage.talk.val($stage.game.hereText.val());
+	});
+	// 모바일 가상 키보드 엔터 제출 처리
+	// hotkey가 keydown으로 엔터를 처리하지만, 모바일 IME에서는 keyCode가 229로 전달됨
+	// 따라서 여러 폴백 방법으로 모바일 엔터를 감지
+	// hereText와 talk 모두에 적용 (둘이 같은 입력란처럼 동작)
+
+	// HTML 속성 설정 - 모바일 키보드에 "보내기" 버튼 표시
+	$stage.game.hereText.attr('enterkeyhint', 'send');
+	$stage.talk.attr('enterkeyhint', 'send');
+
+	function setupMobileEnter($input) {
+		var isComposing = false;
+
+		// IME composition 상태 추적
+		$input.on('compositionstart', function() {
+			isComposing = true;
+		});
+		$input.on('compositionend', function(e) {
+			isComposing = false;
+			// composition 종료 후 값 확인 (개행 문자 감지)
+			var val = $(this).val();
+			if (val.indexOf('\n') !== -1 || val.indexOf('\r') !== -1) {
+				$(this).val(val.replace(/[\r\n]/g, ''));
+				syncInputs($(this));
+				$stage.chatBtn.trigger('click');
+			}
+		});
+
+		// keydown에서 엔터 감지 (IME 상태와 무관하게)
+		$input.on('keydown.mobileEnter', function(e) {
+			// Enter 키 (keyCode 13 또는 key 'Enter')
+			// isComposing이 false일 때만 처리 (IME 입력 완료 후)
+			if (!isComposing && (e.keyCode == 13 || e.key == 'Enter') && !e.shiftKey) {
+				e.preventDefault();
+				e.stopPropagation();
+				$stage.chatBtn.trigger('click');
+				return false;
+			}
+		});
+
+		// beforeinput 이벤트 (모바일 가상 키보드 엔터 감지)
+		if ($input[0]) {
+			$input[0].addEventListener('beforeinput', function(e) {
+				if (e.inputType === 'insertLineBreak') {
+					e.preventDefault();
+					$stage.chatBtn.trigger('click');
+				}
+			});
+		}
+
+		// input 이벤트에서 개행 문자 감지 (최종 폴백)
+		$input.on('input.newline', function() {
+			var val = $(this).val();
+			if (val.indexOf('\n') !== -1 || val.indexOf('\r') !== -1) {
+				$(this).val(val.replace(/[\r\n]/g, ''));
+				syncInputs($(this));
+				$stage.chatBtn.trigger('click');
+			}
+		});
+	}
+
+	// 입력 동기화 헬퍼
+	function syncInputs($input) {
+		if ($input.is($stage.game.hereText)) {
+			$stage.talk.val($input.val());
+		} else {
+			$stage.game.hereText.val($input.val());
+		}
+	}
+
+	setupMobileEnter($stage.game.hereText);
+	setupMobileEnter($stage.talk);
 	$(window).on('beforeunload', function (e) {
 		if ($data.room) return L['sureExit'];
 	});
@@ -1720,11 +1854,13 @@ $lib.Classic.turnStart = function (data) {
 	var $u = $("#game-user-" + data.id).addClass("game-user-current");
 	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
 	if (!$data._replay) {
-		$stage.game.here.css('display', (data.id == $data.id) ? "block" : "none");
+		// 입력창은 항상 표시, 자기 턴일 때만 불투명 (비활성: 모바일 0.5, 데스크톱 0)
+		var inactiveOpacity = mobile ? 0.5 : 0;
+		$stage.game.here.css('opacity', (data.id == $data.id) ? 1 : inactiveOpacity).show();
 		if (data.id == $data.id) {
 			$data._relay = true;
-			$stage.game.hereText.val("");
-			$stage.talk.focus();
+			// 입력창 클리어 제거 - 사용자가 입력 중인 내용 유지
+			mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
 		}
 	}
 	$stage.game.items.html($data.mission = data.mission);
@@ -1772,14 +1908,14 @@ $lib.Classic.turnEnd = function (id, data) {
 	if (data.ok) {
 		checkFailCombo();
 		clearTimeout($data._fail);
-		$stage.game.here.hide();
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		$stage.game.chain.html(++$data.chain);
 		pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0, data.linkIndex, data.straightBonus > 0, data.isHanbang);
 	} else {
 		checkFailCombo(id);
 		$sc.addClass("lost");
 		$(".game-user-current").addClass("game-user-bomb");
-		$stage.game.here.hide();
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		playSound('timeout');
 	}
 	if (data.hint) {
@@ -1866,7 +2002,11 @@ $lib.Jaqwi.roundReady = function (data) {
 $lib.Jaqwi.turnStart = function (data) {
 	$(".game-user-current").removeClass("game-user-current");
 	$(".game-user-bomb").removeClass("game-user-bomb");
-	if ($data.room.game.seq.indexOf($data.id) >= 0) $stage.game.here.show();
+	if ($data.room.game.seq.indexOf($data.id) >= 0) {
+		$stage.game.here.css('opacity', 1).show();
+	} else {
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0).show();
+	}
 	var tVal = data.char;
 	if ($data.room.opts.drg) tVal = "<label style='color:" + getRandomColor() + "'>" + tVal + "</label>";
 	$stage.game.display.html($data._char = tVal);
@@ -1908,14 +2048,14 @@ $lib.Jaqwi.turnEnd = function (id, data) {
 	if (data.giveup) {
 		$uc.addClass("game-user-bomb");
 	} else if (data.answer) {
-		$stage.game.here.hide();
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		var ansColor = ($data.room.opts.drg) ? getRandomColor() : "#FFFF44";
 		$stage.game.display.html($("<label>").css('color', ansColor).html(data.answer));
 		stopBGM();
 		playSound('horr');
 	} else {
 		// if(data.mean) turnHint(data);
-		if (id == $data.id) $stage.game.here.hide();
+		if (id == $data.id) $stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		addScore(id, data.score, data.totalScore);
 		if ($data._roundTime > 10000) $data._roundTime = 10000;
 		drawObtainedScore($uc, $sc);
@@ -1952,6 +2092,8 @@ $lib.Crossword.roundReady = function (data, spec) {
 	$data.selectedRound = (turn == -1) ? 1 : (turn % $data.room.round + 1);
 	$stage.game.items.hide();
 	$stage.game.cwcmd.show().css('opacity', 0);
+	// 십자말풀이는 채팅창으로 입력하므로 게임 입력창 숨김
+	$stage.game.here.hide();
 	drawRound($data.selectedRound);
 	if (!spec) playSound('round_start');
 	clearInterval($data._tTime);
@@ -2147,9 +2289,9 @@ $lib.Typing.spaceOff = function () {
 $lib.Typing.turnStart = function (data) {
 	if (!$data._spectate) {
 		$data._relay = true;
-		$stage.game.here.show();
-		$stage.game.hereText.val("");
-		$stage.talk.val("").focus();
+		$stage.game.here.css('opacity', 1).show();
+		// 입력창 클리어 제거 - 사용자가 입력 중인 내용 유지
+		mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
 		$lib.Typing.spaceOn();
 	}
 	ws.onmessage = _onMessage;
@@ -2191,7 +2333,7 @@ $lib.Typing.turnEnd = function (id, data) {
 		if (data.speed) {
 			clearInterval($data._tTime);
 			$lib.Typing.spaceOff();
-			$stage.game.here.hide();
+			$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 
 			addTimeout(drawSpeed, 1000, data.speed);
 			stopBGM();
@@ -2199,7 +2341,7 @@ $lib.Typing.turnEnd = function (id, data) {
 			if ($data._round < $data.room.round) restGoing(10);
 		} else {
 			if (id == $data.id) {
-				$stage.game.here.hide();
+				$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 				$(".jjo-turn-time .graph-bar")
 					.html("GAME OVER")
 					.css({ 'text-align': "center" });
@@ -2269,11 +2411,12 @@ $lib.Hunmin.turnStart = function (data) {
 	var $u = $("#game-user-" + data.id).addClass("game-user-current");
 	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
 	if (!$data._replay) {
-		$stage.game.here.css('display', (data.id == $data.id) ? "block" : "none");
+		// 입력창은 항상 표시, 자기 턴일 때만 불투명 (비활성: 모바일 0.5, 데스크톱 0)
+		var inactiveOpacity = mobile ? 0.5 : 0;
+		$stage.game.here.css('opacity', (data.id == $data.id) ? 1 : inactiveOpacity).show();
 		if (data.id == $data.id) {
 			$data._relay = true;
-			$stage.game.hereText.val("");
-			$stage.talk.focus();
+			mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
 		}
 	}
 	$stage.game.items.html($data.mission = data.mission);
@@ -2306,13 +2449,13 @@ $lib.Hunmin.turnEnd = function (id, data) {
 	clearInterval($data._tTime);
 	if (data.ok) {
 		clearTimeout($data._fail);
-		$stage.game.here.hide();
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		$stage.game.chain.html(++$data.chain);
 		pushDisplay(data.value, data.mean, data.theme, data.wc);
 	} else {
 		$sc.addClass("lost");
 		$(".game-user-current").addClass("game-user-bomb");
-		$stage.game.here.hide();
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		playSound('timeout');
 	}
 	if (data.hint) {
@@ -2386,11 +2529,12 @@ $lib.Daneo.turnStart = function (data) {
 	var $u = $("#game-user-" + data.id).addClass("game-user-current");
 	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
 	if (!$data._replay) {
-		$stage.game.here.css('display', (data.id == $data.id) ? "block" : "none");
+		// 입력창은 항상 표시, 자기 턴일 때만 불투명 (비활성: 모바일 0.5, 데스크톱 0)
+		var inactiveOpacity = mobile ? 0.5 : 0;
+		$stage.game.here.css('opacity', (data.id == $data.id) ? 1 : inactiveOpacity).show();
 		if (data.id == $data.id) {
 			$data._relay = true;
-			$stage.game.hereText.val("");
-			$stage.talk.focus();
+			mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
 		}
 	}
 	$stage.game.items.html($data.mission = data.mission);
@@ -2423,13 +2567,13 @@ $lib.Daneo.turnEnd = function (id, data) {
 	clearInterval($data._tTime);
 	if (data.ok) {
 		clearTimeout($data._fail);
-		$stage.game.here.hide();
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		$stage.game.chain.html(++$data.chain);
 		pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0);
 	} else {
 		$sc.addClass("lost");
 		$(".game-user-current").addClass("game-user-bomb");
-		$stage.game.here.hide();
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		playSound('timeout');
 	}
 	if (data.hint) {
@@ -2517,11 +2661,12 @@ $lib.Free.turnStart = function (data) {
     var $u = $("#game-user-" + data.id).addClass("game-user-current");
     if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
     if (!$data._replay) {
-        $stage.game.here.css('display', (data.id == $data.id) ? "block" : "none");
+        // 입력창은 항상 표시, 자기 턴일 때만 불투명 (비활성: 모바일 0.5, 데스크톱 0)
+        var inactiveOpacity = mobile ? 0.5 : 0;
+        $stage.game.here.css('opacity', (data.id == $data.id) ? 1 : inactiveOpacity).show();
         if (data.id == $data.id) {
             $data._relay = true;
-            $stage.game.hereText.val("");
-            $stage.talk.focus();
+            mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
         }
     }
     $stage.game.items.html($data.mission = data.mission);
@@ -2557,14 +2702,14 @@ $lib.Free.turnEnd = function (id, data) {
     if (data.ok) {
         checkFailCombo();
         clearTimeout($data._fail);
-        $stage.game.here.hide();
+        $stage.game.here.css('opacity', mobile ? 0.5 : 0);
         $stage.game.chain.html(++$data.chain);
         pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0);
     } else {
         checkFailCombo(id);
         $sc.addClass("lost");
         $(".game-user-current").addClass("game-user-bomb");
-        $stage.game.here.hide();
+        $stage.game.here.css('opacity', mobile ? 0.5 : 0);
         playSound('timeout');
     }
     if (data.hint) {
@@ -2613,14 +2758,57 @@ $lib.Sock.roundReady = function (data, spec) {
 	$data._lang = RULE[MODE[$data.room.mode]].lang;
 	$data._board = data.board;
 	$data._maps = [];
+
+	// apple 규칙 활성화 시 원래 설정 백업
+	if ($data.room.opts && $data.room.opts.apple && !$data._originalSettings) {
+		$data._originalSettings = {
+			round: $data.room.round,
+			time: $data.room.time
+		};
+	}
+
+	// 서버에서 받은 effectiveRound와 effectiveTime을 사용 (apple 규칙 적용 시 서버에서 이미 계산됨)
+	if (data.totalRound) $data.room.round = data.totalRound;
+	if (data.time) $data.room.time = data.time;
 	$data._roundTime = $data.room.time * 1000;
 	$data._fastTime = 10000;
 	$stage.game.items.hide();
 	$stage.game.bb.show();
+	// 솎솎은 채팅창으로 입력하므로 게임 입력창 숨김
+	$stage.game.here.hide();
 	$lib.Sock.drawDisplay();
 	drawRound(data.round);
 	if (!spec) playSound('round_start');
 	clearInterval($data._tTime);
+
+	// Bad Apple Logic
+	if ($data._aplInterval) clearInterval($data._aplInterval);
+	$data._aplMode = false;
+	console.log("[APL] Checking apple option:", $data.room.opts, "apple=", $data.room.opts ? $data.room.opts.apple : "no opts");
+	if ($data.room.opts && $data.room.opts.apple) {
+		console.log("[APL] APL mode detected! Starting Bad Apple...");
+		$data._aplMode = true;
+		stopBGM();
+		$.getScript('/js/bad_apple_data.js', function () {
+			console.log("[APL] Script loaded, frames:", window.badAppleFrames ? window.badAppleFrames.length : "undefined");
+			loadSounds([{ key: 'apple', value: '/media/common/apple.mp3' }], function () {
+				console.log("[APL] Sound loaded, starting playback...");
+				var frameIdx = 0;
+				stopBGM();
+				playSound('apple');
+				$data._aplInterval = _setInterval(function () {
+					if (frameIdx >= window.badAppleFrames.length) {
+						clearInterval($data._aplInterval);
+						return;
+					}
+					$data._board = window.badAppleFrames[frameIdx];
+					while ($data._board.length < 196) $data._board += ".";
+					$lib.Sock.drawDisplay();
+					frameIdx++;
+				}, 100);
+			});
+		});
+	}
 };
 $lib.Sock.turnEnd = function (id, data) {
 	var $sc = $("<div>").addClass("deltaScore").html("+" + data.score);
@@ -2703,7 +2891,10 @@ $lib.Sock.turnStart = function (data, spec) {
 
 	clearInterval($data._tTime);
 	$data._tTime = addInterval(turnGoing, TICK);
-	playBGM('jaqwi');
+	// APL 모드에서는 jaqwi BGM 재생하지 않음
+	if (!$data._aplMode) {
+		playBGM('jaqwi');
+	}
 };
 $lib.Sock.turnGoing = $lib.Jaqwi.turnGoing;
 $lib.Sock.turnHint = function (data) {
@@ -2772,6 +2963,7 @@ $lib.Picture.roundReady = function (data, spec) {
     });
     $stage.game.items.hide();
     $stage.game.bb.hide(); // Hide bb (used in Sock mode), not needed for Picture Quiz
+    // 그림퀴즈는 채팅창으로 입력하므로 게임 입력창 숨김
     $stage.game.here.hide();
 
     $lib.Picture.drawDisplay();
@@ -3091,6 +3283,7 @@ $lib.Picture.turnStart = function (data, spec) {
     $(".game-user-current").removeClass("game-user-current");
     $("#game-user-" + data.drawer).addClass("game-user-current");
 
+    // 그림퀴즈는 채팅창으로 입력하므로 게임 입력창 숨김
     $stage.game.here.hide();
 };
 
@@ -5225,6 +5418,22 @@ function clearGame() {
 	if ($data._spaced) $lib.Typing.spaceOff();
 	clearInterval($data._tTime);
 	$data._relay = false;
+
+	// apple 규칙으로 변경된 설정을 원래대로 복구
+	if ($data._originalSettings && $data.room) {
+		$data.room.round = $data._originalSettings.round;
+		$data.room.time = $data._originalSettings.time;
+		delete $data._originalSettings;
+	}
+
+	// apple 모드 관련 정리
+	if ($data._aplInterval) {
+		clearInterval($data._aplInterval);
+		delete $data._aplInterval;
+	}
+	if ($data._aplMode) {
+		delete $data._aplMode;
+	}
 }
 function gameReady() {
 	var i, u;
@@ -5492,8 +5701,22 @@ function recordEvent(data) {
 }
 function clearBoard() {
 	$data._relay = false;
+	// APL (Bad Apple) 정리
+	if ($data._aplInterval) {
+		clearInterval($data._aplInterval);
+		$data._aplInterval = null;
+	}
+	if ($data._aplMode) {
+		$data._aplMode = false;
+		if ($_sound['apple']) {
+			$_sound['apple'].stop();
+			delete $_sound['apple'];
+		}
+		// 메모리 해제
+		if (window.badAppleFrames) window.badAppleFrames = null;
+	}
 	loading();
-	$stage.game.here.hide();
+	$stage.game.here.css('opacity', mobile ? 0.5 : 0).show();
 	$stage.dialog.result.hide();
 	$stage.dialog.dress.hide();
 	$stage.dialog.charFactory.hide();

@@ -312,7 +312,7 @@ $(document).ready(function () {
 	GAME_CATEGORIES = JSON.parse($("#GAME_CATEGORIES").html());
 	MODE = Object.keys(RULE);
 	mobile = $("#mobile").html() == "true";
-	if (mobile) TICK = 200;
+	if (mobile) TICK = 60;
 	$data.NICKNAME_LIMIT = JSON.parse($("#NICKNAME_LIMIT").html() || "{}");
 	if ($data.NICKNAME_LIMIT.REGEX) $data.NICKNAME_LIMIT.REGEX = new RegExp($data.NICKNAME_LIMIT.REGEX[0], $data.NICKNAME_LIMIT.REGEX[1]);
 	$data._timePercent = false ? function () {
@@ -394,9 +394,8 @@ $(document).ready(function () {
 	$stage.chatBtn.on('click', function (e) {
 		checkInput();
 
-		var value = (mobile && $stage.game.here.is(':visible'))
-			? $stage.game.hereText.val()
-			: $stage.talk.val();
+		// hereText를 메인 입력창으로 사용 (talk와 동기화됨)
+		var value = $stage.game.hereText.val() || $stage.talk.val();
 		if (!value) return;
 		var o = { value: value.trim() };
 		if (o.value[0] == "/") {
@@ -410,26 +409,81 @@ $(document).ready(function () {
 		}
 		if ($data._whisper) {
 			$stage.talk.val("/e " + $data._whisper + " ");
+			$stage.game.hereText.val("/e " + $data._whisper + " ");
 			delete $data._whisper;
 		} else {
 			$stage.talk.val("");
+			$stage.game.hereText.val("");
 		}
-		$stage.game.hereText.val("");
 	}).hotkey($stage.talk, 13).hotkey($stage.game.hereText, 13);
-	$("#cw-q-input").on('keydown', function (e) {
-		if (e.keyCode == 13) {
-			var $target = $(e.currentTarget);
-			var value = $target.val();
-			var o = { relay: true, data: $data._sel, value: value };
+	// 십자말풀이 입력창 처리
+	(function() {
+		var $cwInput = $("#cw-q-input");
+		var cwIsComposing = false;
 
+		// 정답 제출 함수
+		function submitCwAnswer() {
+			var value = $cwInput.val();
 			if (!value) return;
+			var o = { relay: true, data: $data._sel, value: value };
 			send('talk', o);
-			$target.val("");
+			$cwInput.val("");
+			// 제출 후에도 포커스 유지 (오답이면 계속 입력 가능)
+			$cwInput.focus();
 		}
-	}).on('focusout', function (e) {
-		$(".cw-q-body").empty();
-		$stage.game.cwcmd.css('opacity', 0);
-	});
+
+		// IME composition 상태 추적
+		$cwInput.on('compositionstart', function() {
+			cwIsComposing = true;
+		});
+		$cwInput.on('compositionend', function() {
+			cwIsComposing = false;
+		});
+
+		// keydown 엔터 처리
+		$cwInput.on('keydown', function (e) {
+			if (!cwIsComposing && (e.keyCode == 13 || e.key == 'Enter') && !e.shiftKey) {
+				e.preventDefault();
+				e.stopPropagation();
+				submitCwAnswer();
+				return false;
+			}
+		});
+
+		// beforeinput 폴백 (모바일)
+		if ($cwInput[0]) {
+			$cwInput[0].addEventListener('beforeinput', function(e) {
+				if (e.inputType === 'insertLineBreak') {
+					e.preventDefault();
+					submitCwAnswer();
+				}
+			});
+		}
+
+		// input 폴백 (개행 문자 감지)
+		$cwInput.on('input.newline', function() {
+			var val = $(this).val();
+			if (val.indexOf('\n') !== -1 || val.indexOf('\r') !== -1) {
+				$(this).val(val.replace(/[\r\n]/g, ''));
+				submitCwAnswer();
+			}
+		});
+
+		// focusout: cwcmd 영역 외부로 나갈 때만 숨김
+		$cwInput.on('focusout', function (e) {
+			// relatedTarget이 cwcmd 내부이면 숨기지 않음
+			var $related = $(e.relatedTarget);
+			if ($related.closest($stage.game.cwcmd).length > 0) {
+				return;
+			}
+			// cwcmd 외부로 포커스가 나가면 숨김
+			$(".cw-q-body").empty();
+			$stage.game.cwcmd.css('opacity', 0);
+		});
+
+		// HTML 속성 설정
+		$cwInput.attr('enterkeyhint', 'send');
+	})();
 	$("#room-limit").on('change', function (e) {
 		var $target = $(e.currentTarget);
 		var value = $target.val();
@@ -451,11 +505,91 @@ $(document).ready(function () {
 		}
 	});
 	$stage.game.here.on('click', function (e) {
-		mobile || $stage.talk.focus();
+		// 모바일에서도 게임 입력창 클릭 시 포커스
+		if (mobile) {
+			$stage.game.hereText.focus();
+		} else {
+			$stage.talk.focus();
+		}
 	});
-	$stage.talk.on('keyup', function (e) {
+	// 양방향 실시간 입력 동기화
+	$stage.talk.on('input', function (e) {
 		$stage.game.hereText.val($stage.talk.val());
 	});
+	$stage.game.hereText.on('input', function (e) {
+		$stage.talk.val($stage.game.hereText.val());
+	});
+	// 모바일 가상 키보드 엔터 제출 처리
+	// hotkey가 keydown으로 엔터를 처리하지만, 모바일 IME에서는 keyCode가 229로 전달됨
+	// 따라서 여러 폴백 방법으로 모바일 엔터를 감지
+	// hereText와 talk 모두에 적용 (둘이 같은 입력란처럼 동작)
+
+	// HTML 속성 설정 - 모바일 키보드에 "보내기" 버튼 표시
+	$stage.game.hereText.attr('enterkeyhint', 'send');
+	$stage.talk.attr('enterkeyhint', 'send');
+
+	function setupMobileEnter($input) {
+		var isComposing = false;
+
+		// IME composition 상태 추적
+		$input.on('compositionstart', function() {
+			isComposing = true;
+		});
+		$input.on('compositionend', function(e) {
+			isComposing = false;
+			// composition 종료 후 값 확인 (개행 문자 감지)
+			var val = $(this).val();
+			if (val.indexOf('\n') !== -1 || val.indexOf('\r') !== -1) {
+				$(this).val(val.replace(/[\r\n]/g, ''));
+				syncInputs($(this));
+				$stage.chatBtn.trigger('click');
+			}
+		});
+
+		// keydown에서 엔터 감지 (IME 상태와 무관하게)
+		$input.on('keydown.mobileEnter', function(e) {
+			// Enter 키 (keyCode 13 또는 key 'Enter')
+			// isComposing이 false일 때만 처리 (IME 입력 완료 후)
+			if (!isComposing && (e.keyCode == 13 || e.key == 'Enter') && !e.shiftKey) {
+				e.preventDefault();
+				e.stopPropagation();
+				$stage.chatBtn.trigger('click');
+				return false;
+			}
+		});
+
+		// beforeinput 이벤트 (모바일 가상 키보드 엔터 감지)
+		if ($input[0]) {
+			$input[0].addEventListener('beforeinput', function(e) {
+				if (e.inputType === 'insertLineBreak') {
+					e.preventDefault();
+					$stage.chatBtn.trigger('click');
+				}
+			});
+		}
+
+		// input 이벤트에서 개행 문자 감지 (최종 폴백)
+		$input.on('input.newline', function() {
+			var val = $(this).val();
+			if (val.indexOf('\n') !== -1 || val.indexOf('\r') !== -1) {
+				$(this).val(val.replace(/[\r\n]/g, ''));
+				syncInputs($(this));
+				$stage.chatBtn.trigger('click');
+			}
+		});
+	}
+
+	// 입력 동기화 헬퍼
+	function syncInputs($input) {
+		if ($input.is($stage.game.hereText)) {
+			$stage.talk.val($input.val());
+		} else {
+			$stage.game.hereText.val($input.val());
+		}
+	}
+
+	setupMobileEnter($stage.game.hereText);
+	setupMobileEnter($stage.talk);
 	$(window).on('beforeunload', function (e) {
 		if ($data.room) return L['sureExit'];
 	});

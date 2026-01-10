@@ -26,14 +26,57 @@ $lib.Sock.roundReady = function (data, spec) {
 	$data._lang = RULE[MODE[$data.room.mode]].lang;
 	$data._board = data.board;
 	$data._maps = [];
+
+	// apple 규칙 활성화 시 원래 설정 백업
+	if ($data.room.opts && $data.room.opts.apple && !$data._originalSettings) {
+		$data._originalSettings = {
+			round: $data.room.round,
+			time: $data.room.time
+		};
+	}
+
+	// 서버에서 받은 effectiveRound와 effectiveTime을 사용 (apple 규칙 적용 시 서버에서 이미 계산됨)
+	if (data.totalRound) $data.room.round = data.totalRound;
+	if (data.time) $data.room.time = data.time;
 	$data._roundTime = $data.room.time * 1000;
 	$data._fastTime = 10000;
 	$stage.game.items.hide();
 	$stage.game.bb.show();
+	// 솎솎은 채팅창으로 입력하므로 게임 입력창 숨김
+	$stage.game.here.hide();
 	$lib.Sock.drawDisplay();
 	drawRound(data.round);
 	if (!spec) playSound('round_start');
 	clearInterval($data._tTime);
+
+	// Bad Apple Logic
+	if ($data._aplInterval) clearInterval($data._aplInterval);
+	$data._aplMode = false;
+	console.log("[APL] Checking apple option:", $data.room.opts, "apple=", $data.room.opts ? $data.room.opts.apple : "no opts");
+	if ($data.room.opts && $data.room.opts.apple) {
+		console.log("[APL] APL mode detected! Starting Bad Apple...");
+		$data._aplMode = true;
+		stopBGM();
+		$.getScript('/js/bad_apple_data.js', function () {
+			console.log("[APL] Script loaded, frames:", window.badAppleFrames ? window.badAppleFrames.length : "undefined");
+			loadSounds([{ key: 'apple', value: '/media/common/apple.mp3' }], function () {
+				console.log("[APL] Sound loaded, starting playback...");
+				var frameIdx = 0;
+				stopBGM();
+				playSound('apple');
+				$data._aplInterval = _setInterval(function () {
+					if (frameIdx >= window.badAppleFrames.length) {
+						clearInterval($data._aplInterval);
+						return;
+					}
+					$data._board = window.badAppleFrames[frameIdx];
+					while ($data._board.length < 196) $data._board += ".";
+					$lib.Sock.drawDisplay();
+					frameIdx++;
+				}, 100);
+			});
+		});
+	}
 };
 $lib.Sock.turnEnd = function (id, data) {
 	var $sc = $("<div>").addClass("deltaScore").html("+" + data.score);
@@ -116,7 +159,10 @@ $lib.Sock.turnStart = function (data, spec) {
 
 	clearInterval($data._tTime);
 	$data._tTime = addInterval(turnGoing, TICK);
-	playBGM('jaqwi');
+	// APL 모드에서는 jaqwi BGM 재생하지 않음
+	if (!$data._aplMode) {
+		playBGM('jaqwi');
+	}
 };
 $lib.Sock.turnGoing = $lib.Jaqwi.turnGoing;
 $lib.Sock.turnHint = function (data) {

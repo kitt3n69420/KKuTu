@@ -51,13 +51,19 @@ exports.roundReady = function () {
 	var my = this;
 	var words = [];
 	var conf = LANG_STATS[my.rule.lang];
-	var len = my.opts.big ? 196 : 100;
 	var i, w;
+
+	// APL 모드에서는 설정을 직접 변경하지 않고 간주함
+	var effectiveRound = my.opts.apple ? 1 : my.round;
+	var effectiveTime = my.opts.apple ? 220 : my.time;
+	var effectiveBig = my.opts.apple ? true : my.opts.big;
+
+	var len = effectiveBig ? 196 : 100;
 
 	clearTimeout(my.game.turnTimer);
 	my.game.round++;
-	my.game.roundTime = my.time * 1000;
-	if (my.game.round <= my.round) {
+	my.game.roundTime = effectiveTime * 1000;
+	if (my.game.round <= effectiveRound) {
 		var sql = "SELECT _id FROM kkutu_" + my.rule.lang + " WHERE _id ~ '" + conf.reg.source + "' AND hit >= 1";
 		if (conf.add) sql += " AND " + conf.add[0] + " ~ '" + conf.add[1].source + "'";
 		sql += " ORDER BY RANDOM() LIMIT 1234";
@@ -72,10 +78,12 @@ exports.roundReady = function () {
 			}
 			words.sort(function (a, b) { return b.length - a.length; });
 			my.game.words = [];
-			my.game.board = getBoard(words, my.opts.big ? 196 : 100);
+			my.game.board = getBoard(words, effectiveBig ? 196 : 100);
 			my.byMaster('roundReady', {
 				round: my.game.round,
-				board: my.game.board
+				board: my.game.board,
+				totalRound: effectiveRound,
+				time: effectiveTime
 			}, true);
 			my.game.turnTimer = setTimeout(my.turnStart, 2400);
 		});
@@ -108,6 +116,8 @@ exports.submit = function (client, text, data) {
 
 	if (!my.game.words) return;
 	if (!text) return;
+
+	if (my.opts.apple) return client.chat(text);
 
 	if (!play) return client.chat(text);
 	if (text.length < (my.opts.no2 ? 3 : 2)) {

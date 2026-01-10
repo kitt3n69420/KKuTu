@@ -26,6 +26,8 @@ $lib.Crossword.roundReady = function (data, spec) {
 	$data.selectedRound = (turn == -1) ? 1 : (turn % $data.room.round + 1);
 	$stage.game.items.hide();
 	$stage.game.cwcmd.show().css('opacity', 0);
+	// 십자말풀이는 채팅창으로 입력하므로 게임 입력창 숨김
+	$stage.game.here.hide();
 	drawRound($data.selectedRound);
 	if (!spec) playSound('round_start');
 	clearInterval($data._tTime);

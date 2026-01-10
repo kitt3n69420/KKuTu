@@ -71,9 +71,9 @@ $lib.Typing.spaceOff = function () {
 $lib.Typing.turnStart = function (data) {
 	if (!$data._spectate) {
 		$data._relay = true;
-		$stage.game.here.show();
-		$stage.game.hereText.val("");
-		$stage.talk.val("").focus();
+		$stage.game.here.css('opacity', 1).show();
+		// 입력창 클리어 제거 - 사용자가 입력 중인 내용 유지
+		mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
 		$lib.Typing.spaceOn();
 	}
 	ws.onmessage = _onMessage;
@@ -115,7 +115,7 @@ $lib.Typing.turnEnd = function (id, data) {
 		if (data.speed) {
 			clearInterval($data._tTime);
 			$lib.Typing.spaceOff();
-			$stage.game.here.hide();
+			$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 
 			addTimeout(drawSpeed, 1000, data.speed);
 			stopBGM();
@@ -123,7 +123,7 @@ $lib.Typing.turnEnd = function (id, data) {
 			if ($data._round < $data.room.round) restGoing(10);
 		} else {
 			if (id == $data.id) {
-				$stage.game.here.hide();
+				$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 				$(".jjo-turn-time .graph-bar")
 					.html("GAME OVER")
 					.css({ 'text-align': "center" });

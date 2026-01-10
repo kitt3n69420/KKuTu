@@ -64,6 +64,8 @@ var L;
 					// $("#JJoSearchTF").expl();
 					$this.trigger("click");
 					e.preventDefault();
+					e.stopPropagation();
+					return false;
 				}
 			}
 		});

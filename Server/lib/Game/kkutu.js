@@ -1717,6 +1717,12 @@ exports.Room = function (room, channel) {
 				my.opts.injpick = (room.opts.injpick || []).filter(function (item) { return ij.includes(item); });
 			} else my.opts.injpick = [];
 		}
+		// APL (Bad Apple) 옵션 체크: opts 복사 후에 수행
+		if (my.opts && my.opts.apple) {
+			my.round = 1;
+			my.time = 220;
+			my.opts.big = true;
+		}
 		if (!my.rule.ai) {
 			while (my.removeAI(false, true));
 		}
@@ -2077,7 +2083,11 @@ exports.Room = function (room, channel) {
 			o = DIC[res[i].id];
 			if (!o) continue; // Should not happen for non-robots
 			var myHumanRank = userRankMap[o.id];
-			rw = getRewards(my.mode, o.game.score / res[i].dim, o.game.bonus, myHumanRank, humanCount, sumScore);
+			if (my.opts && my.opts.apple) {
+				rw = { score: 0, money: 0 };
+			} else {
+				rw = getRewards(my.mode, o.game.score / res[i].dim, o.game.bonus, myHumanRank, humanCount, sumScore);
+			}
 
 			rw.playTime = now - o.playAt;
 			o.applyEquipOptions(rw); // 착용 아이템 보너스 적용

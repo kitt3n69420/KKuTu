@@ -2037,6 +2037,22 @@ function clearGame() {
 	if ($data._spaced) $lib.Typing.spaceOff();
 	clearInterval($data._tTime);
 	$data._relay = false;
+
+	// apple 규칙으로 변경된 설정을 원래대로 복구
+	if ($data._originalSettings && $data.room) {
+		$data.room.round = $data._originalSettings.round;
+		$data.room.time = $data._originalSettings.time;
+		delete $data._originalSettings;
+	}
+
+	// apple 모드 관련 정리
+	if ($data._aplInterval) {
+		clearInterval($data._aplInterval);
+		delete $data._aplInterval;
+	}
+	if ($data._aplMode) {
+		delete $data._aplMode;
+	}
 }
 function gameReady() {
 	var i, u;
@@ -2304,8 +2320,22 @@ function recordEvent(data) {
 }
 function clearBoard() {
 	$data._relay = false;
+	// APL (Bad Apple) 정리
+	if ($data._aplInterval) {
+		clearInterval($data._aplInterval);
+		$data._aplInterval = null;
+	}
+	if ($data._aplMode) {
+		$data._aplMode = false;
+		if ($_sound['apple']) {
+			$_sound['apple'].stop();
+			delete $_sound['apple'];
+		}
+		// 메모리 해제
+		if (window.badAppleFrames) window.badAppleFrames = null;
+	}
 	loading();
-	$stage.game.here.hide();
+	$stage.game.here.css('opacity', mobile ? 0.5 : 0).show();
 	$stage.dialog.result.hide();
 	$stage.dialog.dress.hide();
 	$stage.dialog.charFactory.hide();
