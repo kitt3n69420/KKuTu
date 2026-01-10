@@ -2790,8 +2790,8 @@ $lib.Sock.roundReady = function (data, spec) {
 		$data._aplMode = true;
 		stopBGM();
 
-		// 먼저 LZ-String 라이브러리 로드
-		$.getScript('/js/lz-string.min.js', function () {
+		// 먼저 LZ-String 라이브러리 로드 (CDN 사용)
+		$.getScript('https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js', function () {
 			console.log("[APL] LZ-String library loaded");
 
 			// 압축된 배드 애플 데이터 로드
