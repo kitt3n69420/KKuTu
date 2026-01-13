@@ -57,3 +57,19 @@ var _setTimeout = setTimeout;
 function getDisplayName(user) {
 	return user.nickname || user.profile.nickname || user.profile.title || user.profile.name;
 }
+
+// 쉬운 미션: 초성과 중성이 일치하는지 확인
+function matchesEasyMission(char, missionChar) {
+	if (!$data.room.opts.easymission) return false;
+
+	var charCode = char.charCodeAt(0) - 0xAC00;
+	var missionCode = missionChar.charCodeAt(0) - 0xAC00;
+
+	// 한글 범위 체크
+	if (charCode < 0 || charCode > 11171 || missionCode < 0 || missionCode > 11171) {
+		return false;
+	}
+
+	// 28로 나눈 몫이 같으면 초성+중성이 같음
+	return Math.floor(charCode / 28) === Math.floor(missionCode / 28);
+}

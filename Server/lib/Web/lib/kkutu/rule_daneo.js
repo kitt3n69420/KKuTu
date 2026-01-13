@@ -107,6 +107,7 @@ $lib.Daneo.turnEnd = function (id, data) {
 		mobile ? $sc.html("+" + (data.score - data.bonus - (data.straightBonus || 0)) + "+" + data.bonus) : addTimeout(function () {
 			var $bc = $("<div>")
 				.addClass("deltaScore bonus")
+				.css('color', '#66FF66') // Green
 				.html("+" + data.bonus);
 
 			drawObtainedScore($uc, $bc);

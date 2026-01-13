@@ -62,7 +62,7 @@ exports.roundReady = function () {
 			my.game.theme = my.opts.injpick[Math.floor(Math.random() * ijl)];
 		}
 		my.game.chain = [];
-		if (my.opts.mission) my.game.mission = getMission(my.rule.lang);
+		if (my.opts.mission) my.game.mission = getMission(my.rule.lang, my.opts);
 		my.byMaster('roundReady', {
 			round: my.game.round,
 			theme: my.game.theme,
@@ -174,6 +174,7 @@ exports.submit = function (client, text, data) {
 					if (client.game.straightStreak >= 2) {
 						var multiplier = (client.game.straightStreak - 1) / 2;
 						straightBonus = Math.round(score * multiplier);
+						if (my.opts.bbungtwigi) straightBonus *= 2; // 뻥튀기: 스트레이트 보너스 2배
 						score += straightBonus;
 					}
 				}
@@ -195,7 +196,10 @@ exports.submit = function (client, text, data) {
 					totalScore: client.game.score
 				}, true);
 				if (my.game.mission === true) {
-					my.game.mission = getMission(my.rule.lang);
+					my.game.mission = getMission(my.rule.lang, my.opts);
+				} else if (my.opts.rndmission) {
+					// 랜덤미션: 달성하지 않아도 매 턴마다 미션 변경
+					my.game.mission = getMission(my.rule.lang, my.opts);
 				}
 				setTimeout(my.turnNext, my.game.turnTime / 6);
 				if (!client.robot) {
@@ -235,9 +239,44 @@ exports.getScore = function (text, delay, ignoreMission) {
 	var score = Const.getPreScore(text, my.game.chain, tr);
 	var arr;
 
-	if (!ignoreMission) if (arr = text.match(new RegExp(my.game.mission, "g"))) {
-		score += score * 0.5 * arr.length;
-		my.game.mission = true;
+	if (!ignoreMission) {
+		// 쉬운 미션 (easymission) 규칙: 초성과 중성만 일치하면 미션 달성
+		if (my.opts.easymission && my.rule.lang === "ko") {
+			var missionChar = my.game.mission;
+			var matchCount = 0;
+
+			// 미션 글자의 초성+중성 값 (28로 나눈 몫)
+			var missionCode = missionChar.charCodeAt(0) - 0xAC00;
+			if (missionCode >= 0 && missionCode <= 11171) {
+				var missionBase = Math.floor(missionCode / 28);
+
+				// 입력 단어의 각 글자를 검사
+				for (var i = 0; i < text.length; i++) {
+					var charCode = text.charCodeAt(i) - 0xAC00;
+					if (charCode >= 0 && charCode <= 11171) {
+						// 초성+중성이 일치하면 카운트
+						if (Math.floor(charCode / 28) === missionBase) {
+							matchCount++;
+						}
+					}
+				}
+
+				if (matchCount > 0) {
+					var missionBonus = score * 0.5 * matchCount;
+					if (my.opts.bbungtwigi) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
+					score += missionBonus;
+					my.game.mission = true;
+				}
+			}
+		} else {
+			// 기본 미션 규칙
+			if (arr = text.match(new RegExp(my.game.mission, "g"))) {
+				var missionBonus = score * 0.5 * arr.length;
+				if (my.opts.bbungtwigi) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
+				score += missionBonus;
+				my.game.mission = true;
+			}
+		}
 	}
 	return Math.round(score);
 };
@@ -347,7 +386,27 @@ function toRegex(theme) {
 	if (typeof theme == "object") return new RegExp(`(^|,)(${theme.join('|')})($|,)`);
 	return new RegExp(`(^|,)${theme}($|,)`);
 }
-function getMission(l) {
+function getMission(l, opts) {
+	// 미션플러스 옵션이 활성화되고 한국어 게임모드일 때
+	if (opts && opts.missionplus && l === "ko") {
+		// 초성 배열 (ㄱ~ㅎ, 쌍자음 제외)
+		var initials = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+		// 모음 배열 (ㅏ, ㅓ, ㅔ, ㅗ, ㅜ, ㅣ)
+		var vowels = ["ㅏ", "ㅓ", "ㅔ", "ㅗ", "ㅜ", "ㅣ"];
+
+		// 무작위로 초성과 모음을 선택
+		var initial = initials[Math.floor(Math.random() * initials.length)];
+		var vowel = vowels[Math.floor(Math.random() * vowels.length)];
+
+		// 유니코드로 한글 조합
+		var initialIndex = Const.INIT_SOUNDS.indexOf(initial);
+		var vowelIndex = ["ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", "ㅗ", "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"].indexOf(vowel);
+
+		// 종성 없이 초성+중성만 조합
+		return String.fromCharCode(0xAC00 + (initialIndex * 588) + (vowelIndex * 28));
+	}
+
+	// 기본 미션 로직
 	var arr = (l == "ko") ? Const.MISSION_ko : Const.MISSION_en;
 
 	if (!arr) return "-";

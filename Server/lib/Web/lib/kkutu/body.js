@@ -2747,11 +2747,12 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 	var linkIdx = -1;
 	var linkingIndices = [];
 
-	// Priority 0: Random (Override)
+	// Priority 0: 서버에서 전송한 linkIndex 사용 (모든 규칙)
+	// 서버의 getLinkIndex 함수가 정확한 시작 인덱스를 계산하여 전송
 	if (typeof overrideLinkIndex !== 'undefined' && overrideLinkIndex !== null) {
 		linkIdx = overrideLinkIndex;
 	}
-	// Priority 1: Middle
+	// Priority 1: Middle (서버 linkIndex 미지원 시 fallback)
 	else if ($data.room.opts.middle) {
 		if (isRev) {
 			linkIdx = Math.floor((len - 1) / 2); // Reverse: Middle
@@ -2795,9 +2796,9 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 	}
 
 	// [New Logic] Linking Indices (Purple)
-	if (RULE[mode].lang == 'en' && mode == 'EKT') {
-		// EKT Special Multi-Char Logic
-		// EKT Linking usually length 3.
+	if ((RULE[mode].lang == 'en' && mode == 'EKT') || mode == 'KKU') {
+		// EKT/KKU Special Multi-Char Logic (3-gram)
+		// EKT/KKU Linking usually length 3 (or 2 for First+Second).
 		// If First rule active, starting from linkIdx (which is Start for First rule).
 		// If Second... 
 		// Wait, let's keep it simple based on the start index found.
@@ -2811,36 +2812,38 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 			}
 		}
 		else if ($data.room.opts.middle) {
-			// Middle for EKT (len dependent)
-			// Re-use linkIdx as center? No, classic.js returns slice.
-			// Let's approximate based on observed behavior or strict match.
-			// Middle EKT: slice(idx-1, idx+2). So 3 chars around center.
-			// If linkIdx was calculated as the "main" one...
-			// Middle EKT Logic in classic.js:
-			/*
-			if (len % 2 !== 0) idx = floor(len/2); -> slice(idx-1, idx+2)
-			else idx = len/2; -> slice(idx-1, idx+2)
-			*/
-			// My logic above:
-			/*
-			Normal: ceil((len-1)/2) -> if len=5, ceil(2)=2. idx=2. slice(1,4). Indices 1,2,3.
-			Reverse: floor -> if len=5, floor(2)=2.
-			*/
-			// Let's assume linkIdx points to the *middle* of the 3 chars?
-			// If linkIdx = 2. We want 1, 2, 3.
-			for (var k = startK - 1; k <= startK + 1; k++) {
-				if (k >= 0 && k < len) linkingIndices.push(k);
-			}
-		}
-		else if ($data.room.opts.first) {
-			// First Rule EKT: slice(0,3) or slice(1,4)
-			// linkIdx above: 0 (or 1 if Second).
+			// Middle for EKT/KKU: 서버에서 시작 인덱스를 반환 (getLinkIndex)
+			// linkIdx는 3글자 연결의 시작 인덱스
+			// 예: "ABCDE" (len=5) -> linkIdx=1 -> 강조 인덱스 1,2,3 ("BCD")
 			for (var k = startK; k < startK + 3; k++) {
 				if (k >= 0 && k < len) linkingIndices.push(k);
 			}
 		}
+		else if ($data.room.opts.first) {
+			// ABCDEFGH 예시: First=ABC(0~2), First+Second=BCD(1~3)
+			if ($data.room.opts.second) {
+				// First+Second: 인덱스 1부터 3글자 (BCD)
+				for (var k = 1; k < 4; k++) {
+					if (k >= 0 && k < len) linkingIndices.push(k);
+				}
+			} else {
+				// First only: 맨 앞 3글자 (ABC)
+				for (var k = 0; k < 3; k++) {
+					if (k >= 0 && k < len) linkingIndices.push(k);
+				}
+			}
+		}
+		else if ($data.room.opts.second) {
+			// Second Rule EKT/KKU: slice(len-4, len-1) - 끝에서 4~2번째 3글자 (EFG)
+			// ABCDEFGH 예시: 인덱스 4, 5, 6 (EFG) - 마지막 글자(H) 제외
+			var secondStart = len - 4;
+			for (var k = 0; k < 3; k++) {
+				var idx = secondStart + k;
+				if (idx >= 0 && idx < len - 1) linkingIndices.push(idx); // len-1 제외 (마지막 글자 제외)
+			}
+		}
 		else {
-			// Default EKT: slice(-3)
+			// Default EKT/KKU: slice(-3) - 마지막 3글자
 			// linkIdx above: len-1.
 			// slice(-3) start index is len-3.
 			// Adjust linkIdx to be start?
@@ -2904,7 +2907,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 					playSound('mission');
 					$l.css({ 'color': "#FFFF00" }); // Yellow (Priority 2)
 					anim['font-size'] = 24;
-				} else if (originalChar == $data.mission) {
+				} else if (originalChar == $data.mission || matchesEasyMission(originalChar, $data.mission)) {
 					playSound('mission');
 					$l.css({ 'color': "#66FF66" }); // Green (Priority 2 -> 3)
 					anim['font-size'] = 24;
@@ -2946,7 +2949,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				} else if (isStraightChar) {
 					playSound('mission');
 					j = "<label style='color: #FFFF00;'>" + t_disp + "</label>" + j;
-				} else if (t == $data.mission) {
+				} else if (t == $data.mission || matchesEasyMission(t, $data.mission)) {
 					playSound('mission');
 					j = "<label style='color: #66FF66;'>" + t_disp + "</label>" + j;
 				} else if (isLinking) {
@@ -2972,7 +2975,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				} else if (isStraightChar) {
 					playSound('mission');
 					j += "<label style='color: #FFFF00;'>" + t_disp + "</label>";
-				} else if (t == $data.mission) {
+				} else if (t == $data.mission || matchesEasyMission(t, $data.mission)) {
 					playSound('mission');
 					j += "<label style='color: #66FF66;'>" + t_disp + "</label>";
 				} else if (isLinking) {

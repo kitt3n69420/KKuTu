@@ -112,14 +112,23 @@ $lib.Classic.turnEnd = function (id, data) {
 	if (data.hint) {
 		data.hint = data.hint._id;
 		hi = data.hint.indexOf($data._chars[0]);
-		if (hi == -1) hi = data.hint.indexOf($data._chars[1]);
+		var matchedChar = $data._chars[0];
+		if (hi == -1) {
+			hi = data.hint.indexOf($data._chars[1]);
+			matchedChar = $data._chars[1];
+		}
+		// 연결 글자 길이 (EKT/KKU는 2-3글자, 기본은 1글자)
+		var charLen = matchedChar ? matchedChar.length : 1;
 
 		if (MODE[$data.room.mode] == "KAP" || MODE[$data.room.mode] == "KAK" || MODE[$data.room.mode] == "EAP" || MODE[$data.room.mode] == "EAK") $stage.game.display.empty()
 			.append($("<label>").css('color', "#AAAAAA").html(data.hint.slice(0, hi)))
 			.append($("<label>").html(data.hint.slice(hi)));
-		else $stage.game.display.empty()
-			.append($("<label>").html(data.hint.slice(0, hi + 1)))
-			.append($("<label>").css('color', "#AAAAAA").html(data.hint.slice(hi + 1)));
+		else {
+			$stage.game.display.empty();
+			if (hi > 0) $stage.game.display.append($("<label>").css('color', "#AAAAAA").html(data.hint.slice(0, hi)));
+			$stage.game.display.append($("<label>").html(data.hint.slice(hi, hi + charLen)))
+				.append($("<label>").css('color', "#AAAAAA").html(data.hint.slice(hi + charLen)));
+		}
 	}
 	if (data.bonus) {
 		mobile ? $sc.html("+" + (data.score - data.bonus - (data.speedToss || 0) - (data.straightBonus || 0)) + "+" + data.bonus) : addTimeout(function () {

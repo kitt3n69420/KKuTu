@@ -224,8 +224,8 @@ exports.getTitle = function () {
 	EXAMPLE = Const.EXAMPLE_TITLE[l.lang];
 	my.game.dic = {};
 
-	// EKT: 타이틀을 단어가 아니라 1~10 동그라미 숫자로 표시
-	if (l.lang === 'en' && Const.GAME_TYPE[my.mode] === 'EKT') {
+	// EKT/KKU: 타이틀을 단어가 아니라 1~10 동그라미 숫자로 표시
+	if (Const.GAME_TYPE[my.mode] === 'EKT' || Const.GAME_TYPE[my.mode] === 'KKU') {
 		R.go("①②③④⑤⑥⑦⑧⑨⑩");
 		return R;
 	}
@@ -428,13 +428,17 @@ exports.roundReady = function () {
 		// EKT: 매 라운드마다 EKT_BIGRAMS에서 랜덤 bigram 직접 선택
 		if (Const.GAME_TYPE[my.mode] === 'EKT') {
 			my.game.char = EKT_BIGRAMS[Math.floor(Math.random() * EKT_BIGRAMS.length)];
+		} else if (Const.GAME_TYPE[my.mode] === 'KKU') {
+			// KKU: 매 라운드마다 KKU_START_BIGRAMS에서 랜덤 2그램 직접 선택
+			my.game.char = Const.KKU_START_BIGRAMS[Math.floor(Math.random() * Const.KKU_START_BIGRAMS.length)];
 		} else {
 			my.game.char = my.game.title[my.game.round - 1];
 		}
 		my.game.subChar = getSubChar.call(my, my.game.char);
 		my.game.chain = [];
 		my.game.ektTrigramMode = (Const.GAME_TYPE[my.mode] === 'EKT'); // EKT: 항상 3-gram 모드 활성화
-		if (my.opts.mission) my.game.mission = getMission(my.rule.lang);
+		my.game.kkuTrigramMode = (Const.GAME_TYPE[my.mode] === 'KKU'); // KKU: 3-gram 모드 활성화 (EKT와 동일)
+		if (my.opts.mission) my.game.mission = getMission(my.rule.lang, my.opts);
 		if (my.opts.sami) {
 			my.game.wordLength = 2;
 			my.game.samiCount = 0;
@@ -737,6 +741,11 @@ exports.submit = function (client, text) {
 		return client.chat(text);
 	}
 
+	// KKU 3-gram 모드에서 3글자 이하 단어 입력 시 채팅으로 처리 (게임 진행 안함)
+	if (Const.GAME_TYPE[my.mode] === 'KKU' && my.game.kkuTrigramMode && text.length < 4) {
+		return client.chat(text);
+	}
+
 	if (my.game.chain.indexOf(text) != -1) {
 		var isRecentDuplicate = my.opts.return && my.game.chain.slice(-5).indexOf(text) != -1;
 
@@ -787,10 +796,18 @@ exports.submit = function (client, text) {
 
 		// EKT: 3글자 이상 단어 입력 시, trigram 모드가 활성화될 것을 미리 예상하여 3-gram으로 매너 체크
 		var gameType = Const.GAME_TYPE[my.mode];
+		console.log(`[PreManner] Mode=${gameType}, Word="${text}", preChar="${preChar}", preSubChar="${preSubChar}", first=${my.opts.first}, middle=${my.opts.middle}, trigramMode=${my.game.kkuTrigramMode}`);
 		if (gameType === 'EKT' && text.length >= 3 && !my.game.ektTrigramMode) {
 			preChar = text.slice(-3); // 강제로 마지막 3글자 사용
 			preSubChar = preChar.slice(1); // 2-gram subChar
 			console.log(`[EKT] PreManner: Forcing trigram check for word "${text}" -> preChar=${preChar}, preSubChar=${preSubChar}`);
+		}
+		// KKU: 3글자 이상 단어 입력 시, trigram 모드 활성화를 예상하여 3-gram으로 매너 체크
+		// 단, First/Middle 규칙에서는 getChar가 이미 올바른 연결 글자를 반환하므로 강제 변경하지 않음
+		if (gameType === 'KKU' && text.length >= 3 && !my.game.kkuTrigramMode && !my.opts.first && !my.opts.middle) {
+			preChar = text.slice(-3); // 강제로 마지막 3글자 사용
+			preSubChar = preChar.slice(1); // 2-gram subChar
+			console.log(`[KKU] PreManner: Forcing trigram check for word "${text}" -> preChar=${preChar}, preSubChar=${preSubChar}`);
 		}
 
 
@@ -814,8 +831,9 @@ exports.submit = function (client, text) {
 				if (my.opts.speedtoss && !my.opts.random) {
 					var matchingSumiChar = checkspeedToss(my.game.chain[my.game.chain.length - 1], text);
 					if (matchingSumiChar) {
-						// 30% Bonus
-						var bonusScore = Math.round(score * 0.3);
+						// 50% Bonus
+						var bonusScore = Math.round(score * 0.5);
+						if (my.opts.bbungtwigi) bonusScore *= 2; // 뻥튀기: 스피드토스 보너스 2배
 						score += bonusScore;
 						speedTossBonus = bonusScore;
 						my.game.sumiChar = matchingSumiChar; // Store for turnStart highlighting
@@ -846,6 +864,7 @@ exports.submit = function (client, text) {
 					if (client.game.straightStreak >= 2) {
 						var multiplier = (Math.log(client.game.straightStreak - 1) / Math.log(4)) + 0.5;
 						straightBonus = Math.round(score * multiplier);
+						if (my.opts.bbungtwigi) straightBonus *= 2; // 뻥튀기: 스트레이트 보너스 2배
 						score += straightBonus;
 					}
 				}
@@ -870,6 +889,11 @@ exports.submit = function (client, text) {
 						my.game.ektTrigramMode = true;
 						console.log(`[EKT] Trigram mode activated by word: ${text}`);
 					}
+					// KKU: 3글자 이상 단어 사용 시 3-gram 모드 활성화 (EKT와 동일)
+					if (type === 'KKU' && text.length >= 3 && !my.game.kkuTrigramMode) {
+						my.game.kkuTrigramMode = true;
+						console.log(`[KKU] Trigram mode activated by word: ${text}`);
+					}
 					my.game.char = randomResult.char;
 					my.game.subChar = getSubChar.call(my, randomResult.char);
 					// Pass link index to client
@@ -884,6 +908,15 @@ exports.submit = function (client, text) {
 						preChar = getChar.call(my, text);
 						preSubChar = getSubChar.call(my, preChar);
 						console.log(`[EKT] Recalculated preChar after mode activation: ${preChar}`);
+					}
+					// KKU: 3글자 이상 단어 사용 시 3-gram 모드 활성화 (비랜덤 모드, EKT와 동일)
+					if (type === 'KKU' && text.length >= 3 && !my.game.kkuTrigramMode) {
+						my.game.kkuTrigramMode = true;
+						console.log(`[KKU] Trigram mode activated by word: ${text}`);
+						// 모드 전환 후 preChar 재계산
+						preChar = getChar.call(my, text);
+						preSubChar = getSubChar.call(my, preChar);
+						console.log(`[KKU] Recalculated preChar after mode activation: ${preChar}`);
 					}
 					my.game.char = preChar;
 					my.game.subChar = preSubChar;
@@ -991,7 +1024,10 @@ exports.submit = function (client, text) {
 						}, true);
 
 						if (my.game.mission === true) {
-							my.game.mission = getMission(my.rule.lang);
+							my.game.mission = getMission(my.rule.lang, my.opts);
+						} else if (my.opts.rndmission) {
+							// 랜덤미션: 달성하지 않아도 매 턴마다 미션 변경
+							my.game.mission = getMission(my.rule.lang, my.opts);
 						}
 						setTimeout(my.turnNext, my.game.turnTime / 6);
 
@@ -1020,6 +1056,7 @@ exports.submit = function (client, text) {
 			// 비랜덤 모드: 기존 매너 체크
 			else if (!my.opts.unknown) getAuto.call(my, preChar, preSubChar, 1).then(function (w) {
 				var count = (typeof w === 'number') ? w : (w ? 1 : 0);
+				console.log(`[MannerCheck] getAuto result for preChar="${preChar}", preSubChar="${preSubChar}": count=${count}`);
 				var used = 0;
 				if (my.game.chain) {
 					var checkChars = [preChar];
@@ -1046,9 +1083,11 @@ exports.submit = function (client, text) {
 				// 매너 한도: 최소 1단어
 				var minRemaining = 1;
 				var trigramRemaining = count - used;
+				console.log(`[MannerCheck] count=${count}, used=${used}, trigramRemaining=${trigramRemaining}, checkChars=${JSON.stringify(checkChars)}`);
 
 				// EKT 3-gram 모드: 3-gram과 2-gram 개수의 합으로 매너 체크
 				function checkMannerAndProceed(totalRemaining) {
+					console.log(`[MannerCheck] checkMannerAndProceed: totalRemaining=${totalRemaining}, firstMove=${firstMove}, manner=${my.opts.manner}, minRemaining=${minRemaining}`);
 					// 남은 단어 수를 저장하여 turnStart에서 재사용
 					my.game.nextCharWordCount = totalRemaining;
 
@@ -1118,9 +1157,10 @@ exports.submit = function (client, text) {
 					}
 				}
 
-				// EKT 3-gram 모드: 2-gram도 함께 조회하여 합산
-				if (gameType === 'EKT' && preChar.length >= 3) {
-					var bigramChar = preChar.slice(1); // 맨 앞 글자 제외한 2-gram
+				// EKT/KKU 3-gram 모드: 2-gram도 함께 조회하여 합산
+				if ((gameType === 'EKT' || gameType === 'KKU') && preChar.length >= 3) {
+					// First 규칙: 앞 2글자 (AB), 그 외: 뒤 2글자 (BC)
+					var bigramChar = my.opts.first ? preChar.slice(0, 2) : preChar.slice(1);
 					getAuto.call(my, bigramChar, null, 1).then(function (bigramRes) {
 						var bigramCount = (typeof bigramRes === 'number') ? bigramRes : (bigramRes ? 1 : 0);
 						var bigramUsed = 0;
@@ -1138,7 +1178,7 @@ exports.submit = function (client, text) {
 						var bigramRemaining = bigramCount - bigramUsed;
 						var totalRemaining = trigramRemaining + bigramRemaining;
 
-						console.log(`[MannerDebug] Combined Check: 3-gram=${preChar}(${trigramRemaining}), 2-gram=${bigramChar}(${bigramRemaining}), total=${totalRemaining}`);
+						console.log(`[MannerDebug] Combined Check (${gameType}): 3-gram=${preChar}(${trigramRemaining}), 2-gram=${bigramChar}(${bigramRemaining}), total=${totalRemaining}`);
 
 						checkMannerAndProceed(totalRemaining);
 					});
@@ -1297,11 +1337,45 @@ exports.getScore = function (text, delay, ignoreMission) {
 	score = Const.getPreScore(text, my.game.chain, tr);
 
 	if (my.game.dic[text]) score *= 15 / (my.game.dic[text] + 15);
-	if (!ignoreMission)
-		if (arr = text.match(new RegExp(my.game.mission, "g"))) {
-			score += score * 0.5 * arr.length;
-			my.game.mission = true;
+	if (!ignoreMission) {
+		// 쉬운 미션 (easymission) 규칙: 초성과 중성만 일치하면 미션 달성
+		if (my.opts.easymission && my.rule.lang === "ko") {
+			var missionChar = my.game.mission;
+			var matchCount = 0;
+
+			// 미션 글자의 초성+중성 값 (28로 나눈 몫)
+			var missionCode = missionChar.charCodeAt(0) - 0xAC00;
+			if (missionCode >= 0 && missionCode <= 11171) {
+				var missionBase = Math.floor(missionCode / 28);
+
+				// 입력 단어의 각 글자를 검사
+				for (var i = 0; i < text.length; i++) {
+					var charCode = text.charCodeAt(i) - 0xAC00;
+					if (charCode >= 0 && charCode <= 11171) {
+						// 초성+중성이 일치하면 카운트
+						if (Math.floor(charCode / 28) === missionBase) {
+							matchCount++;
+						}
+					}
+				}
+
+				if (matchCount > 0) {
+					var missionBonus = score * 0.5 * matchCount;
+					if (my.opts.bbungtwigi) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
+					score += missionBonus;
+					my.game.mission = true;
+				}
+			}
+		} else {
+			// 기본 미션 규칙
+			if (arr = text.match(new RegExp(my.game.mission, "g"))) {
+				var missionBonus = score * 0.5 * arr.length;
+				if (my.opts.bbungtwigi) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
+				score += missionBonus;
+				my.game.mission = true;
+			}
 		}
+	}
 	return Math.round(score);
 };
 exports.readyRobot = function (robot) {
@@ -1314,6 +1388,12 @@ exports.readyRobot = function (robot) {
 	var isRev = (Const.GAME_TYPE[my.mode] == "KAP" || Const.GAME_TYPE[my.mode] == "KAK" || Const.GAME_TYPE[my.mode] == "EAP" || Const.GAME_TYPE[my.mode] == "EAK");
 	var personality = robot.data.personality || 0;
 	var preferredChar = robot.data.preferredChar;
+	var isKKU = (Const.GAME_TYPE[my.mode] === "KKU");
+
+	// KKU 모드: 성격 값이 0보다 크면 0으로 취급
+	if (isKKU && personality > 0) {
+		personality = 0;
+	}
 
 	console.log(`[BOT] readyRobot: Level=${level}, Personality=${personality}, PrefChar=${preferredChar}, Mode=${Const.GAME_TYPE[my.mode]}`);
 
@@ -1371,8 +1451,7 @@ exports.readyRobot = function (robot) {
 		});
 	}
 
-	// EKT 매너 필터: 연결 가능한 단어가 있는 단어만 반환
-	// 기존 플레이어 매너 체크 로직 (preApproved의 EKT 3-gram 체크)과 동일한 방식 사용
+	// EKT 매너 필터: 연결 가능한 단어가 있는 단어만 반환 (통계 테이블 사용)
 	function filterEKTManner(list) {
 		return new Promise(function (resolve) {
 			if (!list || list.length === 0) return resolve([]);
@@ -1391,22 +1470,23 @@ exports.readyRobot = function (robot) {
 			list.forEach(function (w) {
 				var word = w._id;
 				if (word.length < 4) {
-					// EKT 3-gram 모드에서 4글자 미만은 이미 필터됨 (검사 불필요)
 					results.push(w);
 					if (--pending === 0) resolve(results);
 					return;
 				}
 
-				// getChar를 사용하여 실제 연결 위치 결정 (EKT trigram 모드에서는 마지막 3글자)
 				var trigram = getChar.call(my, word);
-				// 2-gram subChar: trigram의 맨 앞 글자 제외 (플레이어 매너 체크와 동일)
-				var bigram = trigram.slice(1);
+				var bigram = null;
+				// KKU/EKT First Rule: 2-char connection. Trigram is actually 2 chars.
+				// Skip Bigram check as it would be 1 char.
+				if (!(my.opts.first && (Const.GAME_TYPE[my.mode] === 'KKU' || Const.GAME_TYPE[my.mode] === 'EKT'))) {
+					bigram = trigram.slice(1);
+				}
 
 				var trigramCount = 0;
 				var bigramCount = 0;
-				var checks = 2;
+				var checks = bigram ? 2 : 1;
 
-				// 3-gram 조회
 				table.findOne(['_id', trigram]).on(function (doc) {
 					trigramCount = (doc && doc[col]) ? doc[col] : 0;
 					if (--checks === 0) checkResult();
@@ -1414,18 +1494,17 @@ exports.readyRobot = function (robot) {
 					if (--checks === 0) checkResult();
 				});
 
-				// 2-gram 조회
-				table.findOne(['_id', bigram]).on(function (doc) {
-					bigramCount = (doc && doc[col]) ? doc[col] : 0;
-					if (--checks === 0) checkResult();
-				}, null, function () {
-					if (--checks === 0) checkResult();
-				});
+				if (bigram) {
+					table.findOne(['_id', bigram]).on(function (doc) {
+						bigramCount = (doc && doc[col]) ? doc[col] : 0;
+						if (--checks === 0) checkResult();
+					}, null, function () {
+						if (--checks === 0) checkResult();
+					});
+				}
 
 				function checkResult() {
 					var totalCount = trigramCount + bigramCount;
-
-					// 사용된 단어 수 계산 (플레이어 매너 체크와 동일한 로직)
 					var trigramUsed = 0;
 					var bigramUsed = 0;
 
@@ -1434,16 +1513,10 @@ exports.readyRobot = function (robot) {
 						if (my.opts.return) checkChain = my.game.chain.slice(-5);
 
 						checkChain.forEach(function (doneWord) {
-							// 3-gram으로 시작하는 단어
 							if (doneWord.indexOf(trigram) === 0) trigramUsed++;
-							// 2-gram으로 시작하는 단어
 							if (doneWord.indexOf(bigram) === 0) bigramUsed++;
 						});
 					}
-
-					// 주의: 현재 단어 자체는 카운트하지 않음
-					// 봇이 선택한 단어는 "다음 턴에 상대가 이어야 할 글자"를 결정하는 것이지
-					// 자신이 다시 그 글자로 시작하는 단어를 쓰는 게 아님
 
 					var trigramRemaining = trigramCount - trigramUsed;
 					var bigramRemaining = bigramCount - bigramUsed;
@@ -1451,7 +1524,6 @@ exports.readyRobot = function (robot) {
 
 					console.log(`[BOT] EKT Manner Check: word=${word}, trigram=${trigram}(${trigramCount}-${trigramUsed}=${trigramRemaining}), bigram=${bigram}(${bigramCount}-${bigramUsed}=${bigramRemaining}), remaining=${remaining}`);
 
-					// 매너 조건: 최소 1단어 남아야 함
 					if (remaining >= 1) {
 						results.push(w);
 					}
@@ -1460,6 +1532,141 @@ exports.readyRobot = function (robot) {
 				}
 			});
 		});
+	}
+
+	// KKU 전용 봇 로직: 단어 가져오기 → 셔플 → 하나씩 매너 체크 → 첫 통과 단어 사용
+	function executeKKUBot() {
+		var FETCH_SIZE = 50;
+		var fetched = [];
+
+		function fetchWords(offset) {
+			getAuto.call(my, my.game.char, my.game.subChar, 2, 1).then(function (list) {
+				if (!list || list.length === 0) {
+					if (fetched.length === 0) {
+						return denied();
+					}
+					// 더 이상 가져올 단어가 없으면 현재 fetched에서 시도
+					return tryFromList(fetched);
+				}
+
+				// 4글자 이상, 사용되지 않은 단어만 필터
+				list = list.filter(function (w) {
+					return w._id.length >= 4 && !robot._done.includes(w._id) &&
+						(!my.game.chain || !my.game.chain.includes(w._id));
+				});
+
+				if (list.length === 0) {
+					if (fetched.length === 0) {
+						return denied();
+					}
+					return tryFromList(fetched);
+				}
+
+				// 셔플해서 fetched에 추가
+				list = shuffle(list);
+				fetched = fetched.concat(list);
+
+				tryFromList(fetched);
+			});
+		}
+
+		function tryFromList(list) {
+			if (list.length === 0) {
+				return denied();
+			}
+
+			// 매너 모드가 아니면 첫 번째 단어 바로 사용
+			if (!my.opts.manner) {
+				return pickWord(list[0]);
+			}
+
+			// 매너 모드: 하나씩 체크
+			checkNextWord(list, 0);
+		}
+
+		function checkNextWord(list, index) {
+			if (index >= list.length) {
+				// 모든 단어가 매너 체크 실패 → 더 가져오기
+				console.log(`[BOT] KKU: All ${list.length} words failed manner check, fetching more...`);
+				getAuto.call(my, my.game.char, my.game.subChar, 2, 2).then(function (moreList) {
+					if (!moreList || moreList.length === 0) {
+						return denied();
+					}
+					moreList = moreList.filter(function (w) {
+						return w._id.length >= 4 && !robot._done.includes(w._id) &&
+							(!my.game.chain || !my.game.chain.includes(w._id)) &&
+							!list.some(function (existing) { return existing._id === w._id; });
+					});
+
+					if (moreList.length === 0) {
+						return denied();
+					}
+
+					moreList = shuffle(moreList);
+					checkNextWord(moreList, 0);
+				});
+				return;
+			}
+
+			var w = list[index];
+			var word = w._id;
+			var trigram = getChar.call(my, word);
+			var bigram = null;
+			// KKU First Rule: 2-char connection.
+			if (!(my.opts.first && Const.GAME_TYPE[my.mode] === 'KKU')) {
+				bigram = trigram.slice(1);
+			}
+
+			// DB에서 다음 단어 존재 여부 확인
+			var regexStr = `^(${escapeRegExp(trigram)}`;
+			if (bigram) {
+				regexStr += `|${escapeRegExp(bigram)}`;
+			}
+			regexStr += ').';
+
+			var query = [
+				['_id', new RegExp(regexStr)]
+			];
+
+			if (!my.opts.injeong) query.push(['flag', { '$nand': Const.KOR_FLAG.INJEONG }]);
+			if (my.opts.loanword) query.push(['flag', { '$nand': Const.KOR_FLAG.LOANWORD }]);
+			if (my.opts.strict) {
+				query.push(['type', Const.KOR_STRICT], ['flag', { $lte: 3 }]);
+			} else {
+				query.push(['type', Const.KOR_GROUP]);
+			}
+
+			DB.kkutu.ko.find(...query).limit(5).on(function (docs) {
+				var available = docs ? docs.filter(function (d) {
+					return !my.game.chain || !my.game.chain.includes(d._id);
+				}).length : 0;
+
+				console.log(`[BOT] KKU Manner: word=${word}, next=${trigram}|${bigram}, available=${available}`);
+
+				if (available > 0) {
+					// 매너 통과
+					return pickWord(w);
+				}
+
+				// 다음 단어로
+				checkNextWord(list, index + 1);
+			}, null, function () {
+				// DB 에러 → 다음 단어로
+				checkNextWord(list, index + 1);
+			});
+		}
+
+		function pickWord(w) {
+			if (my.game.late) return;
+			text = w._id;
+			delay += 500 * ROBOT_THINK_COEF[level] * Math.random() / Math.log(1.1 + w.hit);
+			console.log(`[BOT] KKU: Picked word: ${text}`);
+			robot._done.push(text);
+			setTimeout(my.turnRobot, delay, robot, text);
+		}
+
+		// 시작
+		fetchWords(0);
 	}
 	if (my.opts.unknown) {
 		var gen = "";
@@ -1708,6 +1915,13 @@ exports.readyRobot = function (robot) {
 	}
 
 	function decideStrategy() {
+		// KKU 모드: 별도의 간단한 봇 로직 사용
+		if (isKKU) {
+			console.log(`[BOT] KKU Mode: Using dedicated simple bot logic`);
+			executeKKUBot();
+			return;
+		}
+
 		var strategy = "NORMAL";
 		var isKKT = (Const.GAME_TYPE[my.mode] == "KKT" || Const.GAME_TYPE[my.mode] == "EKK" || Const.GAME_TYPE[my.mode] == "KAK" || Const.GAME_TYPE[my.mode] == "EAK");
 		var decided = false;
@@ -1764,8 +1978,12 @@ exports.readyRobot = function (robot) {
 			if (roll < prob) {
 				var allowAttack = true;
 
+				// KKU 모드: 시페셜 무브는 항상 LONG 전략
+				if (isKKU) {
+					strategy = "LONG";
+				}
 				// Special Move Triggered
-				if (isKKT && allowAttack) strategy = "ATTACK";
+				else if (isKKT && allowAttack) strategy = "ATTACK";
 				else {
 					// For non-KKT, pick randomly between ATTACK and LONG
 					// Also check first turn for Attack
@@ -2302,7 +2520,9 @@ exports.readyRobot = function (robot) {
 					list = shuffle(top).concat(rest);
 
 					// EKT 매너 모드: 연결 가능한 단어가 있는 단어만 선택
-					if (my.opts.manner && Const.GAME_TYPE[my.mode] === 'EKT' && my.game.ektTrigramMode) {
+					var needsEKTMannerFilter = my.opts.manner && Const.GAME_TYPE[my.mode] === 'EKT' && my.game.ektTrigramMode;
+
+					if (needsEKTMannerFilter) {
 						console.log(`[BOT] EKT Manner Filter: Checking ${list.length} words...`);
 						filterEKTManner(list).then(function (filtered) {
 							if (filtered.length > 0) {
@@ -2427,7 +2647,30 @@ exports.readyRobot = function (robot) {
 	}
 };
 
-function getMission(l) {
+function getMission(l, opts) {
+	// 미션플러스 옵션이 활성화되고 한국어 게임모드일 때
+	if (opts && opts.missionplus && l === "ko") {
+		// 초성 배열 (ㄱ~ㅎ, 쌍자음 제외)
+		var initials = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+		// 모음 배열 (ㅏ, ㅓ, ㅔ, ㅗ, ㅜ, ㅣ)
+		var vowels = ["ㅏ", "ㅓ", "ㅔ", "ㅗ", "ㅜ", "ㅣ"];
+
+		// 무작위로 초성과 모음을 선택
+		var initial = initials[Math.floor(Math.random() * initials.length)];
+		var vowel = vowels[Math.floor(Math.random() * vowels.length)];
+
+		// 유니코드로 한글 조합
+		// 한글 음절 = 0xAC00 + (초성 인덱스 × 588) + (중성 인덱스 × 28) + 종성 인덱스
+		var initialIndex = Const.INIT_SOUNDS.indexOf(initial);
+		var vowelIndex = ["ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", "ㅗ", "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"].indexOf(vowel);
+
+		// 종성 없이 초성+중성만 조합
+		var syllable = String.fromCharCode(0xAC00 + (initialIndex * 588) + (vowelIndex * 28));
+
+		return syllable;
+	}
+
+	// 기본 미션 로직
 	var arr = (l == "ko") ? Const.MISSION_ko : Const.MISSION_en;
 
 	if (!arr) return "-";
@@ -2462,7 +2705,21 @@ function getAuto(char, subc, type, limit, sort) {
 			} else {
 				adv = `^(${adc}).`; // 비활성화 시 1글자 char: 2글자 이상
 			}
-			break;;
+			break;
+		case 'KKU':
+			// KKU 3-gram 모드: 최소 4글자 이상 단어만 검색
+			if (my.game.kkuTrigramMode) {
+				var minExtraChars = Math.max(1, 4 - char.length);
+				adv = `^(${adc})${'.'.repeat(minExtraChars)}`;
+			} else {
+				// Standard KKU: Allow length >= 2
+				if (char.length >= 2) {
+					adv = `^(${adc})`;
+				} else {
+					adv = `^(${adc}).`;
+				}
+			}
+			break;
 		case 'KSH':
 			adv = `^(${adc}).`;
 			break;
@@ -2486,7 +2743,8 @@ function getAuto(char, subc, type, limit, sort) {
 	}
 
 	// type=1 (존재 여부 확인 Check): kkutu_stats table check
-	if (bool && char) {
+	// KKU는 통계 테이블이 없으므로 DB 직접 쿼리로 fallback
+	if (bool && char && gameType !== 'KKU') {
 		// Bitmask State (통계 테이블은 0-7만 지원, freedueum 비트 제외)
 		var state = 0;
 		if (!my.opts.injeong) state |= 1;
@@ -2568,6 +2826,12 @@ function getAuto(char, subc, type, limit, sort) {
 			case 0:
 			default:
 				aft = function ($md) {
+					// EKT/KKU: 4글자 이상만 힌트로 표시
+					if ((gameType === 'EKT' || gameType === 'KKU') && $md.length > 0) {
+						$md = $md.filter(function (item) {
+							return item._id && item._id.length >= 4;
+						});
+					}
 					R.go($md[Math.floor(Math.random() * $md.length)]);
 				};
 				break;
@@ -2584,7 +2848,9 @@ function getAuto(char, subc, type, limit, sort) {
 		}
 		var raiser = DB.kkutu[my.rule.lang].find.apply(this, aqs);
 		if (sort) raiser.sort(sort);
-		raiser.limit((bool ? 1 : 123) * (limit || 1)).on(function ($md) {
+		// KKU 모드에서는 매너 체크를 위해 실제 단어 개수를 세어야 하므로 limit을 크게 설정
+		var limitValue = (bool && gameType === 'KKU') ? 10000 : ((bool ? 1 : 123) * (limit || 1));
+		raiser.limit(limitValue).on(function ($md) {
 			if (my.game.chain) aft($md.filter(function (item) {
 				return !my.game.chain.includes(item);
 			}));
@@ -2616,17 +2882,24 @@ function getChar(text) {
 	if (type === 'EKT' && my.rule.lang === 'en') {
 		my._lastWordLen = len;
 	}
+	if (type === 'KKU' && my.rule.lang === 'ko') {
+		my._lastWordLen = len;
+	}
 
 	// Priority 1: Middle Rule
 	if (my.opts.middle) {
-		if (type === 'EKT' && my.rule.lang === 'en') {
+		if ((type === 'EKT' && my.rule.lang === 'en') || (type === 'KKU' && my.rule.lang === 'ko')) {
 			if (len === 2) {
 				if (my.opts.second) return text.charAt(0);
 				return text.slice(-1);
 			}
-			// EKT Middle: 한국어처럼 가운데 글자 기준으로 양옆 포함 3글자
-			// Middle+Second (홀수): 가운데 3글자
-			// Middle+Second (짝수): 인덱스를 하나 앞으로 (앞쪽 가운데 3글자)
+			if (len === 3) {
+				// 3글자: 전체 반환
+				return text;
+			}
+			// EKT/KKU Middle: 가운데 글자 기준으로 양옆 포함 (3글자)
+			// Middle+Second (홀수): 가운데
+			// Middle+Second (짝수): 인덱스를 하나 앞으로
 			if (len % 2 !== 0) {
 				// 홀수: 정확한 가운데 3글자
 				idx = Math.floor(len / 2);
@@ -2634,10 +2907,10 @@ function getChar(text) {
 			} else {
 				// 짝수
 				if (my.opts.second) {
-					// Middle+Second: 앞쪽 가운데 3글자 (인덱스 앞으로 당김)
+					// Middle+Second: 앞쪽 가운데
 					idx = len / 2 - 1;
 				} else {
-					// Middle only: 뒤쪽 가운데 3글자
+					// Middle only: 뒤쪽 가운데
 					idx = len / 2;
 				}
 				return text.slice(idx - 1, idx + 2);
@@ -2664,28 +2937,30 @@ function getChar(text) {
 
 	// Priority 2: First Rule (첫말잇기)
 	// 끝말: 앞에서 연결 / 앞말(isKAP): 뒤에서 연결
-	// Second: 인덱스를 하나 당김
+	// ABCDEFGH 예시: First=ABC(subChar=AB), First+Second=BCD(subChar=BC)
+	// First가 들어가면 subChar는 3글자 중 앞 2글자
 	if (my.opts.first) {
 		if (my.opts.second) {
-			// First+Second
-			if (type === 'EKT') return text.slice(1, 4); // EKT: 1~3번째 3글자
+			// First+Second: 인덱스 1부터 3글자 (BCD)
+			if (type === 'EKT' || type === 'KKU') return text.slice(1, 4); // EKT/KKU: 인덱스 1~3 (BCD)
 			if (isKAP) return text.charAt(len - 2);       // 앞말: 끝에서 2번째
 			return text.charAt(1);                         // 끝말: 앞에서 2번째
 		}
-		// First only
-		if (type === 'EKT') return text.slice(0, 3);      // EKT: 0~2번째 3글자
+		// First only: 맨 앞 3글자 (ABC)
+		if (type === 'EKT' || type === 'KKU') return text.slice(0, 3);  // EKT/KKU: 인덱스 0~2 (ABC)
 		if (isKAP) return text.charAt(len - 1);           // 앞말: 마지막
 		return text.charAt(0);                             // 끝말: 첫번째
 	}
 
 	// Priority 3: Second Rule (세컨드)
 	// 끝말: 끝에서 2번째 / 앞말(isKAP): 앞에서 2번째
+	// ABCDEFGH 예시: Second=FG/EFG (끝에서 2번째까지, 마지막 글자 제외)
 	if (my.opts.second) {
-		if (type === 'EKT' && my.rule.lang === 'en') {
-			// EKT: 마지막 3글자 → 끝에서 4~2번째
+		if ((type === 'EKT' && my.rule.lang === 'en') || (type === 'KKU' && my.rule.lang === 'ko')) {
+			// EKT/KKU: 끝에서 4~2번째 3글자 (EFG) - 마지막 글자(H) 제외
 			if (len === 2) return text.charAt(0);
-			if (len >= 4) return text.slice(len - 4, len - 1);
-			else if (len === 3) return text;
+			if (len === 3) return text.slice(0, 2); // 2글자만 (AB)
+			if (len >= 4) return text.slice(len - 4, len - 1); // EFG
 		}
 		// 1글자 연결
 		if (isKAP) return text.charAt(1);                  // 앞말: 앞에서 2번째
@@ -2700,6 +2975,12 @@ function getChar(text) {
 				return text.slice(-1);
 			}
 			return text.slice(-3);
+		case 'KKU':
+			// KKU: 3-gram 모드 - 마지막 3글자 (EKT와 동일)
+			if (my.game.kkuTrigramMode) {
+				return text.slice(-3);
+			}
+			return text.slice(-1);
 		case 'EKK':
 		case 'ESH':
 		case 'KKT':
@@ -2724,21 +3005,22 @@ function getLinkIndex(text) {
 
 	// Priority 1: Middle Rule
 	if (my.opts.middle) {
-		if (type === 'EKT' && my.rule.lang === 'en') {
+		if ((type === 'EKT' && my.rule.lang === 'en') || (type === 'KKU' && my.rule.lang === 'ko')) {
 			if (len === 2) {
 				return my.opts.second ? 0 : 1;
 			}
-			// EKT Middle: 가운데 3글자의 시작 인덱스
+			// EKT/KKU Middle: 가운데 글자의 시작 인덱스
+			// getChar에서 3글자를 반환하므로 시작 인덱스는 항상 idx - 1
 			if (len % 2 !== 0) {
 				idx = Math.floor(len / 2);
-				return idx - 1; // 3글자의 시작 인덱스
+				return idx - 1; // 홀수: 가운데 3글자 시작 (idx-1부터 idx+1까지)
 			} else {
 				if (my.opts.second) {
 					idx = len / 2 - 1;
 				} else {
 					idx = len / 2;
 				}
-				return idx - 1;
+				return idx - 1; // 짝수: 가운데 3글자 시작
 			}
 		}
 
@@ -2758,10 +3040,12 @@ function getLinkIndex(text) {
 	if (my.opts.first) {
 		if (my.opts.second) {
 			if (type === 'EKT') return 1; // EKT: 1~3번째 시작
+			if (type === 'KKU') return 1; // KKU: 1~2번째 시작
 			if (isKAP) return len - 2;
 			return 1;
 		}
 		if (type === 'EKT') return 0; // EKT: 0~2번째 시작
+		if (type === 'KKU') return 0; // KKU: 0~1번째 시작
 		if (isKAP) return len - 1;
 		return 0;
 	}
@@ -2771,6 +3055,11 @@ function getLinkIndex(text) {
 		if (type === 'EKT' && my.rule.lang === 'en') {
 			if (len === 2) return 0;
 			if (len >= 4) return len - 4; // 끝에서 4~2번째 시작
+			else if (len === 3) return 0;
+		}
+		if (type === 'KKU' && my.rule.lang === 'ko') {
+			if (len === 2) return 0;
+			if (len >= 4) return len - 3; // 끝에서 3~1번째 시작
 			else if (len === 3) return 0;
 		}
 		if (isKAP) return 1;
@@ -2784,6 +3073,12 @@ function getLinkIndex(text) {
 				return len - 1;
 			}
 			return len - 3; // 마지막 3글자 시작 인덱스
+		case 'KKU':
+			// KKU: 3-gram 모드 - 마지막 3글자 시작 인덱스 (EKT와 동일)
+			if (my.game.kkuTrigramMode) {
+				return len - 3;
+			}
+			return len - 1;
 		case 'EKK':
 		case 'ESH':
 		case 'KKT':
@@ -2801,7 +3096,7 @@ function getLinkIndex(text) {
 function getSubChar(char) {
 	var my = this;
 	var r;
-	if (char.length > 1 && Const.GAME_TYPE[my.mode] !== "EKT") return r;
+	if (char.length > 1 && Const.GAME_TYPE[my.mode] !== "EKT" && Const.GAME_TYPE[my.mode] !== "KKU") return r;
 	var c = char.charCodeAt();
 	var k;
 	var ca, cb, cc;
@@ -2809,13 +3104,18 @@ function getSubChar(char) {
 
 	switch (Const.GAME_TYPE[my.mode]) {
 		case "EKT":
-			// EKT 3-gram subChar 계산
-			// char이 3글자인 경우, subChar는 앞 1글자를 제외한 2글자 (2-gram)
+		case "KKU":
+			// EKT/KKU 3-gram subChar 계산
+			// char이 3글자인 경우:
+			// - First 규칙: subChar는 앞 2글자 (ABC -> AB, BCD -> BC)
+			// - 그 외: subChar는 뒤 2글자 (ABC -> BC, DEF -> EF)
 			if (char.length >= 3) {
-				r = char.slice(1); // 기본: 앞 1글자 제외한 2글자
+				if (my.opts.first) {
+					r = char.slice(0, 2); // First 규칙: 앞 2글자
+				} else {
+					r = char.slice(1); // 그 외: 뒤 2글자
+				}
 			}
-			// Middle/Second/First 규칙에 따른 subChar 조정은 불필요
-			// getChar에서 이미 올바른 3-gram을 반환하고, subChar는 항상 마지막 2글자
 			break;
 		case "EKK":
 		case "KKT":
@@ -3120,5 +3420,8 @@ function getRandomChar(text) {
 }
 
 function escapeRegExp(string) {
+	if (string === undefined || string === null) {
+		return '';
+	}
 	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

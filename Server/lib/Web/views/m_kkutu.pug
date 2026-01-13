@@ -229,6 +229,7 @@ block Middle
 			div.dialog-bar
 				h4= L('roundTime')
 				select#room-time
+					option(value=5, style='color: #FF4444')
 					option(value=10, style='color: #FF4444')
 					option(value=30)
 					option(value=60, selected)
@@ -259,14 +260,14 @@ block Middle
 			div.dialog-bar#room-bonus-panel(style='height: auto; overflow: hidden; display: none;')
 				h4(style='height: auto;')= L('bonus')
 				div(style='float: left; width: 200px;')
-					- var bonusOpts = ['mis', 'spt', 'stt'];
+					- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 					- for(var i in locals.OPTIONS)
 						- if(bonusOpts.indexOf(i) === -1) continue;
 						+GameOption(i, 'room')
 			div.dialog-bar#room-misc-panel(style='height: auto; overflow: hidden; display: none;')
 				h4(style='height: 45px;')= L('misc')
 				div(style='float: left; width: 200px;')
-					- var bonusOpts = ['mis', 'spt', 'stt'];
+					- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 					- for(var i in locals.OPTIONS)
 						- if(['mid', 'fir', 'ran', 'sch', 'k32', 'k22', 'k44', 'k43', 'ext', 'loa', 'str', 'unk', 'lng', 'prv', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'].indexOf(i) !== -1) continue;
 						- if(bonusOpts.indexOf(i) !== -1) continue;

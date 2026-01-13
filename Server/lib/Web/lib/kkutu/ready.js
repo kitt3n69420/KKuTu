@@ -709,6 +709,16 @@ $(document).ready(function () {
 		}
 		$data._injpick = $data.room.opts.injpick;
 
+		// 미션 상태에 따라 관련 옵션 활성화/비활성화
+		var missionEnabled = $data.room.opts.mission;
+		if (!missionEnabled) {
+			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', true);
+			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', true);
+		} else {
+			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', false);
+			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', false);
+		}
+
 		showDialog($d = $stage.dialog.room);
 		$d.find(".dialog-title").html(L['setRoom']);
 	});
@@ -855,7 +865,7 @@ $(document).ready(function () {
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv'];
-		var bonusOpts = ['mis', 'spt', 'stt'];
+		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 
 		if (showCategory) {
 			// Categorized view - hide flat panel, show category panels
@@ -928,6 +938,16 @@ $(document).ready(function () {
 		$("#room-time").children("option").each(function (i, o) {
 			$(o).html(Number($(o).val()) * rule.time + L['SECOND']);
 		});
+
+		// 미션 상태에 따라 관련 옵션 활성화/비활성화
+		var missionEnabled = $("#room-mission").is(':checked');
+		if (!missionEnabled) {
+			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', true);
+			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', true);
+		} else {
+			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', false);
+			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', false);
+		}
 	});
 	$stage.menu.spectate.on('click', function (e) {
 		var mode = $stage.menu.spectate.hasClass("toggled");
@@ -1697,6 +1717,20 @@ $(document).ready(function () {
 		if ($(this).is(':checked')) {
 			$("#room-proverb").prop('checked', false);
 			$("#room-flat-proverb").prop('checked', false);
+		}
+	});
+
+	// 6. 미션이 꺼져있으면 이지미션, 랜덤미션, 미션플러스 비활성화
+	$("#room-mission").on('change', function () {
+		var missionEnabled = $(this).is(':checked');
+		if (!missionEnabled) {
+			// 미션이 꺼지면 관련 옵션들도 끄고 비활성화
+			$("#room-easymission, #room-rndmission, #room-missionplus").prop('checked', false).prop('disabled', true);
+			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('checked', false).prop('disabled', true);
+		} else {
+			// 미션이 켜지면 관련 옵션들 활성화
+			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', false);
+			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', false);
 		}
 	});
 

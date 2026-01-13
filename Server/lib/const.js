@@ -43,6 +43,9 @@ exports.OPTIONS = {
 	'man': { name: "Manner" },
 	'ext': { name: "Injeong" },
 	'mis': { name: "Mission" },
+	'eam': { name: "EasyMission" },
+	'rdm': { name: "RndMission" },
+	'mpl': { name: "MissionPlus" },
 	'loa': { name: "Loanword" },
 	'prv': { name: "Proverb" },
 	'str': { name: "Strict" },
@@ -76,7 +79,8 @@ exports.OPTIONS = {
 	'fir': { name: "First" },
 	'ran': { name: "Random" },
 	'vin': { name: "VowelInv" },
-	'apl': { name: "Apple" }
+	'apl': { name: "Apple" },
+	'bbg': { name: "BbungTwigi" }
 
 };
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
@@ -95,14 +99,16 @@ exports.ROBOT_VICTORY_MESSAGES = [ // 봇이 한방단어를 주고 보내는 �
 	"이얍!", "이건 못 참지", "메롱~"
 ];
 exports.ROBOT_DEFEAT_MESSAGES = [ // 봇이 한방단어를 받았을 때 보내는 메시지
-	"아니", "살살 좀 해", "짜증나", "이건 너무하잖아...", "으앙", "히잉", "아놔...",
-	"ㅁㄴㅇㄹ", "ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", "님아 제발", "아오 진짜",
+	"아니", "살살 좀 해", "짜증나", "이건 너무하잖아...", "으앙", "히잉",
+	"ㅁㄴㅇㄹ", "님아 제발", "아오 진짜", "아놔...",
 	"ㅠㅠ", "너무해", "선넘네", "이렇게 가는구나...", "이런!", "에라이", "하...", "엣?",
 	"아니 님아", "아 제발", "뿌에엥", "뾄!", "악", "안돼", "ㅠㅠ", "저기요?", "이럴수가",
-	"너 봇이지?", "치트 쓰지마", "사기치지마", "으아악", "어...?", "???"
+	"너 봇이지?", "으아악", "어...?", "???"
 ];
-exports.ROBOT_ANGRY_MESSAGES = [
-	"나 안해", "이건 불공평해", "억까 제발좀", "아오!!!!!!", "개짜증나", "망겜", "○○", "야!!!"
+exports.ROBOT_ANGRY_MESSAGES = [ //봇이 빡치면 보내는 메시지
+	"나 안해", "이건 불공평해", "억까 제발좀", "아오!!!!!!", "개짜증나",
+	"ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", "망겜", "○○",
+	"야!!!", "치트 쓰지마", "사기치지마", "너 어디사냐?"
 ]
 exports.MOREMI_PART = ["back", "shoes", "clothes", "head", "eye", "mouth", "lhand", "rhand"];
 exports.CATEGORIES = ["all", "spec", "skin", "badge", "head", "eye", "mouth", "clothes", "hs", "back"];
@@ -143,7 +149,7 @@ exports.RULE = {
 	'EKT': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -152,7 +158,7 @@ exports.RULE = {
 	'ESH': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -161,7 +167,7 @@ exports.RULE = {
 	'KKT': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "fir", "ran"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -170,7 +176,7 @@ exports.RULE = {
 	'KSH': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "stt", "fir", "ran"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -215,7 +221,7 @@ exports.RULE = {
 	'KAP': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "stt", "fir", "ran"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -225,7 +231,7 @@ exports.RULE = {
 	'EAP': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -236,7 +242,7 @@ exports.RULE = {
 	'HUN': {
 		lang: "ko",
 		rule: "Hunmin",
-		opts: ["ext", "mis", "loa", "str", "one", "ret", "spd", "drg", "ln3"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -245,7 +251,7 @@ exports.RULE = {
 	'KDA': {
 		lang: "ko",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "trp", "one", "ret", "spd", "drg", "stt"],
+		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg"],
 		time: 1,
 		ai: true,
 		ewq: false
@@ -253,7 +259,7 @@ exports.RULE = {
 	'EDA': {
 		lang: "en",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "trp", "one", "ret", "spd", "drg", "stt"],
+		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -298,7 +304,7 @@ exports.RULE = {
 	'KFR': {
 		lang: "ko",
 		rule: "Free",
-		opts: ["ext", "mis", "one", "unk", "ret", "spd", "drg", "stt"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -307,7 +313,7 @@ exports.RULE = {
 	'EFR': {
 		lang: "en",
 		rule: "Free",
-		opts: ["ext", "mis", "one", "unk", "ret", "spd", "drg", "stt"],
+		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -316,7 +322,7 @@ exports.RULE = {
 	'EKK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -334,7 +340,7 @@ exports.RULE = {
 	'KAK': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "fir", "ran"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -344,11 +350,20 @@ exports.RULE = {
 	'EAK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg"],
 		time: 1,
 		ai: true,
 		big: false,
 		_back: true,
+		ewq: true
+	},
+	'KKU': {
+		lang: "ko",
+		rule: "Classic",
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "mid", "sch", "spd", "drg", "stt", "fir", "bbg"],
+		time: 1,
+		ai: true,
+		big: false,
 		ewq: true
 	}
 
@@ -356,7 +371,7 @@ exports.RULE = {
 exports.GAME_CATEGORIES = {
 	'classic': {
 		name: 'GameCategoryClassic',
-		modes: ['KKT', 'KSH', 'KAP', 'KAK', 'EKT', 'ESH', 'EKK', 'EAP', 'EAK']
+		modes: ['KKT', 'KSH', 'KAP', 'KAK', 'KKU', 'EKT', 'ESH', 'EKK', 'EAP', 'EAK']
 	},
 	'quiz': {
 		name: 'GameCategoryQuiz',
@@ -378,6 +393,14 @@ exports.EXAMPLE_TITLE = {
 	'ko': "이기자도지사리스트법",
 	'en': "demography"
 };
+exports.KKU_START_BIGRAMS = [
+	"아이", "국제", "자동", "전자", "자기", "전기", "사회", "사이",
+	"직접", "이중", "환경", "방사", "한국", "다중", "자연", "공기",
+	"단일", "완전", "기계", "항공", "고정", "국가", "기본", "공동",
+	"자유", "중간", "경제", "문화", "일반", "신경", "작은", "복합",
+	"표준", "이차", "시간", "세포", "화학", "간접", "세계", "지역",
+	"유전", "생물", "정보", "지방"
+];
 exports.INIT_SOUNDS = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
 exports.VOWEL_SOUNDS = ["ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", "ㅗ", "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"];
 exports.MISSION_ko = ["가", "나", "다", "라", "마", "바", "사", "아", "자", "차", "카", "타", "파", "하"];
@@ -449,7 +472,7 @@ exports.BOT_NAME_TEMPLATES = [
 	"옷삶아빛나데", "믹서기육천원", "투다리스머프", "이웃집또털어",
 	"아기공룡둘째", "집수리오형제", "카드값줘체리", "독수리오년째",
 	"출산드라블록", "명륜진샤오미", "브라운타이즈", "클레오파트너",
-	"인사없음트롤", "명랑소녀성기", "배숙희나빈손", "말죽거리잠옷사",
+	"인사없음트롤", "배숙희나빈손", "말죽거리잠옷사",
 	"백마타고온환자", "더블에스오지명", "그리움만싸인회", "노스트라단무지",
 	"소리없는정우성", "소년탐정김정일", "반지의제왕절개", "발리에서쌩깐일",
 	"태정태세문단속", "오른쪽이스웨인", "18K반지의제왕"
