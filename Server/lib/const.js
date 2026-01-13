@@ -27,7 +27,8 @@ exports.SPAM_LIMIT = 7;
 exports.BLOCKED_LENGTH = 10000;
 exports.KICK_BY_SPAM = 9;
 exports.MAX_OBSERVER = 8;
-exports.JAMSU_WARN_TIME = 150000;
+exports.JAMSU_WARN_TIME = 90000; //10만보다 크면 안 된다!
+exports.JAMSU_WARN2_TIME = 60000;
 exports.JAMSU_BOOM_TIME = 30000;
 exports.TESTER = GLOBAL.ADMIN.concat([
 	"Input tester id here"

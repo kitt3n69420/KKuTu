@@ -1010,14 +1010,15 @@ exports.Room = function (room, channel) {
 		}
 		if (my.password) return;
 
-		if (my._adt) clearTimeout(my._adt);
+		if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 		// 버그 수정: _jst 타이머도 함께 정리하여 중복 알림 방지
 		if (my._jst) { clearTimeout(my._jst); delete my._jst; }
-		var warnTime = Const.JAMSU_WARN_TIME; // 2.5 minutes (before TLS 180s timeout)
+		var warnTime = Const.JAMSU_WARN_TIME; // 1.5 minutes
+		var warn2Time = Const.JAMSU_WARN2_TIME; // 1 minute
 		var boomTime = Const.JAMSU_BOOM_TIME;  // 30 seconds
 
 		if (stage === 'destroy') {
-			// 폭파 단계: 1분 후 방 삭제
+			// 폭파 단계: 30초 후 방 삭제
 			my._adt = setTimeout(function () {
 				// 게임 중이면 타이머 삭제 후 게임 종료 시 재설정됨
 				if (my.gaming) {
@@ -1092,6 +1093,47 @@ exports.Room = function (room, channel) {
 					}
 				}, 2000);
 			}, boomTime);
+		} else if (stage === 'warn2') {
+			my._adt = setTimeout(function () {
+				// 게임 중이면 타이머 삭제 후 게임 종료 시 재설정됨
+				if (my.gaming) {
+					delete my._adt;
+					return;
+				}
+
+				// Phantom Player Cleanup
+				var i, p;
+				for (i = my.players.length - 1; i >= 0; i--) {
+					p = my.players[i];
+					if (typeof p !== 'object') {
+						if (!DIC[p] || DIC[p].place != my.id) {
+							my.players.splice(i, 1);
+						}
+					}
+				}
+				if (my.players.length == 0) {
+					if (my._adt) clearTimeout(my._adt);
+					if (my._jst) clearTimeout(my._jst);
+					delete ROOM[my.id];
+					if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
+					return;
+				}
+
+				// 연습 중이면 타이머 삭제 후 연습 종료 시 재설정됨
+				if (my.isPracticing) {
+					delete my._adt;
+					return;
+				}
+
+				// 메시지 전송 직전 한번 더 상태 확인
+				if (my.gaming || my.isPracticing) {
+					delete my._adt;
+					return;
+				}
+
+				exports.narrate(my.players, 'chat', { code: "room_will_be_deleted_1m", notice: true });
+				my.setAutoDelete('destroy');
+			}, warn2Time);
 		} else {
 			my._adt = setTimeout(function () {
 				// 게임 중이면 타이머 삭제 후 게임 종료 시 재설정됨
@@ -1130,8 +1172,8 @@ exports.Room = function (room, channel) {
 					return;
 				}
 
-				exports.narrate(my.players, 'chat', { code: "room_will_be_deleted_1m", notice: true });
-				my.setAutoDelete('destroy');
+				exports.narrate(my.players, 'chat', { code: "room_auto_delete_warning_1", notice: true });
+				my.setAutoDelete('warn2');
 			}, warnTime);
 		}
 	};
