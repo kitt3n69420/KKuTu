@@ -15,6 +15,11 @@ const ROBOT_HIT_LIMIT = [4, 3, 2, 1, 0];
 const ROBOT_LENGTH_LIMIT = [3, 7, 15, 31, 999];
 const ROBOT_CANDIDATE_LIMIT = [10, 20, 40, 80, 40];
 
+// Helper function to get player ID (supports both robot objects and player ID strings)
+function getPlayerId(player) {
+    return (typeof player === 'object' && player.id) ? player.id : player;
+}
+
 exports.init = function (_DB, _DIC) {
     DB = _DB;
     DIC = _DIC;
@@ -118,7 +123,8 @@ exports.submit = function (client, text) {
     var mgt = my.game.seq[my.game.turn];
 
     if (!mgt) return;
-    if (!mgt.robot) if (mgt != client.id) return;
+    // Turn check: Only the current turn owner can submit words
+    if (getPlayerId(mgt) !== getPlayerId(client)) return client.chat(text);
 
     // Surrogate character check: reject inputs containing surrogates (e.g., emojis)
     if (/[\uD800-\uDFFF]/.test(text)) {
@@ -512,10 +518,12 @@ function getAuto(char, type) {
     return R;
 }
 function shuffle(arr) {
-    var i, r = [];
-
-    for (i in arr) r.push(arr[i]);
-    r.sort(function (a, b) { return Math.random() - 0.5; });
-
+    var r = arr.slice(); // 원본 배열 복사
+    for (var i = r.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = r[i];
+        r[i] = r[j];
+        r[j] = temp;
+    }
     return r;
 }

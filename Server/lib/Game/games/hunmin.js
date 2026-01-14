@@ -30,6 +30,11 @@ const ROBOT_CANDIDATE_LIMIT = [10, 20, 40, 80, 40];
 const HUNMIN_LIST = [4352, 4354, 4355, 4358, 4359, 4361, 4363, 4364, 4366, 4368, 4369, 4370];
 const HUNMIN_LIST_3 = ["ᄋᄉᄀ", "ᄋᄉᄌ", "ᄀᄉᄌ", "ᄋᄀᄌ", "ᄀᄌᄀ", "ᄀᄋᄌ", "ᄋᄋᄉ", "ᄀᄉᄀ", "ᄋᄉᄋ", "ᄀᄋᄉ", "ᄀᄀᄌ", "ᄋᄋᄌ", "ᄋᄀᄉ", "ᄀᄌᄋ", "ᄉᄋᄌ", "ᄋᄋᄀ", "ᄉᄀᄌ", "ᄀᄉᄋ", "ᄋᄌᄀ", "ᄀᄋᄀ", "ᄀᄌᄉ", "ᄉᄋᄀ", "ᄋᄉᄅ", "ᄀᄀᄉ", "ᄌᄀᄌ", "ᄌᄌᄀ", "ᄋᄀᄅ", "ᄀᄌᄌ", "ᄌᄉᄀ", "ᄌᄋᄉ", "ᄋᄌᄉ", "ᄉᄉᄀ", "ᄋᄉᄉ", "ᄋᄌᄋ", "ᄋᄋᄋ", "ᄀᄉᄉ", "ᄋᄀᄋ", "ᄌᄋᄀ", "ᄉᄌᄀ", "ᄌᄀᄉ", "ᄀᄉᄅ", "ᄋᄋᄅ", "ᄌᄋᄌ", "ᄉᄀᄅ", "ᄉᄀᄋ", "ᄀᄀᄋ", "ᄇᄉᄀ", "ᄋᄌᄌ", "ᄉᄀᄉ", "ᄉᄋᄉ", "ᄌᄌᄉ", "ᄌᄉᄌ", "ᄀᄅᄌ", "ᄉᄉᄌ", "ᄋᄀᄀ", "ᄇᄋᄉ", "ᄌᄀᄅ", "ᄉᄀᄀ", "ᄌᄉᄋ", "ᄇᄋᄀ", "ᄇᄋᄌ", "ᄌᄉᄉ", "ᄀᄀᄀ", "ᄉᄌᄉ", "ᄌᄀᄋ", "ᄀᄋᄅ", "ᄀᄋᄋ", "ᄉᄉᄅ", "ᄋᄋᄃ", "ᄀᄌᄅ", "ᄀᄀᄅ", "ᄉᄋᄅ", "ᄉᄉᄋ", "ᄋᄃᄅ", "ᄋᄌᄅ", "ᄉᄌᄋ", "ᄌᄀᄀ", "ᄀᄉᄇ", "ᄌᄌᄋ", "ᄒᄉᄀ", "ᄇᄌᄀ", "ᄇᄀᄌ", "ᄉᄋᄋ", "ᄉᄀᄃ", "ᄀᄅᄉ", "ᄋᄅᄀ", "ᄀᄅᄀ", "ᄇᄉᄋ", "ᄋᄒᄉ", "ᄋᄉᄃ", "ᄋᄅᄉ", "ᄋᄀᄃ", "ᄉᄌᄌ", "ᄌᄌᄌ", "ᄋᄃᄀ", "ᄋᄃᄋ", "ᄇᄉᄌ", "ᄌᄋᄋ", "ᄋᄅᄋ", "ᄉᄉᄉ"];
 
+// Helper function to get player ID (supports both robot objects and player ID strings)
+function getPlayerId(player) {
+	return (typeof player === 'object' && player.id) ? player.id : player;
+}
+
 exports.init = function (_DB, _DIC) {
 	DB = _DB;
 	DIC = _DIC;
@@ -127,7 +132,8 @@ exports.submit = function (client, text, data) {
 	var mgt = my.game.seq[my.game.turn];
 
 	if (!mgt) return;
-	if (!mgt.robot) if (mgt != client.id) return;
+	// Turn check: Only the current turn owner can submit words
+	if (getPlayerId(mgt) !== getPlayerId(client)) return client.chat(text);
 	if (!my.game.theme) return;
 	if (isChainable(text, my.game.theme)) {
 		if (my.game.chain.indexOf(text) == -1 || my.opts.return) {
@@ -395,10 +401,12 @@ function getTheme3(ex) {
 	return res;
 }
 function shuffle(arr) {
-	var i, r = [];
-
-	for (i in arr) r.push(arr[i]);
-	r.sort(function (a, b) { return Math.random() - 0.5; });
-
+	var r = arr.slice(); // 원본 배열 복사
+	for (var i = r.length - 1; i > 0; i--) {
+		var j = Math.floor(Math.random() * (i + 1));
+		var temp = r[i];
+		r[i] = r[j];
+		r[j] = temp;
+	}
 	return r;
 }

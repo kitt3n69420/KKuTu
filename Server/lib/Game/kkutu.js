@@ -2344,11 +2344,13 @@ function getGuestName(sid) {
 	return "손님" + (1000 + (res % 9000));
 }
 function shuffle(arr) {
-	var i, r = [];
-
-	for (i in arr) r.push(arr[i]);
-	r.sort(function (a, b) { return Math.random() - 0.5; });
-
+	var r = arr.slice(); // 원본 배열 복사
+	for (var i = r.length - 1; i > 0; i--) {
+		var j = Math.floor(Math.random() * (i + 1));
+		var temp = r[i];
+		r[i] = r[j];
+		r[j] = temp;
+	}
 	return r;
 }
 function getRewards(mode, score, bonus, rank, all, ss) {

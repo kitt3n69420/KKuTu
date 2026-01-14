@@ -172,5 +172,13 @@ function getBoard(words, len) {
 
 	while (sl++ < len) str.push("　");
 
-	return str.sort(function () { return Math.random() - 0.5; }).join("");
+	// Fisher-Yates shuffle
+	for (var i = str.length - 1; i > 0; i--) {
+		var j = Math.floor(Math.random() * (i + 1));
+		var temp = str[i];
+		str[i] = str[j];
+		str[j] = temp;
+	}
+
+	return str.join("");
 }
