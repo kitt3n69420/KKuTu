@@ -147,7 +147,15 @@ exports.submit = function (client, text, data) {
 					my.game.late = true;
 					clearTimeout(my.game.turnTimer);
 					t = tv - my.game.turnAt;
-					score = my.getScore(text, t);
+
+					// 기본 점수 계산 (미션 보너스 포함)
+					var baseScore = my.getScore(text, t);
+					// 미션 보너스 제외한 순수 기본 점수
+					var baseScoreWithoutMission = my.getScore(text, t, true);
+					// 미션 보너스만 추출
+					var missionBonus = (my.game.mission === true) ? baseScore - baseScoreWithoutMission : 0;
+
+					score = baseScore;
 					if (my.opts.return && my.game.chain.includes(text)) score = 0;
 					my.game.chain.push(text);
 					my.game.roundTime -= t;
@@ -159,7 +167,7 @@ exports.submit = function (client, text, data) {
 						theme: $doc.theme,
 						wc: $doc.type,
 						score: score,
-						bonus: (my.game.mission === true) ? score - my.getScore(text, t, true) : 0,
+						bonus: missionBonus,
 						totalScore: client.game.score
 					}, true);
 					if (my.game.mission === true) {

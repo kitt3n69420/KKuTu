@@ -79,9 +79,10 @@ $lib.Free.turnStart = function (data) {
 
 $lib.Free.turnGoing = $lib.Classic.turnGoing;
 $lib.Free.turnEnd = function (id, data) {
+    var baseScore = data.score - (data.bonus || 0) - (data.straightBonus || 0);
     var $sc = $("<div>")
         .addClass("deltaScore")
-        .html((data.score > 0) ? ("+" + (data.score - data.bonus - (data.straightBonus || 0))) : data.score);
+        .html((data.score > 0) ? ("+" + baseScore) : data.score);
     var $uc = $(".game-user-current");
     var hi;
 
@@ -108,14 +109,28 @@ $lib.Free.turnEnd = function (id, data) {
             .append($("<label>").html(data.hint));
     }
     if (data.bonus) {
-        mobile ? $sc.html("+" + (data.score - data.bonus) + "+" + data.bonus) : addTimeout(function () {
-            var $bc = $("<div>")
-                .addClass("deltaScore bonus")
-                .css('color', '#66FF66') // Green
-                .html("+" + data.bonus);
+        mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function($target) {
+            return function() {
+                var $bc = $("<div>")
+                    .addClass("deltaScore bonus")
+                    .css('color', '#66FF66') // Green
+                    .html("+" + data.bonus);
 
-            drawObtainedScore($uc, $bc);
-        }, 500);
+                drawObtainedScore($target, $bc);
+            };
+        })($uc), 500);
+    }
+    if (data.straightBonus) {
+        mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function($target) {
+            return function() {
+                var $bc = $("<div>")
+                    .addClass("deltaScore straight-bonus")
+                    .css('color', '#FFFF00') // Yellow
+                    .html("+" + data.straightBonus);
+
+                drawObtainedScore($target, $bc);
+            };
+        })($uc), 800);
     }
     drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
     updateScore(id, getScore(id));

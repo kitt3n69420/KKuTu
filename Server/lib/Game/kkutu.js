@@ -1642,8 +1642,57 @@ exports.Room = function (room, channel) {
 			while (my.removeAI(false, true));
 			my.master = my.players[0];
 		}
-		if (DIC[my.master]) {
-			DIC[my.master].ready = false;
+		// ========== Cross-Channel 버그 수정: 마스터 검증 강화 ==========
+		var validMaster = false;
+		var newMaster = null;
+
+		// 1단계: DIC에 마스터가 있는지 확인
+		if (my.master && DIC[my.master]) {
+			validMaster = true;
+		}
+
+		// 2단계: DIC에 없으면 players에서 확인 (Cross-Channel 가능성)
+		if (!validMaster && my.players.length > 0) {
+			// 2-1: players에 마스터가 있는지 확인
+			var masterInPlayers = false;
+			for (var i = 0; i < my.players.length; i++) {
+				if (my.players[i] === my.master) {
+					masterInPlayers = true;
+					break;
+				}
+			}
+
+			if (masterInPlayers) {
+				// Cross-Channel 마스터로 간주 (다른 채널에 있지만 방 유지)
+				validMaster = true;
+				JLog.warn(`Room ${my.id}: Master ${my.master} not in DIC but in players (cross-channel?)`);
+			} else {
+				// 2-2: players에도 없으면 새 마스터 찾기
+				for (var j = 0; j < my.players.length; j++) {
+					var p = my.players[j];
+					// 봇이 아니고 DIC에 있는 플레이어만 마스터 후보
+					if (typeof p !== 'object' && DIC[p]) {
+						newMaster = p;
+						break;
+					}
+				}
+			}
+		}
+
+		// 3단계: 새 마스터로 재할당
+		if (!validMaster && newMaster) {
+			my.master = newMaster;
+			validMaster = true;
+			DIC[newMaster].ready = false;
+			JLog.info(`Room ${my.id}: Master reassigned from ${client.id} to ${newMaster}`);
+		}
+
+		// 4단계: validMaster에 따라 분기
+		if (validMaster) {
+			// ========== 정상 처리 로직 ==========
+			if (DIC[my.master]) {
+				DIC[my.master].ready = false;
+			}
 
 			// 플레이어 퇴장 후 상태 확인
 			if (!my.gaming) {
@@ -1662,34 +1711,41 @@ exports.Room = function (room, channel) {
 				}
 			}
 
+			// 게임 중이면 게임 로직 처리
 			if (my.gaming) {
 				// onLeave 함수가 게임 모드에 존재할 때만 호출 (picture.js 등에서만 정의됨)
 				if (Rule[my.rule.rule] && Rule[my.rule.rule].onLeave) {
 					my.route("onLeave", client.id);
 				}
-				x = my.game.seq.indexOf(client.id);
-				if (x != -1) {
+
+				var seqIndex = my.game.seq.indexOf(client.id);
+				if (seqIndex != -1) {
 					if (my.game.seq.length <= 2) {
-						my.game.seq.splice(x, 1);
+						my.game.seq.splice(seqIndex, 1);
 						my.roundEnd();
 					} else {
-						me = my.game.turn == x;
-						if (me && my.rule.ewq) {
+						var isTurn = my.game.turn == seqIndex;
+						if (isTurn && my.rule.ewq) {
 							clearTimeout(my.game._rrt);
 							my.game.loading = false;
 							if (Cluster.isWorker) my.turnEnd();
 						}
-						my.game.seq.splice(x, 1);
-						if (my.game.turn > x) {
+						my.game.seq.splice(seqIndex, 1);
+						if (my.game.turn > seqIndex) {
 							my.game.turn--;
 							if (my.game.turn < 0) my.game.turn = my.game.seq.length - 1;
 						}
 						if (my.game.turn >= my.game.seq.length) my.game.turn = 0;
 					}
 				}
+
 				if (my.gaming && my.game.seq.length < 2) my.roundEnd();
 			}
+
 		} else {
+			// ========== 방 삭제 로직 ==========
+			JLog.warn(`Room ${my.id}: No valid master found, deleting room`);
+
 			if (my.gaming) {
 				my.interrupt();
 				my.game.late = true;
@@ -1697,7 +1753,6 @@ exports.Room = function (room, channel) {
 				my.game = {};
 			}
 
-			// 문제 1: 마스터 없이 방 삭제 시 남은 플레이어 퇴장 처리
 			var roomId = my.id;
 			var remainingPlayers = my.players.slice();
 
@@ -1705,6 +1760,7 @@ exports.Room = function (room, channel) {
 			if (my._adt) clearTimeout(my._adt);
 			if (my._jst) clearTimeout(my._jst);
 			delete ROOM[roomId];
+
 			if (Cluster.isWorker) {
 				process.send({ type: "room-invalid", room: { id: roomId } });
 			}
@@ -1724,6 +1780,7 @@ exports.Room = function (room, channel) {
 				});
 			}
 		}
+		// ========== 수정 구간 종료 ==========
 		if (my.practice) {
 			clearTimeout(my.game.turnTimer);
 			client.subPlace = 0;

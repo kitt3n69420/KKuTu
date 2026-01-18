@@ -156,7 +156,15 @@ exports.submit = function (client, text, data) {
 				clearTimeout(my.game.turnTimer);
 				t = tv - my.game.turnAt;
 				var isReturn = my.opts.return && my.game.chain.includes(text);
-				score = my.getScore(text, t, isReturn);
+
+				// 기본 점수 계산 (미션 보너스 포함)
+				var baseScore = my.getScore(text, t, isReturn);
+				// 미션 보너스 제외한 순수 기본 점수
+				var baseScoreWithoutMission = my.getScore(text, t, true);
+				// 미션 보너스만 추출
+				var missionBonus = (my.game.mission === true) ? baseScore - baseScoreWithoutMission : 0;
+
+				score = baseScoreWithoutMission;
 
 				// Straight Rule Logic
 				var straightBonus = 0;
@@ -179,11 +187,13 @@ exports.submit = function (client, text, data) {
 
 					if (client.game.straightStreak >= 2) {
 						var multiplier = (client.game.straightStreak - 1) / 2;
-						straightBonus = Math.round(score * multiplier);
+						straightBonus = Math.round(baseScoreWithoutMission * multiplier);
 						if (my.opts.bbungtwigi) straightBonus *= 2; // 뻥튀기: 스트레이트 보너스 2배
-						score += straightBonus;
 					}
 				}
+
+				// 최종 점수 = 기본 점수 + 미션 보너스 + 스트레이트 보너스
+				score = baseScoreWithoutMission + missionBonus + straightBonus;
 
 				if (isReturn) score = 0;
 				my.game.chain.push(text);
@@ -196,7 +206,7 @@ exports.submit = function (client, text, data) {
 					theme: $doc.theme,
 					wc: $doc.type,
 					score: score,
-					bonus: (my.game.mission === true) ? score - my.getScore(text, t, true) : 0,
+					bonus: missionBonus,
 					straightBonus: straightBonus, // Send Straight Bonus
 					baby: $doc.baby,
 					totalScore: client.game.score

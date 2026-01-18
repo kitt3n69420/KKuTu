@@ -828,7 +828,15 @@ exports.submit = function (client, text) {
 				clearTimeout(my.game.turnTimer);
 				t = tv - my.game.turnAt;
 				var isReturn = my.opts.return && my.game.chain.includes(text);
-				score = my.getScore(text, t, isReturn);
+
+				// 기본 점수 계산 (미션 보너스 포함)
+				var baseScore = my.getScore(text, t, isReturn);
+				// 미션 보너스 제외한 순수 기본 점수
+				var baseScoreWithoutMission = my.getScore(text, t, true);
+				// 미션 보너스만 추출
+				var missionBonus = (my.game.mission === true) ? baseScore - baseScoreWithoutMission : 0;
+
+				score = baseScoreWithoutMission;
 
 				// Sumi-Sanggwan Check (SpeedToss)
 				var speedTossBonus = 0;
@@ -837,9 +845,8 @@ exports.submit = function (client, text) {
 					var matchingSumiChar = checkspeedToss(my.game.chain[my.game.chain.length - 1], text);
 					if (matchingSumiChar) {
 						// 50% Bonus
-						var bonusScore = Math.round(score * 0.5);
+						var bonusScore = Math.round(baseScoreWithoutMission * 0.5);
 						if (my.opts.bbungtwigi) bonusScore *= 2; // 뻥튀기: 스피드토스 보너스 2배
-						score += bonusScore;
 						speedTossBonus = bonusScore;
 						my.game.sumiChar = matchingSumiChar; // Store for turnStart highlighting
 					} else {
@@ -868,11 +875,13 @@ exports.submit = function (client, text) {
 
 					if (client.game.straightStreak >= 2) {
 						var multiplier = (Math.log(client.game.straightStreak - 1) / Math.log(4)) + 0.5;
-						straightBonus = Math.round(score * multiplier);
+						straightBonus = Math.round(baseScoreWithoutMission * multiplier);
 						if (my.opts.bbungtwigi) straightBonus *= 2; // 뻥튀기: 스트레이트 보너스 2배
-						score += straightBonus;
 					}
 				}
+
+				// 최종 점수 = 기본 점수 + 미션 보너스 + 스피드토스 보너스 + 스트레이트 보너스
+				score = baseScoreWithoutMission + missionBonus + speedTossBonus + straightBonus;
 
 				if (isReturn) score = 0;
 				my.game.dic[text] = (my.game.dic[text] || 0) + 1;
@@ -1019,7 +1028,7 @@ exports.submit = function (client, text) {
 							theme: $doc.theme,
 							wc: $doc.type,
 							score: score,
-							bonus: (my.game.mission === true) ? score - my.getScore(text, t, true) : 0,
+							bonus: missionBonus,
 							speedToss: speedTossBonus,
 							straightBonus: straightBonus, // Send Straight Bonus
 							baby: $doc.baby,

@@ -49,6 +49,7 @@ exports.roundReady = function () {
 	my.game.themeBonus = 0.3 * Math.log(0.6 * ijl + 1);
 	my.game.winner = [];
 	my.game.giveup = [];
+	my.game.primary = 0;
 	my.game.round++;
 	my.game.roundTime = my.time * 1000;
 	if (my.game.round <= my.round) {
@@ -127,7 +128,7 @@ exports.submit = function (client, text) {
 	var $ans = my.game.answer;
 	var now = (new Date()).getTime();
 	var play = (my.game.seq ? my.game.seq.includes(client.id) : false) || client.robot;
-	var gu = my.game.giveup ? my.game.giveup.includes(client.id) : true;
+	var gu = my.game.giveup ? my.game.giveup.includes(client.id) : false;
 
 	if (!my.game.winner) return;
 	if (my.game.winner.indexOf(client.id) == -1
