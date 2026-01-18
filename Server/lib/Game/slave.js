@@ -388,6 +388,10 @@ KKuTu.onClientMessage = function ($c, msg) {
 				clearTimeout(temp._jst);
 				delete temp._jst;
 			}
+			if (temp._jst_stage2) {
+				clearTimeout(temp._jst_stage2);
+				delete temp._jst_stage2;
+			}
 			temp.export();
 			break;
 		case 'wp':

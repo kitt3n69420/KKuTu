@@ -747,6 +747,7 @@ exports.Client = function (socket, profile, sid) {
 				// 타이머 먼저 정리 (isPracticing=true 상태에서)
 				if ($room._adt) { clearTimeout($room._adt); delete $room._adt; }
 				if ($room._jst) { clearTimeout($room._jst); delete $room._jst; }
+				if ($room._jst_stage2) { clearTimeout($room._jst_stage2); delete $room._jst_stage2; }
 				// 그 다음 isPracticing 해제
 				$room.isPracticing = false;
 				// 잠수 체크 및 타이머 재설정
@@ -859,6 +860,7 @@ exports.Client = function (socket, profile, sid) {
 		if ($room.master == my.id) {
 			$room.isPracticing = true;
 			if ($room._jst) { clearTimeout($room._jst); delete $room._jst; }
+			if ($room._jst_stage2) { clearTimeout($room._jst_stage2); delete $room._jst_stage2; }
 			if ($room._adt) { clearTimeout($room._adt); delete $room._adt; }
 		}
 
@@ -873,6 +875,7 @@ exports.Client = function (socket, profile, sid) {
 		// 추가 안전장치: 타이머가 있으면 클리어
 		if (my.pracRoom._adt) { clearTimeout(my.pracRoom._adt); delete my.pracRoom._adt; }
 		if (my.pracRoom._jst) { clearTimeout(my.pracRoom._jst); delete my.pracRoom._jst; }
+		if (my.pracRoom._jst_stage2) { clearTimeout(my.pracRoom._jst_stage2); delete my.pracRoom._jst_stage2; }
 		my.pracRoom.id = $room.id + 1000;
 		ud.game.practice = my.pracRoom.id;
 		if (pr = $room.preReady()) return my.sendError(pr);
@@ -1006,6 +1009,7 @@ exports.Room = function (room, channel) {
 		if (my.isPracticing || my.gaming) {
 			if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 			if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+			if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
 			return;
 		}
 		if (my.password) return;
@@ -1013,6 +1017,7 @@ exports.Room = function (room, channel) {
 		if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 		// 버그 수정: _jst 타이머도 함께 정리하여 중복 알림 방지
 		if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+		if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
 		var warnTime = Const.JAMSU_WARN_TIME; // 1.5 minutes
 		var warn2Time = Const.JAMSU_WARN2_TIME; // 1 minute
 		var boomTime = Const.JAMSU_BOOM_TIME;  // 30 seconds
@@ -1020,6 +1025,9 @@ exports.Room = function (room, channel) {
 		if (stage === 'destroy') {
 			// 폭파 단계: 30초 후 방 삭제
 			my._adt = setTimeout(function () {
+				// 좀비 타이머 방지: 방이 이미 삭제되었는지 확인
+				if (!ROOM[my.id]) return;
+
 				// 게임 중이면 타이머 삭제 후 게임 종료 시 재설정됨
 				if (my.gaming) {
 					delete my._adt;
@@ -1039,6 +1047,7 @@ exports.Room = function (room, channel) {
 				if (my.players.length == 0) {
 					if (my._adt) clearTimeout(my._adt);
 					if (my._jst) clearTimeout(my._jst);
+					if (my._jst_stage2) clearTimeout(my._jst_stage2);
 					delete ROOM[my.id];
 					if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
 					return;
@@ -1095,6 +1104,9 @@ exports.Room = function (room, channel) {
 			}, boomTime);
 		} else if (stage === 'warn2') {
 			my._adt = setTimeout(function () {
+				// 좀비 타이머 방지: 방이 이미 삭제되었는지 확인
+				if (!ROOM[my.id]) return;
+
 				// 게임 중이면 타이머 삭제 후 게임 종료 시 재설정됨
 				if (my.gaming) {
 					delete my._adt;
@@ -1114,6 +1126,7 @@ exports.Room = function (room, channel) {
 				if (my.players.length == 0) {
 					if (my._adt) clearTimeout(my._adt);
 					if (my._jst) clearTimeout(my._jst);
+					if (my._jst_stage2) clearTimeout(my._jst_stage2);
 					delete ROOM[my.id];
 					if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
 					return;
@@ -1136,6 +1149,9 @@ exports.Room = function (room, channel) {
 			}, warn2Time);
 		} else {
 			my._adt = setTimeout(function () {
+				// 좀비 타이머 방지: 방이 이미 삭제되었는지 확인
+				if (!ROOM[my.id]) return;
+
 				// 게임 중이면 타이머 삭제 후 게임 종료 시 재설정됨
 				if (my.gaming) {
 					delete my._adt;
@@ -1155,6 +1171,7 @@ exports.Room = function (room, channel) {
 				if (my.players.length == 0) {
 					if (my._adt) clearTimeout(my._adt);
 					if (my._jst) clearTimeout(my._jst);
+					if (my._jst_stage2) clearTimeout(my._jst_stage2);
 					delete ROOM[my.id];
 					if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
 					return;
@@ -1188,6 +1205,10 @@ exports.Room = function (room, channel) {
 				clearTimeout(my._jst);
 				delete my._jst;
 			}
+			if (my._jst_stage2) {
+				clearTimeout(my._jst_stage2);
+				delete my._jst_stage2;
+			}
 			return;
 		}
 		var i, o, allReady = true;
@@ -1218,6 +1239,8 @@ exports.Room = function (room, channel) {
 				my._jst = setTimeout(function () {
 					try {
 						delete my._jst;
+						// 좀비 타이머 방지: 방이 이미 삭제되었는지 확인
+						if (!ROOM[my.id]) return;
 						if (my.gaming) return;
 
 						// Phantom Player Cleanup (생략 - 위에서 처리되었거나 2단계에서 처리됨)
@@ -1265,10 +1288,13 @@ exports.Room = function (room, channel) {
 								}
 							}
 
-							// 2단계: 조치 전 대기 (10초)
-							my._jst = setTimeout(function () {
+							// 2단계: 조치 전 대기 (10초) - 별도 변수로 관리하여 경쟁 조건 방지
+							if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
+							my._jst_stage2 = setTimeout(function () {
 								try {
-									delete my._jst;
+									delete my._jst_stage2;
+									// 좀비 타이머 방지: 방이 이미 삭제되었는지 확인
+									if (!ROOM[my.id]) return;
 									if (my.gaming) return;
 
 									// Phantom Player Cleanup
@@ -1350,9 +1376,9 @@ exports.Room = function (room, channel) {
 									}
 								} catch (err) {
 									JLog.error(`checkJamsu Action error in room ${my.id}: ${err.toString()}`);
-									if (my._jst) {
-										clearTimeout(my._jst);
-										delete my._jst;
+									if (my._jst_stage2) {
+										clearTimeout(my._jst_stage2);
+										delete my._jst_stage2;
 									}
 								}
 							}, Const.JAMSU_DELAY_ACTION);
@@ -1371,6 +1397,10 @@ exports.Room = function (room, channel) {
 			if (my._jst) {
 				clearTimeout(my._jst);
 				delete my._jst;
+			}
+			if (my._jst_stage2) {
+				clearTimeout(my._jst_stage2);
+				delete my._jst_stage2;
 			}
 		}
 	};
@@ -1573,6 +1603,7 @@ exports.Room = function (room, channel) {
 		if (!my.practice && !my.gaming) {
 			if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 			if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+			if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
 			my.setAutoDelete();
 		}
 
@@ -1594,6 +1625,7 @@ exports.Room = function (room, channel) {
 		if (!my.practice && !my.gaming) {
 			if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 			if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+			if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
 			my.setAutoDelete();
 		}
 
@@ -1631,6 +1663,7 @@ exports.Room = function (room, channel) {
 				JLog.info(`Room ${my.id} has no players, deleting room`);
 				if (my._adt) clearTimeout(my._adt);
 				if (my._jst) clearTimeout(my._jst);
+				if (my._jst_stage2) clearTimeout(my._jst_stage2);
 				delete ROOM[my.id];
 				if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
 			}
@@ -1707,6 +1740,7 @@ exports.Room = function (room, channel) {
 					JLog.info(`Room ${my.id}: Only spectators remain, starting auto-delete timer`);
 					// 잠수 타이머 정리 후 재시작
 					if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+					if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
 					my.setAutoDelete();
 				}
 			}
@@ -1759,6 +1793,7 @@ exports.Room = function (room, channel) {
 			// 타이머 정리 및 방 먼저 삭제 (재귀 호출 방지)
 			if (my._adt) clearTimeout(my._adt);
 			if (my._jst) clearTimeout(my._jst);
+			if (my._jst_stage2) clearTimeout(my._jst_stage2);
 			delete ROOM[roomId];
 
 			if (Cluster.isWorker) {
@@ -1896,6 +1931,7 @@ exports.Room = function (room, channel) {
 	my.start = function (pracLevel, personality, preferredChar) {
 		if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 		if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+		if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
 		console.log("[DEBUG] my.start called with:", pracLevel, personality, preferredChar);
 		var i, j, o, hum = 0;
 		var now = (new Date()).getTime();
