@@ -443,7 +443,7 @@ exports.getPenalty = function (chain, score) {
 };
 // 계산 대결 점수 계산 (정답 기반)
 exports.getCalcBattleScore = function (answer) {
-	return Math.round(500 * Math.atan(answer/1000)+10);
+	return Math.round(500 * Math.atan(answer / 1000) + 10);
 };
 // 수학 문제 생성 헬퍼 함수 (calcrelay, calcbattle 공용)
 exports.generateCalcProblem = function (chainLength) {
@@ -465,8 +465,8 @@ exports.generateCalcProblem = function (chainLength) {
 		question = (a + b) + " - " + a + " = ?";
 		answer = b | 0;
 	} else { // 곱셈: a × b = ?
-		var sqrtM = Math.min(Math.max(5, Math.floor(Math.pow(m, 0.6))), 10000);
-		var minVal = Math.max(2,Math.floor(sqrtM / 10));
+		var sqrtM = 2 * Math.min(Math.max(5, Math.floor(Math.pow(m, 0.6))), 10000);
+		var minVal = Math.max(2, Math.floor(sqrtM / 10));
 		a = Math.max(2, Math.floor(Math.random() * (sqrtM - minVal) + minVal));
 		b = Math.max(2, Math.floor(Math.random() * (sqrtM - minVal) + minVal));
 		question = a + " × " + b + " = ?";
@@ -534,7 +534,7 @@ exports.EN_THEME = [
 exports.IJP_EXCEPT = [
 	"OIJ", "TPW"
 ];
-exports.QUIZ_TOPIC=[
+exports.QUIZ_TOPIC = [
 	"CAPI", "CELM", "UNIT", "CALC" /*, "CNTR" */
 ];
 exports.KO_IJP = exports.KO_INJEONG.concat(exports.KO_THEME).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });
