@@ -443,7 +443,7 @@ exports.getPenalty = function (chain, score) {
 };
 // 계산 대결 점수 계산 (정답 기반)
 exports.getCalcBattleScore = function (answer) {
-	return Math.round(3000 * Math.atan(Math.log(answer / 2000 + 10)) + 10);
+	return Math.round(500 * Math.atan(answer/1000)+10);
 };
 // 수학 문제 생성 헬퍼 함수 (calcrelay, calcbattle 공용)
 exports.generateCalcProblem = function (chainLength) {
