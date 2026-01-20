@@ -2377,7 +2377,7 @@ function turnError(code, text) {
 	clearTimeout($data._fail);
 	$data._fail = addTimeout(function () {
 		// 계산 릴레이 모드에서는 _question을 복원, 다른 모드에서는 _char를 복원
-		var restoreContent = ($data.room && $data.room.game && $data.room.game.title === 'Calcrelay')
+		var restoreContent = ($data.room && MODE[$data.room.mode] === 'CRL')
 			? $data._question
 			: $data._char;
 		$stage.game.display.html(restoreContent);

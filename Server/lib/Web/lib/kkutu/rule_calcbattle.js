@@ -191,7 +191,7 @@ $lib.Calcbattle.turnEnd = function (id, data) {
 		}
 
 		addScore(id, data.score, data.totalScore);
-		$sc.css('color', '#FF4444');
+		$sc.addClass("lost");
 		drawObtainedScore($uc, $sc);
 		updateScore(id, getScore(id));
 	} else if (data.ok) {

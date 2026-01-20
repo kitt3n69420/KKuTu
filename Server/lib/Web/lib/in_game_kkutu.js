@@ -3589,10 +3589,16 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 		$(".game-user-current").addClass("game-user-bomb");
 		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		playSound('timeout');
-		// 정답 표시
+		// 정답 표시 후 원래 문제 복원
 		if (data.answer !== undefined) {
 			$stage.game.display.empty()
 				.append($("<label>").html(data.answer));
+			// 잠시 후 원래 문제로 복원
+			addTimeout(function() {
+				var qStr = $data._question;
+				if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
+				$stage.game.display.html(qStr);
+			}, 1500);
 		}
 	}
 	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
@@ -4019,7 +4025,7 @@ $lib.Calcbattle.turnEnd = function (id, data) {
 		}
 
 		addScore(id, data.score, data.totalScore);
-		$sc.css('color', '#FF4444');
+		$sc.addClass("lost");
 		drawObtainedScore($uc, $sc);
 		updateScore(id, getScore(id));
 	} else if (data.ok) {
@@ -6482,7 +6488,7 @@ function turnError(code, text) {
 	clearTimeout($data._fail);
 	$data._fail = addTimeout(function () {
 		// 계산 릴레이 모드에서는 _question을 복원, 다른 모드에서는 _char를 복원
-		var restoreContent = ($data.room && $data.room.game && $data.room.game.title === 'Calcrelay')
+		var restoreContent = ($data.room && MODE[$data.room.mode] === 'CRL')
 			? $data._question
 			: $data._char;
 		$stage.game.display.html(restoreContent);

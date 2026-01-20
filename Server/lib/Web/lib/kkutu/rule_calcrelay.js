@@ -98,10 +98,16 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 		$(".game-user-current").addClass("game-user-bomb");
 		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		playSound('timeout');
-		// 정답 표시
+		// 정답 표시 후 원래 문제 복원
 		if (data.answer !== undefined) {
 			$stage.game.display.empty()
 				.append($("<label>").html(data.answer));
+			// 잠시 후 원래 문제로 복원
+			addTimeout(function() {
+				var qStr = $data._question;
+				if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
+				$stage.game.display.html(qStr);
+			}, 1500);
 		}
 	}
 	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
