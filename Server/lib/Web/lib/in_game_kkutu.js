@@ -492,7 +492,7 @@ $(document).ready(function () {
 		}
 	}).hotkey($stage.talk, 13).hotkey($stage.game.hereText, 13);
 	// 십자말풀이 입력창 처리
-	(function() {
+	(function () {
 		var $cwInput = $("#cw-q-input");
 		var cwIsComposing = false;
 
@@ -508,10 +508,10 @@ $(document).ready(function () {
 		}
 
 		// IME composition 상태 추적
-		$cwInput.on('compositionstart', function() {
+		$cwInput.on('compositionstart', function () {
 			cwIsComposing = true;
 		});
-		$cwInput.on('compositionend', function() {
+		$cwInput.on('compositionend', function () {
 			cwIsComposing = false;
 		});
 
@@ -527,7 +527,7 @@ $(document).ready(function () {
 
 		// beforeinput 폴백 (모바일)
 		if ($cwInput[0]) {
-			$cwInput[0].addEventListener('beforeinput', function(e) {
+			$cwInput[0].addEventListener('beforeinput', function (e) {
 				if (e.inputType === 'insertLineBreak') {
 					e.preventDefault();
 					submitCwAnswer();
@@ -536,7 +536,7 @@ $(document).ready(function () {
 		}
 
 		// input 폴백 (개행 문자 감지)
-		$cwInput.on('input.newline', function() {
+		$cwInput.on('input.newline', function () {
 			var val = $(this).val();
 			if (val.indexOf('\n') !== -1 || val.indexOf('\r') !== -1) {
 				$(this).val(val.replace(/[\r\n]/g, ''));
@@ -607,10 +607,10 @@ $(document).ready(function () {
 		var isComposing = false;
 
 		// IME composition 상태 추적
-		$input.on('compositionstart', function() {
+		$input.on('compositionstart', function () {
 			isComposing = true;
 		});
-		$input.on('compositionend', function(e) {
+		$input.on('compositionend', function (e) {
 			isComposing = false;
 			// composition 종료 후 값 확인 (개행 문자 감지)
 			var val = $(this).val();
@@ -622,7 +622,7 @@ $(document).ready(function () {
 		});
 
 		// keydown에서 엔터 감지 (IME 상태와 무관하게)
-		$input.on('keydown.mobileEnter', function(e) {
+		$input.on('keydown.mobileEnter', function (e) {
 			// Enter 키 (keyCode 13 또는 key 'Enter')
 			// isComposing이 false일 때만 처리 (IME 입력 완료 후)
 			if (!isComposing && (e.keyCode == 13 || e.key == 'Enter') && !e.shiftKey) {
@@ -635,7 +635,7 @@ $(document).ready(function () {
 
 		// beforeinput 이벤트 (모바일 가상 키보드 엔터 감지)
 		if ($input[0]) {
-			$input[0].addEventListener('beforeinput', function(e) {
+			$input[0].addEventListener('beforeinput', function (e) {
 				if (e.inputType === 'insertLineBreak') {
 					e.preventDefault();
 					$stage.chatBtn.trigger('click');
@@ -644,7 +644,7 @@ $(document).ready(function () {
 		}
 
 		// input 이벤트에서 개행 문자 감지 (최종 폴백)
-		$input.on('input.newline', function() {
+		$input.on('input.newline', function () {
 			var val = $(this).val();
 			if (val.indexOf('\n') !== -1 || val.indexOf('\r') !== -1) {
 				$(this).val(val.replace(/[\r\n]/g, ''));
@@ -3492,6 +3492,620 @@ $lib.Picture.turnHint = function (data) {
 /**
  * Rule the words! KKuTu Online
  * Copyright (C) 2017 JJoriping(op@jjo.kr)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+$lib.Calcrelay = {};
+
+$lib.Calcrelay.roundReady = function (data) {
+	var i, len = $data.room.game.title.length;
+	var $l;
+
+	clearBoard();
+	$data._roundTime = $data.room.time * 1000;
+	var qStr = data.question;
+	if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
+	$stage.game.display.html($data._question = qStr);
+	$stage.game.chain.show().html($data.chain = 0);
+	drawRound(data.round);
+	playSound('round_start');
+	recordEvent('roundReady', { data: data });
+};
+
+$lib.Calcrelay.turnStart = function (data) {
+	$data.room.game.turn = data.turn;
+	if (data.seq) $data.room.game.seq = data.seq;
+	$data._tid = $data.room.game.seq[data.turn];
+	if ($data._tid.robot) $data._tid = $data._tid.id;
+	data.id = $data._tid;
+
+	if (data.question) {
+		var qStr = data.question;
+		if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
+		$stage.game.display.html($data._question = qStr);
+	}
+
+	var $u = $("#game-user-" + data.id).addClass("game-user-current");
+	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
+	if (!$data._replay) {
+		var inactiveOpacity = mobile ? 0.5 : 0;
+		$stage.game.here.css('opacity', (data.id == $data.id) ? 1 : inactiveOpacity).show();
+		if (data.id == $data.id) {
+			$data._relay = true;
+			mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
+		}
+	}
+
+	ws.onmessage = _onMessage;
+	clearInterval($data._tTime);
+	clearTrespasses();
+	$data._speed = data.speed;
+	$data._tTime = addInterval(turnGoing, TICK);
+	$data.turnTime = data.turnTime;
+	$data._turnTime = data.turnTime;
+	$data._roundTime = data.roundTime;
+	$data._turnSound = playSound("T" + data.speed);
+	recordEvent('turnStart', {
+		data: data
+	});
+};
+
+$lib.Calcrelay.turnGoing = $lib.Classic.turnGoing;
+
+$lib.Calcrelay.turnEnd = function (id, data) {
+	var $sc = $("<div>")
+		.addClass("deltaScore")
+		.html((data.score > 0) ? ("+" + data.score) : data.score);
+	var $uc = $(".game-user-current");
+
+	if ($data._turnSound) $data._turnSound.stop();
+	if (id == $data.id) $data._relay = false;
+	addScore(id, data.score, data.totalScore);
+	clearInterval($data._tTime);
+	if (data.ok) {
+		clearTimeout($data._fail);
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		$stage.game.chain.html(++$data.chain);
+		// 정답 표시 (daneo/free처럼 pushDisplay 사용)
+		pushDisplay(data.value, null, null, null, false, null, false);
+		// 다음 문제 표시 (pushDisplay 애니메이션 후)
+		if (data.nextQuestion) {
+			$data._question = data.nextQuestion;
+		}
+	} else {
+		$sc.addClass("lost");
+		$(".game-user-current").addClass("game-user-bomb");
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		playSound('timeout');
+		// 정답 표시
+		if (data.answer !== undefined) {
+			$stage.game.display.empty()
+				.append($("<label>").html(data.answer));
+		}
+	}
+	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
+	updateScore(id, getScore(id));
+};
+
+/**
+ * Rule the words! KKuTu Online
+ * Copyright (C) 2017 JJoriping(op@jjo.kr)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+ * Chainbattle (잇기 대결) - 클라이언트 UI
+ * 타자대결 기반 + 끝말잇기 요소 (제시 글자, 히스토리)
+ */
+
+$lib.Chainbattle = {};
+
+$lib.Chainbattle.roundReady = function (data) {
+	var i, len = data.title.length;
+
+	$data._chatter = $stage.talk;
+	clearBoard();
+	$data._round = data.round;
+	$data._roundTime = $data.room.time * 1000;
+	$data._char = data.char;
+	$data._subChar = data.subChar;
+	$data.chain = 0;
+
+	// 제시 글자 표시 (끝말잇기 스타일)
+	var tVal = getCharText(data.char, data.subChar);
+	if ($data.room.opts.drg) tVal = "<label style='color:" + getRandomColor() + "'>" + tVal + "</label>";
+	$stage.game.display.html(tVal);
+	$stage.game.chain.show().html($data.chain);
+
+	$(".game-user-bomb").removeClass("game-user-bomb");
+	$(".jjo-turn-time .graph-bar").css('background-color', "");
+
+	$data._fastTime = 10000;
+	$data._playerWords = {};
+
+	// 초기 플레이어 단어 설정
+	var seq = $data.room.game.seq;
+	var initChar = getCharText(data.char, data.subChar);
+	for (i in seq) {
+		// seq에는 문자열 ID(플레이어) 또는 객체(봇)가 있음
+		var pid = (typeof seq[i] === 'object' && seq[i].id) ? seq[i].id : seq[i];
+		$data._playerWords[pid] = initChar;
+	}
+
+	drawRound(data.round);
+	drawPlayerWords();
+
+	playSound('round_start');
+	recordEvent('roundReady', { data: data });
+};
+
+$lib.Chainbattle.turnStart = function (data) {
+	// 모든 플레이어가 동시에 입력 (타자대결 스타일)
+	if (!$data._spectate) {
+		$data._relay = true;
+		$stage.game.here.css('opacity', 1).show();
+		mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
+	}
+
+	ws.onmessage = _onMessage;
+	clearInterval($data._tTime);
+	clearTrespasses();
+	$data._tTime = addInterval($lib.Chainbattle.turnGoing, TICK);
+	$data._roundTime = data.roundTime;
+
+	playBGM('jaqwi');
+	recordEvent('turnStart', { data: data });
+};
+
+$lib.Chainbattle.turnGoing = function () {
+	if (!$data.room || !$data.room.gaming) {
+		clearInterval($data._tTime);
+		return;
+	}
+	$data._roundTime -= TICK;
+
+	// 라운드 바 업데이트 (타자대결/자퀴처럼 - 파란색 바)
+	var $rtb = $stage.game.roundBar;
+	var bRate;
+	var tt;
+
+	tt = $data._spectate ? L['stat_spectate'] : ($data._roundTime * 0.001).toFixed(1) + L['SECOND'];
+	$rtb
+		.width($data._roundTime / $data.room.time * 0.1 + "%")
+		.html(tt);
+
+	// 턴 바는 플레이어 단어 표시 (어두운 색 바)
+	drawPlayerWords();
+
+	// 10초 경고
+	if (!$rtb.hasClass("round-extreme")) {
+		if ($data._roundTime <= $data._fastTime) {
+			if ($data.bgm) {
+				bRate = $data.bgm.currentTime / $data.bgm.duration;
+				if ($data.bgm.paused) stopBGM();
+				else playBGM('jaqwiF');
+				$data.bgm.currentTime = $data.bgm.duration * bRate;
+			}
+			$rtb.addClass("round-extreme");
+		}
+	}
+};
+
+$lib.Chainbattle.turnEnd = function (id, data) {
+	var $sc = $("<div>")
+		.addClass("deltaScore")
+		.html("+" + data.score);
+	var $uc = $("#game-user-" + id);
+
+	if (id == $data.id) $data._relay = false;
+
+	if (data.error) {
+		// 에러 (잘못된 입력) - 서버에서 send로 본인에게만 전송됨
+		playSound('fail');
+		return;
+	} else if (data.ok) {
+		// 단어 입력 성공
+		if ($data.id == id) {
+			// 내가 입력한 단어
+			$data.chain++;
+			$data._char = data.char;
+			$data._subChar = data.subChar;
+
+			// 제시 글자 업데이트 (끝말잇기 스타일)
+			var tVal = getCharText(data.char, data.subChar);
+			if ($data.room.opts.drg) tVal = "<label style='color:" + getRandomColor() + "'>" + tVal + "</label>";
+			$stage.game.display.html(tVal);
+			$stage.game.chain.html($data.chain);
+
+			// 히스토리에 추가
+			pushHistory(data.value, data.mean);
+
+			// 내 단어일 때만 mission 소리 재생
+			playSound('mission');
+		}
+
+		// 플레이어 단어 업데이트 (다음 글자로)
+		if ($data._playerWords) $data._playerWords[id] = getCharText(data.char, data.subChar);
+		drawPlayerWords();
+
+		addScore(id, data.score, data.totalScore);
+		drawObtainedScore($uc, $sc);
+		updateScore(id, getScore(id));
+	} else if (data.out) {
+		// 게임오버 (one 규칙)
+		if (id == $data.id) {
+			$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+			$(".jjo-turn-time .graph-bar")
+				.html("GAME OVER")
+				.css({ 'text-align': "center" });
+		}
+		if ($data._playerWords) $data._playerWords[id] = "X";
+		drawPlayerWords();
+		$uc.addClass("game-user-bomb");
+		playSound('timeout');
+	} else if (data.speed) {
+		// 라운드 종료 (시간 만료)
+		clearInterval($data._tTime);
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+
+		addTimeout(drawChainSpeed, 1000, data.speed);
+		stopBGM();
+		playSound('horr');
+
+		if ($data._round < $data.room.round) restGoing(10);
+	}
+};
+
+function restGoing(rest) {
+	$(".jjo-turn-time .graph-bar")
+		.html(rest + L['afterRun']);
+	if (rest > 0) addTimeout(restGoing, 1000, rest - 1);
+}
+
+function drawPlayerWords() {
+	if (!$data.room || !$data._playerWords) return;
+
+	// 내 상태가 GAME OVER면 업데이트하지 않음
+	if ($(".jjo-turn-time .graph-bar").text() === "GAME OVER") return;
+
+	var words = [];
+	var seq = $data.room.game.seq;
+
+	// 순서대로 단어 수집
+	for (var i = 0; i < seq.length; i++) {
+		// seq에는 문자열 ID(플레이어) 또는 객체(봇)가 있음
+		var pid = (typeof seq[i] === 'object' && seq[i].id) ? seq[i].id : seq[i];
+		var w = $data._playerWords[pid];
+		if (w !== undefined && w !== null && w !== "") {
+			words.push(w);
+		}
+	}
+
+	// 단어가 있든 없든 항상 업데이트
+	$(".jjo-turn-time .graph-bar")
+		.width("100%")
+		.html(words.length > 0 ? words.join(" ") : "")
+		.css({ 'text-align': "center", 'background-color': "#70712D" });
+}
+
+function drawChainSpeed(table) {
+	var i;
+	var chainLabel = L['chainCount'] || 'Chain';
+
+	for (i in table) {
+		$("#game-user-" + i + " .game-user-score").empty()
+			.append($("<div>").css({
+				'float': "none",
+				'color': "#4444FF",
+				'text-align': "center"
+			}).html(table[i] + "<label style='font-size: 11px;'>" + chainLabel + "</label>"));
+	}
+}
+
+/**
+ * Rule the words! KKuTu Online
+ * Copyright (C) 2017 JJoriping(op@jjo.kr)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+ * Calcbattle (계산 대결) - 클라이언트 UI
+ * 타자대결 기반 + 수학 문제 풀이
+ */
+
+$lib.Calcbattle = {};
+
+$lib.Calcbattle.roundReady = function (data) {
+	$data._chatter = $stage.talk;
+	clearBoard();
+	$data._round = data.round;
+	$data._roundTime = $data.room.time * 1000;
+	$data._fastTime = 10000;
+	$data.chain = 0;
+	$data._oneback = data.oneback || false;
+
+	// 노란 바 초기화 (이전 라운드의 카운트다운 제거)
+	$(".jjo-turn-time .graph-bar")
+		.width("100%")
+		.html("")
+		.css({ 'text-align': "center", 'background-color': "#70712D" });
+
+	// 내 문제 표시
+	var myProblem = data.problems[$data.id];
+	if (myProblem) {
+		if ($data._oneback) {
+			// oneback 모드: 라운드 준비 중에는 첫 문제(풀어야 할 문제)를 보여줌
+			$data._firstQuestion = myProblem.first;
+			$data._displayQuestion = myProblem.display;
+			$data._nextQuestion = myProblem.next;
+			var qStr = myProblem.first;
+			if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
+			$stage.game.display.html(qStr);
+			// 노란 바에는 두 번째 문제(다음에 표시될 문제)
+			var nextStr = myProblem.display;
+			if ($data.room.opts.drg) nextStr = "<label style='color:" + getRandomColor() + "'>" + nextStr + "</label>";
+			$(".jjo-turn-time .graph-bar")
+				.width("100%")
+				.html(nextStr)
+				.css({ 'text-align': "center", 'background-color': "#70712D" });
+		} else {
+			// 일반 모드
+			var qStr = myProblem;
+			if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
+			$stage.game.display.html($data._question = qStr);
+			// 노란 바에 다음 문제 표시
+			var nextProblem = data.nextProblems[$data.id];
+			if (nextProblem) {
+				$data._nextQuestion = nextProblem;
+				var nextStr = nextProblem;
+				if ($data.room.opts.drg) nextStr = "<label style='color:" + getRandomColor() + "'>" + nextStr + "</label>";
+				$(".jjo-turn-time .graph-bar")
+					.width("100%")
+					.html(nextStr)
+					.css({ 'text-align': "center", 'background-color': "#70712D" });
+			}
+		}
+	}
+
+	$stage.game.chain.show().html($data.chain);
+
+	$(".game-user-bomb").removeClass("game-user-bomb");
+
+	drawRound(data.round);
+	playSound('round_start');
+	recordEvent('roundReady', { data: data });
+};
+
+$lib.Calcbattle.turnStart = function (data) {
+	// 모든 플레이어가 동시에 입력 (타자대결 스타일)
+	if (!$data._spectate) {
+		$data._relay = true;
+		$stage.game.here.css('opacity', 1).show();
+		mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
+	}
+
+	// oneback 모드: 턴 시작 시 표시 문제를 두 번째 문제로 변경
+	if ($data._oneback && $data._displayQuestion) {
+		var qStr = $data._displayQuestion;
+		if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
+		$stage.game.display.html(qStr);
+		// 노란 바에는 다다음 문제
+		if ($data._nextQuestion) {
+			var nextStr = $data._nextQuestion;
+			if ($data.room.opts.drg) nextStr = "<label style='color:" + getRandomColor() + "'>" + nextStr + "</label>";
+			$(".jjo-turn-time .graph-bar")
+				.width("100%")
+				.html(nextStr)
+				.css({ 'text-align': "center", 'background-color': "#70712D" });
+		}
+	}
+
+	ws.onmessage = _onMessage;
+	clearInterval($data._tTime);
+	clearTrespasses();
+	$data._tTime = addInterval($lib.Calcbattle.turnGoing, TICK);
+	$data._roundTime = data.roundTime;
+
+	playBGM('jaqwi');
+	recordEvent('turnStart', { data: data });
+};
+
+$lib.Calcbattle.turnGoing = function () {
+	if (!$data.room || !$data.room.gaming) {
+		clearInterval($data._tTime);
+		return;
+	}
+	$data._roundTime -= TICK;
+
+	// 라운드 바 업데이트 (타자대결/자퀴처럼 - 파란색 바)
+	var $rtb = $stage.game.roundBar;
+	var bRate;
+	var tt;
+
+	tt = $data._spectate ? L['stat_spectate'] : ($data._roundTime * 0.001).toFixed(1) + L['SECOND'];
+	$rtb
+		.width($data._roundTime / $data.room.time * 0.1 + "%")
+		.html(tt);
+
+	// 10초 경고
+	if (!$rtb.hasClass("round-extreme")) {
+		if ($data._roundTime <= $data._fastTime) {
+			if ($data.bgm) {
+				bRate = $data.bgm.currentTime / $data.bgm.duration;
+				if ($data.bgm.paused) stopBGM();
+				else playBGM('jaqwiF');
+				$data.bgm.currentTime = $data.bgm.duration * bRate;
+			}
+			$rtb.addClass("round-extreme");
+		}
+	}
+};
+
+$lib.Calcbattle.turnEnd = function (id, data) {
+	var $sc = $("<div>")
+		.addClass("deltaScore")
+		.html((data.score >= 0 ? "+" : "") + data.score);
+	var $uc = $("#game-user-" + id);
+
+	if (id == $data.id) $data._relay = false;
+
+	if (data.error) {
+		// 에러 (잘못된 입력) - 서버에서 send로 본인에게만 전송됨
+		playSound('fail');
+		return;
+	} else if (data.giveup) {
+		// 포기 처리
+		if ($data.id == id) {
+			// 다음 문제 표시
+			if (data.nextQuestion) {
+				var qStr = data.nextQuestion;
+				if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
+				$stage.game.display.html($data._question = qStr);
+
+				if ($data._oneback) {
+					$data._displayQuestion = data.nextQuestion;
+				}
+			}
+
+			// 노란 바에 다다음 문제 표시
+			if (data.nextNextQuestion) {
+				$data._nextQuestion = data.nextNextQuestion;
+				var nextStr = data.nextNextQuestion;
+				if ($data.room.opts.drg) nextStr = "<label style='color:" + getRandomColor() + "'>" + nextStr + "</label>";
+				$(".jjo-turn-time .graph-bar")
+					.width("100%")
+					.html(nextStr)
+					.css({ 'text-align': "center", 'background-color': "#70712D" });
+			}
+
+			pushHistory(data.value, "?");
+			playSound('fail');
+		}
+
+		addScore(id, data.score, data.totalScore);
+		$sc.css('color', '#FF4444');
+		drawObtainedScore($uc, $sc);
+		updateScore(id, getScore(id));
+	} else if (data.ok) {
+		// 정답 처리
+		if ($data.id == id) {
+			// 내가 맞힌 경우
+			$data.chain = data.chain;
+			$stage.game.chain.html($data.chain);
+
+			// 다음 문제 표시
+			if (data.nextQuestion) {
+				var qStr = data.nextQuestion;
+				if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
+				$stage.game.display.html($data._question = qStr);
+
+				// oneback 모드인 경우 내부 상태도 업데이트
+				if ($data._oneback) {
+					$data._displayQuestion = data.nextQuestion;
+				}
+			}
+
+			// 노란 바에 다다음 문제 표시
+			if (data.nextNextQuestion) {
+				$data._nextQuestion = data.nextNextQuestion;
+				var nextStr = data.nextNextQuestion;
+				if ($data.room.opts.drg) nextStr = "<label style='color:" + getRandomColor() + "'>" + nextStr + "</label>";
+				$(".jjo-turn-time .graph-bar")
+					.width("100%")
+					.html(nextStr)
+					.css({ 'text-align': "center", 'background-color': "#70712D" });
+			}
+
+			// 정답 히스토리에 추가
+			pushHistory(data.value, "");
+			playSound('mission');
+		}
+
+		addScore(id, data.score, data.totalScore);
+		drawObtainedScore($uc, $sc);
+		updateScore(id, getScore(id));
+	} else if (data.out) {
+		// 게임오버 (one 규칙)
+		if (id == $data.id) {
+			$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+			$(".jjo-turn-time .graph-bar")
+				.html("GAME OVER")
+				.css({ 'text-align': "center" });
+		}
+		$uc.addClass("game-user-bomb");
+		playSound('timeout');
+	} else if (data.chains) {
+		// 라운드 종료 (시간 만료)
+		clearInterval($data._tTime);
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+
+		addTimeout(drawChainResult, 1000, data.chains);
+		stopBGM();
+		playSound('horr');
+
+		if ($data._round < $data.room.round) restGoing(10);
+	}
+};
+
+function restGoing(rest) {
+	$(".jjo-turn-time .graph-bar")
+		.html(rest + L['afterRun']);
+	if (rest > 0) addTimeout(restGoing, 1000, rest - 1);
+}
+
+function drawChainResult(table) {
+	var i;
+	var chainLabel = L['chainCount'] || 'Chain';
+
+	for (i in table) {
+		$("#game-user-" + i + " .game-user-score").empty()
+			.append($("<div>").css({
+				'float': "none",
+				'color': "#4444FF",
+				'text-align': "center"
+			}).html(table[i] + "<label style='font-size: 11px;'>" + chainLabel + "</label>"));
+	}
+}
+
+/**
+ * Rule the words! KKuTu Online
+ * Copyright (C) 2017 JJoriping(op@jjo.kr)
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -5867,7 +6481,11 @@ function turnError(code, text) {
 	playSound('fail');
 	clearTimeout($data._fail);
 	$data._fail = addTimeout(function () {
-		$stage.game.display.html($data._char);
+		// 계산 릴레이 모드에서는 _question을 복원, 다른 모드에서는 _char를 복원
+		var restoreContent = ($data.room && $data.room.game && $data.room.game.title === 'Calcrelay')
+			? $data._question
+			: $data._char;
+		$stage.game.display.html(restoreContent);
 	}, 1800);
 }
 function getScore(id) {

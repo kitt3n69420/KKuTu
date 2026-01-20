@@ -21,6 +21,7 @@ var MainDB = require("../db");
 var JLog = require("../../sub/jjlog");
 var GLOBAL = require("../../sub/global.json");
 var Const = require("../../const");
+var ProfanityFilter = require("../../sub/profanity-filter");
 
 function obtain($user, key, value, term, addValue) {
 	var now = (new Date()).getTime();
@@ -135,7 +136,10 @@ exports.run = function (Server, page) {
 		if (rawNickname) console.log("[DEBUG] /profile received raw nickname: " + rawNickname + " -> " + nickname);
 		if (!nickname) return res.send({ result: 200 });
 
+		// 서버 측 닉네임 욕설 필터링 적용
 		if (nickname.length > 12) nickname = nickname.slice(0, 12);
+		nickname = ProfanityFilter.filterNickname(nickname);
+
 		MainDB.users.findOne(['nickname', nickname]).on(function (data) {
 			if (data) return res.send({ error: 456 });
 			MainDB.users.findOne(['_id', req.session.profile.id]).on(function (requester) {

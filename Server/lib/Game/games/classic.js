@@ -34,7 +34,7 @@ const RIEUL_TO_NIEUN = [4449, 4450, 4457, 4460, 4462, 4467];
 const RIEUL_TO_IEUNG = [4451, 4455, 4456, 4461, 4466, 4469];
 const NIEUN_TO_IEUNG = [4455, 4461, 4466, 4469];
 const PRIORITY_ATTACK_CHARS = ["렁", "듈", "븐", "튬", "쾃", "럿", "듐", "픔", "뮴", "읃", "읓", "읔", "읕", "읖", "읗", "냑", "녘"];
-const PRIORITY_ATTACK_CHARS_MANNER = ["릇", "륨", "늄", "럴", "텝", "슭", "픈", "깟", "왑", "켓", "븨", "껏"];
+const PRIORITY_ATTACK_CHARS_MANNER = ["릇", "륨", "늄", "럴", "텝", "슭", "픈", "깟", "왑", "븨", "껏"];
 const PRIORITY_KAP_ATTACK_CHARS = ["녈", "맞", "흰", "뉸", "뒷", "헛", "붉", "뻐", "첫", "룍", "뇩", "넓", "홑", "맆", "렾", "녚", "갯", "받", "뉼", "앉", "높", "롶", "돼", "윗", "넙", "랼", "된", "뾰", "햇", "엑", "좁", "굳", "왼", "뻔", "빤", "륽", "늙", "뺑", "엎", "같", "띾", "꺾", "닫", "랕", "뙤", "돋", "쨍", "씽", "꽈", "귓", "므", "쌩", "샐", "잦", "섞", "덮", "맏", "얽", "왱", "긁", "짧", "걷", "헥", "잿"];
 const PRIORITY_KAP_ATTACK_CHARS_MANNER = ["겉", "쩔", "떠", "녑", "훌", "숫", "붙", "곧", "랒", "쫄", "쏠", "녓", "갸", "콧", "갖", "썰", "뻥", "삥", "쩌", "뗑", "꺄", "쐐", "헝", "갤", "촬", "옵", "찡", "믿", "줴", "촐", "놓", "쓴", "맑", "칡", "핸", "힌", "싀", "깁", "씀", "뭍"];
 const DUBANG = ["괙", "귁", "껙", "꿕", "뀍", "늡", "릅", "돨", "똴", "뙁", "뛸", "뜩", "띡", "띨", "멫", "몇", "뱍", "뷩", "뷩", "븩", "뽓", "뿅", "솰", "쏼", "었", "쟘", "좍", "좜", "좸", "줅", "줍", "쥄", "쫙", "챱", "홱", "깟", "팅"]
@@ -698,17 +698,35 @@ exports.turnEnd = function () {
 			// console.log("[DEBUG] Candidate bots count: " + bots.length);
 
 			if (bots.length > 0) {
-				var prob = 0.5 / bots.length;
-				// console.log("[DEBUG] Probability per bot: " + prob);
+				// Each bot has a 50% chance to send a timeout message
+				var prob = 0.5;
+				var targetTeam = 0;
+				// Determine target team safely
+				if (target && typeof target === 'object') {
+					if (target.robot) {
+						targetTeam = target.game.team || 0;
+					} else {
+						targetTeam = target.team || 0;
+					}
+				}
+
 				for (i in bots) {
 					var rand = Math.random();
-					// console.log("[DEBUG] Bot " + bots[i].id + " roll: " + rand + " vs " + prob);
 					if (rand < prob) {
 						(function (bot) {
-							// console.log("[DEBUG] Scheduling message for bot " + bot.id);
+							// Check team relation
+							var botTeam = bot.game.team || 0;
+							var isTeammate = (targetTeam !== 0 && targetTeam === botTeam);
+
 							setTimeout(function () {
-								var msg = Const.ROBOT_TIMEOUT_MESSAGES[Math.floor(Math.random() * Const.ROBOT_TIMEOUT_MESSAGES.length)];
-								// console.log("[DEBUG] Bot " + bot.id + " saying: " + msg);
+								var msgs = isTeammate ?
+									Const.ROBOT_TIMEOUT_MESSAGES_SAMETEAM :
+									Const.ROBOT_TIMEOUT_MESSAGES;
+
+								// Fallback just in case SAMETEAM array is missing/empty, though unlikely
+								if (!msgs || msgs.length === 0) msgs = Const.ROBOT_TIMEOUT_MESSAGES;
+
+								var msg = msgs[Math.floor(Math.random() * msgs.length)];
 								bot.chat(msg);
 							}, 500 + Math.random() * 1000);
 						})(bots[i]);
@@ -1953,6 +1971,37 @@ exports.readyRobot = function (robot) {
 			decided = true;
 		}
 
+		// Team Check: Disable attack if next player is teammate
+		var currentTeam = robot.game.team || 0;
+		console.log(`[BOT] Team Check START: current bot team=${currentTeam}, turn=${my.game.turn}, seq.length=${my.game.seq.length}`);
+
+		if (currentTeam !== 0) {
+			var nextTurnIndex = (my.game.turn + 1) % my.game.seq.length;
+			var nextPlayer = my.game.seq[nextTurnIndex];
+			console.log(`[BOT] Team Check: nextTurnIndex=${nextTurnIndex}, nextPlayer type=${typeof nextPlayer}`);
+
+			if (typeof nextPlayer === 'string') {
+				nextPlayer = DIC[nextPlayer];
+			}
+
+			if (nextPlayer) {
+				var nextTeam = nextPlayer.robot ? (nextPlayer.game.team || 0) : (nextPlayer.team || 0);
+				console.log(`[BOT] Team Check: nextPlayer.id=${nextPlayer.id}, nextPlayer.robot=${nextPlayer.robot}, nextTeam=${nextTeam}`);
+
+				if (nextTeam !== 0 && nextTeam === currentTeam) {
+					console.log(`[BOT] ✓ TEAMMATE DETECTED! Same team ${currentTeam}. Disabling Attack.`);
+					strategy = "NORMAL";
+					decided = true;
+				} else {
+					console.log(`[BOT] ✗ Not teammates (currentTeam=${currentTeam}, nextTeam=${nextTeam})`);
+				}
+			} else {
+				console.log(`[BOT] Team Check: nextPlayer is null/undefined`);
+			}
+		} else {
+			console.log(`[BOT] Team Check: Current bot has no team (team=0), skipping check`);
+		}
+
 		// First/Random Rules: Disable Attack
 		if (!decided && (my.opts.first || my.opts.random)) {
 			console.log("[BOT] First/Random Rule detected. Disabling Attack Strategy and Special Moves.");
@@ -1966,7 +2015,7 @@ exports.readyRobot = function (robot) {
 		if (isKKT && effPersonality < 0) effPersonality = 0; // KKT: No Long Word personality
 
 		// Priority 2: Personality Check
-		if (effPersonality !== 0 && level >= 2) {
+		if (!decided && effPersonality !== 0 && level >= 2) {
 			var roll = Math.random();
 			var prob = PERSONALITY_CONST[level] * Math.abs(effPersonality);
 			console.log(`[BOT] Priority 2 (Personality): Roll=${roll.toFixed(3)}, Prob=${prob.toFixed(3)}`);
@@ -2533,10 +2582,30 @@ exports.readyRobot = function (robot) {
 					var rest = list.slice(ROBOT_CANDIDATE_LIMIT[level]);
 					list = shuffle(top).concat(rest);
 
-					// EKT 매너 모드: 연결 가능한 단어가 있는 단어만 선택
-					var needsEKTMannerFilter = my.opts.manner && Const.GAME_TYPE[my.mode] === 'EKT' && my.game.ektTrigramMode;
+					// Team-based Manner Check: Apply manner filter for teammates
+					var isNextTeammate = false;
+					var currentTeam = robot.game.team || 0;
+					if (currentTeam !== 0) {
+						var nextTurnIndex = (my.game.turn + 1) % my.game.seq.length;
+						var nextPlayer = my.game.seq[nextTurnIndex];
+						if (typeof nextPlayer === 'string') {
+							nextPlayer = DIC[nextPlayer];
+						}
+						if (nextPlayer) {
+							var nextTeam = nextPlayer.robot ? (nextPlayer.game.team || 0) : (nextPlayer.team || 0);
+							if (nextTeam !== 0 && nextTeam === currentTeam) {
+								isNextTeammate = true;
+								console.log(`[BOT] Manner Filter: TEAMMATE detected (team ${currentTeam})`);
+							}
+						}
+					}
 
-					if (needsEKTMannerFilter) {
+					var isEKT = Const.GAME_TYPE[my.mode] === 'EKT';
+					var needsMannerFilter = my.opts.manner || isNextTeammate;
+					var useEKTManner = needsMannerFilter && isEKT && my.game.ektTrigramMode;
+					var useGeneralManner = needsMannerFilter && !useEKTManner;
+
+					if (useEKTManner) {
 						console.log(`[BOT] EKT Manner Filter: Checking ${list.length} words...`);
 						filterEKTManner(list).then(function (filtered) {
 							if (filtered.length > 0) {
@@ -2547,6 +2616,17 @@ exports.readyRobot = function (robot) {
 								denied();
 							}
 						});
+					} else if (useGeneralManner) {
+						console.log(`[BOT] General Manner Filter: Checking ${list.length} words... (Teammate: ${isNextTeammate})`);
+						filterManner(list).then(function (filtered) {
+							if (filtered.length > 0) {
+								console.log(`[BOT] General Manner Filter: ${filtered.length}/${list.length} words passed`);
+								pickList(filtered);
+							} else {
+								console.log(`[BOT] General Manner Filter: No valid words found`);
+								denied();
+							}
+						});
 					} else {
 						pickList(list);
 					}
@@ -2554,6 +2634,110 @@ exports.readyRobot = function (robot) {
 			} else {
 				denied();
 			}
+		});
+	}
+
+	// General Manner Filter: Check if next word exists (connectivity check)
+	function filterManner(list) {
+		return new Promise(function (resolve) {
+			if (!list || list.length === 0) return resolve([]);
+
+			// For KKU mode, we use a simple check (already handled in executeKKUBot, but adding here just in case)
+			// For standard modes (KKT, KSH, etc.), we use the stats table.
+
+			var state = 0;
+			if (!my.opts.injeong) state |= 1;
+			if (my.opts.strict) state |= 2;
+			if (my.opts.loanword) state |= 4;
+			// Note: freedueum bit (8) is not in standard stats tables 0-7, usually handled by query or separate check.
+			// Start/End stats cols usually cover standard rules.
+
+			var isKo = my.rule.lang === 'ko';
+			var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
+			var isRev = !!my.rule._back;
+
+			// Determine column based on next turn length logic
+			// Standard Manner Check: check if there is AT LEAST ONE word connecting.
+			// Stats tables have count_state or start/end_state.
+
+			var col;
+			if (isKo) {
+				var nextLen = getNextTurnLength.call(my);
+				var lenSuffix = (nextLen === 2) ? "2" : (nextLen === 3) ? "3" : (nextLen === 4) ? "4" : "all";
+
+				// If current is Normal game, next player needs word STARTING with LinkChar.
+				// stats 'start_all' counts words starting with char.
+				// If current is Reverse game, next player needs word ENDING with LinkChar.
+				// stats 'end_all' counts words ending with char.
+
+				// HOWEVER:
+				// getAttackChars logic uses:
+				// isRev ? end_state : start_state
+				// This is correct because:
+				// Normal Game (KKT): My word ends with 'A'. Next player needs 'A...'.
+				// So we check if 'A' has 'start_all' count > 0.
+
+				col = isRev ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
+			} else {
+				// English: count_state implies 'starts with' usually.
+				col = `count_${state}`;
+			}
+
+			var results = [];
+			var pending = list.length;
+			// Limit checks to top 50 to avoid performance hit
+			var checkList = list.slice(0, 50);
+			var restList = list.slice(50);
+			if (checkList.length === 0) return resolve([]);
+
+			pending = checkList.length;
+
+			checkList.forEach(function (w) {
+				var word = w._id;
+				var linkChar = "";
+
+				// Calculate Link Char based on rules
+				// We can reuse getChar logic or similar.
+				// Note: getChar returns the character *to be matched* by the next player?
+				// No, getChar returns the specific character(s) of the *current* word that are relevant.
+				// In KKT: getChar returns the char to link.
+
+				// Let's verify getChar behavior.
+				// Classic.js Line 2890: getChar(text)
+				// KKT: text.slice(-1) (Normal)
+				// KAP: text.charAt(0) (Reverse)
+				// So getChar returns the Link Character.
+
+				linkChar = getChar.call(my, word);
+				var subChar = getSubChar.call(my, linkChar);
+
+				// We need to check if any word starts (or ends if Rev) with linkChar or subChar.
+				var charsToCheck = [linkChar];
+				if (subChar) {
+					subChar.split('|').forEach(sc => {
+						if (sc && !charsToCheck.includes(sc)) charsToCheck.push(sc);
+					});
+				}
+
+				var valid = false;
+				var pSub = charsToCheck.length;
+
+				charsToCheck.forEach(c => {
+					table.findOne(['_id', c]).on(function (doc) {
+						if (doc && doc[col] > 0) valid = true;
+
+						if (--pSub === 0) {
+							if (valid) results.push(w);
+							if (--pending === 0) resolve(results.concat(restList)); // Append unchecked stats as fallback? Or just return filtered. Better return filtered.
+						}
+					}, null, function () { // Error/Null
+						if (--pSub === 0) {
+							if (valid) results.push(w);
+							if (--pending === 0) resolve(results.concat(restList));
+						}
+					});
+				});
+			});
 		});
 	}
 

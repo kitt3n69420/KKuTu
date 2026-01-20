@@ -112,6 +112,65 @@ exports.turnEnd = function () {
             score: score,
             hint: w
         }, true);
+
+        // Bot timeout message logic
+        if (target && my.game.seq) {
+            var bots = [];
+            var i, p, item;
+            var targetId = (typeof target === 'object') ? target.id : target;
+
+            for (i in my.game.seq) {
+                item = my.game.seq[i];
+                if (typeof item === 'string') {
+                    p = DIC[item];
+                } else {
+                    p = item;
+                }
+
+                if (p && p.robot) {
+                    if (p.id !== targetId) {
+                        bots.push(p);
+                    }
+                }
+            }
+
+            if (bots.length > 0) {
+                // Each bot has a 50% chance to send a timeout message
+                var prob = 0.5;
+                var targetTeam = 0;
+                // Determine target team safely
+                if (target && typeof target === 'object') {
+                    if (target.robot) {
+                        targetTeam = target.game.team || 0;
+                    } else {
+                        targetTeam = target.team || 0;
+                    }
+                }
+
+                for (i in bots) {
+                    var rand = Math.random();
+                    if (rand < prob) {
+                        (function (bot) {
+                            // Check team relation
+                            var botTeam = bot.game.team || 0;
+                            var isTeammate = (targetTeam !== 0 && targetTeam === botTeam);
+
+                            setTimeout(function () {
+                                var msgs = isTeammate ?
+                                    Const.ROBOT_TIMEOUT_MESSAGES_SAMETEAM :
+                                    Const.ROBOT_TIMEOUT_MESSAGES;
+
+                                if (!msgs || msgs.length === 0) msgs = Const.ROBOT_TIMEOUT_MESSAGES;
+
+                                var msg = msgs[Math.floor(Math.random() * msgs.length)];
+                                bot.chat(msg);
+                            }, 500 + Math.random() * 1000);
+                        })(bots[i]);
+                    }
+                }
+            }
+        }
+
         my.game._rrt = setTimeout(my.roundReady, 3000);
     });
     clearTimeout(my.game.robotTimer);

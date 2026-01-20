@@ -2376,7 +2376,11 @@ function turnError(code, text) {
 	playSound('fail');
 	clearTimeout($data._fail);
 	$data._fail = addTimeout(function () {
-		$stage.game.display.html($data._char);
+		// 계산 릴레이 모드에서는 _question을 복원, 다른 모드에서는 _char를 복원
+		var restoreContent = ($data.room && $data.room.game && $data.room.game.title === 'Calcrelay')
+			? $data._question
+			: $data._char;
+		$stage.game.display.html(restoreContent);
 	}, 1800);
 }
 function getScore(id) {

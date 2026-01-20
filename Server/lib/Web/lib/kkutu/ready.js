@@ -417,7 +417,7 @@ $(document).ready(function () {
 		}
 	}).hotkey($stage.talk, 13).hotkey($stage.game.hereText, 13);
 	// 십자말풀이 입력창 처리
-	(function() {
+	(function () {
 		var $cwInput = $("#cw-q-input");
 		var cwIsComposing = false;
 
@@ -433,10 +433,10 @@ $(document).ready(function () {
 		}
 
 		// IME composition 상태 추적
-		$cwInput.on('compositionstart', function() {
+		$cwInput.on('compositionstart', function () {
 			cwIsComposing = true;
 		});
-		$cwInput.on('compositionend', function() {
+		$cwInput.on('compositionend', function () {
 			cwIsComposing = false;
 		});
 
@@ -452,7 +452,7 @@ $(document).ready(function () {
 
 		// beforeinput 폴백 (모바일)
 		if ($cwInput[0]) {
-			$cwInput[0].addEventListener('beforeinput', function(e) {
+			$cwInput[0].addEventListener('beforeinput', function (e) {
 				if (e.inputType === 'insertLineBreak') {
 					e.preventDefault();
 					submitCwAnswer();
@@ -461,7 +461,7 @@ $(document).ready(function () {
 		}
 
 		// input 폴백 (개행 문자 감지)
-		$cwInput.on('input.newline', function() {
+		$cwInput.on('input.newline', function () {
 			var val = $(this).val();
 			if (val.indexOf('\n') !== -1 || val.indexOf('\r') !== -1) {
 				$(this).val(val.replace(/[\r\n]/g, ''));
@@ -532,10 +532,10 @@ $(document).ready(function () {
 		var isComposing = false;
 
 		// IME composition 상태 추적
-		$input.on('compositionstart', function() {
+		$input.on('compositionstart', function () {
 			isComposing = true;
 		});
-		$input.on('compositionend', function(e) {
+		$input.on('compositionend', function (e) {
 			isComposing = false;
 			// composition 종료 후 값 확인 (개행 문자 감지)
 			var val = $(this).val();
@@ -547,7 +547,7 @@ $(document).ready(function () {
 		});
 
 		// keydown에서 엔터 감지 (IME 상태와 무관하게)
-		$input.on('keydown.mobileEnter', function(e) {
+		$input.on('keydown.mobileEnter', function (e) {
 			// Enter 키 (keyCode 13 또는 key 'Enter')
 			// isComposing이 false일 때만 처리 (IME 입력 완료 후)
 			if (!isComposing && (e.keyCode == 13 || e.key == 'Enter') && !e.shiftKey) {
@@ -560,7 +560,7 @@ $(document).ready(function () {
 
 		// beforeinput 이벤트 (모바일 가상 키보드 엔터 감지)
 		if ($input[0]) {
-			$input[0].addEventListener('beforeinput', function(e) {
+			$input[0].addEventListener('beforeinput', function (e) {
 				if (e.inputType === 'insertLineBreak') {
 					e.preventDefault();
 					$stage.chatBtn.trigger('click');
@@ -569,7 +569,7 @@ $(document).ready(function () {
 		}
 
 		// input 이벤트에서 개행 문자 감지 (최종 폴백)
-		$input.on('input.newline', function() {
+		$input.on('input.newline', function () {
 			var val = $(this).val();
 			if (val.indexOf('\n') !== -1 || val.indexOf('\r') !== -1) {
 				$(this).val(val.replace(/[\r\n]/g, ''));

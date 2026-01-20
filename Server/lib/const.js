@@ -81,12 +81,17 @@ exports.OPTIONS = {
 	'ran': { name: "Random" },
 	'vin': { name: "VowelInv" },
 	'apl': { name: "Apple" },
-	'bbg': { name: "BbungTwigi" }
+	'bbg': { name: "BbungTwigi" },
+	'obk': { name: "Oneback" }
 
 };
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
 	"저런", "ㅋㅋㅋㅋ", "안타깝네요", "아이고...", "바부", "컷~",
-	"잘가시고~", "ㅋㅋㅋㅋㅋㅋ", "멍충이", "아이고야", "그럴 수도 있지"
+	"잘가시고~", "ㅋㅋㅋㅋㅋㅋ", "멍충이", "아이고야", "상당히 아플텐데...",
+];
+exports.ROBOT_TIMEOUT_MESSAGES_SAMETEAM = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
+	"저런", "아이고...", "멍충이", "그럴 수도 있지", "님 뭐함?",
+	"어후", "바부", "정신차려!", "아오"
 ];
 exports.ROBOT_DEFEAT_MESSAGES_2 = [ // 남은 단어가 없으면 봇이 보내는 메시지
 	"뭐였더라?", "단어가 생각이 안나", "아 까먹었다", "GG", "모르겠어",
@@ -97,19 +102,23 @@ exports.ROBOT_VICTORY_MESSAGES = [ // 봇이 한방단어를 주고 보내는 �
 	"ㄴㅇㅅ", "ㅅㄱ", "ㅂㅂ", "잘가시게", "이거나 먹어라", ":3", ":)", "^-^", "OwO",
 	"ㅋㅋㅋㅋ", "나이스~", "한번 당해봐라!", "바이바이~", "ㅋㅋㅋㅋㅋㅋ", "ㅎㅎ",
 	"즐~", "ㅃㅃ", "ㅋㅋㅋㅋㅋㅋㅋㅋ", "수고~", "안녕은 영원한 헤어짐은 아니겠지요~",
-	"이얍!", "이건 못 참지", "메롱~"
+	"이얍!", "이건 못 참지", "메롱~", "하핫!"
 ];
 exports.ROBOT_DEFEAT_MESSAGES = [ // 봇이 한방단어를 받았을 때 보내는 메시지
 	"아니", "살살 좀 해", "짜증나", "이건 너무하잖아...", "으앙", "히잉",
-	"ㅁㄴㅇㄹ", "님아 제발", "아오 진짜", "아놔...",
-	"ㅠㅠ", "너무해", "선넘네", "이렇게 가는구나...", "이런!", "에라이", "하...", "엣?",
-	"아니 님아", "아 제발", "뿌에엥", "뾄!", "악", "안돼", "ㅠㅠ", "저기요?", "이럴수가",
-	"너 봇이지?", "으아악", "어...?", "???"
+	"ㅁㄴㅇㄹ", "님아 제발", "아오 진짜", "아놔...", "ㅠㅠ", "너무해",
+	"선넘네", "이렇게 가는구나...", "이런!", "에라이", "하...", "엣?",
+	"아니 님아", "아 제발", "뿌에엥", "뾄!", "악", "안돼", "ㅠㅠ", "저기요?",
+	"이럴수가", "너 봇이지?", "으아악", "어...?", "???", "무...무슨?", "뭐...뭐야?"
 ];
 exports.ROBOT_ANGRY_MESSAGES = [ //봇이 빡치면 보내는 메시지
-	"나 안해", "이건 불공평해", "억까 제발좀", "아오!!!!!!", "개짜증나",
-	"ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", "망겜", "○○",
+	"이건 불공평해", "억까 제발좀", "아오!!!!!!", "개짜증나",
+	"ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", "○○",
 	"야!!!", "치트 쓰지마", "사기치지마", "너 어디사냐?"
+]
+exports.ROBOT_FINAL_MESSAGES = [ //봇이 중퇴하기 전에 보내는 메시지
+	"나 안해", "망겜", "개노잼", "니들끼리나 잘 해라", "난 안할거임 ㅅㄱ",
+	"내가 너희랑 다시 하나 봐라", "ㅇㅇ", "게임 뭣같이하네"
 ]
 exports.MOREMI_PART = ["back", "shoes", "clothes", "head", "eye", "mouth", "lhand", "rhand"];
 exports.CATEGORIES = ["all", "spec", "skin", "badge", "head", "eye", "mouth", "clothes", "hs", "back"];
@@ -366,6 +375,42 @@ exports.RULE = {
 		ai: true,
 		big: false,
 		ewq: true
+	},
+	'CRL': {
+		lang: "etc",
+		rule: "Calcrelay",
+		opts: ["spd", "one", "drg"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: true
+	},
+	'KCB': {
+		lang: "ko",
+		rule: "Chainbattle",
+		opts: ["ext", "str", "loa", "one", "drg"],
+		time: 2,
+		ai: true,
+		big: false,
+		ewq: false
+	},
+	'ECB': {
+		lang: "en",
+		rule: "Chainbattle",
+		opts: ["ext", "one", "drg"],
+		time: 2,
+		ai: true,
+		big: false,
+		ewq: false
+	},
+	'CAL': {
+		lang: "etc",
+		rule: "Calcbattle",
+		opts: ["one", "drg", "obk"],
+		time: 2,
+		ai: true,
+		big: false,
+		ewq: false
 	}
 
 };
@@ -376,18 +421,74 @@ exports.GAME_CATEGORIES = {
 	},
 	'quiz': {
 		name: 'GameCategoryQuiz',
-		modes: ['CSQ', 'KCW', 'KSS', 'ESS', 'KPQ', 'EPQ', 'KSC']
+		modes: ['CSQ', 'KCW', 'KSS', 'ESS', 'KPQ', 'EPQ', 'KSC', 'CRL']
 	},
 	'other': {
 		name: 'GameCategoryOther',
-		modes: ['KDA', 'EDA', 'KTY', 'ETY', 'HUN', 'KFR', 'EFR']
+		modes: ['KDA', 'EDA', 'KTY', 'ETY', 'HUN', 'KFR', 'EFR', 'KCB', 'ECB', 'CAL']
+	},
+	'etc': { //이건뭐지
+		name: 'GameCategoryEtc',
+		modes: ['CRL']
 	}
 };
 exports.getPreScore = function (text, chain, tr) {
 	return 2 * (Math.pow(5 + 7 * (text || "").length, 0.74) + 1.18 * (chain || []).length) * (0.5 + 0.5 * tr);
 };
+exports.getCalcScore = function (answer, tr) {
+	return 2 * Math.pow(5 + 2800 * Math.atan(answer / 2000), 0.74) * (0.5 + 0.5 * tr);
+};
 exports.getPenalty = function (chain, score) {
 	return -1 * Math.round(Math.max(50, 10 + (chain || []).length * 3 + score * 0.2));
+};
+// 계산 대결 점수 계산 (정답 기반)
+exports.getCalcBattleScore = function (answer) {
+	return Math.round(4000 * Math.atan(answer / 2000) + 10);
+};
+// 수학 문제 생성 헬퍼 함수 (calcrelay, calcbattle 공용)
+exports.generateCalcProblem = function (chainLength) {
+	var c = chainLength || 0;
+	var m = Math.min(10000000, Math.floor(15 * Math.pow(2, c / 8)));
+	var op = Math.floor(Math.random() * 3);
+	var a, b, question, answer;
+
+	if (op === 0) { // 덧셈: a + b = ?
+		var minVal = Math.floor(m / 10);
+		a = Math.max(1, Math.floor(Math.random() * (m - minVal) + minVal));
+		b = Math.max(1, Math.floor(Math.random() * (m - minVal) + minVal));
+		question = a + " + " + b + " = ?";
+		answer = (a + b) | 0;
+	} else if (op === 1) { // 뺄셈: (a+b) - a = ?
+		var minVal = Math.floor(m / 10);
+		a = Math.max(1, Math.floor(Math.random() * (m - minVal) + minVal));
+		b = Math.max(1, Math.floor(Math.random() * (m - minVal) + minVal));
+		question = (a + b) + " - " + a + " = ?";
+		answer = b | 0;
+	} else { // 곱셈: a × b = ?
+		var sqrtM = Math.min(Math.max(2, Math.floor(Math.pow(m, 0.6))), 10000);
+		var minVal = Math.floor(sqrtM / 10);
+		a = Math.max(2, Math.floor(Math.random() * (sqrtM - minVal) + minVal));
+		b = Math.max(2, Math.floor(Math.random() * (sqrtM - minVal) + minVal));
+		question = a + " × " + b + " = ?";
+		answer = (a * b) | 0;
+	}
+	return { question: question, answer: answer };
+};
+// 봇 오답 생성 함수
+exports.generateWrongAnswer = function (correct) {
+	var digits = String(correct).split('');
+	if (digits.length === 0) return "0";
+	var idx = Math.floor(Math.random() * digits.length);
+	var newDigit;
+	do {
+		newDigit = String(Math.floor(Math.random() * 10));
+	} while (newDigit === digits[idx]);
+	digits[idx] = newDigit;
+	// 첫 자리가 0이 되면 안됨 (단, 한 자리 수는 0 가능)
+	if (digits.length > 1 && digits[0] === '0') {
+		digits[0] = String(Math.floor(Math.random() * 9) + 1);
+	}
+	return digits.join('');
 };
 exports.GAME_TYPE = Object.keys(exports.RULE);
 exports.EXAMPLE_TITLE = {
@@ -432,6 +533,9 @@ exports.EN_THEME = [
 ];
 exports.IJP_EXCEPT = [
 	"OIJ", "TPW"
+];
+exports.QUIZ_TOPIC=[
+	"CAPI", "CELM", "UNIT", "CALC" /*, "CNTR" */
 ];
 exports.KO_IJP = exports.KO_INJEONG.concat(exports.KO_THEME).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });
 exports.EN_IJP = exports.EN_INJEONG.concat(exports.EN_THEME).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });

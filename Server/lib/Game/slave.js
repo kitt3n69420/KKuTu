@@ -21,6 +21,7 @@ var File = require('fs');
 var Const = require("../const");
 var https = require('https');
 var Secure = require('../sub/secure');
+var ProfanityFilter = require('../sub/profanity-filter');
 var Server;
 var HTTPS_Server
 
@@ -209,6 +210,8 @@ KKuTu.onClientMessage = function ($c, msg) {
 				return;
 			}
 			msg.value = msg.value.substr(0, 200);
+			// 서버 측 욕설 필터링 적용
+			msg.value = ProfanityFilter.filterChatMessage(msg.value);
 			if (msg.relay) {
 				if ($c.subPlace) temp = $c.pracRoom;
 				else if (!(temp = ROOM[$c.place])) return;
@@ -246,6 +249,11 @@ KKuTu.onClientMessage = function ($c, msg) {
 			if (!msg.round) stable = false;
 			if (!msg.time) stable = false;
 			if (!msg.opts) stable = false;
+
+			// 서버 측 방 제목 욕설 필터링 적용
+			if (msg.title) {
+				msg.title = ProfanityFilter.filterRoomTitle(msg.title);
+			}
 
 			msg.code = false;
 			msg.limit = Number(msg.limit);

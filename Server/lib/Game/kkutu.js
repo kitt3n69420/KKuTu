@@ -2079,6 +2079,17 @@ exports.Room = function (room, channel) {
 		clearTimeout(my.game.hintTimer);
 		clearTimeout(my.game.hintTimer2);
 		clearTimeout(my.game.qTimer);
+		clearTimeout(my.game.robotTimer);
+
+		// 봇별 typingTimer 정리 (chainbattle, typing, calcbattle 등에서 사용)
+		if (my.game.seq) {
+			for (var i in my.game.seq) {
+				var o = my.game.seq[i];
+				if (o && o.robot && o.game && o.game.typingTimer) {
+					clearTimeout(o.game.typingTimer);
+				}
+			}
+		}
 	};
 	my.roundEnd = function (data) {
 		var i, o, rw;
