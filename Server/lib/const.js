@@ -28,8 +28,8 @@ exports.BLOCKED_LENGTH = 10000;
 exports.KICK_BY_SPAM = 9;
 exports.MAX_OBSERVER = 8;
 exports.JAMSU_WARN_TIME = 90000; //10만보다 크면 안 된다!
-exports.JAMSU_WARN2_TIME = 60000;
-exports.JAMSU_BOOM_TIME = 30000;
+exports.JAMSU_WARN2_TIME = 90000;
+exports.JAMSU_BOOM_TIME = 60000;
 exports.TESTER = GLOBAL.ADMIN.concat([
 	"Input tester id here"
 ]);
@@ -73,6 +73,7 @@ exports.OPTIONS = {
 	'unl': { name: "Unlimited" },
 	'sur': { name: "Survival" },
 	'fdu': { name: "FreeDueum" },
+	'ndu': { name: "NoDueum" },
 	'spd': { name: "Speed" },
 	'drg': { name: "Drg" },
 	'spt': { name: "SpeedToss" },
@@ -82,16 +83,22 @@ exports.OPTIONS = {
 	'vin': { name: "VowelInv" },
 	'apl': { name: "Apple" },
 	'bbg': { name: "BbungTwigi" },
-	'obk': { name: "Oneback" }
+	'obk': { name: "Oneback" },
+	'qz1': { name: "QuizEasy" },
+	'qz2': { name: "QuizNormal" },
+	'qz3': { name: "QuizHard" },
+	'nar': { name: "Narak" },
+	'god': { name: "Invincible" },
+	'apd': { name: "AntiTroll" }
 
 };
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
 	"저런", "ㅋㅋㅋㅋ", "안타깝네요", "아이고...", "바부", "컷~",
-	"잘가시고~", "ㅋㅋㅋㅋㅋㅋ", "멍충이", "아이고야", "상당히 아플텐데...",
+	"잘가시고~", "ㅋㅋㅋㅋㅋㅋ", "멍충이", "아이고야", "꽤나 따끔할거요",
 ];
 exports.ROBOT_TIMEOUT_MESSAGES_SAMETEAM = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
 	"저런", "아이고...", "멍충이", "그럴 수도 있지", "님 뭐함?",
-	"어후", "바부", "정신차려!", "아오"
+	"어후", "바부", "정신차려!", "아오", "트롤하지마"
 ];
 exports.ROBOT_DEFEAT_MESSAGES_2 = [ // 남은 단어가 없으면 봇이 보내는 메시지
 	"뭐였더라?", "단어가 생각이 안나", "아 까먹었다", "GG", "모르겠어",
@@ -118,7 +125,8 @@ exports.ROBOT_ANGRY_MESSAGES = [ //봇이 빡치면 보내는 메시지
 ]
 exports.ROBOT_FINAL_MESSAGES = [ //봇이 중퇴하기 전에 보내는 메시지
 	"나 안해", "망겜", "개노잼", "니들끼리나 잘 해라", "난 안할거임 ㅅㄱ",
-	"내가 너희랑 다시 하나 봐라", "ㅇㅇ", "게임 뭣같이하네"
+	"내가 너희랑 다시 하나 봐라", "ㅇㅇ", "게임 뭣같이하네", "ㅂㅂ",
+	"나 탈주함 ㅂㅂ", "이타치가 왜 완전 강한지 알아? 탈주닌자라서"
 ]
 exports.MOREMI_PART = ["back", "shoes", "clothes", "head", "eye", "mouth", "lhand", "rhand"];
 exports.CATEGORIES = ["all", "spec", "skin", "badge", "head", "eye", "mouth", "clothes", "hs", "back"];
@@ -159,7 +167,7 @@ exports.RULE = {
 	'EKT': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -168,7 +176,7 @@ exports.RULE = {
 	'ESH': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -177,7 +185,7 @@ exports.RULE = {
 	'KKT': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -186,7 +194,7 @@ exports.RULE = {
 	'KSH': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -231,7 +239,7 @@ exports.RULE = {
 	'KAP': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -252,7 +260,7 @@ exports.RULE = {
 	'HUN': {
 		lang: "ko",
 		rule: "Hunmin",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -261,7 +269,7 @@ exports.RULE = {
 	'KDA': {
 		lang: "ko",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg"],
+		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god"],
 		time: 1,
 		ai: true,
 		ewq: false
@@ -269,7 +277,7 @@ exports.RULE = {
 	'EDA': {
 		lang: "en",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg"],
+		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -314,7 +322,7 @@ exports.RULE = {
 	'KFR': {
 		lang: "ko",
 		rule: "Free",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -323,7 +331,7 @@ exports.RULE = {
 	'EFR': {
 		lang: "en",
 		rule: "Free",
-		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg"],
+		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -350,7 +358,7 @@ exports.RULE = {
 	'KAK': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -370,7 +378,7 @@ exports.RULE = {
 	'KKU': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "mid", "sch", "spd", "drg", "stt", "fir", "bbg"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "mid", "sch", "spd", "drg", "stt", "fir", "bbg", "nar", "god", "apd"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -379,7 +387,7 @@ exports.RULE = {
 	'CRL': {
 		lang: "etc",
 		rule: "Calcrelay",
-		opts: ["spd", "one", "drg"],
+		opts: ["spd", "one", "drg", "nar", "god"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -411,6 +419,24 @@ exports.RULE = {
 		ai: true,
 		big: false,
 		ewq: false
+	},
+	'KQZ': {
+		lang: "ko",
+		rule: "Quiz",
+		opts: ["qij", "qz1", "qz2", "qz3", "drg"],
+		time: 0.1,
+		ai: true,
+		big: false,
+		ewq: false
+	},
+	'EQZ': {
+		lang: "en",
+		rule: "Quiz",
+		opts: ["qij", "qz1", "qz2", "qz3", "drg"],
+		time: 0.1,
+		ai: true,
+		big: false,
+		ewq: false
 	}
 
 };
@@ -421,7 +447,7 @@ exports.GAME_CATEGORIES = {
 	},
 	'quiz': {
 		name: 'GameCategoryQuiz',
-		modes: ['CSQ', 'KCW', 'KSS', 'ESS', 'KPQ', 'EPQ', 'KSC', 'CRL']
+		modes: ['CSQ', 'KCW', 'KSS', 'ESS', 'KPQ', 'EPQ', 'KSC', 'CRL', 'KQZ', 'EQZ']
 	},
 	'other': {
 		name: 'GameCategoryOther',
@@ -535,7 +561,7 @@ exports.IJP_EXCEPT = [
 	"OIJ", "TPW"
 ];
 exports.QUIZ_TOPIC = [
-	"CAPI", "CELM", "UNIT", "CALC" /*, "CNTR" */
+	"MATH", "CAPI", "CHEM", "UNIT" /*, "CNTR" */
 ];
 exports.KO_IJP = exports.KO_INJEONG.concat(exports.KO_THEME).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });
 exports.EN_IJP = exports.EN_INJEONG.concat(exports.EN_THEME).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });

@@ -38,7 +38,7 @@ const PRIORITY_ATTACK_CHARS_MANNER = ["릇", "륨", "늄", "럴", "텝", "슭", 
 const PRIORITY_KAP_ATTACK_CHARS = ["녈", "맞", "흰", "뉸", "뒷", "헛", "붉", "뻐", "첫", "룍", "뇩", "넓", "홑", "맆", "렾", "녚", "갯", "받", "뉼", "앉", "높", "롶", "돼", "윗", "넙", "랼", "된", "뾰", "햇", "엑", "좁", "굳", "왼", "뻔", "빤", "륽", "늙", "뺑", "엎", "같", "띾", "꺾", "닫", "랕", "뙤", "돋", "쨍", "씽", "꽈", "귓", "므", "쌩", "샐", "잦", "섞", "덮", "맏", "얽", "왱", "긁", "짧", "걷", "헥", "잿"];
 const PRIORITY_KAP_ATTACK_CHARS_MANNER = ["겉", "쩔", "떠", "녑", "훌", "숫", "붙", "곧", "랒", "쫄", "쏠", "녓", "갸", "콧", "갖", "썰", "뻥", "삥", "쩌", "뗑", "꺄", "쐐", "헝", "갤", "촬", "옵", "찡", "믿", "줴", "촐", "놓", "쓴", "맑", "칡", "핸", "힌", "싀", "깁", "씀", "뭍"];
 const DUBANG = ["괙", "귁", "껙", "꿕", "뀍", "늡", "릅", "돨", "똴", "뙁", "뛸", "뜩", "띡", "띨", "멫", "몇", "뱍", "뷩", "뷩", "븩", "뽓", "뿅", "솰", "쏼", "었", "쟘", "좍", "좜", "좸", "줅", "줍", "쥄", "쫙", "챱", "홱", "깟", "팅"]
-const DUBANG_KAP = ["뒷", "쌩", "빤", "핫", "갤", "캘", "왱", "헛"];
+const DUBANG_KAP = ["뒷", "쌩", "빤", "핫", "갤", "캘", "왱", "헛", "삥", "쫄"];
 const PRIORITY_ATTACK_CHARS_EN = ["ght", "ock", "ick", "ird", "ert", "ork", "eck", "nds", "uck", "ond", "lue", "lls", "elt", "rds", "arp", "uff", "erm", "irl", "ilt", "ilk", "ods", "cks", "ays", "iff", "ett", "olt", "ors", "erb", "ohn", "erk", "awk", "nks", "irs", "irm", "urd", "ilm", "nue", "rks", "arf", "nyx", "erd", "ryx", "olk", "itt", "rys", "gie", "url", "nck", "ils", "avy", "ynx", "ews", "mie", "irk", "cht", "cue", "ulb", "onk", "elp", "urk", "ldt", "aws"];
 const PRIORITY_ATTACK_CHARS_MANNER_EN = ["ack", "ark", "ics", "orm", "ers", "ify", "ons", "omb", "ngs", "ump", "owl", "ift", "urn", "rie", "eek", "oud", "elf", "irt", "ild", "kie", "itz", "rld", "iew", "thm", "els", "awl", "awn", "rue", "yew", "eft", "oft", "ffy", "uld", "hew", "ivy", "rtz", "egs", "tew", "oux", "rns", "ebs", "tua", "tyl", "efy", "ohm", "omp", "bbs", "ltz", "ggs", "oek", "xxv", "few", "wyn", "orr", "utz", "enn", "ebb", "hns", "ogs", "ruz", "ibs", "uhr", "nyl"];
 const PRIORITY_KAP_ATTACK_CHARS_EN = ["j", "q", "x", "z"];
@@ -530,6 +530,7 @@ exports.turnStart = function (force) {
 	if (typeof my.game.nextCharWordCount !== 'undefined') {
 		// 매너 체크에서 저장된 값이 있으면 재사용 (중복 쿼리 방지)
 		var isHanbang = (my.game.nextCharWordCount === 0);
+		my.game.isHanbang = isHanbang; // 억까 방지용 저장
 		delete my.game.nextCharWordCount; // 사용 후 삭제
 
 		my.byMaster('turnStart', {
@@ -583,6 +584,7 @@ exports.turnStart = function (force) {
 
 			// 남은 단어가 0개면 한방
 			var isHanbang = (count - used === 0);
+			my.game.isHanbang = isHanbang; // 억까 방지용 저장
 
 			my.byMaster('turnStart', {
 				turn: my.game.turn,
@@ -659,8 +661,20 @@ exports.turnEnd = function () {
 	my.game.late = true;
 	if (target)
 		if (target.game) {
-			score = Const.getPenalty(my.game.chain, target.game.score);
-			target.game.score += score;
+			// 무적(god): 패널티 면제
+			if (my.opts.invincible) {
+				score = 0;
+				// 억까 방지(apd): 한방단어 받았을 때 패널티 면제
+			} else if (my.opts.antitroll && my.game.isHanbang) {
+				score = 0;
+			} else {
+				score = Const.getPenalty(my.game.chain, target.game.score);
+				// 나락(nar): 패널티 적용 후에도 점수가 양수면 0으로 만듦
+				if (my.opts.narak && (target.game.score + score) > 0) {
+					score = -target.game.score;
+				}
+			}
+			if (score !== 0) target.game.score += score;
 		}
 	getAuto.call(my, my.game.char, my.game.subChar, 0).then(function (w) {
 		my.byMaster('turnEnd', {
@@ -1090,12 +1104,23 @@ exports.submit = function (client, text) {
 				var count = (typeof w === 'number') ? w : (w ? 1 : 0);
 				console.log(`[MannerCheck] getAuto result for preChar="${preChar}", preSubChar="${preSubChar}": count=${count}`);
 				var used = 0;
-				if (my.game.chain) {
-					var checkChars = [preChar];
-					if (preSubChar) preSubChar.split("|").forEach(function (c) { if (c && checkChars.indexOf(c) == -1) checkChars.push(c); });
-					var type = Const.GAME_TYPE[my.mode];
-					var isKAP = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK');
+				var checkChars = [preChar];
+				if (preSubChar) preSubChar.split("|").forEach(function (c) { if (c && checkChars.indexOf(c) == -1) checkChars.push(c); });
+				var type = Const.GAME_TYPE[my.mode];
+				var isKAP = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK');
 
+				// 현재 입력하는 단어도 used에 포함 (한방 체크: "둬둬둬" 같은 케이스)
+				var textMatch = false;
+				checkChars.forEach(function (cc) {
+					if (isKAP) {
+						if (text.slice(-cc.length) === cc) textMatch = true;
+					} else {
+						if (text.indexOf(cc) === 0) textMatch = true;
+					}
+				});
+				if (textMatch) used++;
+
+				if (my.game.chain) {
 					var checkChain = my.game.chain;
 					if (my.opts.return) checkChain = my.game.chain.slice(-5);
 
@@ -1134,8 +1159,15 @@ exports.submit = function (client, text) {
 									return;
 								}
 
-								var isStack = true;
-								var i, w, nc, ns;
+								// 이미 사용된 단어 필터링
+								var availableList = list.filter(function (item) {
+									return !my.game.chain || !my.game.chain.includes(item._id);
+								});
+
+								if (availableList.length === 0) {
+									denied(403);
+									return;
+								}
 
 								// Prepare valid start characters (Original + Dueum Variations)
 								var startChars = [preChar];
@@ -1145,37 +1177,144 @@ exports.submit = function (client, text) {
 									});
 								}
 
-								for (i = 0; i < list.length; i++) {
-									w = list[i]._id;
-									nc = getChar.call(my, w);
-									ns = getSubChar.call(my, nc);
+								// 사용 가능 단어가 3개 이하일 때: 함정 체크 + 매너 체크 통합
+								// 각 단어가 (1) 자기 자신으로 돌아오지 않고 (2) 이을 단어가 있는지 확인
+								if (availableList.length <= 3) {
+									console.log(`[MannerCheck] Combined trap+manner check for ${availableList.length} words`);
+									var checkPending = availableList.length;
+									var hasValidWord = false;
 
-									var linksToSelf = false;
+									availableList.forEach(function (item) {
+										var candidateWord = item._id;
+										var candidateChar = getChar.call(my, candidateWord);
+										var candidateSubChar = getSubChar.call(my, candidateChar);
 
-									// Check if nc matches any start char
-									if (startChars.indexOf(nc) !== -1) linksToSelf = true;
-									// Check if any subchar of nc matches any start char
-									else if (ns) {
-										var parts = ns.split('|');
-										for (var k = 0; k < parts.length; k++) {
-											if (startChars.indexOf(parts[k]) !== -1) {
-												linksToSelf = true;
-												break;
+										// 1. 자기 자신으로 돌아오는지 체크 (함정 체크)
+										var linksToSelf = false;
+										if (startChars.indexOf(candidateChar) !== -1) {
+											linksToSelf = true;
+										} else if (candidateSubChar) {
+											var parts = candidateSubChar.split('|');
+											for (var k = 0; k < parts.length; k++) {
+												if (startChars.indexOf(parts[k]) !== -1) {
+													linksToSelf = true;
+													break;
+												}
 											}
+										}
+
+										if (linksToSelf) {
+											// 자기 자신으로 돌아오면 비매너
+											console.log(`[MannerCheck] Candidate "${candidateWord}" links back to self -> invalid`);
+											checkPending--;
+											if (checkPending === 0 && !hasValidWord) {
+												console.log(`[MannerCheck] All candidates are traps or dead ends`);
+												denied(403);
+											}
+											return;
+										}
+
+										// 2. 이을 단어가 있는지 체크 (매너 체크) - 매너 모드일 때만
+										if (my.opts.manner) {
+											getAuto.call(my, candidateChar, candidateSubChar, 1).then(function (nextCount) {
+												var nextTotal = (typeof nextCount === 'number') ? nextCount : (nextCount ? 1 : 0);
+
+												// 해당 단어로 시작하는 이미 사용된 단어 개수 계산
+												var nextUsed = 0;
+												var nextCheckChars = [candidateChar];
+												if (candidateSubChar) candidateSubChar.split("|").forEach(function (c) {
+													if (c && nextCheckChars.indexOf(c) == -1) nextCheckChars.push(c);
+												});
+
+												// 후보 단어 자체가 다음 글자로 시작하는지 체크 (예: "섹스텟"이 "텟"으로 시작하지 않음)
+												var candidateMatchesNext = false;
+												nextCheckChars.forEach(function (cc) {
+													if (isKAP) {
+														if (candidateWord.slice(-cc.length) === cc) candidateMatchesNext = true;
+													} else {
+														if (candidateWord.indexOf(cc) === 0) candidateMatchesNext = true;
+													}
+												});
+												if (candidateMatchesNext) nextUsed++;
+
+												if (my.game.chain) {
+													var nextCheckChain = my.game.chain;
+													if (my.opts.return) nextCheckChain = my.game.chain.slice(-5);
+
+													nextCheckChain.forEach(function (doneWord) {
+														var match = false;
+														nextCheckChars.forEach(function (cc) {
+															if (isKAP) {
+																if (doneWord.slice(-cc.length) === cc) match = true;
+															} else {
+																if (doneWord.indexOf(cc) === 0) match = true;
+															}
+														});
+														if (match) nextUsed++;
+													});
+												}
+
+												var nextRemaining = nextTotal - nextUsed;
+												console.log(`[MannerCheck] Candidate "${candidateWord}" -> char="${candidateChar}": total=${nextTotal}, used=${nextUsed}, remaining=${nextRemaining}, candidateMatchesNext=${candidateMatchesNext}`);
+
+												if (nextRemaining >= 1) {
+													hasValidWord = true;
+												}
+
+												checkPending--;
+												if (checkPending === 0) {
+													if (hasValidWord) {
+														approved();
+													} else {
+														console.log(`[MannerCheck] All ${availableList.length} candidates are traps or dead ends in manner mode`);
+														denied(403);
+													}
+												}
+											});
+										} else {
+											// 매너 모드가 아니면 함정만 아니면 통과
+											hasValidWord = true;
+											checkPending--;
+											if (checkPending === 0) {
+												if (hasValidWord) {
+													approved();
+												} else {
+													denied(403);
+												}
+											}
+										}
+									});
+								} else {
+									// 4개 이상일 때: 기존 함정 체크만 수행
+									var isStack = true;
+									for (var i = 0; i < availableList.length; i++) {
+										var w = availableList[i]._id;
+										var nc = getChar.call(my, w);
+										var ns = getSubChar.call(my, nc);
+
+										var linksToSelf = false;
+										if (startChars.indexOf(nc) !== -1) linksToSelf = true;
+										else if (ns) {
+											var parts = ns.split('|');
+											for (var k = 0; k < parts.length; k++) {
+												if (startChars.indexOf(parts[k]) !== -1) {
+													linksToSelf = true;
+													break;
+												}
+											}
+										}
+
+										if (!linksToSelf) {
+											isStack = false;
+											break;
 										}
 									}
 
-									if (!linksToSelf) {
-										isStack = false; // Found an escape!
-										break;
+									if (isStack) {
+										denied(403);
+									} else {
+										approved();
 									}
-								}
-
-								if (isStack && list.length > 0) {
-									// Block!
-									denied(403);
-								} else {
-									approved();
 								}
 							});
 						} else {
@@ -1947,6 +2086,12 @@ exports.readyRobot = function (robot) {
 	}
 
 	function decideStrategy() {
+		// Validate game state
+		if (!my.game || !my.game.seq) {
+			console.error(`[BOT] ERROR: Game state is invalid (game.seq is undefined). Aborting bot action.`);
+			return;
+		}
+
 		// KKU 모드: 별도의 간단한 봇 로직 사용
 		if (isKKU) {
 			console.log(`[BOT] KKU Mode: Using dedicated simple bot logic`);
@@ -3338,6 +3483,11 @@ function getSubChar(char) {
 
 			srcCodes.forEach(function (cd) {
 				if (cd !== c) resSet.add(String.fromCharCode(cd));
+
+				// nodueum 옵션이 활성화되면 두음법칙 처리를 건너뜀
+				if (my.opts.nodueum) {
+					return; // 두음법칙 subChar 추가 안함
+				}
 
 				var k_sub = cd - 0xAC00;
 				var ca = [Math.floor(k_sub / 588), Math.floor(k_sub / 28) % 21, k_sub % 28];

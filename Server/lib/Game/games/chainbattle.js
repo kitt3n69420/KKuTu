@@ -507,9 +507,21 @@ exports.submit = function (client, text) {
 		return client.chat(text);
 	}
 
+	// 낙장불입 처리 함수 (one 옵션)
+	function handleOut() {
+		client.game.out = true;
+		client.publish('turnEnd', { target: client.id, ok: false, out: true }, true);
+	}
+
+	// 실패 처리 함수 (낙장불입 옵션 적용)
+	function handleFail() {
+		client.send('turnEnd', { target: client.id, error: true });
+		if (my.opts.one) handleOut();
+	}
+
 	// 중복 체크
 	if (state.chain.includes(text)) {
-		client.send('turnEnd', { target: client.id, error: true });
+		handleFail();
 		return;
 	}
 
@@ -520,8 +532,7 @@ exports.submit = function (client, text) {
 	).limit(['mean', true], ['theme', true], ['type', true], ['hit', true], ['flag', true])
 		.on(function ($doc) {
 			if (!$doc) {
-				client.send('turnEnd', { target: client.id, error: true });
-				if (my.opts.one) handleOut();
+				handleFail();
 				return;
 			}
 
@@ -529,17 +540,17 @@ exports.submit = function (client, text) {
 			if (isKo) {
 				// injeong: false면 인정 단어 금지
 				if (!my.opts.injeong && ($doc.flag & Const.KOR_FLAG.INJEONG)) {
-					client.send('turnEnd', { target: client.id, error: true });
+					handleFail();
 					return;
 				}
 				// strict: true면 명사가 아닌 낱말, 사투리, 옛말, 북한어 금지
 				if (my.opts.strict && (!$doc.type.match(Const.KOR_STRICT) || $doc.flag >= 4)) {
-					client.send('turnEnd', { target: client.id, error: true });
+					handleFail();
 					return;
 				}
 				// loanword: true면 외래어 금지
 				if (my.opts.loanword && ($doc.flag & Const.KOR_FLAG.LOANWORD)) {
-					client.send('turnEnd', { target: client.id, error: true });
+					handleFail();
 					return;
 				}
 			}
@@ -552,7 +563,7 @@ exports.submit = function (client, text) {
 			if (isKo) {
 				checkManner.call(my, nextChar, nextSubChar, state.chain).then(function (remaining) {
 					if (remaining <= 0) {
-						client.send('turnEnd', { target: client.id, error: true });
+						handleFail();
 						return;
 					}
 					approveWord(nextChar, nextSubChar);
@@ -560,11 +571,6 @@ exports.submit = function (client, text) {
 			} else {
 				// 영어는 매너 체크 불필요
 				approveWord(nextChar, null);
-			}
-
-			function handleOut() {
-				client.game.out = true;
-				client.publish('turnEnd', { target: client.id, ok: false, out: true }, true);
 			}
 
 			function approveWord(nChar, nSubChar) {

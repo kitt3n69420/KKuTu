@@ -1850,6 +1850,9 @@ exports.Room = function (room, channel) {
 				ij = Const[`${my.rule.lang.toUpperCase()}_IJP`];
 				my.opts.injpick = (room.opts.injpick || []).filter(function (item) { return ij.includes(item); });
 			} else my.opts.injpick = [];
+			if (my.rule.opts.includes("qij")) {
+				my.opts.quizpick = room.opts.quizpick || [];
+			} else my.opts.quizpick = [];
 		}
 		// APL (Bad Apple) 옵션 체크: opts 복사 후에 수행
 		if (my.opts && my.opts.apple) {
@@ -1894,6 +1897,11 @@ exports.Room = function (room, channel) {
 			if (!my.opts.injpick.every(function (item) {
 				return !Const.IJP_EXCEPT.includes(item);
 			})) return 414;
+		}
+		// 퀴즈픽 검사
+		if (my.rule.opts.includes("qij")) {
+			if (!my.opts.quizpick) return 400;
+			if (!my.opts.quizpick.length) return 413;
 		}
 		return false;
 	};

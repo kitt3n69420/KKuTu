@@ -210,8 +210,7 @@ KKuTu.onClientMessage = function ($c, msg) {
 				return;
 			}
 			msg.value = msg.value.substr(0, 200);
-			// 서버 측 욕설 필터링 적용
-			msg.value = ProfanityFilter.filterChatMessage(msg.value);
+			// 서버에서는 욕설 필터링을 적용하지 않음 (클라이언트에서 표시 시 처리)
 			if (msg.relay) {
 				if ($c.subPlace) temp = $c.pracRoom;
 				else if (!(temp = ROOM[$c.place])) return;
@@ -250,10 +249,7 @@ KKuTu.onClientMessage = function ($c, msg) {
 			if (!msg.time) stable = false;
 			if (!msg.opts) stable = false;
 
-			// 서버 측 방 제목 욕설 필터링 적용
-			if (msg.title) {
-				msg.title = ProfanityFilter.filterRoomTitle(msg.title);
-			}
+			// 서버에서는 욕설 필터링을 적용하지 않음 (클라이언트에서 표시 시 처리)
 
 			msg.code = false;
 			msg.limit = Number(msg.limit);

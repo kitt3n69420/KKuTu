@@ -235,6 +235,10 @@ $(document).ready(function () {
 			injPickAll: $("#injpick-all"),
 			injPickNo: $("#injpick-no"),
 			injPickOK: $("#injpick-ok"),
+			quizPick: $("#QuizPickDiag"),
+			quizPickAll: $("#quizpick-all"),
+			quizPickNo: $("#quizpick-no"),
+			quizPickOK: $("#quizpick-ok"),
 			chatLog: $("#ChatLogDiag"),
 			obtain: $("#ObtainDiag"),
 			obtainOK: $("#obtain-ok"),
@@ -990,6 +994,11 @@ $(document).ready(function () {
 			if (rule.opts.indexOf("ijp") != -1) $("#room-injpick-panel").show();
 			else $("#room-injpick-panel").hide();
 			$("#room-injpick-panel-flat").hide();
+
+			// Show/hide quiz topic pick panel
+			if (rule.opts.indexOf("qij") != -1) $("#room-quizpick-panel").show();
+			else $("#room-quizpick-panel").hide();
+			$("#room-quizpick-panel-flat").hide();
 		} else {
 			// Flat view - hide all category panels, show flat panel
 			$("#room-link-method-panel").hide();
@@ -998,6 +1007,7 @@ $(document).ready(function () {
 			$("#room-bonus-panel").hide();
 			$("#room-misc-panel").hide();
 			$("#room-injpick-panel").hide();
+			$("#room-quizpick-panel").hide();
 
 			// Show flat panel and update options visibility
 			$("#room-all-rules-panel").show();
@@ -1005,10 +1015,15 @@ $(document).ready(function () {
 			// Show/hide injeong pick panel in flat mode
 			if (rule.opts.indexOf("ijp") != -1) $("#room-injpick-panel-flat").show();
 			else $("#room-injpick-panel-flat").hide();
+
+			// Show/hide quiz topic pick panel in flat mode
+			if (rule.opts.indexOf("qij") != -1) $("#room-quizpick-panel-flat").show();
+			else $("#room-quizpick-panel-flat").hide();
 		}
 
 		// Hide Special Rules Panel if empty
-		$data._injpick = [];
+		if (!$data._injpick) $data._injpick = [];
+		if (!$data._quizpick) $data._quizpick = [];
 		if (rule.rule == "Typing") $("#room-round").val(3);
 		$("#room-time").children("option").each(function (i, o) {
 			$(o).html(Number($(o).val()) * rule.time + L['SECOND']);
@@ -1022,6 +1037,12 @@ $(document).ready(function () {
 		} else {
 			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', false);
 			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', false);
+		}
+	});
+	// 나락-무적 상호배타: 나락 체크시 무적 해제
+	$("#room-narak, #room-flat-narak").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-invincible, #room-flat-invincible").prop('checked', false);
 		}
 	});
 	$stage.menu.spectate.on('click', function (e) {
@@ -1293,7 +1314,8 @@ $(document).ready(function () {
 	});
 	$stage.dialog.roomOK.on('click', function (e) {
 		var i, k, opts = {
-			injpick: $data._injpick
+			injpick: $data._injpick,
+			quizpick: $data._quizpick
 		};
 		for (i in OPTIONS) {
 			k = OPTIONS[i].name.toLowerCase();
@@ -1596,6 +1618,34 @@ $(document).ready(function () {
 		$data._injpick = list;
 		$stage.dialog.injPick.hide();
 	});
+	// Quiz topic pick handlers
+	$("#room-quiz-pick, #room-quiz-pick-flat").on('click', function (e) {
+		var i;
+
+		$("#quizpick-no").trigger('click');
+		for (i in $data._quizpick) {
+			$("#quiz-pick-" + $data._quizpick[i]).prop('checked', true);
+		}
+		showDialog($stage.dialog.quizPick);
+	});
+	$stage.dialog.quizPickAll.on('click', function (e) {
+		$("#quizpick-list input").prop('checked', true);
+	});
+	$stage.dialog.quizPickNo.on('click', function (e) {
+		$("#quizpick-list input").prop('checked', false);
+	});
+	$stage.dialog.quizPickOK.on('click', function (e) {
+		var list = [];
+
+		$("#quizpick-list").find("input").each(function (i, o) {
+			var $o = $(o);
+			var id = $o.attr('id').slice(10); // "quiz-pick-" length
+
+			if ($o.is(':checked')) list.push(id);
+		});
+		$data._quizpick = list;
+		$stage.dialog.quizPick.hide();
+	});
 	$stage.dialog.kickVoteY.on('click', function (e) {
 		send('kickVote', { agree: true });
 		clearTimeout($data._kickTimer);
@@ -1806,6 +1856,20 @@ $(document).ready(function () {
 			// 미션이 켜지면 관련 옵션들 활성화
 			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', false);
 			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', false);
+		}
+	});
+
+	// 7. 자유두음 vs 두음 없음 (상호 배제)
+	$("#room-freedueum").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-nodueum").prop('checked', false);
+			$("#room-flat-nodueum").prop('checked', false);
+		}
+	});
+	$("#room-nodueum").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-freedueum").prop('checked', false);
+			$("#room-flat-freedueum").prop('checked', false);
 		}
 	});
 
@@ -2320,7 +2384,7 @@ $lib.Typing.roundReady = function (data) {
 	recordEvent('roundReady', { data: data });
 };
 function onSpace(e) {
-	if (e.keyCode == 32) {
+	if (e.keyCode == 32 && $data._spaced) {
 		$stage.chatBtn.trigger('click');
 		e.preventDefault();
 	}
@@ -2398,8 +2462,9 @@ $lib.Typing.turnEnd = function (id, data) {
 	} else {
 		if (data.speed) {
 			clearInterval($data._tTime);
+			$data._relay = false;
 			$lib.Typing.spaceOff();
-			$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+			$stage.game.here.hide();
 
 			addTimeout(drawSpeed, 1000, data.speed);
 			stopBGM();
@@ -3856,8 +3921,14 @@ function drawChainSpeed(table) {
  */
 
 $lib.Calcbattle = {};
+$lib.Calcbattle._restTimer = null;
 
 $lib.Calcbattle.roundReady = function (data) {
+	// 이전 라운드의 restGoing 타이머 취소
+	if ($lib.Calcbattle._restTimer) {
+		clearTimeout($lib.Calcbattle._restTimer);
+		$lib.Calcbattle._restTimer = null;
+	}
 	$data._chatter = $stage.talk;
 	clearBoard();
 	$data._round = data.round;
@@ -4079,7 +4150,8 @@ $lib.Calcbattle.turnEnd = function (id, data) {
 	} else if (data.chains) {
 		// 라운드 종료 (시간 만료)
 		clearInterval($data._tTime);
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		$data._relay = false;
+		$stage.game.here.hide();
 
 		addTimeout(drawChainResult, 1000, data.chains);
 		stopBGM();
@@ -4092,7 +4164,11 @@ $lib.Calcbattle.turnEnd = function (id, data) {
 function restGoing(rest) {
 	$(".jjo-turn-time .graph-bar")
 		.html(rest + L['afterRun']);
-	if (rest > 0) addTimeout(restGoing, 1000, rest - 1);
+	if (rest > 0) {
+		$lib.Calcbattle._restTimer = addTimeout(restGoing, 1000, rest - 1);
+	} else {
+		$lib.Calcbattle._restTimer = null;
+	}
 }
 
 function drawChainResult(table) {
@@ -4108,6 +4184,115 @@ function drawChainResult(table) {
 			}).html(table[i] + "<label style='font-size: 11px;'>" + chainLabel + "</label>"));
 	}
 }
+
+/**
+ * Rule the words! KKuTu Online
+ * Copyright (C) 2017 JJoriping(op@jjo.kr)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+$lib.Quiz = {};
+
+$lib.Quiz.roundReady = function (data) {
+	var tv = L['quiz_' + data.topic];
+	var dv = "(" + L['quiz_' + data.difficulty] + ")";
+
+	clearBoard();
+	$data._roundTime = $data.room.time * 1000;
+	$data._fastTime = 10000;
+	$stage.game.display.html(tv + dv);
+	$stage.game.items.hide();
+	$stage.game.hints.show();
+	$(".jjo-turn-time .graph-bar")
+		.width("100%")
+		.html(tv)
+		.css('text-align', "center");
+	drawRound(data.round);
+	playSound('round_start');
+	clearInterval($data._tTime);
+};
+
+$lib.Quiz.turnStart = function (data) {
+	$(".game-user-current").removeClass("game-user-current");
+	$(".game-user-bomb").removeClass("game-user-bomb");
+	if ($data.room.game.seq.indexOf($data.id) >= 0) {
+		$stage.game.here.css('opacity', 1).show();
+	} else {
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0).show();
+	}
+
+	// 문제 표시 (jaqwi와 다른 부분)
+	var qVal = data.question;
+	if ($data.room.opts.drg) qVal = "<label style='color:" + getRandomColor() + "'>" + qVal + "</label>";
+	$stage.game.display.html($data._question = qVal);
+
+	clearInterval($data._tTime);
+	$data._tTime = addInterval(turnGoing, TICK);
+	playBGM('jaqwi');
+};
+
+$lib.Quiz.turnGoing = function () {
+	var $rtb = $stage.game.roundBar;
+	var bRate;
+	var tt;
+
+	if (!$data.room || !$data.room.gaming) clearInterval($data._tTime);
+	$data._roundTime -= TICK;
+
+	tt = $data._spectate ? L['stat_spectate'] : ($data._roundTime * 0.001).toFixed(1) + L['SECOND'];
+	$rtb
+		.width($data._roundTime / $data.room.time * 0.1 + "%")
+		.html(tt);
+
+	if (!$rtb.hasClass("round-extreme")) if ($data._roundTime <= $data._fastTime) {
+		if ($data.bgm) {
+			bRate = $data.bgm.currentTime / $data.bgm.duration;
+			if ($data.bgm.paused) stopBGM();
+			else playBGM('jaqwiF');
+			$data.bgm.currentTime = $data.bgm.duration * bRate;
+		}
+		$rtb.addClass("round-extreme");
+	}
+};
+
+$lib.Quiz.turnHint = function (data) {
+	playSound('mission');
+	pushHint(data.hint);
+};
+
+$lib.Quiz.turnEnd = function (id, data) {
+	var $sc = $("<div>").addClass("deltaScore").html("+" + data.score);
+	var $uc = $("#game-user-" + id);
+
+	if (data.giveup) {
+		$uc.addClass("game-user-bomb");
+	} else if (data.answer) {
+		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		var ansColor = ($data.room.opts.drg) ? getRandomColor() : "#FFFF44";
+		$stage.game.display.html($("<label>").css('color', ansColor).html(data.answer));
+		stopBGM();
+		playSound('horr');
+	} else {
+		if (id == $data.id) $stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		addScore(id, data.score, data.totalScore);
+		if ($data._roundTime > 10000) $data._roundTime = 10000;
+		drawObtainedScore($uc, $sc);
+		updateScore(id, getScore(id)).addClass("game-user-current");
+		playSound('success');
+	}
+};
 
 /**
  * Rule the words! KKuTu Online
@@ -6026,7 +6211,7 @@ function requestRoomInfo(id) {
 
 	$data._roominfo = id;
 	$("#RoomInfoDiag .dialog-title").html(id + L['sRoomInfo']);
-	$("#ri-title").html((o.password ? "<i class='fa fa-lock'></i>&nbsp;" : "") + o.title);
+	$("#ri-title").html((o.password ? "<i class='fa fa-lock'></i>&nbsp;" : "") + badWords(o.title));
 	$("#ri-mode").html(L['mode' + MODE[o.mode]]);
 	$("#ri-round").html(o.round + ", " + o.time + L['SECOND']);
 	$("#ri-limit").html(o.players.length + " / " + o.limit);
@@ -7136,13 +7321,14 @@ function pushHistory(text, mean, theme, wc) {
 	var $v, $w, $x;
 	var wcs = wc ? wc.split(',') : [], wd = {};
 	var val;
+	var displayText = badWords(text);  // 표시용 텍스트는 비속어 필터링
 
 	$stage.game.history.prepend($v = $("<div>")
 		.addClass("ellipse history-item")
 		.width(0)
 		.animate({ width: 200 })
 		.css('color', ($data.room.opts.drg) ? getRandomColor() : "")
-		.html(text)
+		.html(displayText)
 	);
 	$w = $stage.game.history.children();
 	if ($w.length > 6) {

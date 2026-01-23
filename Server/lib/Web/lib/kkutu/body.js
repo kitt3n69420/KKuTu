@@ -1915,7 +1915,7 @@ function requestRoomInfo(id) {
 
 	$data._roominfo = id;
 	$("#RoomInfoDiag .dialog-title").html(id + L['sRoomInfo']);
-	$("#ri-title").html((o.password ? "<i class='fa fa-lock'></i>&nbsp;" : "") + o.title);
+	$("#ri-title").html((o.password ? "<i class='fa fa-lock'></i>&nbsp;" : "") + badWords(o.title));
 	$("#ri-mode").html(L['mode' + MODE[o.mode]]);
 	$("#ri-round").html(o.round + ", " + o.time + L['SECOND']);
 	$("#ri-limit").html(o.players.length + " / " + o.limit);
@@ -3025,13 +3025,14 @@ function pushHistory(text, mean, theme, wc) {
 	var $v, $w, $x;
 	var wcs = wc ? wc.split(',') : [], wd = {};
 	var val;
+	var displayText = badWords(text);  // 표시용 텍스트는 비속어 필터링
 
 	$stage.game.history.prepend($v = $("<div>")
 		.addClass("ellipse history-item")
 		.width(0)
 		.animate({ width: 200 })
 		.css('color', ($data.room.opts.drg) ? getRandomColor() : "")
-		.html(text)
+		.html(displayText)
 	);
 	$w = $stage.game.history.children();
 	if ($w.length > 6) {

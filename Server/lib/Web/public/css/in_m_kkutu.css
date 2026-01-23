@@ -2009,3 +2009,9 @@ body {
 	display: flex;
 	flex-wrap: wrap;
 }
+
+/* Hide qij checkboxes - use picker dialog instead (like ijp) */
+#room-qij,
+#room-flat-qij {
+	display: none !important;
+}

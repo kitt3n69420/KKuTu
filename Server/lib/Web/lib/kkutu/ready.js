@@ -160,6 +160,10 @@ $(document).ready(function () {
 			injPickAll: $("#injpick-all"),
 			injPickNo: $("#injpick-no"),
 			injPickOK: $("#injpick-ok"),
+			quizPick: $("#QuizPickDiag"),
+			quizPickAll: $("#quizpick-all"),
+			quizPickNo: $("#quizpick-no"),
+			quizPickOK: $("#quizpick-ok"),
 			chatLog: $("#ChatLogDiag"),
 			obtain: $("#ObtainDiag"),
 			obtainOK: $("#obtain-ok"),
@@ -915,6 +919,11 @@ $(document).ready(function () {
 			if (rule.opts.indexOf("ijp") != -1) $("#room-injpick-panel").show();
 			else $("#room-injpick-panel").hide();
 			$("#room-injpick-panel-flat").hide();
+
+			// Show/hide quiz topic pick panel
+			if (rule.opts.indexOf("qij") != -1) $("#room-quizpick-panel").show();
+			else $("#room-quizpick-panel").hide();
+			$("#room-quizpick-panel-flat").hide();
 		} else {
 			// Flat view - hide all category panels, show flat panel
 			$("#room-link-method-panel").hide();
@@ -923,6 +932,7 @@ $(document).ready(function () {
 			$("#room-bonus-panel").hide();
 			$("#room-misc-panel").hide();
 			$("#room-injpick-panel").hide();
+			$("#room-quizpick-panel").hide();
 
 			// Show flat panel and update options visibility
 			$("#room-all-rules-panel").show();
@@ -930,10 +940,15 @@ $(document).ready(function () {
 			// Show/hide injeong pick panel in flat mode
 			if (rule.opts.indexOf("ijp") != -1) $("#room-injpick-panel-flat").show();
 			else $("#room-injpick-panel-flat").hide();
+
+			// Show/hide quiz topic pick panel in flat mode
+			if (rule.opts.indexOf("qij") != -1) $("#room-quizpick-panel-flat").show();
+			else $("#room-quizpick-panel-flat").hide();
 		}
 
 		// Hide Special Rules Panel if empty
-		$data._injpick = [];
+		if (!$data._injpick) $data._injpick = [];
+		if (!$data._quizpick) $data._quizpick = [];
 		if (rule.rule == "Typing") $("#room-round").val(3);
 		$("#room-time").children("option").each(function (i, o) {
 			$(o).html(Number($(o).val()) * rule.time + L['SECOND']);
@@ -947,6 +962,12 @@ $(document).ready(function () {
 		} else {
 			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', false);
 			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', false);
+		}
+	});
+	// 나락-무적 상호배타: 나락 체크시 무적 해제
+	$("#room-narak, #room-flat-narak").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-invincible, #room-flat-invincible").prop('checked', false);
 		}
 	});
 	$stage.menu.spectate.on('click', function (e) {
@@ -1218,7 +1239,8 @@ $(document).ready(function () {
 	});
 	$stage.dialog.roomOK.on('click', function (e) {
 		var i, k, opts = {
-			injpick: $data._injpick
+			injpick: $data._injpick,
+			quizpick: $data._quizpick
 		};
 		for (i in OPTIONS) {
 			k = OPTIONS[i].name.toLowerCase();
@@ -1521,6 +1543,34 @@ $(document).ready(function () {
 		$data._injpick = list;
 		$stage.dialog.injPick.hide();
 	});
+	// Quiz topic pick handlers
+	$("#room-quiz-pick, #room-quiz-pick-flat").on('click', function (e) {
+		var i;
+
+		$("#quizpick-no").trigger('click');
+		for (i in $data._quizpick) {
+			$("#quiz-pick-" + $data._quizpick[i]).prop('checked', true);
+		}
+		showDialog($stage.dialog.quizPick);
+	});
+	$stage.dialog.quizPickAll.on('click', function (e) {
+		$("#quizpick-list input").prop('checked', true);
+	});
+	$stage.dialog.quizPickNo.on('click', function (e) {
+		$("#quizpick-list input").prop('checked', false);
+	});
+	$stage.dialog.quizPickOK.on('click', function (e) {
+		var list = [];
+
+		$("#quizpick-list").find("input").each(function (i, o) {
+			var $o = $(o);
+			var id = $o.attr('id').slice(10); // "quiz-pick-" length
+
+			if ($o.is(':checked')) list.push(id);
+		});
+		$data._quizpick = list;
+		$stage.dialog.quizPick.hide();
+	});
 	$stage.dialog.kickVoteY.on('click', function (e) {
 		send('kickVote', { agree: true });
 		clearTimeout($data._kickTimer);
@@ -1731,6 +1781,20 @@ $(document).ready(function () {
 			// 미션이 켜지면 관련 옵션들 활성화
 			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', false);
 			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', false);
+		}
+	});
+
+	// 7. 자유두음 vs 두음 없음 (상호 배제)
+	$("#room-freedueum").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-nodueum").prop('checked', false);
+			$("#room-flat-nodueum").prop('checked', false);
+		}
+	});
+	$("#room-nodueum").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-freedueum").prop('checked', false);
+			$("#room-flat-freedueum").prop('checked', false);
 		}
 	});
 

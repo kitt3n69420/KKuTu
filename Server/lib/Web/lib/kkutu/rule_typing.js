@@ -36,7 +36,7 @@ $lib.Typing.roundReady = function (data) {
 	recordEvent('roundReady', { data: data });
 };
 function onSpace(e) {
-	if (e.keyCode == 32) {
+	if (e.keyCode == 32 && $data._spaced) {
 		$stage.chatBtn.trigger('click');
 		e.preventDefault();
 	}
@@ -114,8 +114,9 @@ $lib.Typing.turnEnd = function (id, data) {
 	} else {
 		if (data.speed) {
 			clearInterval($data._tTime);
+			$data._relay = false;
 			$lib.Typing.spaceOff();
-			$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+			$stage.game.here.hide();
 
 			addTimeout(drawSpeed, 1000, data.speed);
 			stopBGM();

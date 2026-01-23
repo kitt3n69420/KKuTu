@@ -2496,4 +2496,22 @@ TypeError: Cannot read properties of undefined (reading 'guest__25PZSsRi-LcTGvqO
     at my.submit (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:2351:13)
     at Timeout._onTimeout (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\chainbattle.js:581:9)
     at listOnTimeout (node:internal/timers:588:17)
-    at process.processTimers (node:internal/timers:523:7)
+    at process.processTimers (node:internal/timers:523:7):2083 [2026. 1. 22. 오전 9:17:38] ERROR: TypeError: query.find is not a function
+TypeError: query.find is not a function
+    at exports.Room.getQuestion (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\quiz.js:316:17)
+    at exports.roundReady (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\quiz.js:87:15)
+    at my.route.my.routeSync (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:2410:13)
+    at my.roundReady [as _onTimeout] (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:2082:13)
+    at listOnTimeout (node:internal/timers:588:17)
+    at process.processTimers (node:internal/timers:523:7):2083 [2026. 1. 23. 오전 1:41:31] ERROR: TypeError: Cannot read properties of undefined (reading 'length')
+TypeError: Cannot read properties of undefined (reading 'length')
+    at decideStrategy (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1990:120)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:1955:6
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:316:13)
+    at Query.preCB (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:298:6)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12)
+    at Client._handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\client.js:290:19)
+    at Connection.emit (node:events:518:28)
+    at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12
+    at Parser.parse (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\parser.js:40:17)
+    at Socket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\index.js:11:42)

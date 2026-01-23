@@ -210,6 +210,7 @@ block Middle
 						option(value=10)= L('modeHUN')
 						option(value=15)= L('modeKPQ')
 						option(value=17)= L('modeKFR')
+						option(value=28)= L('modeKQZ')
 					optgroup(label=L('mcEnglish'))
 						option(value=1)= L('modeESH')
 						option(value=19)= L('modeEKK')
@@ -222,6 +223,7 @@ block Middle
 						option(value=14)= L('modeESS')
 						option(value=20)= L('modeEPQ')
 						option(value=18)= L('modeEFR')
+						option(value=29)= L('modeEQZ')
 					optgroup(label=L('mcEtc'))
 						option(value=24)= L('modeCRL')
 						option(value=27)= L('modeCAL')
@@ -279,6 +281,8 @@ block Middle
 						+GameOption(i, 'room')
 				div.dialog-opt#room-injpick-panel
 					button#room-injeong-pick(style='font-size: 11px;')= L('pickInjeong')
+				div.dialog-opt#room-quizpick-panel
+					button#room-quiz-pick(style='font-size: 11px;')= L('pickQuizTopic')
 			div.dialog-bar#room-all-rules-panel(style='height: auto; overflow: hidden;')
 				h4(style='height: 45px;')= L('misc')
 				div(style='float: left; width: calc(100% - 90px);')
@@ -306,6 +310,8 @@ block Middle
 					});
 				div.dialog-opt#room-injpick-panel-flat
 					button#room-injeong-pick-flat(style='font-size: 11px;')= L('pickInjeong')
+				div.dialog-opt#room-quizpick-panel-flat
+					button#room-quiz-pick-flat(style='font-size: 11px;')= L('pickQuizTopic')
 		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; right: 10px; width: auto;')
 			button#room-ok= L('OK')
 	+Dialog('InjPickDiag', 200, 400, L('pickInjeong'))
@@ -332,6 +338,20 @@ block Middle
 				- });
 		div.dialog-bar.tail-button
 			button#injpick-ok= L('OK')
+	+Dialog('QuizPickDiag', 200, 300, L('pickQuizTopic'))
+		h4= L('explQuizPick')
+		div.dialog-bar
+			button#quizpick-all= L('injpickAll')
+			button#quizpick-no= L('injpickNo')
+		div.dialog-bar#quizpick-list(style='height: 180px; overflow-y: scroll;')
+			- locals.QUIZ_TOPIC.forEach(function(item){
+				- var name = "quiz-pick-" + item;
+				div(style='float: left; width: 100%;')
+					input(id=name, type='checkbox', style='width: auto;')
+					label(for=name)= LANG['quiz_' + item]
+			- });
+		div.dialog-bar.tail-button
+			button#quizpick-ok= L('OK')
 	+Dialog('PracticeDiag', 300, 205)
 		div.dialog-bar
 			h4= L('selectLevel')

@@ -117,8 +117,17 @@ exports.turnEnd = function () {
 
 	my.game.late = true;
 	if (target) if (target.game) {
-		score = Const.getPenalty(my.game.chain, target.game.score);
-		target.game.score += score;
+		// 무적(god): 패널티 면제
+		if (my.opts.invincible) {
+			score = 0;
+		} else {
+			score = Const.getPenalty(my.game.chain, target.game.score);
+			// 나락(nar): 최소 패널티 >= 점수일 때 적용 (점수가 0 이하가 됨)
+			if (my.opts.narak && Math.abs(score) >= target.game.score) {
+				score = -target.game.score;
+			}
+		}
+		if (score !== 0) target.game.score += score;
 	}
 	my.byMaster('turnEnd', {
 		ok: false,

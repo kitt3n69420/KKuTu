@@ -22,8 +22,14 @@
  */
 
 $lib.Calcbattle = {};
+$lib.Calcbattle._restTimer = null;
 
 $lib.Calcbattle.roundReady = function (data) {
+	// 이전 라운드의 restGoing 타이머 취소
+	if ($lib.Calcbattle._restTimer) {
+		clearTimeout($lib.Calcbattle._restTimer);
+		$lib.Calcbattle._restTimer = null;
+	}
 	$data._chatter = $stage.talk;
 	clearBoard();
 	$data._round = data.round;
@@ -245,7 +251,8 @@ $lib.Calcbattle.turnEnd = function (id, data) {
 	} else if (data.chains) {
 		// 라운드 종료 (시간 만료)
 		clearInterval($data._tTime);
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		$data._relay = false;
+		$stage.game.here.hide();
 
 		addTimeout(drawChainResult, 1000, data.chains);
 		stopBGM();
@@ -258,7 +265,11 @@ $lib.Calcbattle.turnEnd = function (id, data) {
 function restGoing(rest) {
 	$(".jjo-turn-time .graph-bar")
 		.html(rest + L['afterRun']);
-	if (rest > 0) addTimeout(restGoing, 1000, rest - 1);
+	if (rest > 0) {
+		$lib.Calcbattle._restTimer = addTimeout(restGoing, 1000, rest - 1);
+	} else {
+		$lib.Calcbattle._restTimer = null;
+	}
 }
 
 function drawChainResult(table) {
