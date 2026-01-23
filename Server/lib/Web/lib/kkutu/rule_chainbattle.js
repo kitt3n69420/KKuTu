@@ -22,9 +22,16 @@
  */
 
 $lib.Chainbattle = {};
+$lib.Chainbattle._restTimer = null;
 
 $lib.Chainbattle.roundReady = function (data) {
 	var i, len = data.title.length;
+
+	// 이전 라운드의 restGoing 타이머 취소
+	if ($lib.Chainbattle._restTimer) {
+		clearTimeout($lib.Chainbattle._restTimer);
+		$lib.Chainbattle._restTimer = null;
+	}
 
 	$data._chatter = $stage.talk;
 	clearBoard();
@@ -41,7 +48,12 @@ $lib.Chainbattle.roundReady = function (data) {
 	$stage.game.chain.show().html($data.chain);
 
 	$(".game-user-bomb").removeClass("game-user-bomb");
-	$(".jjo-turn-time .graph-bar").css('background-color', "");
+
+	// 노란 바 초기화 (이전 라운드의 카운트다운 제거)
+	$(".jjo-turn-time .graph-bar")
+		.width("100%")
+		.html("")
+		.css({ 'text-align': "center", 'background-color': "#70712D" });
 
 	$data._fastTime = 10000;
 	$data._playerWords = {};
@@ -182,7 +194,11 @@ $lib.Chainbattle.turnEnd = function (id, data) {
 function restGoing(rest) {
 	$(".jjo-turn-time .graph-bar")
 		.html(rest + L['afterRun']);
-	if (rest > 0) addTimeout(restGoing, 1000, rest - 1);
+	if (rest > 0) {
+		$lib.Chainbattle._restTimer = addTimeout(restGoing, 1000, rest - 1);
+	} else {
+		$lib.Chainbattle._restTimer = null;
+	}
 }
 
 function drawPlayerWords() {

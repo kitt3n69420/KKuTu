@@ -178,26 +178,37 @@ function getAuto(char, subChar, mode) {
 			var regexStr = '^(' + chars.map(escapeRegExp).join('|') + ')';
 			var regex = new RegExp(regexStr);
 
-			// 필요한 필드만 조회
-			var typeC = my.opts.strict ? Const.KOR_STRICT : Const.KOR_GROUP;
-			var conditions = [
+			// 필요한 필드 조회 (_id, flag, type - 봇 필터링용)
+			DB.kkutu['ko'].find(
 				['_id', regex],
-				['type', typeC]
-			];
-			if (!my.opts.injeong) conditions.push(['flag', { '$not': Const.KOR_FLAG.INJEONG }]);
-			if (my.opts.strict) conditions.push(['flag', { '$lt': 4 }]);
-			if (my.opts.loanword) conditions.push(['flag', { '$not': Const.KOR_FLAG.LOANWORD }]);
-
-			DB.kkutu['ko'].find.apply(DB.kkutu['ko'], conditions)
-				.limit(['_id', true], ['flag', true], ['type', true])  // 필드 반환
+				['type', Const.KOR_GROUP]
+			).limit(['_id', true], ['flag', true], ['type', true])  // flag, type 필드 추가
 				.limit(50)  // 50개로 제한 (성능)
 				.on(function (docs) {
 					if (!docs || docs.length === 0) {
 						R.go([]);
 						return;
 					}
-					// 옵션 필터링은 submit에서 처리되므로 여기선 기본 필터만
-					R.go(docs);
+					// 플래그 필터링 적용 (봇이 규칙 준수하도록)
+					var filtered = docs.filter(function (w) {
+						if (!w.flag && !w.type) return true; // 플래그 데이터 없으면 허용
+
+						// 어인정: false면 인정 단어 금지
+						if (!my.opts.injeong && w.flag && (w.flag & Const.KOR_FLAG.INJEONG)) {
+							return false;
+						}
+						// 깐깐: true면 명사가 아닌 낱말, 사투리, 옛말, 북한어 금지
+						if (my.opts.strict) {
+							if (w.type && !w.type.match(Const.KOR_STRICT)) return false;
+							if (w.flag && w.flag >= 4) return false;
+						}
+						// 우리말: true면 외래어 금지
+						if (my.opts.loanword && w.flag && (w.flag & Const.KOR_FLAG.LOANWORD)) {
+							return false;
+						}
+						return true;
+					});
+					R.go(filtered);
 				});
 		} else {
 			// 영어: 글자별 캐싱 (알파벳 26자만 있으므로 캐싱 효율적)
@@ -677,34 +688,31 @@ exports.playRobot = function (robot) {
 				return;
 			}
 
-			// 필터링: 길이 제한, 미사용 단어
+			// 필터링: 길이 제한, 미사용 단어, 플래그 검증
 			list = list.filter(function (w) {
-				return w._id.length >= 2 &&
-					w._id.length <= maxLen &&
-					!state.chain.includes(w._id);
-			});
+				// 기본 길이 및 중복 체크
+				if (w._id.length < 2 || w._id.length > maxLen || state.chain.includes(w._id)) {
+					return false;
+				}
 
-			if (list.length === 0) {
-				retryLater();
-				return;
-			}
-
-			// 한국어: 플래그 필터링 (어인정, 깐깐, 우리말)
-			if (isKo) {
-				list = list.filter(function (w) {
-					// 어인정
-					if (!my.opts.injeong && (w.flag & Const.KOR_FLAG.INJEONG)) return false;
-					// 깐깐
-					if (my.opts.strict) {
-						if (w.flag >= 4) return false;
-						if (w.type && !w.type.match(Const.KOR_STRICT)) return false;
+				// 한국어: 플래그 검증 (이미 getAuto에서 필터링되었지만 이중 확인)
+				if (isKo && (w.flag || w.type)) {
+					// 어인정: false면 인정 단어 금지
+					if (!my.opts.injeong && w.flag && (w.flag & Const.KOR_FLAG.INJEONG)) {
+						return false;
 					}
-					// 우리말
-					if (my.opts.loanword && (w.flag & Const.KOR_FLAG.LOANWORD)) return false;
-
-					return true;
-				});
-			}
+					// 깐깐: true면 명사가 아닌 낱말, 사투리, 옛말, 북한어 금지
+					if (my.opts.strict) {
+						if (w.type && !w.type.match(Const.KOR_STRICT)) return false;
+						if (w.flag && w.flag >= 4) return false;
+					}
+					// 우리말: true면 외래어 금지
+					if (my.opts.loanword && w.flag && (w.flag & Const.KOR_FLAG.LOANWORD)) {
+						return false;
+					}
+				}
+				return true;
+			});
 
 			if (list.length === 0) {
 				retryLater();

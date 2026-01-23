@@ -90,6 +90,8 @@ exports.roundReady = function () {
 
 	if (!my.game.lists) return;
 
+	clearTimeout(my.game.qTimer);
+	clearTimeout(my.game._rrt);
 	my.game.round++;
 	my.game.roundTime = my.time * 1000;
 	if (my.game.round <= my.round) {
@@ -146,8 +148,9 @@ exports.submit = function (client, text) {
 	var allOut = true;
 
 	if (!client.game) return;
-	if (client.game.out) return;
+	if (client.game.out) return client.chat(text);
 	if (!my.game.clist) return;
+	if (my.game.late) return client.chat(text);
 
 	if (my.opts.mirror) text = text.split("").reverse().join("");
 	if (my.game.clist[client.game.index] == text) {

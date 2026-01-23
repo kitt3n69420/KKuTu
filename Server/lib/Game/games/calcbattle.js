@@ -77,6 +77,8 @@ exports.roundReady = function () {
 	var playerProblems = {};
 	var playerNextProblems = {};
 
+	clearTimeout(my.game.qTimer);
+	clearTimeout(my.game._rrt);
 	my.game.round++;
 	my.game.roundTime = my.time * 1000;
 
@@ -175,8 +177,8 @@ exports.submit = function (client, text) {
 	var allOut = true;
 
 	if (!client.game) return;
-	if (client.game.out) return;
-	if (my.game.late) return;
+	if (client.game.out) return client.chat(text);
+	if (my.game.late) return client.chat(text);
 
 	// 포기 처리 (gg, ㅈㅈ)
 	if (text === 'gg' || text === 'ㅈㅈ') {

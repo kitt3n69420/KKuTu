@@ -16,9 +16,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+$lib.Typing = $lib.Typing || {};
+$lib.Typing._restTimer = null;
+
 $lib.Typing.roundReady = function (data) {
 	var i, len = $data.room.game.title.length;
 	var $l;
+
+	// 이전 라운드의 restGoing 타이머 취소
+	if ($lib.Typing._restTimer) {
+		clearTimeout($lib.Typing._restTimer);
+		$lib.Typing._restTimer = null;
+	}
 
 	$data._chatter = $stage.talk;
 	clearBoard();
@@ -29,7 +38,13 @@ $lib.Typing.roundReady = function (data) {
 	$data.chain = 0;
 	$data.long = data.long;
 	$(".game-user-bomb").removeClass("game-user-bomb");
-	$(".jjo-turn-time .graph-bar").css('background-color', "");
+
+	// 노란 바 초기화 (이전 라운드의 카운트다운 제거)
+	$(".jjo-turn-time .graph-bar")
+		.width("100%")
+		.html("")
+		.css({ 'text-align': "center", 'background-color': "#70712D" });
+
 	drawList();
 	drawRound(data.round);
 	playSound('round_start');
@@ -137,7 +152,11 @@ $lib.Typing.turnEnd = function (id, data) {
 function restGoing(rest) {
 	$(".jjo-turn-time .graph-bar")
 		.html(rest + L['afterRun']);
-	if (rest > 0) addTimeout(restGoing, 1000, rest - 1);
+	if (rest > 0) {
+		$lib.Typing._restTimer = addTimeout(restGoing, 1000, rest - 1);
+	} else {
+		$lib.Typing._restTimer = null;
+	}
 }
 function drawSpeed(table) {
 	var i;
