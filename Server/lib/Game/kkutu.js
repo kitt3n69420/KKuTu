@@ -1765,11 +1765,25 @@ exports.Room = function (room, channel) {
 							if (Cluster.isWorker) my.turnEnd();
 						}
 						my.game.seq.splice(seqIndex, 1);
-						if (my.game.turn > seqIndex) {
-							my.game.turn--;
-							if (my.game.turn < 0) my.game.turn = my.game.seq.length - 1;
+
+						// 랜덤 턴 모드: 배열 재생성
+						if (my.opts.randomturn) {
+							my.game.randomTurnOrder = [];
+							my.game.randomTurnIndex = 0;
+
+							for (var rt = 0; rt < my.game.seq.length * 2; rt++) {
+								my.game.randomTurnOrder.push(rt % my.game.seq.length);
+							}
+
+							my.game.randomTurnOrder = shuffle(my.game.randomTurnOrder);
+							my.game.turn = my.game.randomTurnOrder[0];
+						} else {
+							if (my.game.turn > seqIndex) {
+								my.game.turn--;
+								if (my.game.turn < 0) my.game.turn = my.game.seq.length - 1;
+							}
+							if (my.game.turn >= my.game.seq.length) my.game.turn = 0;
 						}
-						if (my.game.turn >= my.game.seq.length) my.game.turn = 0;
 					}
 				}
 
@@ -2052,6 +2066,20 @@ exports.Room = function (room, channel) {
 			}
 		}
 		my.game.mission = null;
+
+		// 랜덤 턴 옵션 활성화 시 턴 순서 배열 초기화
+		if (my.opts.randomturn) {
+			my.game.randomTurnOrder = [];
+			my.game.randomTurnIndex = 0;
+
+			// 플레이어 인덱스를 2벌 만들기
+			for (var rt = 0; rt < my.game.seq.length * 2; rt++) {
+				my.game.randomTurnOrder.push(rt % my.game.seq.length);
+			}
+
+			// 셔플
+			my.game.randomTurnOrder = shuffle(my.game.randomTurnOrder);
+		}
 		for (i in my.game.seq) {
 			o = DIC[my.game.seq[i]] || my.game.seq[i];
 			if (!o) continue;
@@ -2349,7 +2377,32 @@ exports.Room = function (room, channel) {
 		if (!my.gaming) return;
 		if (!my.game.seq) return;
 
-		my.game.turn = (my.game.turn + 1) % my.game.seq.length;
+		// 랜덤 턴 옵션 체크
+		if (my.opts.randomturn) {
+			// 랜덤 턴 배열 인덱스 증가
+			my.game.randomTurnIndex++;
+
+			// 배열 끝에 도달하면 재셔플
+			if (my.game.randomTurnIndex >= my.game.randomTurnOrder.length) {
+				my.game.randomTurnIndex = 0;
+
+				// 플레이어 인덱스를 2벌 만들기
+				my.game.randomTurnOrder = [];
+				for (var rt = 0; rt < my.game.seq.length * 2; rt++) {
+					my.game.randomTurnOrder.push(rt % my.game.seq.length);
+				}
+
+				// 재셔플
+				my.game.randomTurnOrder = shuffle(my.game.randomTurnOrder);
+			}
+
+			// 랜덤 턴 배열에서 다음 플레이어 선택
+			my.game.turn = my.game.randomTurnOrder[my.game.randomTurnIndex];
+		} else {
+			// 기존 로직: 순차 진행
+			my.game.turn = (my.game.turn + 1) % my.game.seq.length;
+		}
+
 		my.turnStart(force);
 	};
 	my.turnEnd = function () {

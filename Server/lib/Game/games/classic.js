@@ -2120,7 +2120,7 @@ exports.readyRobot = function (robot) {
 		var currentTeam = robot.game.team || 0;
 		console.log(`[BOT] Team Check START: current bot team=${currentTeam}, turn=${my.game.turn}, seq.length=${my.game.seq.length}`);
 
-		if (currentTeam !== 0) {
+		if (currentTeam !== 0 || my.opts.randomturn) {
 			var nextTurnIndex = (my.game.turn + 1) % my.game.seq.length;
 			var nextPlayer = my.game.seq[nextTurnIndex];
 			console.log(`[BOT] Team Check: nextTurnIndex=${nextTurnIndex}, nextPlayer type=${typeof nextPlayer}`);
