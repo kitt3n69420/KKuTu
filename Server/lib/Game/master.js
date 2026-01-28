@@ -28,7 +28,7 @@ var Const = require("../const");
 var JLog = require("../sub/jjlog");
 var Secure = require("../sub/secure");
 var Recaptcha = require("../sub/recaptcha");
-var { validateInput } = require("../Web/validators");
+var { validateInput, checkPrototypePollution } = require("../Web/validators");
 
 var MainDB;
 
@@ -556,6 +556,15 @@ function joinNewUser($c) {
 
 KKuTu.onClientMessage = function ($c, msg) {
   if (!msg) return;
+
+  // 프로토타입 오염 방지 검사
+  if (typeof msg === "object" && msg !== null) {
+    if (!checkPrototypePollution(msg)) {
+      JLog.warn(`[SECURITY] Prototype pollution attempt blocked from: ${$c.id}`);
+      $c.send("error", { code: 400 });
+      return;
+    }
+  }
 
   if ($c.passRecaptcha) {
     processClientRequest($c, msg);

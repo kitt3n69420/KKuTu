@@ -22,7 +22,7 @@ var Const = require("../const");
 var https = require("https");
 var Secure = require("../sub/secure");
 var ProfanityFilter = require("../sub/profanity-filter");
-var { validateInput } = require("../Web/validators");
+var { validateInput, checkPrototypePollution } = require("../Web/validators");
 var Server;
 var HTTPS_Server;
 
@@ -211,6 +211,18 @@ KKuTu.onClientMessage = function ($c, msg) {
 
   if (!msg) return;
 
+  // 프로토타입 오염 방지 검사
+  if (typeof msg === "object" && msg !== null) {
+    if (!checkPrototypePollution(msg)) {
+      console.log("[SECURITY] Prototype pollution attempt blocked from:", $c.id);
+      console.log("[SECURITY] Message type:", msg.type);
+      console.log("[SECURITY] Message keys:", Object.keys(msg));
+      console.log("[SECURITY] Full message:", JSON.stringify(msg));
+      $c.send("error", { code: 400 });
+      return;
+    }
+  }
+
   switch (msg.type) {
     case "yell":
       if (!msg.value) return;
@@ -326,13 +338,31 @@ KKuTu.onClientMessage = function ($c, msg) {
       $c.start();
       break;
     case "practice":
+      console.log("[DEBUG] practice case reached, msg:", JSON.stringify(msg));
       if (!ROOM[$c.place]) return;
       if (ROOM[$c.place].gaming) return;
       if (!GUEST_PERMISSION.practice) if ($c.guest) return;
-      if (!validateInput(msg.level, "number")) return;
-      if (msg.personality !== undefined && !validateInput(msg.personality, "number")) return;
-      if (msg.preferredChar !== undefined && !validateInput(msg.preferredChar, "string", { maxLength: 1 })) return;
-      if (isNaN((msg.level = Number(msg.level)))) return;
+
+      // 빈 문자열을 undefined로 변환
+      if (msg.personality === "") msg.personality = undefined;
+      if (msg.preferredChar === "") msg.preferredChar = undefined;
+
+      if (!validateInput(msg.level, "number")) {
+        console.log("[DEBUG] practice: level validation failed", msg.level);
+        return;
+      }
+      if (msg.personality !== undefined && !validateInput(msg.personality, "number")) {
+        console.log("[DEBUG] practice: personality validation failed", msg.personality);
+        return;
+      }
+      if (msg.preferredChar !== undefined && !validateInput(msg.preferredChar, "string", { maxLength: 1 })) {
+        console.log("[DEBUG] practice: preferredChar validation failed", msg.preferredChar);
+        return;
+      }
+      if (isNaN((msg.level = Number(msg.level)))) {
+        console.log("[DEBUG] practice: level NaN check failed");
+        return;
+      }
       if (ROOM[$c.place].rule.ai) {
         if (msg.level < 0 || msg.level >= 5) return;
       } else if (msg.level != -1) return;
@@ -446,6 +476,10 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (msg.value.length < 2) return;
       break;
     case "setAI":
+      // 빈 문자열을 undefined로 변환
+      if (msg.personality === "") msg.personality = undefined;
+      if (msg.preferredChar === "") msg.preferredChar = undefined;
+
       if (!validateInput(msg.target, "string", { maxLength: 50 })) return;
       if (!validateInput(msg.level, "number")) return;
       if (!validateInput(msg.team, "number")) return;
