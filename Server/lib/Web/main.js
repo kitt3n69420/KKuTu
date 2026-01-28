@@ -35,6 +35,7 @@ var Secure = require("../sub/secure");
 //볕뉘 수정
 var passport = require("passport");
 //볕뉘 수정 끝
+var { validateInput } = require("./validators");
 var Const = require("../const");
 var https = require("https");
 
@@ -289,6 +290,11 @@ Server.get("/common-sounds", function (req, res) {
 Server.get("/", function (req, res) {
   var server = req.query.server;
 
+  // 입력 검증
+  if (server !== undefined && !validateInput(server, "number")) {
+    return res.status(400).send("Invalid server parameter");
+  }
+
   //볕뉘 수정 구문삭제(220~229, 240)
   DB.session.findOne(["_id", req.session.id]).on(function ($ses) {
     // var sid = (($ses || {}).profile || {}).sid || "NULL";
@@ -355,5 +361,8 @@ Server.get("/servers", function (req, res) {
 //볕뉘 수정 구문 삭제(274~353)
 
 Server.get("/legal/:page", function (req, res) {
+  if (!validateInput(req.params.page, "string", { maxLength: 50, noSpecialChars: true })) {
+    return res.status(400).send("Invalid page parameter");
+  }
   page(req, res, "legal/" + req.params.page);
 });
