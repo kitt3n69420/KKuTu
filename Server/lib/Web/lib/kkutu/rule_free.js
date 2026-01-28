@@ -88,8 +88,14 @@ $lib.Free.turnEnd = function (id, data) {
 
     if ($data._turnSound) $data._turnSound.stop();
     if (id == $data.id) $data._relay = false;
-    addScore(id, data.score, data.totalScore);
     clearInterval($data._tTime);
+
+    // ========== 서바이벌 모드 처리 ==========
+    if (handleSurvivalKO(id, data, $sc, $uc)) return;
+    handleSurvivalDamage(data);
+    // ========== 서바이벌 모드 끝 ==========
+
+    addScore(id, data.score, data.totalScore);
     if (data.ok) {
         checkFailCombo();
         clearTimeout($data._fail);
@@ -108,30 +114,36 @@ $lib.Free.turnEnd = function (id, data) {
         $stage.game.display.empty()
             .append($("<label>").html(data.hint));
     }
-    if (data.bonus) {
-        mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function($target) {
-            return function() {
-                var $bc = $("<div>")
-                    .addClass("deltaScore bonus")
-                    .css('color', '#66FF66') // Green
-                    .html("+" + data.bonus);
+    // 서바이벌 모드에서는 자신의 점수/보너스 스플래시 숨김 (데미지만 표시)
+    if (!data.survival) {
+        if (data.bonus) {
+            mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function($target) {
+                return function() {
+                    var $bc = $("<div>")
+                        .addClass("deltaScore bonus")
+                        .css('color', '#66FF66') // Green
+                        .html("+" + data.bonus);
 
-                drawObtainedScore($target, $bc);
-            };
-        })($uc), 500);
-    }
-    if (data.straightBonus) {
-        mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function($target) {
-            return function() {
-                var $bc = $("<div>")
-                    .addClass("deltaScore straight-bonus")
-                    .css('color', '#FFFF00') // Yellow
-                    .html("+" + data.straightBonus);
+                    drawObtainedScore($target, $bc);
+                };
+            })($uc), 500);
+        }
+        if (data.straightBonus) {
+            mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function($target) {
+                return function() {
+                    var $bc = $("<div>")
+                        .addClass("deltaScore straight-bonus")
+                        .css('color', '#FFFF00') // Yellow
+                        .html("+" + data.straightBonus);
 
-                drawObtainedScore($target, $bc);
-            };
-        })($uc), 800);
+                    drawObtainedScore($target, $bc);
+                };
+            })($uc), 800);
+        }
+        drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
+    } else {
+        // 서바이벌 모드: 스플래시 없이 current 클래스만 제거
+        $uc.removeClass("game-user-current").css('border-color', '');
     }
-    drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
     updateScore(id, getScore(id));
 };

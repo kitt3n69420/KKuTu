@@ -157,7 +157,7 @@ block Middle
 			button#lb-next(style='margin-right: 6px;')= L('nextPage')
 			button#lb-me= L('myRank')
 			button#lb-prev= L('prevPage')
-	+Dialog('QuickDiag', 415, 280, L('quickRoom'))
+	+Dialog('QuickDiag', 415, 310, L('quickRoom'))
 		div(style='height: 200px; overflow-y: auto; overflow-x: hidden;')
 			div.dialog-bar
 				h4= L('gameMode')
@@ -204,7 +204,7 @@ block Middle
 		div(style='position: absolute; bottom: 10px; left: 10px; right: 10px;')
 			h4(style='float: left; font-size: 12px; padding-top: 5px;')#quick-status
 			button#quick-ok(style='float: right; width: 80px; height: 20px;')= L('OK')
-	+Dialog('RoomDiag', 415, 450)
+	+Dialog('RoomDiag', 415, 480)
 		div.dialog-bar
 			h4= L('roomTitle')
 			input#room-title(placeholder=(nick || L('guest'))+L('roomDefault'), maxlength=20, style="width: 283px;")
@@ -261,8 +261,13 @@ block Middle
 			h4
 			h4#game-mode-expl.dialog-bar-value(style='width: 100%; font-size: 11px;')
 		div.dialog-bar(style='overflow: hidden;')
-			h4= L('roundSetting')
+			h4#room-round-label= L('roundSetting')
 			input#room-round(type='number', min=1, max=10, step=1, value=5, style="float: left; width: 133px;")
+			select#room-sur-hp(style="float: left; width: 133px; display: none;")
+				option(value=200) 200 HP
+				option(value=500, selected) 500 HP
+				option(value=1000) 1000 HP
+				option(value=2000) 2000 HP
 			select#room-time(style="float: left; width: 133px; margin-left: 5px;")
 				option(value=5, style='color: #FF4444')
 				option(value=10, style='color: #FF4444')

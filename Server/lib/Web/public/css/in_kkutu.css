@@ -2431,3 +2431,61 @@ iframe {
 #room-flat-qij {
 	display: none !important;
 }
+
+/* ========== 서바이벌 모드 스타일 ========== */
+
+/* KO된 플레이어 전체 스타일 */
+.game-user-ko {
+	/*filter: grayscale(80%);*/
+}
+
+/* KO된 플레이어 모레미 숨김 */
+.game-user-image.survival-ko {
+	filter: grayscale(100%);
+	/*visibility: hidden;*/
+}
+
+/* KO 점수 표시 스타일 - 일반 모드 (점수와 같은 크기 30px, 중앙정렬) */
+.game-user-score.survival-ko-score {
+	color: #d82525 !important;
+	font-weight: bold;
+	font-size: 30px;
+	text-shadow: 0px 0px 5px #00000080;
+	text-align: center;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+/* KO 점수 표시 스타일 - 스몰 모드 (점수와 같은 크기, 중앙정렬) */
+.game-body.small-mode .game-user-score.survival-ko-score {
+	font-size: min(16px, 18cqw);
+	text-align: center;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+/* 데미지 애니메이션 */
+.survival-damage {
+	animation: survival-damage-shake 0.3s ease-in-out;
+}
+
+@keyframes survival-damage-shake {
+	0%, 100% { transform: translateX(0); }
+	20% { transform: translateX(-5px); }
+	40% { transform: translateX(5px); }
+	60% { transform: translateX(-3px); }
+	80% { transform: translateX(3px); }
+}
+
+/* 데미지 점수 표시 */
+.deltaScore.damage {
+	color: #FF6666 !important;
+	font-weight: bold;
+}
+
+/* 서바이벌 HP 선택 패널 */
+#room-sur-hp-panel {
+	margin-top: 5px;
+}

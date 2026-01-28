@@ -156,8 +156,8 @@ block Middle
 			button#lb-next(style='margin-right: 6px;')= L('nextPage')
 			button#lb-me= L('myRank')
 			button#lb-prev= L('prevPage')
-	+Dialog('QuickDiag', 300, 280, L('quickRoom'))
-		div(style='height: 200px; overflow-y: auto; overflow-x: hidden;')
+	+Dialog('QuickDiag', 300, 310, L('quickRoom'))
+		div(style='height: 230px; overflow-y: auto; overflow-x: hidden;')
 			div.dialog-bar
 				h4= L('gameMode')
 				select#quick-mode
@@ -168,14 +168,12 @@ block Middle
 				div(style='float: left; width: calc(100% - 80px);')
 					- for(var i in locals.OPTIONS)
 						+GameOption(i, 'quick')
-			div.dialog-bar
-				h4(style='width: 100%; height: 20px;')#quick-status
-			div.dialog-bar
-				h4(style='width: 100%; height: 20px;')#quick-queue
-		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; right: 10px; width: auto;')
-			button#quick-ok= L('OK')
-	+Dialog('RoomDiag', 300, 500)
-		div(style='height: 440px; overflow-y: auto; overflow-x: hidden;')
+		div.dialog-bar#quick-queue(style='height: 20px;')
+		div(style='position: absolute; bottom: 10px; left: 10px; right: 10px;')
+			h4(style='float: left; font-size: 12px; padding-top: 5px;')#quick-status
+			button#quick-ok(style='float: right; width: 80px; height: 20px;')= L('OK')
+	+Dialog('RoomDiag', 300, 530)
+		div(style='height: 470px; overflow-y: auto; overflow-x: hidden;')
 			div.dialog-bar
 				h4= L('roomTitle')
 				input#room-title(placeholder=(nick || L('guest'))+L('roomDefault'), maxlength=20)
@@ -231,8 +229,13 @@ block Middle
 				h4
 				h4#game-mode-expl.dialog-bar-value(style='width: 100%; font-size: 11px;')
 			div.dialog-bar
-				h4= L('numRound')
+				h4#room-round-label= L('numRound')
 				input#room-round(type='number', min=1, max=10, step=1, value=5)
+				select#room-sur-hp(style="display: none;")
+					option(value=200) 200 HP
+					option(value=500, selected) 500 HP
+					option(value=1000) 1000 HP
+					option(value=2000) 2000 HP
 			div.dialog-bar
 				h4= L('roundTime')
 				select#room-time

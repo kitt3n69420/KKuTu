@@ -79,7 +79,11 @@ exports.turnStart = function (force) {
         mission: my.game.mission,
         seq: force ? my.game.seq : undefined
     }, true);
-    my.game.turnTimer = setTimeout(my.turnEnd, Math.min(my.game.roundTime, my.game.turnTime + 100));
+    // 서바이벌 모드: 라운드 시간 체크 제거 (턴 시간만 사용)
+    var timeout = my.opts.survival
+        ? my.game.turnTime + 100
+        : Math.min(my.game.roundTime, my.game.turnTime + 100);
+    my.game.turnTimer = setTimeout(my.turnEnd, timeout);
     if (si = my.game.seq[my.game.turn]) if (si.robot) {
         si._done = [];
         my.readyRobot(si);
@@ -99,6 +103,21 @@ exports.turnEnd = function () {
     }
     clearTimeout(my.game.turnTimer);
     my.game.late = true;
+
+    // ========== 서바이벌 모드: 타임아웃 = 즉시 KO ==========
+    if (my.opts.survival && target && target.game && target.game.alive) {
+        var gameOver = Const.handleSurvivalTimeout(my, DIC, target);
+
+        if (!gameOver) {
+            clearTimeout(my.game.robotTimer);
+            my.game._rrt = setTimeout(function() {
+                my.turnNext();
+            }, 2000);
+        }
+        return;
+    }
+    // ========== 서바이벌 모드 끝 ==========
+
     if (target) if (target.game) {
         // 무적(god): 패널티 면제
         if (my.opts.invincible) {
@@ -281,6 +300,55 @@ exports.submit = function (client, text) {
                 if (isReturn) score = 0;
                 my.game.chain.push(text);
                 my.game.roundTime -= t;
+
+                // ========== 서바이벌 모드: 득점 = 다음 사람 데미지 ==========
+                if (my.opts.survival) {
+                    var survivalDamageInfo = Const.applySurvivalDamage(my, DIC, score, my.game.turn);
+                    var status = Const.checkSurvivalStatus(my, DIC);
+
+                    client.publish('turnEnd', {
+                        ok: true,
+                        value: text,
+                        mean: $doc.mean,
+                        theme: $doc.theme,
+                        wc: $doc.type,
+                        score: score,
+                        bonus: missionBonus,
+                        straightBonus: straightBonus,
+                        baby: $doc.baby,
+                        totalScore: client.game.score,
+                        survival: true,
+                        survivalDamage: survivalDamageInfo,
+                        attackerHP: client.game.score
+                    }, true);
+
+                    if (status.gameOver) {
+                        clearTimeout(my.game.turnTimer);
+                        clearTimeout(my.game.robotTimer);
+                        my.game._rrt = setTimeout(function() {
+                            my.roundEnd();
+                        }, 2000);
+                    } else {
+                        if (my.game.mission === true) {
+                            my.game.mission = getMission(my.rule.lang, my.opts);
+                        } else if (my.opts.rndmission) {
+                            my.game.mission = getMission(my.rule.lang, my.opts);
+                        }
+                        clearTimeout(my.game.turnTimer);
+                        clearTimeout(my.game.robotTimer);
+                        my.game._rrt = setTimeout(function() {
+                            my.turnNext();
+                        }, my.game.turnTime / 6);
+                    }
+
+                    if (!client.robot) {
+                        client.invokeWordPiece(text, 1);
+                        DB.kkutu[l].update(['_id', text]).set(['hit', $doc.hit + 1]).on();
+                    }
+                    return;
+                }
+                // ========== 서바이벌 모드 끝 ==========
+
                 client.game.score += score;
                 client.publish('turnEnd', {
                     ok: true,

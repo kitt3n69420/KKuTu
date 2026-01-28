@@ -168,7 +168,7 @@ exports.RULE = {
 	'EKT': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -177,7 +177,7 @@ exports.RULE = {
 	'ESH': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "rnt"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -186,7 +186,7 @@ exports.RULE = {
 	'KKT': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -195,7 +195,7 @@ exports.RULE = {
 	'KSH': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -240,7 +240,7 @@ exports.RULE = {
 	'KAP': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -250,7 +250,7 @@ exports.RULE = {
 	'EAP': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "rnt"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -261,7 +261,7 @@ exports.RULE = {
 	'HUN': {
 		lang: "ko",
 		rule: "Hunmin",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god", "rnt"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -270,7 +270,7 @@ exports.RULE = {
 	'KDA': {
 		lang: "ko",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt"],
+		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		ewq: false
@@ -278,7 +278,7 @@ exports.RULE = {
 	'EDA': {
 		lang: "en",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt"],
+		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -323,7 +323,7 @@ exports.RULE = {
 	'KFR': {
 		lang: "ko",
 		rule: "Free",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -332,7 +332,7 @@ exports.RULE = {
 	'EFR': {
 		lang: "en",
 		rule: "Free",
-		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt"],
+		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -341,7 +341,7 @@ exports.RULE = {
 	'EKK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "rnt"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -359,7 +359,7 @@ exports.RULE = {
 	'KAK': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -369,7 +369,7 @@ exports.RULE = {
 	'EAK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -379,7 +379,7 @@ exports.RULE = {
 	'KKU': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "mid", "sch", "spd", "drg", "stt", "fir", "bbg", "nar", "god", "apd", "rnt"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "mid", "sch", "spd", "drg", "stt", "fir", "bbg", "nar", "god", "apd", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -388,7 +388,7 @@ exports.RULE = {
 	'CRL': {
 		lang: "etc",
 		rule: "Calcrelay",
-		opts: ["spd", "one", "drg", "nar", "god", "rnt"],
+		opts: ["spd", "one", "drg", "nar", "god", "rnt", "sur"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -626,4 +626,140 @@ exports.BOT_ITEM_WEIGHTS = {
 	"black_mask": 3,
 	"white_mask": 3
 
+};
+
+// ========== 서바이벌 모드 공통 유틸리티 ==========
+
+/**
+ * 서바이벌 모드에서 생존자 수와 팀 수를 확인
+ * @param {Object} my - Room 객체
+ * @param {Object} DIC - 플레이어 사전
+ * @returns {Object} { aliveCount, aliveTeams, hasTeams, gameOver }
+ */
+exports.checkSurvivalStatus = function(my, DIC) {
+	var aliveCount = 0;
+	var aliveTeams = new Set();
+	var hasTeams = false;
+	var individualCount = 0;
+
+	for (var i in my.game.seq) {
+		var p = DIC[my.game.seq[i]] || my.game.seq[i];
+		if (p && p.game && p.game.alive) {
+			aliveCount++;
+			var team = p.robot ? p.game.team : p.team;
+			// team이 1~4이면 팀전, 0이거나 undefined/null이면 개인전
+			if (team && team >= 1 && team <= 4) {
+				aliveTeams.add(team);
+				hasTeams = true;
+			} else {
+				individualCount++;
+			}
+		}
+	}
+
+	// 게임 종료 조건: 팀 + 개인전 합쳐서 1개체만 남을 때
+	// 팀은 같은 팀원끼리 1개체, 개인은 각자 1개체
+	var totalEntities = aliveTeams.size + individualCount;
+	var gameOver = totalEntities <= 1;
+
+	return {
+		aliveCount: aliveCount,
+		aliveTeams: aliveTeams,
+		hasTeams: hasTeams,
+		gameOver: gameOver
+	};
+};
+
+/**
+ * 서바이벌 모드에서 다음 살아있는 플레이어에게 데미지 적용
+ * @param {Object} my - Room 객체
+ * @param {Object} DIC - 플레이어 사전
+ * @param {number} damage - 가할 데미지
+ * @param {number} currentTurn - 현재 턴 인덱스
+ * @returns {Object|null} { targetId, damage, newHP, ko } 또는 null (대상 없음)
+ */
+exports.applySurvivalDamage = function(my, DIC, damage, currentTurn) {
+	if (damage <= 0) return null;
+
+	var nextTurn = currentTurn;
+	var attempts = 0;
+
+	while (attempts < my.game.seq.length) {
+		nextTurn = (nextTurn + 1) % my.game.seq.length;
+		if (nextTurn === currentTurn) {
+			attempts++;
+			continue;
+		}
+
+		var nextPlayer = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
+		if (nextPlayer && nextPlayer.game && nextPlayer.game.alive) {
+			// 데미지 적용
+			nextPlayer.game.score -= damage;
+			var newHP = nextPlayer.game.score;
+			var ko = newHP <= 0;
+
+			if (ko) {
+				nextPlayer.game.alive = false;
+				nextPlayer.game.score = 0;
+			}
+
+			return {
+				targetId: nextPlayer.id,
+				damage: damage,
+				newHP: ko ? 0 : newHP,
+				ko: ko
+			};
+		}
+		attempts++;
+	}
+
+	return null;
+};
+
+/**
+ * 서바이벌 모드에서 타임아웃으로 인한 KO 처리
+ * @param {Object} my - Room 객체
+ * @param {Object} DIC - 플레이어 사전
+ * @param {Object} target - 타임아웃된 플레이어
+ * @param {Object} extraData - turnEnd에 추가할 데이터 (optional)
+ * @returns {boolean} 게임이 종료되었으면 true
+ */
+exports.handleSurvivalTimeout = function(my, DIC, target, extraData) {
+	if (!my.opts.survival || !target || !target.game || !target.game.alive) {
+		return false;
+	}
+
+	target.game.alive = false;
+	target.game.score = 0;
+
+	var status = exports.checkSurvivalStatus(my, DIC);
+
+	var turnEndData = {
+		ok: false,
+		target: target.id,
+		score: 0,
+		totalScore: 0,
+		survival: true,
+		ko: true,
+		koReason: 'timeout'
+	};
+
+	// 추가 데이터 병합
+	if (extraData) {
+		for (var key in extraData) {
+			turnEndData[key] = extraData[key];
+		}
+	}
+
+	my.byMaster('turnEnd', turnEndData, true);
+
+	if (status.gameOver) {
+		clearTimeout(my.game.robotTimer);
+		my.game._rrt = setTimeout(function() {
+			my.roundEnd();
+		}, 2000);
+		return true;
+	}
+
+	return false;
 };

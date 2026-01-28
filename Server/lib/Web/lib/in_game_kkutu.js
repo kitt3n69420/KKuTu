@@ -353,6 +353,7 @@ $(document).ready(function () {
 				{ key: "mission", value: "/media/kkutu/mission.mp3" },
 				{ key: "kung", value: "/media/kkutu/kung.mp3" },
 				{ key: "horr", value: "/media/kkutu/horr.mp3" },
+				{ key: "KO", value: "/media/common/ko.mp3" },
 			];
 			for (i = 0; i <= 10; i++) $data._soundList.push(
 				{ key: "T" + i, value: "/media/kkutu/T" + i + ".mp3" },
@@ -788,6 +789,11 @@ $(document).ready(function () {
 		}
 		$data._injpick = $data.room.opts.injpick;
 
+		// 서바이벌 HP 설정 복원
+		if ($data.room.opts.surHP) {
+			$("#room-sur-hp").val($data.room.opts.surHP);
+		}
+
 		// 미션 상태에 따라 관련 옵션 활성화/비활성화
 		var missionEnabled = $data.room.opts.mission;
 		if (!missionEnabled) {
@@ -1043,6 +1049,12 @@ $(document).ready(function () {
 	$("#room-narak, #room-flat-narak").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-invincible, #room-flat-invincible").prop('checked', false);
+		}
+	});
+	// 무적(갓모드) 체크시 나락 해제
+	$("#room-invincible, #room-flat-invincible").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-narak, #room-flat-narak").prop('checked', false);
 		}
 	});
 	$stage.menu.spectate.on('click', function (e) {
@@ -1342,6 +1354,12 @@ $(document).ready(function () {
 		if (scopeVal == 'ext') opts['injeong'] = true;
 		else if (scopeVal == 'str') opts['strict'] = true;
 		else if (scopeVal == 'unk') opts['unknown'] = true;
+
+		// Read Survival HP Dropdown
+		var surHPVal = $("#room-sur-hp").val();
+		console.log("[DEBUG] surHP dropdown value:", surHPVal, "survival checked:", opts['survival']);
+		if (surHPVal) opts['surHP'] = parseInt(surHPVal);
+		console.log("[DEBUG] Final opts.surHP:", opts['surHP']);
 
 		send($data.typeRoom, {
 			title: $("#room-title").val().trim() || $("#room-title").attr('placeholder').trim(),
@@ -1873,6 +1891,29 @@ $(document).ready(function () {
 		}
 	});
 
+	// 8. 서바이벌 모드 UI 변경
+	function updateSurvivalUI(isSurvival) {
+		if (isSurvival) {
+			// 라운드 수 1로 고정하고 숨김
+			$("#room-round").val(1).prop('disabled', true).hide();
+			// HP 선택 드롭다운 표시 (라운드 위치에)
+			$("#room-sur-hp").show();
+			// 라벨 변경
+			$("#room-round-label").text(L['survivalHP']);
+		} else {
+			// 원상복구
+			$("#room-round").prop('disabled', false).show();
+			// HP 선택 드롭다운 숨김
+			$("#room-sur-hp").hide();
+			// 라벨 원상복구 (모바일: 라운드 수, 데스크톱: 라운드 설정)
+			$("#room-round-label").text(mobile ? L['numRound'] : L['roundSetting']);
+		}
+	}
+
+	$("#room-survival, #room-flat-survival").on('change', function () {
+		updateSurvivalUI($(this).is(':checked'));
+	});
+
 	// 웹소켓 연결
 	function connect() {
 		ws = new _WebSocket($data.URL);
@@ -2018,8 +2059,14 @@ $lib.Classic.turnEnd = function (id, data) {
 
 	if ($data._turnSound) $data._turnSound.stop();
 	if (id == $data.id) $data._relay = false;
-	addScore(id, data.score, data.totalScore);
 	clearInterval($data._tTime);
+
+	// ========== 서바이벌 모드 처리 ==========
+	if (handleSurvivalKO(id, data, $sc, $uc)) return;
+	handleSurvivalDamage(data);
+	// ========== 서바이벌 모드 끝 ==========
+
+	addScore(id, data.score, data.totalScore);
 	if (data.ok) {
 		checkFailCombo();
 		clearTimeout($data._fail);
@@ -2054,43 +2101,49 @@ $lib.Classic.turnEnd = function (id, data) {
 				.append($("<label>").css('color', "#AAAAAA").html(data.hint.slice(hi + charLen)));
 		}
 	}
-	if (data.bonus) {
-		mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function($target) {
-			return function() {
-				var $bc = $("<div>")
-					.addClass("deltaScore bonus")
-					.css('color', '#66FF66')
-					.html("+" + data.bonus);
+	// 서바이벌 모드에서는 자신의 점수/보너스 스플래시 숨김 (데미지만 표시)
+	if (!data.survival) {
+		if (data.bonus) {
+			mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function($target) {
+				return function() {
+					var $bc = $("<div>")
+						.addClass("deltaScore bonus")
+						.css('color', '#66FF66')
+						.html("+" + data.bonus);
 
-				drawObtainedScore($target, $bc);
-			};
-		})($uc), 500);
-	}
-	if (data.speedToss) {
-		mobile ? $sc.append("+" + data.speedToss) : addTimeout((function($target) {
-			return function() {
-				var $bc = $("<div>")
-					.addClass("deltaScore sumi-sanggwan")
-					.css('color', '#00FFFF') // Cyan
-					.html("+" + data.speedToss);
+					drawObtainedScore($target, $bc);
+				};
+			})($uc), 500);
+		}
+		if (data.speedToss) {
+			mobile ? $sc.append("+" + data.speedToss) : addTimeout((function($target) {
+				return function() {
+					var $bc = $("<div>")
+						.addClass("deltaScore sumi-sanggwan")
+						.css('color', '#00FFFF') // Cyan
+						.html("+" + data.speedToss);
 
-				drawObtainedScore($target, $bc);
-			};
-		})($uc), 800);
-	}
-	if (data.straightBonus) {
-		mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function($target) {
-			return function() {
-				var $bc = $("<div>")
-					.addClass("deltaScore straight-bonus")
-					.css('color', '#FFFF00') // Yellow
-					.html("+" + data.straightBonus);
+					drawObtainedScore($target, $bc);
+				};
+			})($uc), 800);
+		}
+		if (data.straightBonus) {
+			mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function($target) {
+				return function() {
+					var $bc = $("<div>")
+						.addClass("deltaScore straight-bonus")
+						.css('color', '#FFFF00') // Yellow
+						.html("+" + data.straightBonus);
 
-				drawObtainedScore($target, $bc);
-			};
-		})($uc), 1100);
+					drawObtainedScore($target, $bc);
+				};
+			})($uc), 1100);
+		}
+		drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
+	} else {
+		// 서바이벌 모드: 스플래시 없이 current 클래스만 제거
+		$uc.removeClass("game-user-current").css('border-color', '');
 	}
-	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	updateScore(id, getScore(id));
 };
 
@@ -2589,14 +2642,20 @@ $lib.Hunmin.turnGoing = $lib.Classic.turnGoing;
 $lib.Hunmin.turnEnd = function (id, data) {
 	var $sc = $("<div>")
 		.addClass("deltaScore")
-		.html((data.score > 0) ? ("+" + (data.score - data.bonus)) : data.score);
+		.html((data.score > 0) ? ("+" + (data.score - (data.bonus || 0))) : data.score);
 	var $uc = $(".game-user-current");
 	var hi;
 
-	$data._turnSound.stop();
+	if ($data._turnSound) $data._turnSound.stop();
 	if (id == $data.id) $data._relay = false;
-	addScore(id, data.score, data.totalScore);
 	clearInterval($data._tTime);
+
+	// ========== 서바이벌 모드 처리 ==========
+	if (handleSurvivalKO(id, data, $sc, $uc)) return;
+	handleSurvivalDamage(data);
+	// ========== 서바이벌 모드 끝 ==========
+
+	addScore(id, data.score, data.totalScore);
 	if (data.ok) {
 		clearTimeout($data._fail);
 		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
@@ -2617,17 +2676,23 @@ $lib.Hunmin.turnEnd = function (id, data) {
 			.append($("<label>").html(data.hint.slice(0, hi + 1)))
 			.append($("<label>").css('color', "#AAAAAA").html(data.hint.slice(hi + 1)));
 	}
-	if (data.bonus) {
-		mobile ? $sc.html("+" + (data.score - data.bonus) + "+" + data.bonus) : addTimeout(function () {
-			var $bc = $("<div>")
-				.addClass("deltaScore bonus")
-				.css('color', '#66FF66') // Green
-				.html("+" + data.bonus);
+	// 서바이벌 모드에서는 자신의 점수/보너스 스플래시 숨김 (데미지만 표시)
+	if (!data.survival) {
+		if (data.bonus) {
+			mobile ? $sc.html("+" + (data.score - data.bonus) + "+" + data.bonus) : addTimeout(function () {
+				var $bc = $("<div>")
+					.addClass("deltaScore bonus")
+					.css('color', '#66FF66') // Green
+					.html("+" + data.bonus);
 
-			drawObtainedScore($uc, $bc);
-		}, 500);
+				drawObtainedScore($uc, $bc);
+			}, 500);
+		}
+		drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
+	} else {
+		// 서바이벌 모드: 스플래시 없이 current 클래스만 제거
+		$uc.removeClass("game-user-current").css('border-color', '');
 	}
-	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	updateScore(id, getScore(id));
 };
 
@@ -2713,10 +2778,16 @@ $lib.Daneo.turnEnd = function (id, data) {
 	var $uc = $(".game-user-current");
 	var hi;
 
-	$data._turnSound.stop();
+	if ($data._turnSound) $data._turnSound.stop();
 	if (id == $data.id) $data._relay = false;
-	addScore(id, data.score, data.totalScore);
 	clearInterval($data._tTime);
+
+	// ========== 서바이벌 모드 처리 ==========
+	if (handleSurvivalKO(id, data, $sc, $uc)) return;
+	handleSurvivalDamage(data);
+	// ========== 서바이벌 모드 끝 ==========
+
+	addScore(id, data.score, data.totalScore);
 	if (data.ok) {
 		clearTimeout($data._fail);
 		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
@@ -2737,31 +2808,37 @@ $lib.Daneo.turnEnd = function (id, data) {
 			.append($("<label>").html(data.hint.slice(0, hi + 1)))
 			.append($("<label>").css('color', "#AAAAAA").html(data.hint.slice(hi + 1)));
 	}
-	if (data.bonus) {
-		mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function($target) {
-			return function() {
-				var $bc = $("<div>")
-					.addClass("deltaScore bonus")
-					.css('color', '#66FF66') // Green
-					.html("+" + data.bonus);
+	// 서바이벌 모드에서는 자신의 점수/보너스 스플래시 숨김 (데미지만 표시)
+	if (!data.survival) {
+		if (data.bonus) {
+			mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function($target) {
+				return function() {
+					var $bc = $("<div>")
+						.addClass("deltaScore bonus")
+						.css('color', '#66FF66') // Green
+						.html("+" + data.bonus);
 
-				drawObtainedScore($target, $bc);
-			};
-		})($uc), 500);
-	}
-	if (data.straightBonus) {
-		mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function($target) {
-			return function() {
-				var $bc = $("<div>")
-					.addClass("deltaScore straight-bonus")
-					.css('color', '#FFFF00') // Yellow
-					.html("+" + data.straightBonus);
+					drawObtainedScore($target, $bc);
+				};
+			})($uc), 500);
+		}
+		if (data.straightBonus) {
+			mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function($target) {
+				return function() {
+					var $bc = $("<div>")
+						.addClass("deltaScore straight-bonus")
+						.css('color', '#FFFF00') // Yellow
+						.html("+" + data.straightBonus);
 
-				drawObtainedScore($target, $bc);
-			};
-		})($uc), 800);
+					drawObtainedScore($target, $bc);
+				};
+			})($uc), 800);
+		}
+		drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
+	} else {
+		// 서바이벌 모드: 스플래시 없이 current 클래스만 제거
+		$uc.removeClass("game-user-current").css('border-color', '');
 	}
-	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	updateScore(id, getScore(id));
 };
 
@@ -2855,8 +2932,14 @@ $lib.Free.turnEnd = function (id, data) {
 
     if ($data._turnSound) $data._turnSound.stop();
     if (id == $data.id) $data._relay = false;
-    addScore(id, data.score, data.totalScore);
     clearInterval($data._tTime);
+
+    // ========== 서바이벌 모드 처리 ==========
+    if (handleSurvivalKO(id, data, $sc, $uc)) return;
+    handleSurvivalDamage(data);
+    // ========== 서바이벌 모드 끝 ==========
+
+    addScore(id, data.score, data.totalScore);
     if (data.ok) {
         checkFailCombo();
         clearTimeout($data._fail);
@@ -2875,31 +2958,37 @@ $lib.Free.turnEnd = function (id, data) {
         $stage.game.display.empty()
             .append($("<label>").html(data.hint));
     }
-    if (data.bonus) {
-        mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function($target) {
-            return function() {
-                var $bc = $("<div>")
-                    .addClass("deltaScore bonus")
-                    .css('color', '#66FF66') // Green
-                    .html("+" + data.bonus);
+    // 서바이벌 모드에서는 자신의 점수/보너스 스플래시 숨김 (데미지만 표시)
+    if (!data.survival) {
+        if (data.bonus) {
+            mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function($target) {
+                return function() {
+                    var $bc = $("<div>")
+                        .addClass("deltaScore bonus")
+                        .css('color', '#66FF66') // Green
+                        .html("+" + data.bonus);
 
-                drawObtainedScore($target, $bc);
-            };
-        })($uc), 500);
-    }
-    if (data.straightBonus) {
-        mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function($target) {
-            return function() {
-                var $bc = $("<div>")
-                    .addClass("deltaScore straight-bonus")
-                    .css('color', '#FFFF00') // Yellow
-                    .html("+" + data.straightBonus);
+                    drawObtainedScore($target, $bc);
+                };
+            })($uc), 500);
+        }
+        if (data.straightBonus) {
+            mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function($target) {
+                return function() {
+                    var $bc = $("<div>")
+                        .addClass("deltaScore straight-bonus")
+                        .css('color', '#FFFF00') // Yellow
+                        .html("+" + data.straightBonus);
 
-                drawObtainedScore($target, $bc);
-            };
-        })($uc), 800);
+                    drawObtainedScore($target, $bc);
+                };
+            })($uc), 800);
+        }
+        drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
+    } else {
+        // 서바이벌 모드: 스플래시 없이 current 클래스만 제거
+        $uc.removeClass("game-user-current").css('border-color', '');
     }
-    drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
     updateScore(id, getScore(id));
 };
 
@@ -3656,8 +3745,21 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 
 	if ($data._turnSound) $data._turnSound.stop();
 	if (id == $data.id) $data._relay = false;
-	addScore(id, data.score, data.totalScore);
 	clearInterval($data._tTime);
+
+	// ========== 서바이벌 모드 처리 ==========
+	if (data.survival && data.ko) {
+		// calcrelay 전용: 정답 표시
+		if (data.answer !== undefined) {
+			$stage.game.display.empty()
+				.append($("<label>").html(data.answer));
+		}
+		if (handleSurvivalKO(id, data, $sc, $uc)) return;
+	}
+	handleSurvivalDamage(data);
+	// ========== 서바이벌 모드 끝 ==========
+
+	addScore(id, data.score, data.totalScore);
 	if (data.ok) {
 		clearTimeout($data._fail);
 		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
@@ -3685,7 +3787,13 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 			}, 1500);
 		}
 	}
-	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
+	// 서바이벌 모드에서는 자신의 점수 스플래시 숨김 (데미지만 표시)
+	if (!data.survival) {
+		drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
+	} else {
+		// 서바이벌 모드: 스플래시 없이 current 클래스만 제거
+		$uc.removeClass("game-user-current").css('border-color', '');
+	}
 	updateScore(id, getScore(id));
 };
 
@@ -4908,6 +5016,25 @@ function onMessage(data) {
 				}
 			}
 			break;
+		case 'survivalKO':
+			// 서바이벌 모드: 중도 퇴장으로 인한 KO 처리
+			var koTarget = data.target;
+			var $koUser = $("#game-user-" + koTarget);
+
+			if ($koUser.length) {
+				$koUser.find(".game-user-image").addClass("survival-ko");
+				$koUser.find(".game-user-score").text("KO").addClass("survival-ko-score");
+				$koUser.addClass("game-user-ko");
+			}
+
+			var koUser = $data.users[koTarget] || $data.robots[koTarget];
+			if (koUser && koUser.game) {
+				koUser.game.alive = false;
+				koUser.game.score = 0;
+			}
+			playSound('KO');
+			playSound('timeout');
+			break;
 		case 'roundEnd':
 			for (i in data.users) {
 				$data.setUser(i, data.users[i]);
@@ -5264,6 +5391,12 @@ function processRoom(data) {
 			$data.room = data.room;
 			$data.place = $data.room.id;
 			$data.master = $data.room.master == $data.id;
+			// 게임 중일 때 spec 데이터로 플레이어 점수 동기화 (서바이벌 HP 포함)
+			if (data.spec && data.room.gaming) {
+				for (i in data.spec) {
+					if ($data.users[i]) $data.users[i].game.score = data.spec[i];
+				}
+			}
 			if (data.spec && data.target == $data.id) {
 				if (!$data._spectate) {
 					$data._spectate = true;
@@ -5285,9 +5418,6 @@ function processRoom(data) {
 					}
 					$lib.Crossword.roundReady(data, true);
 					$lib.Crossword.turnStart(data, true);
-				}
-				for (i in data.spec) {
-					if ($data.users[i]) $data.users[i].game.score = data.spec[i];
 				}
 			}
 		}
@@ -5573,6 +5703,8 @@ function updateRoomList(refresh) {
 function roomListBar(o) {
 	var $R, $ch;
 	var opts = getOptions(o.mode, o.opts, false, mobile);
+	var isSurvival = o.opts && o.opts.survival;
+	var roundOrHP = isSurvival ? ((o.opts.surHP || 500) + " HP") : (L['rounds'] + " " + o.round);
 
 	$R = $("<div>").attr('id', "room-" + o.id).addClass("rooms-item")
 		.append($ch = $("<div>").addClass("rooms-channel channel-" + o.channel).on('click', function (e) { requestRoomInfo(o.id); }))
@@ -5581,7 +5713,7 @@ function roomListBar(o) {
 		.append($("<div>").addClass("rooms-limit").html(o.players.length + " / " + o.limit))
 		.append($("<div>").width(270)
 			.append($("<div>").addClass("rooms-mode").html(opts.join(" / ").toString()))
-			.append($("<div>").addClass("rooms-round").html(L['rounds'] + " " + o.round))
+			.append($("<div>").addClass("rooms-round").html(roundOrHP))
 			.append($("<div>").addClass("rooms-time").html(o.time + L['SECOND']))
 		)
 		.append($("<div>").addClass("rooms-lock").html(o.password ? "<i class='fa fa-lock'></i>" : "<i class='fa fa-unlock'></i>"))
@@ -5667,6 +5799,9 @@ function updateRoom(gaming) {
 			$r.removeClass("small-mode");
 		}
 		// updateScore(true);
+		// 서바이벌 모드: 초기 HP 결정
+		var survivalHP = ($data.room.opts && $data.room.opts.survival) ? ($data.room.opts.surHP || 500) : 0;
+
 		for (i in $data.room.game.seq) {
 			if ($data._replay) {
 				o = $rec.users[$data.room.game.seq[i]] || $data.room.game.seq[i];
@@ -5688,7 +5823,13 @@ function updateRoom(gaming) {
 				$data.robots[o.id] = o;
 			}
 			$r.append(renderer(o));
-			updateScore(o.id, o.game.score || 0);
+			// 서바이벌 모드에서 플레이어 초기 HP 설정
+			var initialScore = o.game.score;
+			if (survivalHP > 0 && !o.robot && (initialScore === undefined || initialScore === 0)) {
+				initialScore = survivalHP;
+				if (o.game) o.game.score = survivalHP;
+			}
+			updateScore(o.id, initialScore || 0);
 		}
 		clearTimeout($data._jamsu);
 		delete $data._jamsu;
@@ -6743,6 +6884,88 @@ function drawObtainedScore($uc, $sc) {
 
 	return $uc;
 }
+
+// ========== 서바이벌 모드 공통 클라이언트 함수 ==========
+
+/**
+ * 서바이벌 모드 KO 처리 (타임아웃 또는 데미지로 인한 KO)
+ * @param {string} id - 현재 턴 플레이어 ID
+ * @param {Object} data - turnEnd 데이터
+ * @param {jQuery} $sc - 점수 표시 요소
+ * @param {jQuery} $uc - 현재 유저 요소
+ * @returns {boolean} KO 처리가 되었으면 true (이후 로직 스킵)
+ */
+function handleSurvivalKO(id, data, $sc, $uc) {
+	if (!data.survival || !data.ko) return false;
+
+	var koTarget = data.target || id;
+	var $koUser = $("#game-user-" + koTarget);
+
+	if ($koUser.length) {
+		$koUser.find(".game-user-image").addClass("survival-ko");
+		$koUser.find(".game-user-score").text("KO").addClass("survival-ko-score");
+		$koUser.addClass("game-user-ko");
+	}
+
+	var koUser = $data.users[koTarget] || $data.robots[koTarget];
+	if (koUser && koUser.game) {
+		koUser.game.alive = false;
+		koUser.game.score = 0;
+	}
+
+	playSound('KO');
+	playSound('timeout');
+	$sc.addClass("lost");
+	$(".game-user-current").addClass("game-user-bomb");
+	$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+
+	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
+	return true;
+}
+
+/**
+ * 서바이벌 모드 데미지 처리 (정답 입력 시 다음 플레이어에게 데미지)
+ * @param {Object} data - turnEnd 데이터
+ */
+function handleSurvivalDamage(data) {
+	if (!data.survival || !data.survivalDamage) return;
+
+	var dmgInfo = data.survivalDamage;
+	var $dmgTarget = $("#game-user-" + dmgInfo.targetId);
+
+	var dmgUser = $data.users[dmgInfo.targetId] || $data.robots[dmgInfo.targetId];
+	if (dmgUser && dmgUser.game) {
+		dmgUser.game.score = dmgInfo.newHP;
+	}
+
+	if ($dmgTarget.length) {
+		$dmgTarget.addClass("survival-damage");
+		addTimeout(function() {
+			$dmgTarget.removeClass("survival-damage");
+		}, 500);
+
+		var $dmgSc = $("<div>")
+			.addClass("deltaScore damage")
+			.css('color', '#FF6666')
+			.html("-" + dmgInfo.damage);
+		drawObtainedScore($dmgTarget, $dmgSc);
+
+		if (dmgInfo.ko) {
+			$dmgTarget.find(".game-user-image").addClass("survival-ko");
+			$dmgTarget.find(".game-user-score").text("KO").addClass("survival-ko-score");
+			$dmgTarget.addClass("game-user-ko");
+
+			if (dmgUser && dmgUser.game) {
+				dmgUser.game.alive = false;
+			}
+			playSound('KO');
+			playSound('timeout');
+		} else {
+			updateScore(dmgInfo.targetId, dmgInfo.newHP);
+		}
+	}
+}
+// ========== 서바이벌 모드 공통 끝 ==========
 function turnEnd(id, data) {
 	route("turnEnd", id, data);
 }
@@ -7512,13 +7735,15 @@ function setRoomHead($obj, room) {
 	var opts = getOptions(room.mode, room.opts, false, mobile);
 	var rule = RULE[MODE[room.mode]];
 	var $rm;
+	var isSurvival = room.opts && room.opts.survival;
+	var roundOrHP = isSurvival ? ((room.opts.surHP || 500) + " HP") : (room.round + " " + L['rounds']);
 
 	$obj.empty()
 		.append($("<h5>").addClass("room-head-number").html("[" + (room.practice ? L['practice'] : room.id) + "]"))
 		.append($("<h5>").addClass("room-head-title").text(badWords(room.title)))
 		.append($rm = $("<h5>").addClass("room-head-mode").html(opts.join(" / ")))
 		.append($("<h5>").addClass("room-head-limit").html((mobile ? "" : (L['players'] + " ")) + room.players.length + " / " + room.limit))
-		.append($("<h5>").addClass("room-head-round").html(room.round + " " + L['rounds']))
+		.append($("<h5>").addClass("room-head-round").html(roundOrHP))
 		.append($("<h5>").addClass("room-head-time").html(room.time + L['SECOND']));
 
 

@@ -971,6 +971,140 @@ exports.Client = function (socket, profile, sid) {
 		my.send('friendEdit', { friends: my.friends });
 	};
 };
+
+// ========== 서바이벌 모드 공통 유틸리티 ==========
+
+/**
+ * 서바이벌 모드에서 생존자 수와 팀 수를 확인
+ * @param {Object} my - Room 객체
+ * @returns {Object} { aliveCount, aliveTeams, hasTeams, gameOver }
+ */
+exports.checkSurvivalStatus = function(my) {
+	var aliveCount = 0;
+	var aliveTeams = new Set();
+	var hasTeams = false;
+	var individualCount = 0;
+
+	for (var i in my.game.seq) {
+		var p = DIC[my.game.seq[i]] || my.game.seq[i];
+		if (p && p.game && p.game.alive) {
+			aliveCount++;
+			var team = p.robot ? p.game.team : p.team;
+			// team이 1~4이면 팀전, 0이거나 undefined/null이면 개인전
+			if (team && team >= 1 && team <= 4) {
+				aliveTeams.add(team);
+				hasTeams = true;
+			} else {
+				individualCount++;
+			}
+		}
+	}
+
+	// 게임 종료 조건: 팀 + 개인전 합쳐서 1개체만 남을 때
+	// (예: 개인 1명 또는 팀 1개 또는 개인 0명+팀 1개 또는 개인 1명+팀 0개)
+	var totalEntities = aliveTeams.size + individualCount;
+	var gameOver = totalEntities <= 1;
+
+	return {
+		aliveCount: aliveCount,
+		aliveTeams: aliveTeams,
+		hasTeams: hasTeams,
+		gameOver: gameOver
+	};
+};
+
+/**
+ * 서바이벌 모드에서 다음 살아있는 플레이어에게 데미지 적용
+ * @param {Object} my - Room 객체
+ * @param {number} damage - 가할 데미지
+ * @param {number} currentTurn - 현재 턴 인덱스
+ * @returns {Object|null} { targetId, damage, newHP, ko } 또는 null (대상 없음)
+ */
+exports.applySurvivalDamage = function(my, damage, currentTurn) {
+	if (damage <= 0) return null;
+
+	var nextTurn = currentTurn;
+	var attempts = 0;
+
+	while (attempts < my.game.seq.length) {
+		nextTurn = (nextTurn + 1) % my.game.seq.length;
+		if (nextTurn === currentTurn) {
+			attempts++;
+			continue;
+		}
+
+		var nextPlayer = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
+		if (nextPlayer && nextPlayer.game && nextPlayer.game.alive) {
+			// 데미지 적용
+			nextPlayer.game.score -= damage;
+			var newHP = nextPlayer.game.score;
+			var ko = newHP <= 0;
+
+			if (ko) {
+				nextPlayer.game.alive = false;
+				nextPlayer.game.score = 0;
+			}
+
+			return {
+				targetId: nextPlayer.id,
+				damage: damage,
+				newHP: ko ? 0 : newHP,
+				ko: ko
+			};
+		}
+		attempts++;
+	}
+
+	return null;
+};
+
+/**
+ * 서바이벌 모드에서 타임아웃으로 인한 KO 처리
+ * @param {Object} my - Room 객체
+ * @param {Object} target - 타임아웃된 플레이어
+ * @param {Object} extraData - turnEnd에 추가할 데이터 (optional)
+ * @returns {boolean} 게임이 종료되었으면 true
+ */
+exports.handleSurvivalTimeout = function(my, target, extraData) {
+	if (!my.opts.survival || !target || !target.game || !target.game.alive) {
+		return false;
+	}
+
+	target.game.alive = false;
+	target.game.score = 0;
+
+	var status = exports.checkSurvivalStatus(my);
+
+	var turnEndData = {
+		ok: false,
+		target: target.id,
+		score: 0,
+		totalScore: 0,
+		survival: true,
+		ko: true,
+		koReason: 'timeout'
+	};
+
+	// 추가 데이터 병합
+	if (extraData) {
+		for (var key in extraData) {
+			turnEndData[key] = extraData[key];
+		}
+	}
+
+	my.byMaster('turnEnd', turnEndData, true);
+
+	if (status.gameOver) {
+		clearTimeout(my.game.robotTimer);
+		my.game._rrt = setTimeout(function() {
+			my.roundEnd();
+		}, 2000);
+		return true;
+	}
+
+	return false;
+};
+
 exports.Room = function (room, channel) {
 	var my = this;
 
@@ -1754,35 +1888,95 @@ exports.Room = function (room, channel) {
 
 				var seqIndex = my.game.seq.indexOf(client.id);
 				if (seqIndex != -1) {
-					if (my.game.seq.length <= 2) {
-						my.game.seq.splice(seqIndex, 1);
-						my.roundEnd();
-					} else {
+					// 서바이벌 모드: 중도 퇴장 시 KO 처리 (seq에서 제거하지 않음)
+					if (my.opts.survival) {
+						// 퇴장하는 플레이어 KO 처리
+						var leavingPlayer = my.game.seq[seqIndex];
+						var pObj = DIC[leavingPlayer] || leavingPlayer;
+						if (pObj && pObj.game) {
+							pObj.game.alive = false;
+							pObj.game.score = 0;
+						}
+
+						// 클라이언트에게 KO 알림
+						my.byMaster('survivalKO', {
+							target: client.id,
+							reason: 'leave'
+						}, true);
+
+						// 현재 턴인 경우 다음 턴으로 진행
 						var isTurn = my.game.turn == seqIndex;
 						if (isTurn && my.rule.ewq) {
 							clearTimeout(my.game._rrt);
 							my.game.loading = false;
-							if (Cluster.isWorker) my.turnEnd();
 						}
-						my.game.seq.splice(seqIndex, 1);
 
-						// 랜덤 턴 모드: 배열 재생성
-						if (my.opts.randomturn) {
-							my.game.randomTurnOrder = [];
-							my.game.randomTurnIndex = 0;
+						// 남은 생존자 체크
+						var aliveCount = 0;
+						var aliveTeams = new Set();
+						var individualCount = 0;
 
-							for (var rt = 0; rt < my.game.seq.length * 2; rt++) {
-								my.game.randomTurnOrder.push(rt % my.game.seq.length);
+						for (var si in my.game.seq) {
+							var sp = DIC[my.game.seq[si]] || my.game.seq[si];
+							if (sp && sp.game && sp.game.alive) {
+								aliveCount++;
+								var team = sp.robot ? sp.game.team : sp.team;
+								// team이 1~4이면 팀전, 0이거나 undefined/null이면 개인전
+								if (team && team >= 1 && team <= 4) {
+									aliveTeams.add(team);
+								} else {
+									individualCount++;
+								}
 							}
+						}
 
-							my.game.randomTurnOrder = shuffle(my.game.randomTurnOrder);
-							my.game.turn = my.game.randomTurnOrder[0];
+						// 게임 종료 조건: 팀 + 개인전 합쳐서 1개체만 남을 때
+						var totalEntities = aliveTeams.size + individualCount;
+						var gameOver = totalEntities <= 1;
+						if (gameOver) {
+							clearTimeout(my.game._rrt);
+							my.game._rrt = setTimeout(function() {
+								my.roundEnd();
+							}, 2000);
+						} else if (isTurn) {
+							// 다음 턴으로 진행
+							clearTimeout(my.game._rrt);
+							my.game._rrt = setTimeout(function() {
+								my.turnNext();
+							}, 2000);
+						}
+					} else {
+						// 비서바이벌 모드: 기존 로직
+						if (my.game.seq.length <= 2) {
+							my.game.seq.splice(seqIndex, 1);
+							my.roundEnd();
 						} else {
-							if (my.game.turn > seqIndex) {
-								my.game.turn--;
-								if (my.game.turn < 0) my.game.turn = my.game.seq.length - 1;
+							var isTurn = my.game.turn == seqIndex;
+							if (isTurn && my.rule.ewq) {
+								clearTimeout(my.game._rrt);
+								my.game.loading = false;
+								if (Cluster.isWorker) my.turnEnd();
 							}
-							if (my.game.turn >= my.game.seq.length) my.game.turn = 0;
+							my.game.seq.splice(seqIndex, 1);
+
+							// 랜덤 턴 모드: 배열 재생성
+							if (my.opts.randomturn) {
+								my.game.randomTurnOrder = [];
+								my.game.randomTurnIndex = 0;
+
+								for (var rt = 0; rt < my.game.seq.length * 2; rt++) {
+									my.game.randomTurnOrder.push(rt % my.game.seq.length);
+								}
+
+								my.game.randomTurnOrder = shuffle(my.game.randomTurnOrder);
+								my.game.turn = my.game.randomTurnOrder[0];
+							} else {
+								if (my.game.turn > seqIndex) {
+									my.game.turn--;
+									if (my.game.turn < 0) my.game.turn = my.game.seq.length - 1;
+								}
+								if (my.game.turn >= my.game.seq.length) my.game.turn = 0;
+							}
 						}
 					}
 				}
@@ -1867,6 +2061,12 @@ exports.Room = function (room, channel) {
 			if (my.rule.opts.includes("qij")) {
 				my.opts.quizpick = room.opts.quizpick || [];
 			} else my.opts.quizpick = [];
+			// 서바이벌 HP 옵션 처리
+			console.log("[DEBUG my.set] room.opts.surHP:", room.opts.surHP, "room.opts:", JSON.stringify(room.opts));
+			if (room.opts.surHP) {
+				my.opts.surHP = room.opts.surHP;
+				console.log("[DEBUG my.set] Set my.opts.surHP to:", my.opts.surHP);
+			}
 		}
 		// APL (Bad Apple) 옵션 체크: opts 복사 후에 수행
 		if (my.opts && my.opts.apple) {
@@ -2088,16 +2288,28 @@ exports.Room = function (room, channel) {
 			o.playAt = now;
 			o.ready = false;
 			console.log("[DEBUG start] Setting score for", o.id, "robot=", o.robot, "game.score before=", o.game.score);
-			o.game.score = 0;
+			// 서바이벌 모드: 점수 대신 체력으로 초기화
+			if (my.opts.survival) {
+				var survivalHP = my.opts.surHP || 500;
+				o.game.score = survivalHP;
+				o.game.alive = true;  // 생존 상태
+			} else {
+				o.game.score = 0;
+			}
 			o.game.bonus = 0;
 			o.game.item = [/*0, 0, 0, 0, 0, 0*/];
 			o.game.wpc = [];
 			console.log("[DEBUG start] After setting, game.score=", o.game.score);
 		}
+		// 서바이벌 모드는 1라운드만 진행
+		if (my.opts.survival) {
+			my.round = 1;
+			my.game.maxRound = 1;
+		}
 		my.game.hum = hum;
 		my.getTitle().then(function (title) {
 			my.game.title = title;
-			my.export();
+			my.export(null, null, true);  // spec=true로 점수 정보 포함 (서바이벌 HP 등)
 			setTimeout(my.roundReady, 2000);
 		});
 		my.byMaster('starting', { target: my.id });
@@ -2199,13 +2411,20 @@ exports.Room = function (room, channel) {
 				teamScore: teamScoreVal, // Sorting Score: Team Total
 				dim: (actualTeam && Array.isArray(teams[actualTeam]) && teams[actualTeam].length === 2) ? teams[actualTeam][0] : 1,
 				robot: o.robot,
-				team: actualTeam
+				team: actualTeam,
+				alive: o.game.alive  // 서바이벌 모드: 생존 상태
 			});
 		}
 
 		// Sort: 1. Team Score (Desc), 2. Team ID (Group ties), 3. Individual Score (Desc)
-		console.log("[DEBUG roundEnd] Before sort:", JSON.stringify(res.map(function (r) { return { id: r.id, score: r.score, teamScore: r.teamScore, team: r.team }; })));
+		// 서바이벌 모드: alive 상태 기준으로 정렬 (생존자가 위)
+		console.log("[DEBUG roundEnd] Before sort:", JSON.stringify(res.map(function (r) { return { id: r.id, score: r.score, teamScore: r.teamScore, team: r.team, alive: r.alive }; })));
 		res.sort(function (a, b) {
+			// 서바이벌 모드: 생존자가 먼저
+			if (my.opts.survival) {
+				if (a.alive !== b.alive) return b.alive ? 1 : -1;
+			}
+
 			// Ensure scores are numbers to prevent undefined comparison issues
 			var aTeamScore = typeof a.teamScore === 'number' ? a.teamScore : 0;
 			var bTeamScore = typeof b.teamScore === 'number' ? b.teamScore : 0;
@@ -2377,6 +2596,36 @@ exports.Room = function (room, channel) {
 		if (!my.gaming) return;
 		if (!my.game.seq) return;
 
+		// 서바이벌 모드: 생존자 확인 및 게임 종료 체크
+		if (my.opts.survival) {
+			var aliveCount = 0;
+			var aliveTeams = new Set();
+			var individualCount = 0;
+
+			for (var i in my.game.seq) {
+				var p = DIC[my.game.seq[i]] || my.game.seq[i];
+				if (p && p.game && p.game.alive) {
+					aliveCount++;
+					var team = p.robot ? p.game.team : p.team;
+					// team이 1~4이면 팀전, 0이거나 undefined/null이면 개인전
+					if (team && team >= 1 && team <= 4) {
+						aliveTeams.add(team);
+					} else {
+						individualCount++;
+					}
+				}
+			}
+
+			// 게임 종료 조건: 팀 + 개인전 합쳐서 1개체만 남을 때
+			// (예: 팀1만 남음 / 개인1명만 남음 / 아무도 없음)
+			var totalEntities = aliveTeams.size + individualCount;
+			var gameOver = totalEntities <= 1;
+			if (gameOver) {
+				my.roundEnd();
+				return;
+			}
+		}
+
 		// 랜덤 턴 옵션 체크
 		if (my.opts.randomturn) {
 			// 랜덤 턴 배열 인덱스 증가
@@ -2386,10 +2635,19 @@ exports.Room = function (room, channel) {
 			if (my.game.randomTurnIndex >= my.game.randomTurnOrder.length) {
 				my.game.randomTurnIndex = 0;
 
-				// 플레이어 인덱스를 2벌 만들기
+				// 플레이어 인덱스를 2벌 만들기 (서바이벌: 살아있는 플레이어만)
 				my.game.randomTurnOrder = [];
-				for (var rt = 0; rt < my.game.seq.length * 2; rt++) {
-					my.game.randomTurnOrder.push(rt % my.game.seq.length);
+				for (var rt = 0; rt < my.game.seq.length; rt++) {
+					if (my.opts.survival) {
+						var rp = DIC[my.game.seq[rt]] || my.game.seq[rt];
+						if (rp && rp.game && rp.game.alive) {
+							my.game.randomTurnOrder.push(rt);
+							my.game.randomTurnOrder.push(rt);  // 2벌
+						}
+					} else {
+						my.game.randomTurnOrder.push(rt);
+						my.game.randomTurnOrder.push(rt);  // 2벌
+					}
 				}
 
 				// 재셔플
@@ -2398,25 +2656,48 @@ exports.Room = function (room, channel) {
 
 			// 랜덤 턴 배열에서 다음 플레이어 선택
 			my.game.turn = my.game.randomTurnOrder[my.game.randomTurnIndex];
+
+			// 서바이벌 모드: 선택된 플레이어가 KO된 경우 다시 선택
+			if (my.opts.survival) {
+				var attempts = 0;
+				var maxAttempts = my.game.seq.length * 2;
+				while (attempts < maxAttempts) {
+					var nextPlayer = DIC[my.game.seq[my.game.turn]] || my.game.seq[my.game.turn];
+					if (nextPlayer && nextPlayer.game && nextPlayer.game.alive) {
+						break;
+					}
+					my.game.randomTurnIndex++;
+					if (my.game.randomTurnIndex >= my.game.randomTurnOrder.length) {
+						my.game.randomTurnIndex = 0;
+					}
+					my.game.turn = my.game.randomTurnOrder[my.game.randomTurnIndex];
+					attempts++;
+				}
+			}
 		} else {
 			// 기존 로직: 순차 진행
 			my.game.turn = (my.game.turn + 1) % my.game.seq.length;
+
+			// 서바이벌 모드: KO된 플레이어 건너뛰기
+			if (my.opts.survival) {
+				var attempts = 0;
+				var maxAttempts = my.game.seq.length;
+				while (attempts < maxAttempts) {
+					var nextPlayer = DIC[my.game.seq[my.game.turn]] || my.game.seq[my.game.turn];
+					if (nextPlayer && nextPlayer.game && nextPlayer.game.alive) {
+						break;
+					}
+					my.game.turn = (my.game.turn + 1) % my.game.seq.length;
+					attempts++;
+				}
+			}
 		}
 
 		my.turnStart(force);
 	};
 	my.turnEnd = function () {
-		var client;
-		if (my.opts.sur && my.game.seq) {
-			client = my.game.seq[my.game.turn];
-			if (client) {
-				if (client.robot) {
-					my.removeAI(client.id);
-				} else if (DIC[client.id]) {
-					DIC[client.id].leave();
-				}
-			}
-		}
+		// 서바이벌 모드: 타임아웃 시 KO 처리는 각 게임 규칙 파일에서 처리
+		// 여기서는 route만 호출
 		return my.route("turnEnd");
 	};
 	my.submit = function (client, text, data) {

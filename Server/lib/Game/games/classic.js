@@ -443,6 +443,14 @@ exports.roundReady = function () {
 		my.game.chain = [];
 		my.game.ektTrigramMode = (Const.GAME_TYPE[my.mode] === 'EKT'); // EKT: 항상 3-gram 모드 활성화
 		my.game.kkuTrigramMode = (Const.GAME_TYPE[my.mode] === 'KKU'); // KKU: 3-gram 모드 활성화 (EKT와 동일)
+
+		// 서바이벌 클래식: 초기 글자 저장 (한방 복구용)
+		if (my.opts.survival) {
+			my.game.originalChar = my.game.char;
+			my.game.originalSubChar = my.game.subChar;
+			my.game.isHanbang = false;
+		}
+
 		if (my.opts.mission) my.game.mission = getMission(my.rule.lang, my.opts);
 		if (my.opts.sami) {
 			my.game.wordLength = 2;
@@ -547,7 +555,11 @@ exports.turnStart = function (force) {
 			seq: force ? my.game.seq : undefined
 		}, true);
 
-		my.game.turnTimer = setTimeout(my.turnEnd, Math.min(my.game.roundTime, my.game.turnTime + 100));
+		// 서바이벌 모드: 라운드 시간 체크 제거 (턴 시간만 사용)
+	var timeout = my.opts.survival
+		? my.game.turnTime + 100
+		: Math.min(my.game.roundTime, my.game.turnTime + 100);
+	my.game.turnTimer = setTimeout(my.turnEnd, timeout);
 		if (si = my.game.seq[my.game.turn])
 			if (si.robot) {
 				si._done = [];
@@ -600,7 +612,11 @@ exports.turnStart = function (force) {
 				seq: force ? my.game.seq : undefined
 			}, true);
 
-			my.game.turnTimer = setTimeout(my.turnEnd, Math.min(my.game.roundTime, my.game.turnTime + 100));
+			// 서바이벌 모드: 라운드 시간 체크 제거 (턴 시간만 사용)
+	var timeout = my.opts.survival
+		? my.game.turnTime + 100
+		: Math.min(my.game.roundTime, my.game.turnTime + 100);
+	my.game.turnTimer = setTimeout(my.turnEnd, timeout);
 			if (si = my.game.seq[my.game.turn])
 				if (si.robot) {
 					si._done = [];
@@ -659,6 +675,48 @@ exports.turnEnd = function () {
 	}
 	clearTimeout(my.game.turnTimer);
 	my.game.late = true;
+
+	// ========== 서바이벌 모드: 타임아웃 = 즉시 KO ==========
+	if (my.opts.survival && target && target.game && target.game.alive) {
+		target.game.alive = false;
+		target.game.score = 0;
+
+		var wasHanbang = my.game.isHanbang;
+		var status = Const.checkSurvivalStatus(my, DIC);
+
+		my.byMaster('turnEnd', {
+			ok: false,
+			target: target.id,
+			score: 0,
+			totalScore: 0,
+			survival: true,
+			ko: true,
+			koReason: 'timeout'
+		}, true);
+
+		if (status.gameOver) {
+			clearTimeout(my.game.robotTimer);
+			my.game._rrt = setTimeout(function() {
+				my.roundEnd();
+			}, 2000);
+			return;
+		}
+
+		// 클래식 전용: 한방으로 KO되었으면 원래 글자로 복구
+		if (wasHanbang && my.game.originalChar) {
+			my.game.char = my.game.originalChar;
+			my.game.subChar = my.game.originalSubChar;
+			my.game.hanbangRecovery = true;
+		}
+
+		clearTimeout(my.game.robotTimer);
+		my.game._rrt = setTimeout(function() {
+			my.turnNext();
+		}, 2000);
+		return;
+	}
+	// ========== 서바이벌 모드 끝 ==========
+
 	if (target)
 		if (target.game) {
 			// 무적(god): 패널티 면제
@@ -1052,6 +1110,68 @@ exports.submit = function (client, text) {
 					});
 
 					function finalizeTurn(isHanbang) {
+						// ========== 서바이벌 모드: 득점 = 다음 사람 데미지 ==========
+						if (my.opts.survival) {
+							var damage = score;
+							var survivalDamageInfo = Const.applySurvivalDamage(my, DIC, damage, my.game.turn);
+
+							// 한방 단어 감지 저장
+							if (isHanbang) {
+								my.game.isHanbang = true;
+							}
+
+							var status = Const.checkSurvivalStatus(my, DIC);
+
+							client.publish('turnEnd', {
+								ok: true,
+								value: text,
+								mean: $doc.mean,
+								theme: $doc.theme,
+								wc: $doc.type,
+								score: score,
+								bonus: missionBonus,
+								speedToss: speedTossBonus,
+								straightBonus: straightBonus,
+								baby: $doc.baby,
+								totalScore: client.game.score,
+								linkIndex: linkIdx,
+								isHanbang: isHanbang,
+								survival: true,
+								survivalDamage: survivalDamageInfo,
+								attackerHP: client.game.score
+							}, true);
+
+							if (status.gameOver) {
+								clearTimeout(my.game.turnTimer);
+								clearTimeout(my.game.robotTimer);
+								my.game._rrt = setTimeout(function() {
+									my.roundEnd();
+								}, 2000);
+								return;
+							}
+
+							// 미션 처리
+							if (my.game.mission === true) {
+								my.game.mission = getMission(my.rule.lang, my.opts);
+							} else if (my.opts.rndmission) {
+								my.game.mission = getMission(my.rule.lang, my.opts);
+							}
+
+							// 다음 턴으로 진행
+							clearTimeout(my.game.turnTimer);
+							clearTimeout(my.game.robotTimer);
+							my.game._rrt = setTimeout(function() {
+								my.turnNext();
+							}, my.game.turnTime / 6);
+
+							if (!client.robot) {
+								client.invokeWordPiece(text, 1);
+								DB.kkutu[l].update(['_id', text]).set(['hit', $doc.hit + 1]).on();
+							}
+							return;
+						}
+						// ========== 서바이벌 모드 끝 ==========
+
 						client.game.score += score;
 						client.publish('turnEnd', {
 							ok: true,
@@ -2111,10 +2231,7 @@ exports.readyRobot = function (robot) {
 		}
 
 		// Mode Constraints
-		if (my.opts.manner) { // 매너모드: 공격 금지
-			strategy = "NORMAL";
-			decided = true;
-		}
+		var mannerMode = my.opts.manner; // 매너모드: 공격만 금지 (LONG은 허용)
 
 		// Team Check: Disable attack if next player is teammate
 		var currentTeam = robot.game.team || 0;
@@ -2165,10 +2282,8 @@ exports.readyRobot = function (robot) {
 			var prob = PERSONALITY_CONST[level] * Math.abs(effPersonality);
 			console.log(`[BOT] Priority 2 (Personality): Roll=${roll.toFixed(3)}, Prob=${prob.toFixed(3)}`);
 			if (roll < prob) {
-				// Prevent Attack on First Turn UNLESS Manner mode is ON (User Request)
-				// NOW: User wants "Manner Attack" (Tier 2) on first turn even in Normal Mode.
-				// So we allow ATTACK always, but enforce fairness in executeStrategy.
-				var allowAttack = true;
+				// 매너 모드에서는 공격만 금지
+				var allowAttack = !mannerMode;
 
 				if (effPersonality > 0 && allowAttack) strategy = "ATTACK";
 				else if (effPersonality < 0 && !isKKT) strategy = "LONG";
@@ -2182,11 +2297,12 @@ exports.readyRobot = function (robot) {
 		if (!decided && level >= 2) {
 			var roll = Math.random();
 			var prob = SPECIAL_MOVE_PROB[level];
-			console.log(`[BOT] Priority 3 (Special Move): Roll=${prob.toFixed(3)}, Prob=${prob.toFixed(3)}`);
+			console.log(`[BOT] Priority 3 (Special Move): Roll=${roll.toFixed(3)}, Prob=${prob.toFixed(3)}`);
 			if (roll < prob) {
-				var allowAttack = true;
+				// 매너 모드에서는 공격만 금지
+				var allowAttack = !mannerMode;
 
-				// KKU 모드: 시페셜 무브는 항상 LONG 전략
+				// KKU 모드: 스페셜 무브는 항상 LONG 전략
 				if (isKKU) {
 					strategy = "LONG";
 				}

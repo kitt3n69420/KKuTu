@@ -577,6 +577,25 @@ function onMessage(data) {
 				}
 			}
 			break;
+		case 'survivalKO':
+			// 서바이벌 모드: 중도 퇴장으로 인한 KO 처리
+			var koTarget = data.target;
+			var $koUser = $("#game-user-" + koTarget);
+
+			if ($koUser.length) {
+				$koUser.find(".game-user-image").addClass("survival-ko");
+				$koUser.find(".game-user-score").text("KO").addClass("survival-ko-score");
+				$koUser.addClass("game-user-ko");
+			}
+
+			var koUser = $data.users[koTarget] || $data.robots[koTarget];
+			if (koUser && koUser.game) {
+				koUser.game.alive = false;
+				koUser.game.score = 0;
+			}
+			playSound('KO');
+			playSound('timeout');
+			break;
 		case 'roundEnd':
 			for (i in data.users) {
 				$data.setUser(i, data.users[i]);
@@ -933,6 +952,12 @@ function processRoom(data) {
 			$data.room = data.room;
 			$data.place = $data.room.id;
 			$data.master = $data.room.master == $data.id;
+			// 게임 중일 때 spec 데이터로 플레이어 점수 동기화 (서바이벌 HP 포함)
+			if (data.spec && data.room.gaming) {
+				for (i in data.spec) {
+					if ($data.users[i]) $data.users[i].game.score = data.spec[i];
+				}
+			}
 			if (data.spec && data.target == $data.id) {
 				if (!$data._spectate) {
 					$data._spectate = true;
@@ -954,9 +979,6 @@ function processRoom(data) {
 					}
 					$lib.Crossword.roundReady(data, true);
 					$lib.Crossword.turnStart(data, true);
-				}
-				for (i in data.spec) {
-					if ($data.users[i]) $data.users[i].game.score = data.spec[i];
 				}
 			}
 		}
@@ -1242,6 +1264,8 @@ function updateRoomList(refresh) {
 function roomListBar(o) {
 	var $R, $ch;
 	var opts = getOptions(o.mode, o.opts, false, mobile);
+	var isSurvival = o.opts && o.opts.survival;
+	var roundOrHP = isSurvival ? ((o.opts.surHP || 500) + " HP") : (L['rounds'] + " " + o.round);
 
 	$R = $("<div>").attr('id', "room-" + o.id).addClass("rooms-item")
 		.append($ch = $("<div>").addClass("rooms-channel channel-" + o.channel).on('click', function (e) { requestRoomInfo(o.id); }))
@@ -1250,7 +1274,7 @@ function roomListBar(o) {
 		.append($("<div>").addClass("rooms-limit").html(o.players.length + " / " + o.limit))
 		.append($("<div>").width(270)
 			.append($("<div>").addClass("rooms-mode").html(opts.join(" / ").toString()))
-			.append($("<div>").addClass("rooms-round").html(L['rounds'] + " " + o.round))
+			.append($("<div>").addClass("rooms-round").html(roundOrHP))
 			.append($("<div>").addClass("rooms-time").html(o.time + L['SECOND']))
 		)
 		.append($("<div>").addClass("rooms-lock").html(o.password ? "<i class='fa fa-lock'></i>" : "<i class='fa fa-unlock'></i>"))
@@ -1336,6 +1360,9 @@ function updateRoom(gaming) {
 			$r.removeClass("small-mode");
 		}
 		// updateScore(true);
+		// 서바이벌 모드: 초기 HP 결정
+		var survivalHP = ($data.room.opts && $data.room.opts.survival) ? ($data.room.opts.surHP || 500) : 0;
+
 		for (i in $data.room.game.seq) {
 			if ($data._replay) {
 				o = $rec.users[$data.room.game.seq[i]] || $data.room.game.seq[i];
@@ -1357,7 +1384,13 @@ function updateRoom(gaming) {
 				$data.robots[o.id] = o;
 			}
 			$r.append(renderer(o));
-			updateScore(o.id, o.game.score || 0);
+			// 서바이벌 모드에서 플레이어 초기 HP 설정
+			var initialScore = o.game.score;
+			if (survivalHP > 0 && !o.robot && (initialScore === undefined || initialScore === 0)) {
+				initialScore = survivalHP;
+				if (o.game) o.game.score = survivalHP;
+			}
+			updateScore(o.id, initialScore || 0);
 		}
 		clearTimeout($data._jamsu);
 		delete $data._jamsu;
@@ -2412,6 +2445,88 @@ function drawObtainedScore($uc, $sc) {
 
 	return $uc;
 }
+
+// ========== 서바이벌 모드 공통 클라이언트 함수 ==========
+
+/**
+ * 서바이벌 모드 KO 처리 (타임아웃 또는 데미지로 인한 KO)
+ * @param {string} id - 현재 턴 플레이어 ID
+ * @param {Object} data - turnEnd 데이터
+ * @param {jQuery} $sc - 점수 표시 요소
+ * @param {jQuery} $uc - 현재 유저 요소
+ * @returns {boolean} KO 처리가 되었으면 true (이후 로직 스킵)
+ */
+function handleSurvivalKO(id, data, $sc, $uc) {
+	if (!data.survival || !data.ko) return false;
+
+	var koTarget = data.target || id;
+	var $koUser = $("#game-user-" + koTarget);
+
+	if ($koUser.length) {
+		$koUser.find(".game-user-image").addClass("survival-ko");
+		$koUser.find(".game-user-score").text("KO").addClass("survival-ko-score");
+		$koUser.addClass("game-user-ko");
+	}
+
+	var koUser = $data.users[koTarget] || $data.robots[koTarget];
+	if (koUser && koUser.game) {
+		koUser.game.alive = false;
+		koUser.game.score = 0;
+	}
+
+	playSound('KO');
+	playSound('timeout');
+	$sc.addClass("lost");
+	$(".game-user-current").addClass("game-user-bomb");
+	$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+
+	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
+	return true;
+}
+
+/**
+ * 서바이벌 모드 데미지 처리 (정답 입력 시 다음 플레이어에게 데미지)
+ * @param {Object} data - turnEnd 데이터
+ */
+function handleSurvivalDamage(data) {
+	if (!data.survival || !data.survivalDamage) return;
+
+	var dmgInfo = data.survivalDamage;
+	var $dmgTarget = $("#game-user-" + dmgInfo.targetId);
+
+	var dmgUser = $data.users[dmgInfo.targetId] || $data.robots[dmgInfo.targetId];
+	if (dmgUser && dmgUser.game) {
+		dmgUser.game.score = dmgInfo.newHP;
+	}
+
+	if ($dmgTarget.length) {
+		$dmgTarget.addClass("survival-damage");
+		addTimeout(function() {
+			$dmgTarget.removeClass("survival-damage");
+		}, 500);
+
+		var $dmgSc = $("<div>")
+			.addClass("deltaScore damage")
+			.css('color', '#FF6666')
+			.html("-" + dmgInfo.damage);
+		drawObtainedScore($dmgTarget, $dmgSc);
+
+		if (dmgInfo.ko) {
+			$dmgTarget.find(".game-user-image").addClass("survival-ko");
+			$dmgTarget.find(".game-user-score").text("KO").addClass("survival-ko-score");
+			$dmgTarget.addClass("game-user-ko");
+
+			if (dmgUser && dmgUser.game) {
+				dmgUser.game.alive = false;
+			}
+			playSound('KO');
+			playSound('timeout');
+		} else {
+			updateScore(dmgInfo.targetId, dmgInfo.newHP);
+		}
+	}
+}
+// ========== 서바이벌 모드 공통 끝 ==========
 function turnEnd(id, data) {
 	route("turnEnd", id, data);
 }
@@ -3181,13 +3296,15 @@ function setRoomHead($obj, room) {
 	var opts = getOptions(room.mode, room.opts, false, mobile);
 	var rule = RULE[MODE[room.mode]];
 	var $rm;
+	var isSurvival = room.opts && room.opts.survival;
+	var roundOrHP = isSurvival ? ((room.opts.surHP || 500) + " HP") : (room.round + " " + L['rounds']);
 
 	$obj.empty()
 		.append($("<h5>").addClass("room-head-number").html("[" + (room.practice ? L['practice'] : room.id) + "]"))
 		.append($("<h5>").addClass("room-head-title").text(badWords(room.title)))
 		.append($rm = $("<h5>").addClass("room-head-mode").html(opts.join(" / ")))
 		.append($("<h5>").addClass("room-head-limit").html((mobile ? "" : (L['players'] + " ")) + room.players.length + " / " + room.limit))
-		.append($("<h5>").addClass("room-head-round").html(room.round + " " + L['rounds']))
+		.append($("<h5>").addClass("room-head-round").html(roundOrHP))
 		.append($("<h5>").addClass("room-head-time").html(room.time + L['SECOND']));
 
 

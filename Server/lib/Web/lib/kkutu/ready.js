@@ -278,6 +278,7 @@ $(document).ready(function () {
 				{ key: "mission", value: "/media/kkutu/mission.mp3" },
 				{ key: "kung", value: "/media/kkutu/kung.mp3" },
 				{ key: "horr", value: "/media/kkutu/horr.mp3" },
+				{ key: "KO", value: "/media/common/ko.mp3" },
 			];
 			for (i = 0; i <= 10; i++) $data._soundList.push(
 				{ key: "T" + i, value: "/media/kkutu/T" + i + ".mp3" },
@@ -713,6 +714,11 @@ $(document).ready(function () {
 		}
 		$data._injpick = $data.room.opts.injpick;
 
+		// 서바이벌 HP 설정 복원
+		if ($data.room.opts.surHP) {
+			$("#room-sur-hp").val($data.room.opts.surHP);
+		}
+
 		// 미션 상태에 따라 관련 옵션 활성화/비활성화
 		var missionEnabled = $data.room.opts.mission;
 		if (!missionEnabled) {
@@ -968,6 +974,12 @@ $(document).ready(function () {
 	$("#room-narak, #room-flat-narak").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-invincible, #room-flat-invincible").prop('checked', false);
+		}
+	});
+	// 무적(갓모드) 체크시 나락 해제
+	$("#room-invincible, #room-flat-invincible").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-narak, #room-flat-narak").prop('checked', false);
 		}
 	});
 	$stage.menu.spectate.on('click', function (e) {
@@ -1267,6 +1279,12 @@ $(document).ready(function () {
 		if (scopeVal == 'ext') opts['injeong'] = true;
 		else if (scopeVal == 'str') opts['strict'] = true;
 		else if (scopeVal == 'unk') opts['unknown'] = true;
+
+		// Read Survival HP Dropdown
+		var surHPVal = $("#room-sur-hp").val();
+		console.log("[DEBUG] surHP dropdown value:", surHPVal, "survival checked:", opts['survival']);
+		if (surHPVal) opts['surHP'] = parseInt(surHPVal);
+		console.log("[DEBUG] Final opts.surHP:", opts['surHP']);
 
 		send($data.typeRoom, {
 			title: $("#room-title").val().trim() || $("#room-title").attr('placeholder').trim(),
@@ -1796,6 +1814,29 @@ $(document).ready(function () {
 			$("#room-freedueum").prop('checked', false);
 			$("#room-flat-freedueum").prop('checked', false);
 		}
+	});
+
+	// 8. 서바이벌 모드 UI 변경
+	function updateSurvivalUI(isSurvival) {
+		if (isSurvival) {
+			// 라운드 수 1로 고정하고 숨김
+			$("#room-round").val(1).prop('disabled', true).hide();
+			// HP 선택 드롭다운 표시 (라운드 위치에)
+			$("#room-sur-hp").show();
+			// 라벨 변경
+			$("#room-round-label").text(L['survivalHP']);
+		} else {
+			// 원상복구
+			$("#room-round").prop('disabled', false).show();
+			// HP 선택 드롭다운 숨김
+			$("#room-sur-hp").hide();
+			// 라벨 원상복구 (모바일: 라운드 수, 데스크톱: 라운드 설정)
+			$("#room-round-label").text(mobile ? L['numRound'] : L['roundSetting']);
+		}
+	}
+
+	$("#room-survival, #room-flat-survival").on('change', function () {
+		updateSurvivalUI($(this).is(':checked'));
 	});
 
 	// 웹소켓 연결

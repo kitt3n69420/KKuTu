@@ -2015,3 +2015,34 @@ body {
 #room-flat-qij {
 	display: none !important;
 }
+
+/* KO된 플레이어 전체 스타일 */
+.game-user-ko {
+	/* filter: grayscale(80%); */
+}
+
+/* KO된 플레이어 모레미 숨김 */
+.game-user-image.survival-ko {
+	visibility: hidden;
+}
+
+/* KO 점수 표시 스타일 - 일반 모드 (점수와 같은 크기 15px, 중앙정렬) */
+.game-user-score.survival-ko-score {
+	color: #d82525 !important;
+	font-weight: bold;
+	font-size: 15px;
+	text-shadow: 0px 0px 5px #00000080;
+	text-align: center;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+/* KO 점수 표시 스타일 - 스몰 모드 (점수와 같은 크기 12px, 중앙정렬) */
+.game-body.small-mode .game-user-score.survival-ko-score {
+	font-size: 12px;
+	text-align: center;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
