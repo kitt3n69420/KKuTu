@@ -24,79 +24,74 @@
 var WS = require("ws");
 var Express = require("express");
 var Exession = require("express-session");
-var Redission = require("connect-redis")(Exession);
-var Redis = require("redis");
 var Parser = require("body-parser");
-var DDDoS = require("dddos");
 var Server = Express();
 var DB = require("./db");
 //볕뉘 수정 구문삭제 (28)
 var JLog = require("../sub/jjlog");
 var WebInit = require("../sub/webinit");
 var GLOBAL = require("../sub/global.json");
-var Secure = require('../sub/secure');
+var Secure = require("../sub/secure");
 //볕뉘 수정
-var passport = require('passport');
+var passport = require("passport");
 //볕뉘 수정 끝
+var { validateInput } = require("./validators");
 var Const = require("../const");
-var https = require('https');
-var fs = require('fs');
+var https = require("https");
 
 var Language = {
-	'ko_KR': require("./lang/ko_KR.json"),
-	'en_US': require("./lang/en_US.json"),
-	'nya': require("./lang/nya.json")
+  ko_KR: require("./lang/ko_KR.json"),
+  en_US: require("./lang/en_US.json"),
+  nya: require("./lang/nya.json"),
 };
 //볕뉘 수정
-var ROUTES = [
-	"major", "consume", "admin", "login"
-];
+var ROUTES = ["major", "consume", "admin", "login"];
 //볕뉘 수정 끝
 var page = WebInit.page;
 var gameServers = [];
 
-WebInit.MOBILE_AVAILABLE = [
-	"portal", "main", "kkutu"
-];
+WebInit.MOBILE_AVAILABLE = ["portal", "main", "kkutu"];
 
 require("../sub/checkpub");
 
 JLog.info("<< KKuTu Web >>");
-Server.set('views', __dirname + "/views");
-Server.set('view engine', "pug");
+Server.set("views", __dirname + "/views");
+Server.set("view engine", "pug");
 Server.use(Express.static(__dirname + "/public"));
 Server.use(Parser.urlencoded({ extended: true }));
-Server.use(Exession({
-	/* use only for redis-installed
+Server.use(
+  Exession({
+    /* use only for redis-installed
 
 	store: new Redission({
 		client: Redis.createClient(),
 		ttl: 3600 * 12
 	}),*/
-	secret: 'kkutu',
-	resave: false,
-	saveUninitialized: true
-}));
+    secret: "kkutu",
+    resave: false,
+    saveUninitialized: true,
+  }),
+);
 //볕뉘 수정
 Server.use(passport.initialize());
 Server.use(passport.session());
 Server.use((req, res, next) => {
-	if (req.session.passport) {
-		delete req.session.passport;
-	}
-	next();
+  if (req.session.passport) {
+    delete req.session.passport;
+  }
+  next();
 });
 Server.use((req, res, next) => {
-	if (Const.IS_SECURED || Const.WAF) {
-		if (req.protocol == 'http') {
-			let url = 'https://' + req.hostname + ':' + Const.MAIN_PORTS[0] + req.path;
-			res.status(302).redirect(url);
-		} else {
-			next();
-		}
-	} else {
-		next();
-	}
+  if (Const.IS_SECURED || Const.WAF) {
+    if (req.protocol == "http") {
+      let url = "https://" + req.hostname + ":" + Const.MAIN_PORTS[0] + req.path;
+      res.status(302).redirect(url);
+    } else {
+      next();
+    }
+  } else {
+    next();
+  }
 });
 //볕뉘 수정 끝
 /* use this if you want
@@ -120,234 +115,255 @@ Server.use(DDDoS.express());*/
 
 WebInit.init(Server, true);
 DB.ready = function () {
-	setInterval(function () {
-		var q = ['createdAt', { $lte: Date.now() - 3600000 * 12 }];
+  setInterval(function () {
+    var q = ["createdAt", { $lte: Date.now() - 3600000 * 12 }];
 
-		DB.session.remove(q).on();
-	}, 600000);
-	setInterval(function () {
-		gameServers.forEach(function (v) {
-			if (v.socket) v.socket.send(`{"type":"seek"}`);
-			else v.seek = undefined;
-		});
-	}, 4000);
-	JLog.success("DB is ready.");
+    DB.session.remove(q).on();
+  }, 600000);
+  setInterval(function () {
+    gameServers.forEach(function (v) {
+      if (v.socket) v.socket.send(`{"type":"seek"}`);
+      else v.seek = undefined;
+    });
+  }, 4000);
+  JLog.success("DB is ready.");
 
-	DB.kkutu_shop_desc.find().on(function ($docs) {
-		var i, j;
+  DB.kkutu_shop_desc.find().on(function ($docs) {
+    var i, j;
 
-		for (i in Language) flush(i);
-		function flush(lang) {
-			var db;
+    for (i in Language) flush(i);
+    function flush(lang) {
+      var db;
 
-			Language[lang].SHOP = db = {};
-			for (j in $docs) {
-				db[$docs[j]._id] = [$docs[j][`name_${lang}`], $docs[j][`desc_${lang}`]];
-			}
-		}
-	});
-	if (Const.IS_SECURED || Const.WAF) {
-		Server.listen(80); // HTTP Rewrite
-		const options = Secure();
-		https.createServer(options, Server).listen(Const.MAIN_PORTS[0]);
-	} else {
-		Server.listen(Const.MAIN_PORTS[0]); //HTTP 접속
-	}
+      Language[lang].SHOP = db = {};
+      for (j in $docs) {
+        db[$docs[j]._id] = [$docs[j][`name_${lang}`], $docs[j][`desc_${lang}`]];
+      }
+    }
+  });
+  if (Const.IS_SECURED || Const.WAF) {
+    Server.listen(80); // HTTP Rewrite
+    const options = Secure();
+    https.createServer(options, Server).listen(Const.MAIN_PORTS[0]);
+  } else {
+    Server.listen(Const.MAIN_PORTS[0]); //HTTP 접속
+  }
 };
 Const.MAIN_PORTS.forEach(function (v, i) {
-	var KEY = process.env['WS_KEY'];
-	var protocol;
-	var protocol = Const.IS_SECURED || Const.WAF ? 'wss' : 'ws';
-	gameServers[i] = new GameClient(KEY, `${protocol}://${GLOBAL.GAME_SERVER_HOST}:${(Const.MASTER_PORTS && Const.MASTER_PORTS[i]) || (v + 30)}/${KEY}`);
+  var KEY = process.env["WS_KEY"];
+  var protocol;
+  var protocol = Const.IS_SECURED || Const.WAF ? "wss" : "ws";
+  gameServers[i] = new GameClient(KEY, `${protocol}://${GLOBAL.GAME_SERVER_HOST}:${(Const.MASTER_PORTS && Const.MASTER_PORTS[i]) || v + 30}/${KEY}`);
 });
 function GameClient(id, url) {
-	var my = this;
+  var my = this;
 
-	my.id = id;
-	my.socket = new WS(url, { perMessageDeflate: false, rejectUnauthorized: false });
+  my.id = id;
+  my.socket = new WS(url, { perMessageDeflate: false, rejectUnauthorized: false });
 
-	my.send = function (type, data) {
-		if (!data) data = {};
-		data.type = type;
+  my.send = function (type, data) {
+    if (!data) data = {};
+    data.type = type;
 
-		my.socket.send(JSON.stringify(data));
-	};
-	my.socket.on('open', function () {
-		JLog.info(`Game server #${my.id} connected`);
-	});
-	my.socket.on('error', function (err) {
-		JLog.warn(`Game server #${my.id} has an error: ${err.toString()}`);
-	});
-	my.socket.on('close', function (code) {
-		JLog.error(`Game server #${my.id} closed: ${code}`);
-		my.socket.removeAllListeners();
-		delete my.socket;
-	});
-	my.socket.on('message', function (data) {
-		var _data = data;
-		var i;
+    my.socket.send(JSON.stringify(data));
+  };
+  my.socket.on("open", function () {
+    JLog.info(`Game server #${my.id} connected`);
+  });
+  my.socket.on("error", function (err) {
+    JLog.warn(`Game server #${my.id} has an error: ${err.toString()}`);
+  });
+  my.socket.on("close", function (code) {
+    JLog.error(`Game server #${my.id} closed: ${code}`);
+    my.socket.removeAllListeners();
+    delete my.socket;
+  });
+  my.socket.on("message", function (data) {
+    var _data = data;
+    var i;
 
-		data = JSON.parse(data);
+    try {
+      data = JSON.parse(data);
+    } catch (e) {
+      JLog.warn(`Invalid JSON received from game server #${my.id}`);
+      return;
+    }
 
-		switch (data.type) {
-			case "seek":
-				my.seek = data.value;
-				break;
-			case "narrate-friend":
-				for (i in data.list) {
-					gameServers[i].send('narrate-friend', { id: data.id, s: data.s, stat: data.stat, list: data.list[i] });
-				}
-				break;
-			default:
-		}
-	});
+    // 파싱된 데이터 검증
+    if (typeof data !== "object" || data === null) return;
+    // hasOwnProperty를 사용하여 객체 자신의 속성인지 확인
+    if (data.hasOwnProperty("__proto__") || data.hasOwnProperty("constructor") || data.hasOwnProperty("prototype")) {
+      JLog.warn(`Prototype pollution attempt from game server #${my.id}`);
+      return;
+    }
+
+    switch (data.type) {
+      case "seek":
+        my.seek = data.value;
+        break;
+      case "narrate-friend":
+        for (i in data.list) {
+          gameServers[i].send("narrate-friend", { id: data.id, s: data.s, stat: data.stat, list: data.list[i] });
+        }
+        break;
+      default:
+    }
+  });
 }
 ROUTES.forEach(function (v) {
-	require(`./routes/${v}`).run(Server, WebInit.page);
+  require(`./routes/${v}`).run(Server, WebInit.page);
 });
 Server.get("/soundpacks", function (req, res) {
-	var fs = require('fs');
-	var path = require('path');
-	var baseDir = path.join(__dirname, "public", "media", "kkutu");
+  var fs = require("fs");
+  var path = require("path");
+  var baseDir = path.join(__dirname, "public", "media", "kkutu");
 
-	console.log("Scanning sound packs in:", baseDir);
+  console.log("Scanning sound packs in:", baseDir);
 
-	fs.readdir(baseDir, function (err, files) {
-		if (err) {
-			console.error("Error reading sound pack directory:", err);
-			return res.send([]);
-		}
-		console.log("Found files/dirs:", files);
-		var packs = [];
-		var promises = [];
+  fs.readdir(baseDir, function (err, files) {
+    if (err) {
+      console.error("Error reading sound pack directory:", err);
+      return res.send([]);
+    }
+    console.log("Found files/dirs:", files);
+    var packs = [];
+    var promises = [];
 
-		files.forEach(function (file) {
-			var packPath = path.join(baseDir, file);
-			var p = new Promise(function (resolve, reject) {
-				fs.stat(packPath, function (err, stats) {
-					if (!err && stats.isDirectory()) {
-						console.log("Found pack directory:", file);
-						fs.readdir(packPath, function (err, packFiles) {
-							if (!err) {
-								packs.push({
-									name: file,
-									files: packFiles
-								});
-							}
-							resolve();
-						});
-					} else {
-						resolve();
-					}
-				});
-			});
-			promises.push(p);
-		});
+    files.forEach(function (file) {
+      var packPath = path.join(baseDir, file);
+      var p = new Promise(function (resolve, reject) {
+        fs.stat(packPath, function (err, stats) {
+          if (!err && stats.isDirectory()) {
+            console.log("Found pack directory:", file);
+            fs.readdir(packPath, function (err, packFiles) {
+              if (!err) {
+                packs.push({
+                  name: file,
+                  files: packFiles,
+                });
+              }
+              resolve();
+            });
+          } else {
+            resolve();
+          }
+        });
+      });
+      promises.push(p);
+    });
 
-		Promise.all(promises).then(function () {
-			console.log("Sending packs:", packs);
-			res.send(packs);
-		});
-	});
+    Promise.all(promises).then(function () {
+      console.log("Sending packs:", packs);
+      res.send(packs);
+    });
+  });
 });
 
 Server.get("/bgm", function (req, res) {
-	var fs = require('fs');
-	var path = require('path');
-	var bgmDir = path.join(__dirname, "public", "media", "bgm");
+  var fs = require("fs");
+  var path = require("path");
+  var bgmDir = path.join(__dirname, "public", "media", "bgm");
 
-	fs.readdir(bgmDir, function (err, files) {
-		if (err) {
-			// If directory doesn't exist or other error, return empty list
-			// console.error("Error reading bgm directory:", err); 
-			return res.send([]);
-		}
-		// Filter for audio files if necessary, or just send all
-		res.send(files);
-	});
+  fs.readdir(bgmDir, function (err, files) {
+    if (err) {
+      // If directory doesn't exist or other error, return empty list
+      // console.error("Error reading bgm directory:", err);
+      return res.send([]);
+    }
+    // Filter for audio files if necessary, or just send all
+    res.send(files);
+  });
 });
 
 Server.get("/common-sounds", function (req, res) {
-	var fs = require('fs');
-	var path = require('path');
-	var commonDir = path.join(__dirname, "public", "media", "common");
+  var fs = require("fs");
+  var path = require("path");
+  var commonDir = path.join(__dirname, "public", "media", "common");
 
-	fs.readdir(commonDir, function (err, files) {
-		if (err) {
-			return res.send([]);
-		}
-		res.send(files);
-	});
+  fs.readdir(commonDir, function (err, files) {
+    if (err) {
+      return res.send([]);
+    }
+    res.send(files);
+  });
 });
 
 Server.get("/", function (req, res) {
-	var server = req.query.server;
+  var server = req.query.server;
 
-	//볕뉘 수정 구문삭제(220~229, 240)
-	DB.session.findOne(['_id', req.session.id]).on(function ($ses) {
-		// var sid = (($ses || {}).profile || {}).sid || "NULL";
-		if (global.isPublic) {
-			onFinish($ses);
-			// DB.jjo_session.findOne([ '_id', sid ]).limit([ 'profile', true ]).on(onFinish);
-		} else {
-			if ($ses) $ses.profile.sid = $ses._id;
-			onFinish($ses);
-		}
-	});
-	function onFinish($doc) {
-		var id = req.session.id;
+  // 입력 검증
+  if (server !== undefined && !validateInput(server, "number")) {
+    return res.status(400).send("Invalid server parameter");
+  }
 
-		if ($doc) {
-			req.session.profile = $doc.profile;
-			id = $doc.profile.sid;
-		} else {
-			delete req.session.profile;
-		}
-		var viewName = Const.MAIN_PORTS[server] ? "kkutu" : "portal";
-		console.log(`[DEBUG] server param: ${server}, MAIN_PORTS[server]: ${Const.MAIN_PORTS[server]}, viewName: ${viewName}`);
-		page(req, res, viewName, {
-			'_page': "kkutu",
-			'_script': viewName == "kkutu" ? "game_kkutu" : undefined,
-			'_id': id,
-			'PORT': (Const.MASTER_PORTS && Const.MASTER_PORTS[server]) || (Const.MAIN_PORTS[server] + 30),
-			'ROOM_PORT': Const.ROOM_PORTS[server],
-			'HOST': req.hostname,
-			'PROTOCOL': Const.IS_SECURED || Const.WAF ? 'wss' : 'ws',
-			'TEST': req.query.test,
-			'MOREMI_PART': Const.MOREMI_PART,
-			'AVAIL_EQUIP': Const.AVAIL_EQUIP,
-			'CATEGORIES': Const.CATEGORIES,
-			'GROUPS': Const.GROUPS,
-			'MODE': Const.GAME_TYPE,
-			'GAME_CATEGORIES': Const.GAME_CATEGORIES,
-			'RULE': Const.RULE,
-			'OPTIONS': Const.OPTIONS,
-			'NICKNAME_LIMIT': GLOBAL.NICKNAME_LIMIT,
-			'KO_INJEONG': Const.KO_INJEONG,
-			'EN_INJEONG': Const.EN_INJEONG,
-			'KO_THEME': Const.KO_THEME,
-			'EN_THEME': Const.EN_THEME,
-			'IJP_EXCEPT': Const.IJP_EXCEPT,
-			'QUIZ_TOPIC': Const.QUIZ_TOPIC,
-			'ogImage': "https://kkutu-n.xyz/img/kkutu/logo.png",
-			'ogURL': "https://kkutu-n.xyz/",
-			'ogTitle': "글자로 놀자! 끄투엔",
-			'ogDescription': "끝말잇기가 이렇게 박진감 넘치는 게임이었다니!"
-		});
-	}
+  //볕뉘 수정 구문삭제(220~229, 240)
+  DB.session.findOne(["_id", req.session.id]).on(function ($ses) {
+    // var sid = (($ses || {}).profile || {}).sid || "NULL";
+    if (global.isPublic) {
+      onFinish($ses);
+      // DB.jjo_session.findOne([ '_id', sid ]).limit([ 'profile', true ]).on(onFinish);
+    } else {
+      if ($ses) $ses.profile.sid = $ses._id;
+      onFinish($ses);
+    }
+  });
+  function onFinish($doc) {
+    var id = req.session.id;
+
+    if ($doc) {
+      req.session.profile = $doc.profile;
+      id = $doc.profile.sid;
+    } else {
+      delete req.session.profile;
+    }
+    var viewName = Const.MAIN_PORTS[server] ? "kkutu" : "portal";
+    console.log(`[DEBUG] server param: ${server}, MAIN_PORTS[server]: ${Const.MAIN_PORTS[server]}, viewName: ${viewName}`);
+    page(req, res, viewName, {
+      _page: "kkutu",
+      _script: viewName == "kkutu" ? "game_kkutu" : undefined,
+      _id: id,
+      PORT: (Const.MASTER_PORTS && Const.MASTER_PORTS[server]) || Const.MAIN_PORTS[server] + 30,
+      ROOM_PORT: Const.ROOM_PORTS[server],
+      HOST: req.hostname,
+      PROTOCOL: Const.IS_SECURED || Const.WAF ? "wss" : "ws",
+      TEST: req.query.test,
+      MOREMI_PART: Const.MOREMI_PART,
+      AVAIL_EQUIP: Const.AVAIL_EQUIP,
+      CATEGORIES: Const.CATEGORIES,
+      GROUPS: Const.GROUPS,
+      MODE: Const.GAME_TYPE,
+      GAME_CATEGORIES: Const.GAME_CATEGORIES,
+      RULE: Const.RULE,
+      OPTIONS: Const.OPTIONS,
+      NICKNAME_LIMIT: GLOBAL.NICKNAME_LIMIT,
+      KO_INJEONG: Const.KO_INJEONG,
+      EN_INJEONG: Const.EN_INJEONG,
+      KO_THEME: Const.KO_THEME,
+      EN_THEME: Const.EN_THEME,
+      IJP_EXCEPT: Const.IJP_EXCEPT,
+      QUIZ_TOPIC: Const.QUIZ_TOPIC,
+      ogImage: "https://kkutu-n.xyz/img/kkutu/logo.png",
+      ogURL: "https://kkutu-n.xyz/",
+      ogTitle: "글자로 놀자! 끄투엔",
+      ogDescription: "끝말잇기가 이렇게 박진감 넘치는 게임이었다니!",
+    });
+  }
 });
 
 Server.get("/servers", function (req, res) {
-	var list = [];
+  var list = [];
 
-	gameServers.forEach(function (v, i) {
-		list[i] = v.seek;
-	});
-	res.send({ list: list, max: Const.KKUTU_MAX });
+  gameServers.forEach(function (v, i) {
+    list[i] = v.seek;
+  });
+  res.send({ list: list, max: Const.KKUTU_MAX });
 });
 
 //볕뉘 수정 구문 삭제(274~353)
 
 Server.get("/legal/:page", function (req, res) {
-	page(req, res, "legal/" + req.params.page);
+  if (!validateInput(req.params.page, "string", { maxLength: 50, noSpecialChars: true })) {
+    return res.status(400).send("Invalid page parameter");
+  }
+  page(req, res, "legal/" + req.params.page);
 });
