@@ -191,7 +191,8 @@ function GameClient(id, url) {
 
     // 파싱된 데이터 검증
     if (typeof data !== "object" || data === null) return;
-    if ("__proto__" in data || "constructor" in data || "prototype" in data) {
+    // hasOwnProperty를 사용하여 객체 자신의 속성인지 확인
+    if (data.hasOwnProperty("__proto__") || data.hasOwnProperty("constructor") || data.hasOwnProperty("prototype")) {
       JLog.warn(`Prototype pollution attempt from game server #${my.id}`);
       return;
     }
