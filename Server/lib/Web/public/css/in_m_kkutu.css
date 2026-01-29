@@ -1976,6 +1976,18 @@ body {
 	width: 50px;
 }
 
+#room-injpick-panel,
+#room-injpick-panel-flat {
+	width: auto;
+	clear: left;
+	margin-left: 80px;
+}
+
+#room-quizpick-panel,
+#room-quizpick-panel-flat {
+	width: auto;
+}
+
 #RoomDiag .dialog-opt label {
 	font-size: 11px;
 	letter-spacing: -0.5px;
@@ -1983,6 +1995,12 @@ body {
 
 #RoomDiag .dialog-opt input {
 	margin-top: 6px !important;
+}
+
+/* RoomDiag/QuickDiag tail-button z-index 설정 - 규칙 설명(ExplBox)이 버튼 위에 표시되도록 */
+#RoomDiag .tail-button,
+#QuickDiag .tail-button {
+	z-index: 1;
 }
 
 /* QuickDiag - Special Rules Grid Layout (4 columns like room settings) */

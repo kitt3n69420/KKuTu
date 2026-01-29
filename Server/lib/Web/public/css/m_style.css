@@ -252,6 +252,7 @@ span {
 	pointer-events: none;
 	background-color: #222222;
 	background-color: rgba(0, 0, 0, 0.8);
+	z-index: 100;
 }
 
 .expl-mother {
@@ -435,7 +436,7 @@ span {
 	pointer-events: none;
 	background-color: #222222;
 	background-color: rgba(0, 0, 0, 0.7);
-	z-index: 2;
+	z-index: 100;
 }
 
 #ExplBox expl {

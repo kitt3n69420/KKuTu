@@ -1,9 +1,10 @@
 {
     "GLOBAL": {
-        "GPL": "<div style='color: #666;'>글자로 놀자! 끄투냥 Copyright (C) 2025 냐옹이(kitt3n69420@gmail.com})<br>이 프로그램은 제품에 대한 어떠한 형태의 보증도 제공하지 않는다냥.<br>이 소프트웨어는 자유 소프트웨어이며 배포 규정을 만족시키는 조건 아래 자유롭게 재배포할 수 있다냥.<br>더 자세한 건 다음 레포지토리에서 확인해라냥: <a target='_blank' href='https://github.com/kitt3n69420/KKuTu-N'>https://github.com/kitt3n69420/KKuTu-N</a></div>",
+        "GPL": "<div style='color: #666;'>글자로 놀자! 끄투냥 Copyright (C) 2025 냐옹이(kitt3n69420@gmail.com})<br>이 프로그램은 제품에 대한 어떠한 형태의 보증도 제공하지 않는다냥.<br>이 소프트웨어는 자유 소프트웨어이며 배포 규정을 만족시키는 조건 아래 자유롭게 재배포할 수 있다냥.<br>더 자세한 건 다음 레포지토리에서 확인해라냥: <a target='_blank' href='https://github.com/kitt3n69420/KKuTu'>https://github.com/kitt3n69420/KKuTu</a></div>",
         "CREATOR": "개발자 블로그다냥",
         "HOME": "집",
         "GAMES": "놀이터",
+        "SERVERLIST": "서버 모음",
         "DISCORD": "디스코드",
         "REPOSITORY": "레포지토리",
         "GAMES_KKUTU": "끄투",
@@ -389,6 +390,7 @@
         "pqPassRemaining": "패스 냠은 거: {V1}",
         "chatClear": "채팅 청소",
         "roundSetting": "라운드 설정",
+        "survivalHP": "서바이벌 설정",
         "pqChars": "글자",
         "numRound": "라운드 수",
         "roundTime": "라운드 시간",

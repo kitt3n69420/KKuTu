@@ -1,9 +1,10 @@
 {
 	"GLOBAL": {
-		"GPL": "<div style='color: #666;'>Rule the words! KKuTu Online Copyright (C) 2025 냐옹이(kitt3n69420@gmail.com)<br>This program comes with ABSOLUTELY NO WARRANTY.<br>This is free software, and you are welcome to redistribute it under certain conditions.<br>For details visit the repository of this software: <a target='_blank' href='https://github.com/kitt3n69420/KKuTu-N'>https://github.com/kitt3n69420/KKuTu-N</a></div>",
+		"GPL": "<div style='color: #666;'>Rule the words! KKuTu Online Copyright (C) 2025 냐옹이(kitt3n69420@gmail.com)<br>This program comes with ABSOLUTELY NO WARRANTY.<br>This is free software, and you are welcome to redistribute it under certain conditions.<br>For details visit the repository of this software: <a target='_blank' href='https://github.com/kitt3n69420/KKuTu'>https://github.com/kitt3n69420/KKuTu</a></div>",
 		"CREATOR": "Developer Blog",
 		"HOME": "Home",
 		"GAMES": "Games",
+		"SERVERLIST": "Server List",
 		"DISCORD": "Discord",
 		"REPOSITORY": "Repository",
 		"GAMES_KKUTU": "KKuTu",
@@ -370,7 +371,7 @@
 		"pqPassRemaining": "Passes left: {V1}",
 		"chatClear": "Clear Chat",
 		"roundSetting": "Round Settings",
-		"survivalHP": "Survival HP",
+		"survivalHP": "Survival",
 		"pqChars": " letters",
 		"numRound": "Rounds",
 		"roundTime": "Round Time",
