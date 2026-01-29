@@ -1133,6 +1133,8 @@ body {
 
 .cw.rounds {
 	margin-top: -380px;
+	position: relative;
+	z-index: 101;
 }
 
 .rounds label {

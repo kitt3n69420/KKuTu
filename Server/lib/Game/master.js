@@ -323,14 +323,43 @@ Cluster.on("message", function (worker, msg) {
       break;
     case "user-publish":
       if ((temp = DIC[msg.data.id])) {
+        // 허용된 속성만 화이트리스트 방식으로 병합
+        const ALLOWED_USER_PROPS = ['place', 'ready', 'team', 'form', 'data', 'profile'];
         for (var i in msg.data) {
+          if (!msg.data.hasOwnProperty(i)) continue;
+          // Prototype Pollution 방어
+          if (i === '__proto__' || i === 'constructor' || i === 'prototype') {
+            JLog.warn(`[SECURITY] Blocked dangerous key in user-publish: ${i}`);
+            continue;
+          }
+          // 화이트리스트 검증
+          if (!ALLOWED_USER_PROPS.includes(i)) {
+            JLog.warn(`[SECURITY] Blocked non-whitelisted key in user-publish: ${i}`);
+            continue;
+          }
           temp[i] = msg.data[i];
         }
       }
       break;
     case "room-publish":
       if ((temp = ROOM[msg.data.room.id])) {
+        // 허용된 속성만 화이트리스트 방식으로 병합
+        const ALLOWED_ROOM_PROPS = [
+          'id', 'channel', 'title', 'password', 'limit', 'mode', 'round', 'time',
+          'master', 'players', 'readies', 'gaming', 'game', 'practice', 'opts'
+        ];
         for (var i in msg.data.room) {
+          if (!msg.data.room.hasOwnProperty(i)) continue;
+          // Prototype Pollution 방어
+          if (i === '__proto__' || i === 'constructor' || i === 'prototype') {
+            JLog.warn(`[SECURITY] Blocked dangerous key in room-publish: ${i}`);
+            continue;
+          }
+          // 화이트리스트 검증
+          if (!ALLOWED_ROOM_PROPS.includes(i)) {
+            JLog.warn(`[SECURITY] Blocked non-whitelisted key in room-publish: ${i}`);
+            continue;
+          }
           temp[i] = msg.data.room[i];
         }
         temp.password = msg.password;

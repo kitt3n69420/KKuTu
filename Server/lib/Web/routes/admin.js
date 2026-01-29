@@ -118,6 +118,13 @@ exports.run = function (Server, page) {
   Server.get("/gwalli/kkutudb/:word", function (req, res) {
     if (!checkAdmin(req, res)) return;
 
+    // lang 파라미터 화이트리스트 검증
+    const ALLOWED_LANGS = ['ko', 'en', 'ja', 'th'];
+    if (!ALLOWED_LANGS.includes(req.query.lang)) {
+      JLog.warn('[SECURITY] Invalid lang parameter:', req.query.lang);
+      return res.sendStatus(400);
+    }
+
     var TABLE = MainDB.kkutu[req.query.lang];
 
     if (!TABLE) return res.sendStatus(400);
@@ -129,15 +136,44 @@ exports.run = function (Server, page) {
   Server.get("/gwalli/kkututheme", function (req, res) {
     if (!checkAdmin(req, res)) return;
 
+    // lang 파라미터 화이트리스트 검증
+    const ALLOWED_LANGS = ['ko', 'en', 'ja', 'th'];
+    if (!ALLOWED_LANGS.includes(req.query.lang)) {
+      JLog.warn('[SECURITY] Invalid lang parameter:', req.query.lang);
+      return res.sendStatus(400);
+    }
+
     var TABLE = MainDB.kkutu[req.query.lang];
 
     if (!TABLE) return res.sendStatus(400);
     if (!TABLE.find) return res.sendStatus(400);
-    TABLE.find(["theme", new RegExp(req.query.theme)])
-      .limit(["_id", true])
-      .on(function ($docs) {
-        res.send({ list: $docs.map((v) => v._id) });
-      });
+
+    // ReDoS 방어: theme 파라미터 검증
+    if (!req.query.theme || typeof req.query.theme !== 'string') {
+      JLog.warn('[SECURITY] Invalid theme parameter type');
+      return res.sendStatus(400);
+    }
+    if (req.query.theme.length > 50) {
+      JLog.warn('[SECURITY] theme parameter too long');
+      return res.sendStatus(400);
+    }
+    // 위험한 정규식 패턴 차단 (중첩된 반복자, 백트래킹 유발 패턴)
+    if (/[*+]{2,}/.test(req.query.theme) || /\(.*[*+].*\).*[*+]/.test(req.query.theme)) {
+      JLog.warn('[SECURITY] Dangerous regex pattern detected:', req.query.theme);
+      return res.sendStatus(400);
+    }
+
+    try {
+      var regex = new RegExp(req.query.theme);
+      TABLE.find(["theme", regex])
+        .limit(["_id", true])
+        .on(function ($docs) {
+          res.send({ list: $docs.map((v) => v._id) });
+        });
+    } catch (e) {
+      JLog.warn('[SECURITY] Invalid regex pattern:', e.message);
+      return res.sendStatus(400);
+    }
   });
   Server.get("/gwalli/kkutuhot", function (req, res) {
     if (!checkAdmin(req, res)) return;
@@ -174,7 +210,20 @@ exports.run = function (Server, page) {
 
     if (req.body.pw != GLOBAL.PASS) return res.sendStatus(400);
 
-    var list = JSON.parse(req.body.list).list;
+    // JSON.parse 검증
+    if (!req.body.list || typeof req.body.list !== 'string') {
+      JLog.warn('[SECURITY] Invalid req.body.list type');
+      return res.sendStatus(400);
+    }
+
+    var parsed, list;
+    try {
+      parsed = JSON.parse(req.body.list);
+      list = parsed.list;
+    } catch (e) {
+      JLog.warn('[SECURITY] JSON.parse failed for req.body.list:', e.message);
+      return res.sendStatus(400);
+    }
 
     // Validate parsed list
     if (!Array.isArray(list)) return res.sendStatus(400);
@@ -214,6 +263,13 @@ exports.run = function (Server, page) {
     if (!checkAdmin(req, res)) return;
     if (req.body.pw != GLOBAL.PASS) return res.sendStatus(400);
 
+    // lang 파라미터 화이트리스트 검증
+    const ALLOWED_LANGS = ['ko', 'en', 'ja', 'th'];
+    if (!ALLOWED_LANGS.includes(req.body.lang)) {
+      JLog.warn('[SECURITY] Invalid lang parameter:', req.body.lang);
+      return res.sendStatus(400);
+    }
+
     var theme = req.body.theme;
     var list = req.body.list;
     var TABLE = MainDB.kkutu[req.body.lang];
@@ -248,8 +304,29 @@ exports.run = function (Server, page) {
   Server.post("/gwalli/kkutudb/:word", function (req, res) {
     if (!checkAdmin(req, res)) return;
     if (req.body.pw != GLOBAL.PASS) return res.sendStatus(400);
+
+    // lang 파라미터 화이트리스트 검증
+    const ALLOWED_LANGS = ['ko', 'en', 'ja', 'th'];
+    if (!ALLOWED_LANGS.includes(req.body.lang)) {
+      JLog.warn('[SECURITY] Invalid lang parameter:', req.body.lang);
+      return res.sendStatus(400);
+    }
+
     var TABLE = MainDB.kkutu[req.body.lang];
-    var data = JSON.parse(req.body.data);
+
+    // JSON.parse 검증
+    if (!req.body.data || typeof req.body.data !== 'string') {
+      JLog.warn('[SECURITY] Invalid req.body.data type');
+      return res.sendStatus(400);
+    }
+
+    var data;
+    try {
+      data = JSON.parse(req.body.data);
+    } catch (e) {
+      JLog.warn('[SECURITY] JSON.parse failed for req.body.data:', e.message);
+      return res.sendStatus(400);
+    }
 
     if (!TABLE) return res.sendStatus(400);
     if (!TABLE.upsert) return res.sendStatus(400);
@@ -291,10 +368,43 @@ exports.run = function (Server, page) {
     if (!checkAdmin(req, res)) return;
     if (req.body.pw != GLOBAL.PASS) return res.sendStatus(400);
 
-    var list = JSON.parse(req.body.list).list;
+    // JSON.parse 검증
+    if (!req.body.list || typeof req.body.list !== 'string') {
+      JLog.warn('[SECURITY] Invalid req.body.list type');
+      return res.sendStatus(400);
+    }
 
+    var parsed, list;
+    try {
+      parsed = JSON.parse(req.body.list);
+      list = parsed.list;
+    } catch (e) {
+      JLog.warn('[SECURITY] JSON.parse failed for req.body.list:', e.message);
+      return res.sendStatus(400);
+    }
+
+    if (!Array.isArray(list)) {
+      JLog.warn('[SECURITY] list is not an array');
+      return res.sendStatus(400);
+    }
+
+    // 필드 화이트리스트 검증
+    const ALLOWED_USER_FIELDS = ['_id', 'money', 'score', 'box', 'exordial', 'nickname', 'record'];
     list.forEach(function (item) {
-      MainDB.users.upsert(["_id", item._id]).set(item).on();
+      if (!item || typeof item !== 'object' || !item._id) {
+        JLog.warn('[SECURITY] Invalid item in users list');
+        return;
+      }
+
+      // 화이트리스트 필드만 추출
+      var safeData = {};
+      for (var key in item) {
+        if (item.hasOwnProperty(key) && ALLOWED_USER_FIELDS.includes(key)) {
+          safeData[key] = item[key];
+        }
+      }
+
+      MainDB.users.upsert(["_id", item._id]).set(safeData).on();
     });
     res.sendStatus(200);
   });
@@ -302,12 +412,56 @@ exports.run = function (Server, page) {
     if (!checkAdmin(req, res)) return;
     if (req.body.pw != GLOBAL.PASS) return res.sendStatus(400);
 
-    var list = JSON.parse(req.body.list).list;
+    // JSON.parse 검증
+    if (!req.body.list || typeof req.body.list !== 'string') {
+      JLog.warn('[SECURITY] Invalid req.body.list type');
+      return res.sendStatus(400);
+    }
 
+    var parsed, list;
+    try {
+      parsed = JSON.parse(req.body.list);
+      list = parsed.list;
+    } catch (e) {
+      JLog.warn('[SECURITY] JSON.parse failed for req.body.list:', e.message);
+      return res.sendStatus(400);
+    }
+
+    if (!Array.isArray(list)) {
+      JLog.warn('[SECURITY] list is not an array');
+      return res.sendStatus(400);
+    }
+
+    // 필드 화이트리스트 검증
+    const ALLOWED_SHOP_FIELDS = ['_id', 'cost', 'term', 'group', 'options'];
     list.forEach(function (item) {
-      item.core.options = JSON.parse(item.core.options);
-      MainDB.kkutu_shop.upsert(["_id", item._id]).set(item.core).on();
-      MainDB.kkutu_shop_desc.upsert(["_id", item._id]).set(item.text).on();
+      if (!item || typeof item !== 'object' || !item._id || !item.core) {
+        JLog.warn('[SECURITY] Invalid item in shop list');
+        return;
+      }
+
+      // options는 JSON 문자열일 수 있으므로 파싱
+      if (typeof item.core.options === 'string') {
+        try {
+          item.core.options = JSON.parse(item.core.options);
+        } catch (e) {
+          JLog.warn('[SECURITY] JSON.parse failed for item.core.options:', e.message);
+          return;
+        }
+      }
+
+      // 화이트리스트 필드만 추출
+      var safeCore = {};
+      for (var key in item.core) {
+        if (item.core.hasOwnProperty(key) && ALLOWED_SHOP_FIELDS.includes(key)) {
+          safeCore[key] = item.core[key];
+        }
+      }
+
+      MainDB.kkutu_shop.upsert(["_id", item._id]).set(safeCore).on();
+      if (item.text) {
+        MainDB.kkutu_shop_desc.upsert(["_id", item._id]).set(item.text).on();
+      }
     });
     res.sendStatus(200);
   });
