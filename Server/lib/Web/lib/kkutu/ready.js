@@ -969,6 +969,10 @@ $(document).ready(function () {
 			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', false);
 			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', false);
 		}
+
+		// 게임 모드 변경 시 서바이벌 UI 업데이트
+		var survivalChecked = $("#room-survival").is(':checked') || $("#room-flat-survival").is(':checked');
+		updateSurvivalUI(survivalChecked);
 	});
 	// 나락-무적 상호배타: 나락 체크시 무적 해제
 	$("#room-narak, #room-flat-narak").on('change', function () {
@@ -1818,7 +1822,13 @@ $(document).ready(function () {
 
 	// 8. 서바이벌 모드 UI 변경
 	function updateSurvivalUI(isSurvival) {
-		if (isSurvival) {
+		// 현재 선택된 게임 모드가 서바이벌을 지원하는지 확인
+		var currentMode = $("#room-mode").val();
+		var rule = RULE[MODE[currentMode]];
+		var supportsSurvival = rule && rule.opts && rule.opts.indexOf("sur") !== -1;
+
+		// 서바이벌이 활성화되었고, 해당 게임이 서바이벌을 지원하는 경우에만 HP UI 표시
+		if (isSurvival && supportsSurvival) {
 			// 라운드 수 1로 고정하고 숨김
 			$("#room-round").val(1).prop('disabled', true).hide();
 			// HP 선택 드롭다운 표시 (라운드 위치에)
