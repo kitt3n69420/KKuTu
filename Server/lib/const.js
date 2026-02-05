@@ -41,35 +41,35 @@ exports.WAF = GLOBAL.WAF;
 exports.MASTER_PORTS = GLOBAL.MASTER_PORTS;
 exports.ROOM_PORTS = GLOBAL.ROOM_PORTS;
 exports.OPTIONS = {
-	'man': { name: "Manner" },
-	'ext': { name: "Injeong" },
-	'mis': { name: "Mission" },
-	'eam': { name: "EasyMission" },
-	'rdm': { name: "RndMission" },
-	'mpl': { name: "MissionPlus" },
-	'loa': { name: "Loanword" },
-	'prv': { name: "Proverb" },
-	'str': { name: "Strict" },
-	'k32': { name: "Sami" },
-	'k22': { name: "Twotwo" },
+	'man': { name: "Manner" },        //매너: 한 방 단어 금지
+	'ext': { name: "Injeong" },       //인정: 우리말샘 및 특수 단어 인정
+	'mis': { name: "Mission" },       //미션: 특정 글자를 쓰면 보너스 점수
+	'eam': { name: "EasyMission" },   //이지미션: 미션 판정을 널널하게
+	'rdm': { name: "RndMission" },    //랜덤미션: 미션이 턴마다 바뀜
+	'mpl': { name: "MissionPlus" },   //미션플러스: 다양한 글자가 미션으로
+	'loa': { name: "Loanword" },      //외래어 금지: ㅈㄱㄴ
+	'prv': { name: "Proverb" },       //속담: ㅈㄱㄴ
+	'str': { name: "Strict" },        //깐깐: 일반어 명사만
+	'k32': { name: "Sami" },          //삼이: 3232 쿵쿵따
+	'k22': { name: "Twotwo" },        //둘둘, 넷넷, 사삼: 비슷함
 	'k44': { name: "Fourfour" },
 	'k43': { name: "Fourthree" },
-	'no2': { name: "No2" },
-	'unk': { name: "Unknown" },
-	'big': { name: "Big" },
-	'trp': { name: "Triple" },
-	'one': { name: "One" },
-	'mir': { name: "Mirror" },
-	'ret': { name: "Return" },
-	'mid': { name: "Middle" },
-	'sch': { name: "Second" },
+	'no2': { name: "No2" },           //2글자 금지: ㅈㄱㄴ
+	'unk': { name: "Unknown" },       //언노운 워드: 없는 단어만 쓰기
+	'big': { name: "Big" },           //큰 보드: 솎솎 글자수가 2배가 됨
+	'trp': { name: "Triple" },        //트리플: 주제 3개를 동시에 씀
+	'one': { name: "One" },           //원찬스: 한번 틀리면 끝
+	'mir': { name: "Mirror" },        //력입 로꾸거 를어단 :러미\\
+	'ret': { name: "Return" },        //리턴: 쓴 단어 재사용 가능
+	'mid': { name: "Middle" },        //미들잇기: 단어의 가운데 글자로 이음
+	'sch': { name: "Second" },        
 	'vow': { name: "Vowel" },
 	'lng': { name: "Long" },
 	'ln3': { name: "Length3" },
 	'ln4': { name: "Length4" },
 	'ln5': { name: "Length5" },
 	'ln6': { name: "Length6" },
-	'ln7': { name: "Length7" }, //3, 4, 6, 7글자는 영어 쿵쿵따에 쓸 예정
+	'ln7': { name: "Length7" },   //3, 4, 6, 7글자는 영어 쿵쿵따에 쓸 예정
 	'unl': { name: "Unlimited" },
 	'sur': { name: "Survival" },
 	'fdu': { name: "FreeDueum" },
@@ -90,7 +90,9 @@ exports.OPTIONS = {
 	'nar': { name: "Narak" },
 	'god': { name: "Invincible" },
 	'apd': { name: "AntiTroll" },
-	'rnt': { name: "RandomTurn" }
+	'rnt': { name: "RandomTurn" },
+	'nol': { name: "NoLong" },     // 장문 금지: 9글자 이상 금지
+	'nos': { name: "NoShort" }     // 단문 금지: 8글자 이하 금지
 
 };
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
@@ -121,7 +123,7 @@ exports.ROBOT_DEFEAT_MESSAGES = [ // 봇이 한방단어를 받았을 때 보내
 ];
 exports.ROBOT_ANGRY_MESSAGES = [ //봇이 빡치면 보내는 메시지
 	"이건 불공평해", "억까 제발좀", "아오!!!!!!", "개짜증나",
-	"ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", "○○",
+	"ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", "냥냥",
 	"야!!!", "치트 쓰지마", "사기치지마", "너 어디사냐?"
 ]
 exports.ROBOT_FINAL_MESSAGES = [ //봇이 중퇴하기 전에 보내는 메시지
@@ -177,7 +179,7 @@ exports.RULE = {
 	'ESH': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "rnt", "sur"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -195,7 +197,7 @@ exports.RULE = {
 	'KSH': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -240,7 +242,7 @@ exports.RULE = {
 	'KAP': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur"],
+		opts: ["man", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -250,7 +252,7 @@ exports.RULE = {
 	'EAP': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "rnt", "sur"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "rnt", "sur", "nol", "nos", "no2"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -270,7 +272,7 @@ exports.RULE = {
 	'KDA': {
 		lang: "ko",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur"],
+		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2"],
 		time: 1,
 		ai: true,
 		ewq: false
@@ -278,7 +280,7 @@ exports.RULE = {
 	'EDA': {
 		lang: "en",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur"],
+		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -323,7 +325,7 @@ exports.RULE = {
 	'KFR': {
 		lang: "ko",
 		rule: "Free",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -332,7 +334,7 @@ exports.RULE = {
 	'EFR': {
 		lang: "en",
 		rule: "Free",
-		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur"],
+		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2"],
 		time: 1,
 		ai: true,
 		big: false,

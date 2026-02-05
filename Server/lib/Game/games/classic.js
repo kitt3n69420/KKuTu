@@ -374,33 +374,67 @@ exports.getTitle = function () {
 
 		var pending = chars.length;
 		var totalCount = 0;
+		var totalShort = 0;
 
 		chars.forEach(function (c) {
 			var isKo = my.rule.lang === 'ko';
 			var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
 			var colName = col;
+			var shortColName = null;
 
 			if (isKo) {
-				// Title check: usually standard "start_all" or specific? 
-				// The game hasn't started, so wordLength might be default.
-				// For KKT, wordLength is 3.
-				var reqLen = my.game.wordLength || 0;
-				var lenSuffix = (reqLen === 2) ? "2" : (reqLen === 3) ? "3" : (reqLen === 4) ? "4" : "all";
-				colName = isRev ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
+				// noLong 모드: startshort/endshort 컬럼 사용 (2~8글자 단어 수)
+				// noShort 모드: 전체(start_all) - startshort = 9글자 이상 단어 수
+				// no2 모드: 전체(start_all) - start2 = 3글자 이상 단어 수
+				if (my.opts.nolong) {
+					colName = isRev ? `endshort_${state}` : `startshort_${state}`;
+				} else if (my.opts.noshort) {
+					colName = isRev ? `endall_${state}` : `startall_${state}`;
+					shortColName = isRev ? `endshort_${state}` : `startshort_${state}`;
+				} else if (my.opts.no2) {
+					colName = isRev ? `endall_${state}` : `startall_${state}`;
+					shortColName = isRev ? `end2_${state}` : `start2_${state}`;
+				} else {
+					// Title check: usually standard "start_all" or specific?
+					// The game hasn't started, so wordLength might be default.
+					// For KKT, wordLength is 3.
+					var reqLen = my.game.wordLength || 0;
+					var lenSuffix = (reqLen === 2) ? "2" : (reqLen === 3) ? "3" : (reqLen === 4) ? "4" : "all";
+					colName = isRev ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
+				}
 			} else {
-				colName = `count_${state}`;
+				// 영어: noLong 모드일 때 countshort 컬럼 사용 (2~8글자)
+				// noShort 모드일 때 전체 - countshort = 9글자 이상
+				// no2 모드일 때 전체 - count2 = 3글자 이상
+				if (my.opts.nolong) {
+					colName = `countshort_${state}`;
+				} else if (my.opts.noshort) {
+					colName = `count_${state}`;
+					shortColName = `countshort_${state}`;
+				} else if (my.opts.no2) {
+					colName = `count_${state}`;
+					shortColName = `count2_${state}`;
+				} else {
+					colName = `count_${state}`;
+				}
 			}
 
 			table.findOne(['_id', c]).on(function (doc) {
 				if (doc && doc[colName]) {
 					totalCount += doc[colName];
 				}
+				if (shortColName && doc && doc[shortColName]) {
+					totalShort += doc[shortColName];
+				}
 				if (--pending === 0) {
-					R.go(totalCount);
+					// noshort 모드: 전체 - short = 9글자 이상 단어 수
+					var finalCount = shortColName ? (totalCount - totalShort) : totalCount;
+					R.go(finalCount);
 				}
 			}, null, function () {
 				if (--pending === 0) {
-					R.go(totalCount);
+					var finalCount = shortColName ? (totalCount - totalShort) : totalCount;
+					R.go(finalCount);
 				}
 			});
 		});
@@ -823,6 +857,11 @@ exports.submit = function (client, text) {
 	if (!my.game.char) return;
 
 	if (!isChainable(text, my.mode, my.game.char, my.game.subChar)) return client.chat(text);
+
+	// noLong/noShort/no2 길이 검증 (통과 못하면 채팅으로 처리)
+	if (my.opts.nolong && text.length >= 9) return client.chat(text);
+	if (my.opts.noshort && text.length <= 8) return client.chat(text);
+	if (my.opts.no2 && text.length <= 2) return client.chat(text);
 
 	// Surrogate character check: reject inputs containing surrogates (e.g., emojis)
 	if (/[\uD800-\uDFFF]/.test(text)) {
@@ -1706,12 +1745,39 @@ exports.readyRobot = function (robot) {
 
 			// Determine Column
 			var col;
+			var shortCol = null;
 			if (isKo) {
-				var nextLen = getNextTurnLength.call(my);
-				var lenSuffix = (nextLen === 2) ? "2" : (nextLen === 3) ? "3" : "all";
-				col = isRev ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
+				// noLong 모드: startshort/endshort 컬럼 사용 (2~8글자 단어 수)
+				// noShort 모드: 전체(start_all) - startshort = 9글자 이상 단어 수
+				// no2 모드: 전체(start_all) - start2 = 3글자 이상 단어 수
+				if (my.opts.nolong) {
+					col = isRev ? `endshort_${state}` : `startshort_${state}`;
+				} else if (my.opts.noshort) {
+					col = isRev ? `endall_${state}` : `startall_${state}`;
+					shortCol = isRev ? `endshort_${state}` : `startshort_${state}`;
+				} else if (my.opts.no2) {
+					col = isRev ? `endall_${state}` : `startall_${state}`;
+					shortCol = isRev ? `end2_${state}` : `start2_${state}`;
+				} else {
+					var nextLen = getNextTurnLength.call(my);
+					var lenSuffix = (nextLen === 2) ? "2" : (nextLen === 3) ? "3" : "all";
+					col = isRev ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
+				}
 			} else {
-				col = `count_${state}`;
+				// 영어: noLong 모드일 때 countshort 컬럼 사용 (2~8글자)
+				// noShort 모드일 때 전체 - countshort = 9글자 이상
+				// no2 모드일 때 전체 - count2 = 3글자 이상
+				if (my.opts.nolong) {
+					col = `countshort_${state}`;
+				} else if (my.opts.noshort) {
+					col = `count_${state}`;
+					shortCol = `countshort_${state}`;
+				} else if (my.opts.no2) {
+					col = `count_${state}`;
+					shortCol = `count2_${state}`;
+				} else {
+					col = `count_${state}`;
+				}
 			}
 
 			// Dueum/SubChar Logic (Read-Time)
@@ -1728,15 +1794,26 @@ exports.readyRobot = function (robot) {
 
 			var pending = chars.length;
 			var total = 0;
+			var totalShort = 0;
 
 			chars.forEach(c => {
 				table.findOne(['_id', c]).on(function (doc) {
 					if (doc && doc[col]) {
 						total += doc[col];
 					}
-					if (--pending === 0) resolve(total);
+					if (shortCol && doc && doc[shortCol]) {
+						totalShort += doc[shortCol];
+					}
+					if (--pending === 0) {
+						// noshort 모드: 전체 - short = 9글자 이상 단어 수
+						var finalTotal = shortCol ? (total - totalShort) : total;
+						resolve(finalTotal);
+					}
 				}, null, function () {
-					if (--pending === 0) resolve(total);
+					if (--pending === 0) {
+						var finalTotal = shortCol ? (total - totalShort) : total;
+						resolve(finalTotal);
+					}
 				});
 			});
 		});
@@ -1994,6 +2071,21 @@ exports.readyRobot = function (robot) {
 					len = Math.floor(Math.random() * 5) + 2;
 					break;
 			}
+			// nolong 모드: 최대 7글자 (char 포함 8글자)
+			if (my.opts.nolong && len > 7) {
+				len = Math.floor(Math.random() * 6) + 1; // 1~7 -> 최종 2~8글자
+			}
+			// noshort 모드: 최소 8글자 (char 포함 9글자), level 0,1은 최대 11글자
+			if (my.opts.noshort) {
+				var minUnkLen = 8; // char 포함 최소 9글자
+				var maxUnkLen = (level <= 1) ? 11 : len; // level 0,1은 최대 12글자
+				if (len < minUnkLen) len = minUnkLen;
+				if (len > maxUnkLen) len = maxUnkLen;
+			}
+			// no2 모드: 최소 2글자 (char 포함 최소 3글자)
+			if (my.opts.no2 && len < 2) {
+				len = 2;
+			}
 		}
 
 		if (my.game.mission) {
@@ -2184,9 +2276,26 @@ exports.readyRobot = function (robot) {
 			).limit(20).on(function (list) {
 				// Filter done words
 				if (list && list.length) {
+					var minLen = 1;
+					var maxLen = ROBOT_LENGTH_LIMIT[level];
+					// nolong 모드: 최대 8글자
+					if (my.opts.nolong) {
+						maxLen = Math.min(maxLen, 8);
+					}
+					// noshort 모드: 최소 9글자, level 0,1 봇은 최대 12글자로 확장
+					if (my.opts.noshort) {
+						minLen = 9;
+						if (level <= 1) {
+							maxLen = Math.max(maxLen, 12);
+						}
+					}
+					// no2 모드: 최소 3글자
+					if (my.opts.no2) {
+						minLen = Math.max(minLen, 3);
+					}
 					list = list.filter(function (w) {
 						if (my.game.wordLength > 0 && w._id.length !== my.game.wordLength) return false;
-						return w._id.length <= ROBOT_LENGTH_LIMIT[level] && !robot._done.includes(w._id);
+						return w._id.length >= minLen && w._id.length <= maxLen && !robot._done.includes(w._id);
 					});
 				}
 
@@ -2339,12 +2448,28 @@ exports.readyRobot = function (robot) {
 				// Filter by length limit and done list
 				// EKT 3-gram 모드: 최소 4글자 이상 필터 추가
 				var minLen = 1;
+				var maxLen = ROBOT_LENGTH_LIMIT[level];
 				if (Const.GAME_TYPE[my.mode] === 'EKT' && my.game.ektTrigramMode) {
 					minLen = 4;
 				}
+				// nolong 모드: 최대 8글자
+				if (my.opts.nolong) {
+					maxLen = Math.min(maxLen, 8);
+				}
+				// noshort 모드: 최소 9글자, level 0,1 봇은 최대 12글자로 확장
+				if (my.opts.noshort) {
+					minLen = Math.max(minLen, 9);
+					if (level <= 1) {
+						maxLen = Math.max(maxLen, 12);
+					}
+				}
+				// no2 모드: 최소 3글자
+				if (my.opts.no2) {
+					minLen = Math.max(minLen, 3);
+				}
 				list = list.filter(function (w) {
 					if (my.game.wordLength > 0 && w._id.length !== my.game.wordLength) return false;
-					return w._id.length >= minLen && w._id.length <= ROBOT_LENGTH_LIMIT[level] && !robot._done.includes(w._id);
+					return w._id.length >= minLen && w._id.length <= maxLen && !robot._done.includes(w._id);
 				});
 
 				if (list.length === 0) {
@@ -3189,8 +3314,22 @@ function getAuto(char, subc, type, limit, sort) {
 			adv = `^(${adc}).{${my.game.wordLength - char.length}}$`;
 			break;
 		case 'KAP':
+			if (my.opts.noshort) {
+				adv = `.{8,}(${adc})$`; // 9글자 이상
+			} else if (my.opts.nolong) {
+				adv = `.{1,7}(${adc})$`; // 2~8글자
+			} else {
+				adv = `.(${adc})$`;
+			}
+			break;
 		case 'EAP':
-			adv = `.(${adc})$`;
+			if (my.opts.noshort) {
+				adv = `.{8,}(${adc})$`; // 9글자 이상
+			} else if (my.opts.nolong) {
+				adv = `.{3,7}(${adc})$`; // 4~8글자 (EAP는 기본 4글자 이상)
+			} else {
+				adv = `.(${adc})$`;
+			}
 			break;
 		case 'KAK':
 		case 'EAK':
@@ -3216,11 +3355,37 @@ function getAuto(char, subc, type, limit, sort) {
 		var col;
 
 		if (isKo) {
-			var nextLen = getNextTurnLength.call(my);
-			var lenSuffix = (nextLen === 2) ? "2" : (nextLen === 3) ? "3" : "all";
-			col = isKAP ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
+			// noLong 모드: startshort/endshort 컬럼 사용 (2~8글자 단어 수)
+			// noShort 모드: 전체(start_all) - startshort = 9글자 이상 단어 수
+			// no2 모드: 전체(start_all) - start2 = 3글자 이상 단어 수
+			if (my.opts.nolong) {
+				col = isKAP ? `endshort_${state}` : `startshort_${state}`;
+			} else if (my.opts.noshort) {
+				// noshort는 별도 계산 필요 - 일단 all 컬럼 사용 후 short 빼기
+				col = isKAP ? `endall_${state}` : `startall_${state}`;
+			} else if (my.opts.no2) {
+				// no2는 별도 계산 필요 - 일단 all 컬럼 사용 후 2글자 빼기
+				col = isKAP ? `endall_${state}` : `startall_${state}`;
+			} else {
+				var nextLen = getNextTurnLength.call(my);
+				var lenSuffix = (nextLen === 2) ? "2" : (nextLen === 3) ? "3" : "all";
+				col = isKAP ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
+			}
 		} else {
-			col = `count_${state}`;
+			// 영어: noLong 모드일 때 countshort 컬럼 사용 (2~8글자)
+			// noShort 모드일 때 전체 - countshort = 9글자 이상
+			// no2 모드일 때 전체 - count2 = 3글자 이상
+			if (my.opts.nolong) {
+				col = `countshort_${state}`;
+			} else if (my.opts.noshort) {
+				// noshort는 별도 계산 필요 - 일단 count 컬럼 사용 후 short 빼기
+				col = `count_${state}`;
+			} else if (my.opts.no2) {
+				// no2는 별도 계산 필요 - 일단 count 컬럼 사용 후 2글자 빼기
+				col = `count_${state}`;
+			} else {
+				col = `count_${state}`;
+			}
 		}
 
 		// Check both char and subChar (Read-Time Dueum)
@@ -3231,28 +3396,49 @@ function getAuto(char, subc, type, limit, sort) {
 			});
 		}
 
+		// noshort/no2 모드일 때 short 컬럼 결정 (전체에서 빼기 위함)
+		var shortCol = null;
+		if (my.opts.noshort) {
+			if (isKo) {
+				shortCol = isKAP ? `endshort_${state}` : `startshort_${state}`;
+			} else {
+				shortCol = `countshort_${state}`;
+			}
+		} else if (my.opts.no2) {
+			if (isKo) {
+				shortCol = isKAP ? `end2_${state}` : `start2_${state}`;
+			} else {
+				shortCol = `count2_${state}`;
+			}
+		}
+
 		// 다중 findOne 병렬 호출 (안정성을 위해 $in 대신 사용)
 		var pending = charsToCheck.length;
 		var totalCount = 0;
+		var totalShort = 0;
 		var debugCounts = [];
 
 		charsToCheck.forEach(function (c) {
 			table.findOne(['_id', c]).on(function ($st) {
 				var charCount = ($st && $st[col]) ? $st[col] : 0;
+				var shortCount = (shortCol && $st && $st[shortCol]) ? $st[shortCol] : 0;
 				totalCount += charCount;
-				debugCounts.push(`${c}:${charCount}`);
+				totalShort += shortCount;
+				debugCounts.push(`${c}:${charCount}` + (shortCol ? `-${shortCount}` : ''));
 
 				if (--pending === 0) {
-					console.log(`[DEBUG] getAuto stats: col=${col}, total=${totalCount}, details=[${debugCounts.join(", ")}]`);
-					// 통계에 없으면 해당 글자로 시작/끝나는 단어가 없음 → 0 반환 (fallback 불필요)
-					R.go(totalCount);
+					// noshort/no2 모드: 전체 - short = 9글자 이상 또는 3글자 이상 단어 수
+					var finalCount = (my.opts.noshort || my.opts.no2) ? (totalCount - totalShort) : totalCount;
+					console.log(`[DEBUG] getAuto stats: col=${col}, shortCol=${shortCol}, total=${totalCount}, short=${totalShort}, final=${finalCount}, details=[${debugCounts.join(", ")}]`);
+					R.go(finalCount);
 				}
 			}, null, function () {
 				// Error/Empty - 통계에 없으면 0으로 처리
 				debugCounts.push(`${c}:0(missing)`);
 				if (--pending === 0) {
-					console.log(`[DEBUG] getAuto stats: col=${col}, total=${totalCount}, details=[${debugCounts.join(", ")}]`);
-					R.go(totalCount);
+					var finalCount = (my.opts.noshort || my.opts.no2) ? (totalCount - totalShort) : totalCount;
+					console.log(`[DEBUG] getAuto stats: col=${col}, shortCol=${shortCol}, total=${totalCount}, short=${totalShort}, final=${finalCount}, details=[${debugCounts.join(", ")}]`);
+					R.go(finalCount);
 				}
 			});
 		});
@@ -3281,6 +3467,26 @@ function getAuto(char, subc, type, limit, sort) {
 		} else {
 			aqs.push(['_id', Const.ENG_ID]);
 		}
+		// noLong/noShort/no2 길이 필터 함수
+		function filterByLengthRule($md) {
+			if (my.opts.nolong) {
+				$md = $md.filter(function (item) {
+					return item._id && item._id.length <= 8;
+				});
+			}
+			if (my.opts.noshort) {
+				$md = $md.filter(function (item) {
+					return item._id && item._id.length >= 9;
+				});
+			}
+			if (my.opts.no2) {
+				$md = $md.filter(function (item) {
+					return item._id && item._id.length >= 3;
+				});
+			}
+			return $md;
+		}
+
 		switch (type) {
 			case 0:
 			default:
@@ -3291,17 +3497,22 @@ function getAuto(char, subc, type, limit, sort) {
 							return item._id && item._id.length >= 4;
 						});
 					}
+					// noLong/noShort 필터 적용
+					$md = filterByLengthRule($md);
 					R.go($md[Math.floor(Math.random() * $md.length)]);
 				};
 				break;
 			case 1:
 				aft = function ($md) {
+					// noLong/noShort 필터 적용
+					$md = filterByLengthRule($md);
 					R.go($md.length);
 				};
 				break;
 			case 2:
 				aft = function ($md) {
-					R.go($md);
+					// noLong/noShort 필터 적용
+					R.go(filterByLengthRule($md));
 				};
 				break;
 		}

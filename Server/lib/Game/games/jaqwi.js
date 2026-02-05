@@ -114,12 +114,17 @@ function turnHint() {
 exports.turnEnd = function () {
 	var my = this;
 
+	// 이미 턴이 종료되었으면 중복 실행 방지
+	if (my.game.late) return;
+
 	if (my.game.answer) {
 		my.game.late = true;
 		my.byMaster('turnEnd', {
 			answer: my.game.answer ? my.game.answer._id : ""
 		});
 	}
+	// 기존 타이머가 있으면 취소 후 새로 등록
+	clearTimeout(my.game._rrt);
 	my.game._rrt = setTimeout(my.roundReady, 2500);
 };
 exports.submit = function (client, text) {

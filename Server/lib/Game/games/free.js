@@ -220,6 +220,11 @@ exports.submit = function (client, text) {
         return;
     }
 
+    // noLong/noShort/no2 길이 검증 (통과 못하면 채팅으로 처리)
+    if (my.opts.nolong && text.length >= 9) return client.chat(text);
+    if (my.opts.noshort && text.length <= 8) return client.chat(text);
+    if (my.opts.no2 && text.length <= 2) return client.chat(text);
+
     // No chaining check needed for Free mode
 
     if (my.game.chain.indexOf(text) != -1) {
@@ -500,6 +505,21 @@ exports.readyRobot = function (robot) {
             case 4: len = Math.floor(Math.random() * 17) + 16; break; // 16~32
             default: len = Math.floor(Math.random() * 5) + 2; break;
         }
+        // nolong 모드: 최대 8글자
+        if (my.opts.nolong && len > 8) {
+            len = Math.floor(Math.random() * 7) + 2; // 2~8글자
+        }
+        // noshort 모드: 최소 9글자, level 0,1은 최대 12글자
+        if (my.opts.noshort) {
+            var minLen = 9;
+            var maxLen = (level <= 1) ? 12 : len;
+            if (len < minLen) len = minLen;
+            if (len > maxLen) len = maxLen;
+        }
+        // no2 모드: 최소 3글자
+        if (my.opts.no2 && len < 3) {
+            len = 3;
+        }
 
         if (my.game.mission) {
             // Mission O: Repeat mission char
@@ -561,9 +581,26 @@ exports.readyRobot = function (robot) {
         after();
     }
     function pickList(list) {
+        var minLen = 1;
+        var maxLen = ROBOT_LENGTH_LIMIT[level];
+        // nolong 모드: 최대 8글자
+        if (my.opts.nolong) {
+            maxLen = Math.min(maxLen, 8);
+        }
+        // noshort 모드: 최소 9글자, level 0,1 봇은 최대 12글자로 확장
+        if (my.opts.noshort) {
+            minLen = 9;
+            if (level <= 1) {
+                maxLen = Math.max(maxLen, 12);
+            }
+        }
+        // no2 모드: 최소 3글자
+        if (my.opts.no2) {
+            minLen = Math.max(minLen, 3);
+        }
         if (list) do {
             if (!(w = list.shift())) break;
-        } while (w._id.length > ROBOT_LENGTH_LIMIT[level] || robot._done.includes(w._id));
+        } while (w._id.length < minLen || w._id.length > maxLen || robot._done.includes(w._id));
         if (w) {
             robot.data.candidates = [w].concat(list);
             robot.data.candidateIndex = 0;
@@ -637,21 +674,43 @@ function getAuto(char, type) {
         }
     }
 
+    // noLong/noShort/no2 길이 필터 함수
+    function filterByLengthRule($md) {
+        if (my.opts.nolong) {
+            $md = $md.filter(function (item) {
+                return item._id && item._id.length <= 8;
+            });
+        }
+        if (my.opts.noshort) {
+            $md = $md.filter(function (item) {
+                return item._id && item._id.length >= 9;
+            });
+        }
+        if (my.opts.no2) {
+            $md = $md.filter(function (item) {
+                return item._id && item._id.length >= 3;
+            });
+        }
+        return $md;
+    }
+
     switch (type) {
         case 0:
         default:
             aft = function ($md) {
+                $md = filterByLengthRule($md);
                 R.go($md[Math.floor(Math.random() * $md.length)]);
             };
             break;
         case 1:
             aft = function ($md) {
+                $md = filterByLengthRule($md);
                 R.go($md.length ? true : false);
             };
             break;
         case 2:
             aft = function ($md) {
-                R.go($md);
+                R.go(filterByLengthRule($md));
             };
             break;
     }

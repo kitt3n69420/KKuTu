@@ -797,14 +797,59 @@ iframe {
 .RoomBox {
 	width: 1000px;
 	height: 360px;
+	display: flex;
+	flex-direction: column;
+}
+
+.RoomBox .product-body {
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.room-users {
+	height: 100%;
+	overflow-y: auto;
+	overflow-x: hidden;
+	display: flex;
+	flex-wrap: wrap;
+	align-content: flex-start;
+}
+
+/* 스크롤바를 얇게 */
+.room-users::-webkit-scrollbar {
+	width: 6px;
+}
+
+.room-users::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.room-users::-webkit-scrollbar-thumb {
+	background: rgba(0, 0, 0, 0.2);
+	border-radius: 3px;
+}
+
+.room-users::-webkit-scrollbar-thumb:hover {
+	background: rgba(0, 0, 0, 0.4);
+}
+
+/* Firefox용 스크롤바 스타일 */
+.room-users {
+	scrollbar-width: thin;
+	scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
 
 .RoomBox .product-title {
-	height: 12px;
+	height: auto;
+	min-height: 12px;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
 }
 
 .RoomBox .product-title h5 {
-	float: left;
+	flex-shrink: 0;
 }
 
 .room-head-modified {
@@ -814,32 +859,40 @@ iframe {
 .room-head-number {
 	width: 35px;
 	text-align: center;
+	flex-shrink: 0;
 }
 
 .room-head-title {
 	font-weight: bold;
 	width: 250px;
+	flex-shrink: 0;
 }
 
 .room-head-mode {
 	margin-right: 5px;
-	width: 510px;
+	flex: 1;
+	min-width: 0;
 	text-align: right;
+	word-break: keep-all;
+	line-height: 1.4;
 }
 
 .room-head-limit {
 	width: 70px;
 	text-align: center;
+	flex-shrink: 0;
 }
 
 .room-head-round {
 	width: 70px;
 	text-align: center;
+	flex-shrink: 0;
 }
 
 .room-head-time {
 	width: 54px;
 	text-align: center;
+	flex-shrink: 0;
 }
 
 .team-selector {
@@ -898,14 +951,14 @@ iframe {
 }
 
 .room-user {
-	float: left;
 	padding: 3px;
 	border-radius: 10px;
 	margin: 3px;
-	width: 224px;
+	width: 222px;
 	height: 151px;
 	box-shadow: 0px 1px 1px #B0BEC5;
 	background-color: #E3F2FD;
+	flex-shrink: 0;
 }
 
 .room-user div {
@@ -920,7 +973,7 @@ iframe {
 
 .room-user-stat {
 	padding: 3px;
-	width: 112px;
+	width: 110px;
 	height: 100px;
 	font-size: 15px;
 }
@@ -959,7 +1012,7 @@ iframe {
 
 .room-user-title {
 	padding: 6px 4px;
-	width: 216px;
+	width: 214px;
 	font-size: 15px;
 }
 

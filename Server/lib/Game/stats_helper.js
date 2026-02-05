@@ -70,12 +70,14 @@ function populateStats() {
                             if (len === 2) statsKo[startChar].start2[state]++;
                             if (len === 3) statsKo[startChar].start3[state]++;
                             if (len === 4) statsKo[startChar].start4[state]++;
+                            if (len >= 2 && len <= 8) statsKo[startChar].startshort[state]++;
 
                             // End Stats
                             statsKo[endChar].endall[state]++;
                             if (len === 2) statsKo[endChar].end2[state]++;
                             if (len === 3) statsKo[endChar].end3[state]++;
                             if (len === 4) statsKo[endChar].end4[state]++;
+                            if (len >= 2 && len <= 8) statsKo[endChar].endshort[state]++;
                         }
                     }
 
@@ -135,10 +137,12 @@ function createEmptyStatsKo() {
         start2: new Array(8).fill(0),
         start3: new Array(8).fill(0),
         start4: new Array(8).fill(0),
+        startshort: new Array(8).fill(0),
         startall: new Array(8).fill(0),
         end2: new Array(8).fill(0),
         end3: new Array(8).fill(0),
         end4: new Array(8).fill(0),
+        endshort: new Array(8).fill(0),
         endall: new Array(8).fill(0)
     };
 }
@@ -161,10 +165,12 @@ function saveStatsKo(stats) {
             cols.push(`start2_${i} INTEGER DEFAULT 0`);
             cols.push(`start3_${i} INTEGER DEFAULT 0`);
             cols.push(`start4_${i} INTEGER DEFAULT 0`);
+            cols.push(`startshort_${i} INTEGER DEFAULT 0`);
             cols.push(`startall_${i} INTEGER DEFAULT 0`);
             cols.push(`end2_${i} INTEGER DEFAULT 0`);
             cols.push(`end3_${i} INTEGER DEFAULT 0`);
             cols.push(`end4_${i} INTEGER DEFAULT 0`);
+            cols.push(`endshort_${i} INTEGER DEFAULT 0`);
             cols.push(`endall_${i} INTEGER DEFAULT 0`);
         }
 
@@ -204,10 +210,12 @@ function saveStatsKo(stats) {
                             data[`start2_${i}`] = d.start2[i];
                             data[`start3_${i}`] = d.start3[i];
                             data[`start4_${i}`] = d.start4[i];
+                            data[`startshort_${i}`] = d.startshort[i];
                             data[`startall_${i}`] = d.startall[i];
                             data[`end2_${i}`] = d.end2[i];
                             data[`end3_${i}`] = d.end3[i];
                             data[`end4_${i}`] = d.end4[i];
+                            data[`endshort_${i}`] = d.endshort[i];
                             data[`endall_${i}`] = d.endall[i];
                         }
 

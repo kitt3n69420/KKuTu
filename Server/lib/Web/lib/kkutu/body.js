@@ -604,6 +604,32 @@ function onMessage(data) {
 				$stage.menu.exit.trigger('click');
 				alert(L['guestExit']);
 			}*/
+			// 서바이벌 모드: roundEnd 후 KO 상태 복원
+			if ($data.room && $data.room.opts && $data.room.opts.survival) {
+				for (i in data.users) {
+					var userData = data.users[i];
+					if (userData && userData.game && userData.game.alive === false) {
+						var $koUser = $("#game-user-" + i);
+						if ($koUser.length) {
+							$koUser.find(".game-user-image").addClass("survival-ko");
+							$koUser.find(".game-user-score").text("KO").addClass("survival-ko-score");
+							$koUser.addClass("game-user-ko");
+						}
+					}
+				}
+				// 봇 KO 상태 복원
+				for (i in $data.robots) {
+					var robotData = $data.robots[i];
+					if (robotData && robotData.game && robotData.game.alive === false) {
+						var $koBot = $("#game-user-" + i);
+						if ($koBot.length) {
+							$koBot.find(".game-user-image").addClass("survival-ko");
+							$koBot.find(".game-user-score").text("KO").addClass("survival-ko-score");
+							$koBot.addClass("game-user-ko");
+						}
+					}
+				}
+			}
 			$data._resultRank = data.ranks;
 			roundEnd(data.result, data.data);
 			break;
@@ -1385,10 +1411,14 @@ function updateRoom(gaming) {
 			}
 			$r.append(renderer(o));
 			// 서바이벌 모드에서 플레이어 초기 HP 설정
+			// 단, 게임이 끝난 후(gaming=false)에는 폴백 적용하지 않음 (KO된 플레이어 점수 0 유지)
 			var initialScore = o.game.score;
 			if (survivalHP > 0 && !o.robot && (initialScore === undefined || initialScore === 0)) {
-				initialScore = survivalHP;
-				if (o.game) o.game.score = survivalHP;
+				// 게임이 진행 중일 때만 폴백 적용 (라운드 시작 시)
+				if ($data.room.gaming) {
+					initialScore = survivalHP;
+					if (o.game) o.game.score = survivalHP;
+				}
 			}
 			updateScore(o.id, initialScore || 0);
 		}
@@ -2558,12 +2588,19 @@ function roundEnd(result, data) {
 		r.reward.score = $data._replay ? 0 : Math.round(r.reward.score);
 		lvUp = getLevel(sc = o.data.score) > getLevel(o.data.score - r.reward.score);
 
+		// 서바이벌 모드: KO된 플레이어 점수 표시
+		var isSurvival = $data.room && $data.room.opts && $data.room.opts.survival;
+		var isKO = isSurvival && r.alive === false;
+		var scoreDisplay = data.scores
+			? (L['avg'] + " " + commify(data.scores[r.id]) + L['kpm'])
+			: (isKO ? "KO" : (commify(r.score || 0) + (isSurvival ? " HP" : L['PTS'])));
+
 		$b.append($o = $("<div>").addClass("result-board-item")
 			.append($p = $("<div>").addClass("result-board-rank").html(r.rank + 1))
 			.append(getLevelImage(sc).addClass("result-board-level"))
 			.append($("<div>").addClass("result-board-name").text(o.profile.title || o.profile.name))
 			.append($("<div>").addClass("result-board-score")
-				.html(data.scores ? (L['avg'] + " " + commify(data.scores[r.id]) + L['kpm']) : (commify(r.score || 0) + L['PTS']))
+				.html(scoreDisplay)
 			)
 			.append($("<div>").addClass("result-board-reward").html(r.reward.score ? ("+" + commify(r.reward.score)) : "-"))
 			.append($("<div>").addClass("result-board-lvup").css('display', lvUp ? "block" : "none")
@@ -2571,6 +2608,7 @@ function roundEnd(result, data) {
 				.append($("<div>").html(L['lvUp']))
 			)
 		);
+		if (isKO) $o.addClass("survival-ko-result");
 		if (o.game.team) $p.addClass("team-" + o.game.team);
 		if (r.id == $data.id) {
 			r.exp = o.data.score - r.reward.score;

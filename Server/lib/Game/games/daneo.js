@@ -249,6 +249,12 @@ exports.submit = function (client, text, data) {
 	// Turn check: Only the current turn owner can submit words
 	if (getPlayerId(mgt) !== getPlayerId(client)) return client.chat(text);
 	if (!my.game.theme) return;
+
+	// noLong/noShort/no2 길이 검증 (통과 못하면 채팅으로 처리)
+	if (my.opts.nolong && text.length >= 9) return client.chat(text);
+	if (my.opts.noshort && text.length <= 8) return client.chat(text);
+	if (my.opts.no2 && text.length <= 2) return client.chat(text);
+
 	if (my.game.chain.indexOf(text) == -1 || my.opts.return) {
 		l = my.rule.lang;
 		my.game.loading = true;
@@ -497,8 +503,25 @@ exports.readyRobot = function (robot) {
 
 		getAuto.call(my, my.game.theme, 2, limit, sort).then(function (list) {
 			if (list && list.length) {
+				var minLen = 1;
+				var maxLen = ROBOT_LENGTH_LIMIT[level];
+				// nolong 모드: 최대 8글자
+				if (my.opts.nolong) {
+					maxLen = Math.min(maxLen, 8);
+				}
+				// noshort 모드: 최소 9글자, level 0,1 봇은 최대 12글자로 확장
+				if (my.opts.noshort) {
+					minLen = 9;
+					if (level <= 1) {
+						maxLen = Math.max(maxLen, 12);
+					}
+				}
+				// no2 모드: 최소 3글자
+				if (my.opts.no2) {
+					minLen = Math.max(minLen, 3);
+				}
 				list = list.filter(function (w) {
-					return w._id.length <= ROBOT_LENGTH_LIMIT[level] && !robot._done.includes(w._id);
+					return w._id.length >= minLen && w._id.length <= maxLen && !robot._done.includes(w._id);
 				});
 
 				if (list.length === 0) {
@@ -603,21 +626,43 @@ function getAuto(theme, type, limit, sort) {
 	raiser = DB.kkutu[my.rule.lang].find.apply(this, aqs);
 	if (sort) raiser.sort(sort);
 	raiser.limit((bool ? 1 : 123) * (limit || 1));
+	// noLong/noShort/no2 길이 필터 함수
+	function filterByLengthRule($md) {
+		if (my.opts.nolong) {
+			$md = $md.filter(function (item) {
+				return item._id && item._id.length <= 8;
+			});
+		}
+		if (my.opts.noshort) {
+			$md = $md.filter(function (item) {
+				return item._id && item._id.length >= 9;
+			});
+		}
+		if (my.opts.no2) {
+			$md = $md.filter(function (item) {
+				return item._id && item._id.length >= 3;
+			});
+		}
+		return $md;
+	}
+
 	switch (type) {
 		case 0:
 		default:
 			aft = function ($md) {
+				$md = filterByLengthRule($md);
 				R.go($md[Math.floor(Math.random() * $md.length)]);
 			};
 			break;
 		case 1:
 			aft = function ($md) {
+				$md = filterByLengthRule($md);
 				R.go($md.length ? true : false);
 			};
 			break;
 		case 2:
 			aft = function ($md) {
-				R.go($md);
+				R.go(filterByLengthRule($md));
 			};
 			break;
 	}

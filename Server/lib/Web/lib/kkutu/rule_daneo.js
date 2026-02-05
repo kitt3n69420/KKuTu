@@ -23,7 +23,7 @@ $lib.Daneo.roundReady = function (data) {
 	clearBoard();
 	$data._roundTime = $data.room.time * 1000;
 	var theme = (typeof data.theme == "object")
-		? data.theme.map(function (e) { return L['theme_' + e]; }).join("/")
+		? data.theme.map(function (e) { return L['theme_' + e]; }).join(",")
 		: L['theme_' + data.theme];
 	var tStr = "&lt;" + theme + "&gt;";
 	if ($data.room.opts.drg) tStr = "<label style='color:" + getRandomColor() + "'>" + tStr + "</label>";
@@ -113,8 +113,8 @@ $lib.Daneo.turnEnd = function (id, data) {
 	// 서바이벌 모드에서는 자신의 점수/보너스 스플래시 숨김 (데미지만 표시)
 	if (!data.survival) {
 		if (data.bonus) {
-			mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function($target) {
-				return function() {
+			mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function ($target) {
+				return function () {
 					var $bc = $("<div>")
 						.addClass("deltaScore bonus")
 						.css('color', '#66FF66') // Green
@@ -125,8 +125,8 @@ $lib.Daneo.turnEnd = function (id, data) {
 			})($uc), 500);
 		}
 		if (data.straightBonus) {
-			mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function($target) {
-				return function() {
+			mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function ($target) {
+				return function () {
 					var $bc = $("<div>")
 						.addClass("deltaScore straight-bonus")
 						.css('color', '#FFFF00') // Yellow

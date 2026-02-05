@@ -873,7 +873,7 @@ $(document).ready(function () {
 
 		// Define option groups
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
-		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'];
+		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 
@@ -984,6 +984,25 @@ $(document).ready(function () {
 	$("#room-invincible, #room-flat-invincible").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-narak, #room-flat-narak").prop('checked', false);
+		}
+	});
+	// 장문금지-단문금지 상호배타: 장문금지 체크시 단문금지 해제
+	$("#room-nolong, #room-flat-nolong").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-noshort, #room-flat-noshort").prop('checked', false);
+		}
+	});
+	// 단문금지 체크시 장문금지 해제, 2글자금지 해제
+	$("#room-noshort, #room-flat-noshort").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-nolong, #room-flat-nolong").prop('checked', false);
+			$("#room-no2, #room-flat-no2").prop('checked', false);
+		}
+	});
+	// 2글자금지 체크시 단문금지 해제
+	$("#room-no2, #room-flat-no2").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-noshort, #room-flat-noshort").prop('checked', false);
 		}
 	});
 	$stage.menu.spectate.on('click', function (e) {
@@ -1277,6 +1296,8 @@ $(document).ready(function () {
 		else if (lenVal == 'k44') opts['fourfour'] = true;
 		else if (lenVal == 'k43') opts['fourthree'] = true;
 		else if (lenVal == 'unl') opts['unlimited'] = true;
+		else if (lenVal == 'nol') opts['nolong'] = true;
+		else if (lenVal == 'nos') opts['noshort'] = true;
 
 		// Read Word Scope Dropdown
 		var scopeVal = $("#room-word-scope").val();

@@ -245,7 +245,8 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 				score: my.game.score || 0,
 				team: my.game.team || 0,
 				bonus: my.game.bonus || 0,
-				item: my.game.item ? my.game.item.slice() : []
+				item: my.game.item ? my.game.item.slice() : [],
+				alive: my.game.alive  // 서바이벌 모드: 생존 상태 추가
 			},
 			data: my.data,
 			place: my.place,
@@ -450,7 +451,8 @@ exports.Client = function (socket, profile, sid) {
 				team: my.team,
 				practice: my.subPlace,
 				score: my.game.score,
-				item: my.game.item
+				item: my.game.item,
+				alive: my.game.alive  // 서바이벌 모드: 생존 상태 추가
 			}
 		};
 		if (!gaming) {
@@ -2159,6 +2161,7 @@ exports.Room = function (room, channel) {
 		var now = (new Date()).getTime();
 
 		my.gaming = true;
+		my.game = {}; 
 		my.game.late = true;
 		my.game.round = 0;
 		my.game.turn = 0;

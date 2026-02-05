@@ -59,7 +59,7 @@ exports.getTitle = function () {
 			minLen = 9;
 			maxLen = 14;
 		}
-		DB.kkutu[my.rule.lang].direct(`SELECT _id FROM kkutu_${my.rule.lang} WHERE LENGTH(_id) BETWEEN ${minLen} AND ${maxLen} AND hit >= 1 ORDER BY RANDOM() LIMIT 416`, function (err, res) {
+		DB.kkutu[my.rule.lang].direct(`SELECT _id FROM kkutu_${my.rule.lang} WHERE LENGTH(_id) BETWEEN ${minLen} AND ${maxLen} AND hit >= 1 AND _id NOT LIKE '% %' ORDER BY RANDOM() LIMIT 416`, function (err, res) {
 			if (err || !res || !res.rows) return;
 			pick(res.rows.map(function (item) { return item._id; }));
 		});

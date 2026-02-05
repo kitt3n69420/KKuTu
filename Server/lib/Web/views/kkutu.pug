@@ -293,7 +293,7 @@ block Middle
 		div.dialog-bar#room-len-limit-panel(style='display: none;')
 			h4= L('lenLimit')
 			div(style='float: left; width: 300px;')
-				- var lenOpts = ['k32', 'k22', 'k44', 'k43','unl','no2','ln3', 'ln4', 'ln5', 'ln6', 'ln7'];
+				- var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 				- for(var i in locals.OPTIONS)
 					- if(lenOpts.indexOf(i) === -1) continue;
 					+GameOption(i, 'room')
@@ -309,7 +309,7 @@ block Middle
 			div(style='float: left; width: 300px;')
 				- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 				- for(var i in locals.OPTIONS)
-					- if(['mid', 'fir', 'ran', 'sch', 'k32', 'k22', 'k44', 'k43', 'unl', 'no2', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'].indexOf(i) !== -1) continue;
+					- if(['mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'].indexOf(i) !== -1) continue;
 					- if(bonusOpts.indexOf(i) !== -1) continue;
 					+GameOption(i, 'room')
 

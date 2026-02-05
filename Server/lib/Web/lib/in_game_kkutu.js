@@ -948,7 +948,7 @@ $(document).ready(function () {
 
 		// Define option groups
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
-		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'];
+		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 
@@ -1044,6 +1044,10 @@ $(document).ready(function () {
 			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', false);
 			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', false);
 		}
+
+		// 게임 모드 변경 시 서바이벌 UI 업데이트
+		var survivalChecked = $("#room-survival").is(':checked') || $("#room-flat-survival").is(':checked');
+		updateSurvivalUI(survivalChecked);
 	});
 	// 나락-무적 상호배타: 나락 체크시 무적 해제
 	$("#room-narak, #room-flat-narak").on('change', function () {
@@ -1055,6 +1059,25 @@ $(document).ready(function () {
 	$("#room-invincible, #room-flat-invincible").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-narak, #room-flat-narak").prop('checked', false);
+		}
+	});
+	// 장문금지-단문금지 상호배타: 장문금지 체크시 단문금지 해제
+	$("#room-nolong, #room-flat-nolong").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-noshort, #room-flat-noshort").prop('checked', false);
+		}
+	});
+	// 단문금지 체크시 장문금지 해제, 2글자금지 해제
+	$("#room-noshort, #room-flat-noshort").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-nolong, #room-flat-nolong").prop('checked', false);
+			$("#room-no2, #room-flat-no2").prop('checked', false);
+		}
+	});
+	// 2글자금지 체크시 단문금지 해제
+	$("#room-no2, #room-flat-no2").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-noshort, #room-flat-noshort").prop('checked', false);
 		}
 	});
 	$stage.menu.spectate.on('click', function (e) {
@@ -1348,6 +1371,8 @@ $(document).ready(function () {
 		else if (lenVal == 'k44') opts['fourfour'] = true;
 		else if (lenVal == 'k43') opts['fourthree'] = true;
 		else if (lenVal == 'unl') opts['unlimited'] = true;
+		else if (lenVal == 'nol') opts['nolong'] = true;
+		else if (lenVal == 'nos') opts['noshort'] = true;
 
 		// Read Word Scope Dropdown
 		var scopeVal = $("#room-word-scope").val();
@@ -1893,7 +1918,13 @@ $(document).ready(function () {
 
 	// 8. 서바이벌 모드 UI 변경
 	function updateSurvivalUI(isSurvival) {
-		if (isSurvival) {
+		// 현재 선택된 게임 모드가 서바이벌을 지원하는지 확인
+		var currentMode = $("#room-mode").val();
+		var rule = RULE[MODE[currentMode]];
+		var supportsSurvival = rule && rule.opts && rule.opts.indexOf("sur") !== -1;
+
+		// 서바이벌이 활성화되었고, 해당 게임이 서바이벌을 지원하는 경우에만 HP UI 표시
+		if (isSurvival && supportsSurvival) {
 			// 라운드 수 1로 고정하고 숨김
 			$("#room-round").val(1).prop('disabled', true).hide();
 			// HP 선택 드롭다운 표시 (라운드 위치에)
@@ -5043,6 +5074,32 @@ function onMessage(data) {
 				$stage.menu.exit.trigger('click');
 				alert(L['guestExit']);
 			}*/
+			// 서바이벌 모드: roundEnd 후 KO 상태 복원
+			if ($data.room && $data.room.opts && $data.room.opts.survival) {
+				for (i in data.users) {
+					var userData = data.users[i];
+					if (userData && userData.game && userData.game.alive === false) {
+						var $koUser = $("#game-user-" + i);
+						if ($koUser.length) {
+							$koUser.find(".game-user-image").addClass("survival-ko");
+							$koUser.find(".game-user-score").text("KO").addClass("survival-ko-score");
+							$koUser.addClass("game-user-ko");
+						}
+					}
+				}
+				// 봇 KO 상태 복원
+				for (i in $data.robots) {
+					var robotData = $data.robots[i];
+					if (robotData && robotData.game && robotData.game.alive === false) {
+						var $koBot = $("#game-user-" + i);
+						if ($koBot.length) {
+							$koBot.find(".game-user-image").addClass("survival-ko");
+							$koBot.find(".game-user-score").text("KO").addClass("survival-ko-score");
+							$koBot.addClass("game-user-ko");
+						}
+					}
+				}
+			}
 			$data._resultRank = data.ranks;
 			roundEnd(data.result, data.data);
 			break;
@@ -5824,10 +5881,14 @@ function updateRoom(gaming) {
 			}
 			$r.append(renderer(o));
 			// 서바이벌 모드에서 플레이어 초기 HP 설정
+			// 단, 게임이 끝난 후(gaming=false)에는 폴백 적용하지 않음 (KO된 플레이어 점수 0 유지)
 			var initialScore = o.game.score;
 			if (survivalHP > 0 && !o.robot && (initialScore === undefined || initialScore === 0)) {
-				initialScore = survivalHP;
-				if (o.game) o.game.score = survivalHP;
+				// 게임이 진행 중일 때만 폴백 적용 (라운드 시작 시)
+				if ($data.room.gaming) {
+					initialScore = survivalHP;
+					if (o.game) o.game.score = survivalHP;
+				}
 			}
 			updateScore(o.id, initialScore || 0);
 		}
@@ -6997,12 +7058,19 @@ function roundEnd(result, data) {
 		r.reward.score = $data._replay ? 0 : Math.round(r.reward.score);
 		lvUp = getLevel(sc = o.data.score) > getLevel(o.data.score - r.reward.score);
 
+		// 서바이벌 모드: KO된 플레이어 점수 표시
+		var isSurvival = $data.room && $data.room.opts && $data.room.opts.survival;
+		var isKO = isSurvival && r.alive === false;
+		var scoreDisplay = data.scores
+			? (L['avg'] + " " + commify(data.scores[r.id]) + L['kpm'])
+			: (isKO ? "KO" : (commify(r.score || 0) + (isSurvival ? " HP" : L['PTS'])));
+
 		$b.append($o = $("<div>").addClass("result-board-item")
 			.append($p = $("<div>").addClass("result-board-rank").html(r.rank + 1))
 			.append(getLevelImage(sc).addClass("result-board-level"))
 			.append($("<div>").addClass("result-board-name").text(o.profile.title || o.profile.name))
 			.append($("<div>").addClass("result-board-score")
-				.html(data.scores ? (L['avg'] + " " + commify(data.scores[r.id]) + L['kpm']) : (commify(r.score || 0) + L['PTS']))
+				.html(scoreDisplay)
 			)
 			.append($("<div>").addClass("result-board-reward").html(r.reward.score ? ("+" + commify(r.reward.score)) : "-"))
 			.append($("<div>").addClass("result-board-lvup").css('display', lvUp ? "block" : "none")
@@ -7010,6 +7078,7 @@ function roundEnd(result, data) {
 				.append($("<div>").html(L['lvUp']))
 			)
 		);
+		if (isKO) $o.addClass("survival-ko-result");
 		if (o.game.team) $p.addClass("team-" + o.game.team);
 		if (r.id == $data.id) {
 			r.exp = o.data.score - r.reward.score;

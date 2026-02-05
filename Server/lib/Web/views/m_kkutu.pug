@@ -196,6 +196,7 @@ block Middle
 					optgroup(label=L('mcKorean'))
 						option(value=3)= L('modeKSH')
 						option(value=2)= L('modeKKT')
+						option(value=23)= L('modeKKU')
 						option(value=8)= L('modeKAP')
 						option(value=21)= L('modeKAK')
 						option(value=11)= L('modeKDA')
@@ -263,7 +264,7 @@ block Middle
 			div.dialog-bar#room-len-limit-panel(style='display: none;')
 				h4= L('lenLimit')
 				div(style='float: left; width: 200px;')
-					- var lenOpts = ['k32', 'k22', 'k44', 'k43', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'];
+					- var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 					- for(var i in locals.OPTIONS)
 						- if(lenOpts.indexOf(i) === -1) continue;
 						+GameOption(i, 'room')
@@ -279,7 +280,7 @@ block Middle
 				div(style='float: left; width: 200px;')
 					- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 					- for(var i in locals.OPTIONS)
-						- if(['mid', 'fir', 'ran', 'sch', 'k32', 'k22', 'k44', 'k43', 'ext', 'loa', 'str', 'unk', 'lng', 'prv', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'].indexOf(i) !== -1) continue;
+						- if(['mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'lng', 'prv', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'].indexOf(i) !== -1) continue;
 						- if(bonusOpts.indexOf(i) !== -1) continue;
 						+GameOption(i, 'room')
 				div.dialog-opt#room-injpick-panel
