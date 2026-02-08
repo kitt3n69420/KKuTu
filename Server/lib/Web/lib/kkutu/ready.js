@@ -654,7 +654,7 @@ $(document).ready(function () {
 		$("#show-rule-category").prop('checked', ($data.opts && $data.opts.src !== undefined) ? $data.opts.src : true);
 
 		// 간단 방 보기 설정
-		$("#simple-room-view").prop('checked', $data.opts && $data.opts.srv);
+		$("#simple-room-view").prop('checked', ($data.opts && $data.opts.srv !== undefined) ? $data.opts.srv : true);
 
 		// 현재 로드된 언어 감지
 		// L 객체로부터 실제 언어 감지 시도
@@ -1097,7 +1097,7 @@ $(document).ready(function () {
 	var mannerGroup = ['manner', 'gentle', 'shield', 'etiquette'];
 	mannerGroup.forEach(function (opt) {
 		var selectors = ['#room-' + opt, '#room-flat-' + opt, '#room-simple-' + opt,
-			'#view-all-' + opt, '#view-all-flat-' + opt].join(', ');
+		'#view-all-' + opt, '#view-all-flat-' + opt].join(', ');
 		$(selectors).on('change', function () {
 			if ($(this).is(':checked')) {
 				mannerGroup.forEach(function (other) {
