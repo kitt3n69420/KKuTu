@@ -39,6 +39,21 @@ function send(type, data, toMaster) {
 	}else $data._sameTalk = 0;
 	$data._talkValue = r.value;*/
 
+	// WebSocket이 아직 연결 중인 경우 연결 완료 후 전송
+	if (subj.readyState === _WebSocket.CONNECTING) {
+		subj.addEventListener('open', function onOpen() {
+			subj.removeEventListener('open', onOpen);
+			subj.send(JSON.stringify(r));
+		}, { once: true });
+		return;
+	}
+
+	// WebSocket이 연결되지 않은 경우 전송하지 않음
+	if (subj.readyState !== _WebSocket.OPEN) {
+		console.warn("WebSocket is not open. readyState:", subj.readyState);
+		return;
+	}
+
 	// Exempt 'draw' and 'test' from spam counter
 	if (type != "test" && type != "draw") if (spamCount++ > 10) {
 		if (++spamWarning >= 3) return subj.close();
@@ -157,6 +172,7 @@ function applyOptions(opt) {
 	$("#only-waiting").attr('checked', $data.opts.ow);
 	$("#only-unlock").attr('checked', $data.opts.ou);
 	$("#show-rule-category").attr('checked', $data.opts.src === true);
+	$("#simple-room-view").attr('checked', ($data.opts.srv !== undefined) ? $data.opts.srv : true);
 
 	// 사운드팩 설정 (localStorage에 값이 있으면 localStorage, 없으면 cookie)
 	var soundPack = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts.sp || "");
@@ -390,6 +406,10 @@ function onMessage(data) {
 				if (data.id === $data.id) {
 					$data.nickname = data.profile.nickname;
 					$data.exordial = data.profile.exordial;
+					var _updName = getDisplayName($data.users[$data.id]);
+					if (_updName) {
+						$("#room-title").attr('placeholder', _updName + L['roomDefault']);
+					}
 				}
 				updateUserList();
 				if ($data.room) updateRoom($data.room.gaming);
@@ -422,6 +442,13 @@ function onMessage(data) {
 			$data._okg = data.okg;
 			$data._gaming = false;
 			$data.box = data.box;
+			if ($data.users[$data.id]) {
+				var _me = $data.users[$data.id];
+				var _myName = getDisplayName(_me);
+				if (_myName) {
+					$("#room-title").attr('placeholder', _myName + L['roomDefault']);
+				}
+			}
 			if (data.test) showAlert(L['welcomeTestServer']);
 			if (location.hash[1]) tryJoin(location.hash.slice(1));
 			updateUI(undefined, true);

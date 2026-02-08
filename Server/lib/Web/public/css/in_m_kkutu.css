@@ -2066,3 +2066,37 @@ body {
 	justify-content: center;
 	align-items: center;
 }
+
+/* ======== Simple Room View Styles ======== */
+
+/* Simple Room View 패널 - 2열 레이아웃 */
+#room-simple-rules-panel .dialog-opt {
+	width: 50%;
+	box-sizing: border-box;
+}
+
+#room-simple-rules-panel .dialog-opt label {
+	font-size: 12px;
+}
+
+/* View All Rules 버튼 - 기본 버튼 스타일 사용 (확인 버튼과 동일) */
+/* 너비는 인라인 스타일로 설정됨 (min-width: 120px) */
+
+/* View All Rules 모달 - 2열 레이아웃 (모바일) */
+#ViewAllRulesDiag .dialog-opt {
+	width: 50%;
+	box-sizing: border-box;
+}
+
+#view-all-rules-content {
+	overflow-x: hidden;
+}
+
+/* Simple Room View - 전체 이름 표시 (축약어 숨김) */
+#room-simple-rules-panel .dialog-opt label.abbr {
+	display: none;
+}
+
+#room-simple-rules-panel .dialog-opt label:not(.abbr) {
+	display: inline;
+}

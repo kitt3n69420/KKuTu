@@ -28,6 +28,7 @@ var Const = require("../const");
 var JLog = require("../sub/jjlog");
 var Secure = require("../sub/secure");
 var Recaptcha = require("../sub/recaptcha");
+var DiscordBot = require("../sub/discord-bot");
 var { validateInput, checkPrototypePollution } = require("../Web/validators");
 
 var MainDB;
@@ -109,13 +110,13 @@ function processAdmin(id, value) {
     case "dump":
       if (DIC[id]) DIC[id].send("yell", { value: "This feature is not supported..." });
       /*Heapdump.writeSnapshot("/home/kkutu_memdump_" + Date.now() + ".heapsnapshot", function(err){
-				if(err){
-					JLog.error("Error when dumping!");
-					return JLog.error(err.toString());
-				}
-				if(DIC[id]) DIC[id].send('yell', { value: "DUMP OK" });
-				JLog.success("Dumping success.");
-			});*/
+        if(err){
+          JLog.error("Error when dumping!");
+          return JLog.error(err.toString());
+        }
+        if(DIC[id]) DIC[id].send('yell', { value: "DUMP OK" });
+        JLog.success("Dumping success.");
+      });*/
       return null;
     /* Enhanced User Block System [S] */
     case "ban":
@@ -278,6 +279,8 @@ Cluster.on("message", function (worker, msg) {
       } else {
         ROOM[msg.room.id] = new KKuTu.Room(msg.room, msg.room.channel);
         JLog.info(`[IPC] room-new: Room ${msg.room.id} created on master (channel: ${msg.room.channel})`);
+        // Discord notification
+        DiscordBot.notifyRoomCreate(msg.room.id, msg.room);
       }
       break;
     case "room-come":
@@ -381,9 +384,43 @@ Cluster.on("message", function (worker, msg) {
         delete ROOM[msg.room.id];
         JLog.info(`[IPC] room-invalid: Room ${msg.room.id} deleted from master`);
         KKuTu.publish("room", { room: { id: msg.room.id, players: [] } });
+        // Discord notification
+        DiscordBot.notifyRoomDelete(msg.room.id);
       } else {
         JLog.warn(`[IPC] room-invalid: Room ${msg.room.id} not found on master (already deleted?)`);
       }
+      break;
+    case "game-start":
+      // Discord notification for game start
+      DiscordBot.notifyGameStart(msg.room);
+      break;
+    case "chat-log":
+      // Log chat message
+      DiscordBot.logChat(msg.profile, msg.message, msg.place, msg.isRobot);
+      break;
+    case "round-end":
+      // Log round end with word chain
+      DiscordBot.notifyRoundEnd(msg.room, msg.chainLog, msg.round, msg.totalRounds);
+      break;
+    case "game-over":
+      // Game over with score rankings
+      DiscordBot.notifyGameOver(msg.room, msg.rankings);
+      break;
+    case "room-settings":
+      // Room settings changed
+      DiscordBot.notifyRoomSettings(msg.roomId, msg.room);
+      break;
+    case "bot-settings":
+      // Bot settings changed
+      DiscordBot.notifyBotSettings(msg.roomId, msg.botInfo);
+      break;
+    case "room-join":
+      // Player/bot joined a room
+      DiscordBot.notifyRoomJoin(msg.roomId, msg.name, msg.isRobot);
+      break;
+    case "room-leave":
+      // Player/bot left a room
+      DiscordBot.notifyRoomLeave(msg.roomId, msg.name, msg.isRobot);
       break;
     default:
       JLog.warn(`Unhandled IPC message type: ${msg.type}`);
@@ -394,6 +431,11 @@ exports.init = function (_SID, CHAN) {
   MainDB = require("../Web/db");
   MainDB.ready = function () {
     JLog.success("Master DB is ready.");
+
+    // Initialize Discord Bot (can be disabled for test servers via BOT_ENABLED)
+    DiscordBot.init(GLOBAL.DISCORD_TOKEN, MainDB, DIC, {
+      enabled: GLOBAL.BOT_ENABLED !== false
+    });
 
     MainDB.users.update(["server", SID]).set(["server", ""]).on();
     if (Const.IS_SECURED || Const.WAF) {
@@ -575,6 +617,9 @@ function joinNewUser($c) {
   narrateFriends($c.id, $c.friends, "on");
   KKuTu.publish("conn", { user: $c.getData() });
 
+  // Discord notification
+  DiscordBot.notifyUserJoin($c.profile, Object.keys(DIC).length);
+
   JLog.info("New user #" + $c.id);
 
   if (GLOBAL.WAF)
@@ -751,16 +796,16 @@ function processClientRequest($c, msg) {
       delete $c._invited;
       break;
     /* 망할 셧다운제
-		case 'caj':
-			if(!$c._checkAjae) return;
-			clearTimeout($c._checkAjae);
-			if(msg.answer == "yes") $c.confirmAjae(msg.input);
-			else if(KKuTu.NIGHT){
-				$c.sendError(440);
-				$c.socket.close();
-			}
-			break;
-		*/
+    case 'caj':
+      if(!$c._checkAjae) return;
+      clearTimeout($c._checkAjae);
+      if(msg.answer == "yes") $c.confirmAjae(msg.input);
+      else if(KKuTu.NIGHT){
+        $c.sendError(440);
+        $c.socket.close();
+      }
+      break;
+    */
     case "test":
       checkTailUser($c.id, $c.place, msg);
       break;
@@ -774,6 +819,9 @@ function processClientRequest($c, msg) {
 }
 
 KKuTu.onClientClosed = function ($c, code) {
+  // Discord notification (before deleting from DIC to get correct count)
+  DiscordBot.notifyUserLeave($c.profile, Object.keys(DIC).length - 1);
+
   delete DIC[$c.id];
   if ($c._error != 409) MainDB.users.update(["_id", $c.id]).set(["server", ""]).on();
   if ($c.profile) delete DNAME[$c.profile.title || $c.profile.name];

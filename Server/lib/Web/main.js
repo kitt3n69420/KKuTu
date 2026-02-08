@@ -63,10 +63,10 @@ Server.use(
   Exession({
     /* use only for redis-installed
 
-	store: new Redission({
-		client: Redis.createClient(),
-		ttl: 3600 * 12
-	}),*/
+  store: new Redission({
+    client: Redis.createClient(),
+    ttl: 3600 * 12
+  }),*/
     secret: "kkutu",
     resave: false,
     saveUninitialized: true,
@@ -97,19 +97,19 @@ Server.use((req, res, next) => {
 /* use this if you want
 
 DDDoS = new DDDoS({
-	maxWeight: 6,
-	checkInterval: 10000,
-	rules: [{
-		regexp: "^/(cf|dict|gwalli)",
-		maxWeight: 20,
-		errorData: "429 Too Many Requests"
-	}, {
-		regexp: ".*",
-		errorData: "429 Too Many Requests"
-	}]
+  maxWeight: 6,
+  checkInterval: 10000,
+  rules: [{
+    regexp: "^/(cf|dict|gwalli)",
+    maxWeight: 20,
+    errorData: "429 Too Many Requests"
+  }, {
+    regexp: ".*",
+    errorData: "429 Too Many Requests"
+  }]
 });
 DDDoS.rules[0].logFunction = DDDoS.rules[1].logFunction = function(ip, path){
-	JLog.warn(`DoS from IP ${ip} on ${path}`);
+  JLog.warn(`DoS from IP ${ip} on ${path}`);
 };
 Server.use(DDDoS.express());*/
 
@@ -157,58 +157,79 @@ Const.MAIN_PORTS.forEach(function (v, i) {
 });
 function GameClient(id, url) {
   var my = this;
+  var reconnectAttempts = 0;
+  var maxReconnectDelay = 30000; // 30 seconds max
 
   my.id = id;
-  my.socket = new WS(url, { perMessageDeflate: false, rejectUnauthorized: false });
+  my.url = url;
+
+  function connect() {
+    my.socket = new WS(url, { perMessageDeflate: false, rejectUnauthorized: false });
+
+    my.socket.on("open", function () {
+      JLog.info(`Game server #${my.id} connected`);
+      reconnectAttempts = 0; // Reset on successful connection
+    });
+
+    my.socket.on("error", function (err) {
+      JLog.warn(`Game server #${my.id} has an error: ${err.toString()}`);
+    });
+
+    my.socket.on("close", function (code) {
+      JLog.error(`Game server #${my.id} closed: ${code}`);
+      my.socket.removeAllListeners();
+      delete my.socket;
+
+      // Auto reconnect with exponential backoff
+      reconnectAttempts++;
+      var delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), maxReconnectDelay);
+      JLog.info(`Game server #${my.id} will reconnect in ${delay / 1000} seconds...`);
+      setTimeout(connect, delay);
+    });
+
+    my.socket.on("message", function (data) {
+      var _data = data;
+      var i;
+
+      try {
+        data = JSON.parse(data);
+      } catch (e) {
+        JLog.warn(`Invalid JSON received from game server #${my.id}`);
+        return;
+      }
+
+      // 파싱된 데이터 검증
+      if (typeof data !== "object" || data === null) return;
+      // hasOwnProperty를 사용하여 객체 자신의 속성인지 확인
+      if (data.hasOwnProperty("__proto__") || data.hasOwnProperty("constructor") || data.hasOwnProperty("prototype")) {
+        JLog.warn(`Prototype pollution attempt from game server #${my.id}`);
+        return;
+      }
+
+      switch (data.type) {
+        case "seek":
+          my.seek = data.value;
+          break;
+        case "narrate-friend":
+          for (i in data.list) {
+            gameServers[i].send("narrate-friend", { id: data.id, s: data.s, stat: data.stat, list: data.list[i] });
+          }
+          break;
+        default:
+      }
+    });
+  }
 
   my.send = function (type, data) {
+    if (!my.socket) return; // Don't send if not connected
     if (!data) data = {};
     data.type = type;
 
     my.socket.send(JSON.stringify(data));
   };
-  my.socket.on("open", function () {
-    JLog.info(`Game server #${my.id} connected`);
-  });
-  my.socket.on("error", function (err) {
-    JLog.warn(`Game server #${my.id} has an error: ${err.toString()}`);
-  });
-  my.socket.on("close", function (code) {
-    JLog.error(`Game server #${my.id} closed: ${code}`);
-    my.socket.removeAllListeners();
-    delete my.socket;
-  });
-  my.socket.on("message", function (data) {
-    var _data = data;
-    var i;
 
-    try {
-      data = JSON.parse(data);
-    } catch (e) {
-      JLog.warn(`Invalid JSON received from game server #${my.id}`);
-      return;
-    }
-
-    // 파싱된 데이터 검증
-    if (typeof data !== "object" || data === null) return;
-    // hasOwnProperty를 사용하여 객체 자신의 속성인지 확인
-    if (data.hasOwnProperty("__proto__") || data.hasOwnProperty("constructor") || data.hasOwnProperty("prototype")) {
-      JLog.warn(`Prototype pollution attempt from game server #${my.id}`);
-      return;
-    }
-
-    switch (data.type) {
-      case "seek":
-        my.seek = data.value;
-        break;
-      case "narrate-friend":
-        for (i in data.list) {
-          gameServers[i].send("narrate-friend", { id: data.id, s: data.s, stat: data.stat, list: data.list[i] });
-        }
-        break;
-      default:
-    }
-  });
+  // Start initial connection
+  connect();
 }
 ROUTES.forEach(function (v) {
   require(`./routes/${v}`).run(Server, WebInit.page);

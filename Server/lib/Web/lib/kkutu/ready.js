@@ -179,7 +179,9 @@ $(document).ready(function () {
 			inputText: $("#input-text"),
 			inputInput: $("#input-input"),
 			inputOK: $("#input-ok"),
-			inputNo: $("#input-no")
+			inputNo: $("#input-no"),
+			viewAllRules: $("#ViewAllRulesDiag"),
+			viewAllRulesOK: $("#view-all-ok")
 		},
 		box: {
 			chat: $(".ChatBox"),
@@ -651,6 +653,9 @@ $(document).ready(function () {
 		// 규칙 카테고리 보기 설정
 		$("#show-rule-category").prop('checked', ($data.opts && $data.opts.src !== undefined) ? $data.opts.src : true);
 
+		// 간단 방 보기 설정
+		$("#simple-room-view").prop('checked', $data.opts && $data.opts.srv);
+
 		// 현재 로드된 언어 감지
 		// L 객체로부터 실제 언어 감지 시도
 		var detectedLang = null;
@@ -872,6 +877,7 @@ $(document).ready(function () {
 		var showCategory = !($data.opts && $data.opts.src === false);
 
 		// Define option groups
+		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv'];
@@ -906,8 +912,13 @@ $(document).ready(function () {
 				$("#room-bonus-panel").hide();
 			}
 
+			// Check and toggle Manner panel
+			var hasMannerOpt = mannerOpts.some(function (opt) { return rule.opts.indexOf(opt) !== -1; });
+			if (hasMannerOpt) $("#room-manner-panel").show();
+			else $("#room-manner-panel").hide();
+
 			// Check if special rules panel should be shown
-			var excludedOpts = linkOpts.concat(lenOpts).concat(scopeOpts).concat(bonusOpts);
+			var excludedOpts = mannerOpts.concat(linkOpts).concat(lenOpts).concat(scopeOpts).concat(bonusOpts);
 			var hasSpecialOpt = false;
 			for (var i in OPTIONS) {
 				if (excludedOpts.indexOf(i) === -1 && rule.opts.indexOf(i) !== -1) {
@@ -932,6 +943,7 @@ $(document).ready(function () {
 			$("#room-quizpick-panel-flat").hide();
 		} else {
 			// Flat view - hide all category panels, show flat panel
+			$("#room-manner-panel").hide();
 			$("#room-link-method-panel").hide();
 			$("#room-len-limit-panel").hide();
 			$("#room-word-settings-wrapper").hide();
@@ -951,6 +963,82 @@ $(document).ready(function () {
 			if (rule.opts.indexOf("qij") != -1) $("#room-quizpick-panel-flat").show();
 			else $("#room-quizpick-panel-flat").hide();
 		}
+
+		// Check if simple room view is enabled
+		var simpleRoomView = $data.opts && $data.opts.srv;
+		if (simpleRoomView) {
+			// Simple view takes priority - hide ALL other rule panels
+			$("#room-all-rules-panel").hide();
+			$("#room-manner-panel").hide();
+			$("#room-link-method-panel").hide();
+			$("#room-len-limit-panel").hide();
+			$("#room-word-settings-wrapper").hide();
+			$("#room-bonus-panel").hide();
+			$("#room-misc-panel").hide();
+			$("#room-injpick-panel").hide();
+			$("#room-quizpick-panel").hide();
+			$("#room-injpick-panel-flat").hide();
+			$("#room-quizpick-panel-flat").hide();
+
+			// Show simple panel instead
+			$("#room-simple-rules-panel").show();
+
+			// Show view all rules button in footer
+			$("#view-all-rules-btn").show();
+
+			// Show/hide topic selection buttons in simple view
+			console.log("[Simple Room] rule.opts:", rule.opts, "ijp:", rule.opts.indexOf("ijp"), "qij:", rule.opts.indexOf("qij"));
+			if (rule.opts.indexOf("ijp") != -1) {
+				console.log("[Simple Room] Showing ijp panel");
+				$("#room-simple-injpick-panel").show();
+			} else {
+				$("#room-simple-injpick-panel").hide();
+			}
+
+			if (rule.opts.indexOf("qij") != -1) {
+				console.log("[Simple Room] Showing qij panel");
+				$("#room-simple-quizpick-panel").show();
+			} else {
+				$("#room-simple-quizpick-panel").hide();
+			}
+
+			// Update simple panel options visibility 
+			updateGameOptions(rule.opts, 'room-simple');
+		} else {
+			$("#room-simple-rules-panel").hide();
+			$("#view-all-rules-btn").hide();
+		}
+
+		// Dynamic RoomDiag width based on simple view
+		if (!mobile) {
+			if (simpleRoomView) {
+				$("#RoomDiag").css("width", "330px");
+				// Adjust internal widths for narrow layout
+				$("#room-title, #room-pw, #room-limit, #room-category, #room-mode").css("width", "200px");
+				// Adjust round/time/sur-hp elements for narrow layout
+				$("#room-round").css("width", "95px");
+				$("#room-sur-hp").css("width", "95px");
+				$("#room-time").css({ "width": "95px", "margin-left": "3px" });
+				// Panel widths
+				$("#room-word-settings-wrapper > div, #room-link-method-panel > div, #room-len-limit-panel > div, #room-bonus-panel > div, #room-misc-panel > div, #room-all-rules-panel > div, #room-simple-rules-panel > div").css("width", "210px");
+				// Compact rule spacing for simple view
+				$("#room-simple-rules-panel .dialog-opt").css({ "margin": "0px", "padding": "1px 0px" });
+			} else {
+				$("#RoomDiag").css("width", "415px");
+				// Restore original widths for wide layout
+				$("#room-title, #room-pw, #room-limit, #room-category, #room-mode").css("width", "283px");
+				// Restore round/time/sur-hp original widths
+				$("#room-round").css("width", "133px");
+				$("#room-sur-hp").css("width", "133px");
+				$("#room-time").css({ "width": "133px", "margin-left": "5px" });
+				// Panel widths
+				$("#room-word-settings-wrapper > div, #room-link-method-panel > div, #room-len-limit-panel > div, #room-bonus-panel > div, #room-misc-panel > div, #room-all-rules-panel > div").css("width", "300px");
+			}
+		}
+
+		// Update survival UI for simple view panel
+		var survivalChecked = $("#room-survival").is(':checked') || $("#room-flat-survival").is(':checked') || $("#room-simple-survival").is(':checked');
+		updateSurvivalUI(survivalChecked);
 
 		// Hide Special Rules Panel if empty
 		if (!$data._injpick) $data._injpick = [];
@@ -1004,6 +1092,158 @@ $(document).ready(function () {
 		if ($(this).is(':checked')) {
 			$("#room-noshort, #room-flat-noshort").prop('checked', false);
 		}
+	});
+	// 매너 그룹 상호배타: man, gen, shi, etq 중 하나만 선택 가능
+	var mannerGroup = ['manner', 'gentle', 'shield', 'etiquette'];
+	mannerGroup.forEach(function (opt) {
+		var selectors = ['#room-' + opt, '#room-flat-' + opt, '#room-simple-' + opt,
+			'#view-all-' + opt, '#view-all-flat-' + opt].join(', ');
+		$(selectors).on('change', function () {
+			if ($(this).is(':checked')) {
+				mannerGroup.forEach(function (other) {
+					if (other !== opt) {
+						$('#room-' + other + ', #room-flat-' + other + ', #room-simple-' + other +
+							', #view-all-' + other + ', #view-all-flat-' + other).prop('checked', false);
+					}
+				});
+			}
+		});
+	});
+	// View All Rules Dialog 버튼 핸들러
+	$("#view-all-rules-btn").on('click', function () {
+		var v = $("#room-mode").val();
+		var rule = RULE[MODE[v]];
+
+		// room- 체크박스 값을 view-all- 및 view-all-flat-에 복사
+		for (var opt in OPTIONS) {
+			var roomId = 'room-' + OPTIONS[opt].name.toLowerCase();
+			var viewAllId = 'view-all-' + OPTIONS[opt].name.toLowerCase();
+			var viewAllFlatId = 'view-all-flat-' + OPTIONS[opt].name.toLowerCase();
+			var checked = $('#' + roomId).is(':checked');
+			$('#' + viewAllId).prop('checked', checked);
+			$('#' + viewAllFlatId).prop('checked', checked);
+		}
+
+		// view-all 패널의 옵션 표시/숨김 업데이트
+		updateGameOptions(rule.opts, 'view-all');
+		updateGameOptions(rule.opts, 'view-all-flat');
+
+		// Check if category view is enabled (default: true)
+		var showCategory = !($data.opts && $data.opts.src === false);
+
+		// Define option groups
+		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
+		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
+		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv'];
+		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
+
+		if (showCategory) {
+			// Categorized view - hide flat panel, show category panels
+			$("#view-all-flat-panel").hide();
+
+			// Check and toggle Link Method panel
+			var hasLinkOpt = linkOpts.some(function (opt) { return rule.opts.indexOf(opt) !== -1; });
+			if (hasLinkOpt) $("#view-all-link-method-panel").show();
+			else $("#view-all-link-method-panel").hide();
+
+			// Check and toggle Length Limit panel
+			var hasLenOpt = lenOpts.some(function (opt) { return rule.opts.indexOf(opt) !== -1; });
+			if (hasLenOpt) $("#view-all-len-limit-panel").show();
+			else $("#view-all-len-limit-panel").hide();
+
+			// Check and toggle Word Scope panel
+			var hasScopeOpt = scopeOpts.some(function (opt) { return rule.opts.indexOf(opt) !== -1; });
+			if (hasScopeOpt) $("#view-all-word-settings-wrapper").show();
+			else $("#view-all-word-settings-wrapper").hide();
+
+			// Check if bonus panel should be shown
+			var hasBonusOpt = bonusOpts.some(function (opt) { return rule.opts.indexOf(opt) !== -1; });
+			if (hasBonusOpt) $("#view-all-bonus-panel").show();
+			else $("#view-all-bonus-panel").hide();
+
+			// Check and toggle Manner panel
+			var hasMannerOpt = mannerOpts.some(function (opt) { return rule.opts.indexOf(opt) !== -1; });
+			if (hasMannerOpt) $("#view-all-manner-panel").show();
+			else $("#view-all-manner-panel").hide();
+
+			// Check if misc panel should be shown
+			var excludedOpts = mannerOpts.concat(linkOpts).concat(lenOpts).concat(scopeOpts).concat(bonusOpts);
+			var hasSpecialOpt = false;
+			for (var i in OPTIONS) {
+				if (excludedOpts.indexOf(i) === -1 && rule.opts.indexOf(i) !== -1) {
+					hasSpecialOpt = true;
+					break;
+				}
+			}
+			if (hasSpecialOpt) $("#view-all-misc-panel").show();
+			else $("#view-all-misc-panel").hide();
+
+			// injeong pick 패널 표시
+			if (rule.opts.indexOf("ijp") != -1) $("#view-all-injpick-panel").show();
+			else $("#view-all-injpick-panel").hide();
+
+			// quiz pick 패널 표시
+			if (rule.opts.indexOf("qij") != -1) $("#view-all-quizpick-panel").show();
+			else $("#view-all-quizpick-panel").hide();
+		} else {
+			// Flat view - hide all category panels, show flat panel
+			$("#view-all-manner-panel").hide();
+			$("#view-all-link-method-panel").hide();
+			$("#view-all-len-limit-panel").hide();
+			$("#view-all-word-settings-wrapper").hide();
+			$("#view-all-bonus-panel").hide();
+			$("#view-all-misc-panel").hide();
+			$("#view-all-injpick-panel").hide();
+			$("#view-all-quizpick-panel").hide();
+
+			// Show flat panel
+			$("#view-all-flat-panel").show();
+
+			// injeong pick 패널 표시 (flat mode)
+			if (rule.opts.indexOf("ijp") != -1) $("#view-all-flat-injpick-panel").show();
+			else $("#view-all-flat-injpick-panel").hide();
+
+			// quiz pick 패널 표시 (flat mode)
+			if (rule.opts.indexOf("qij") != -1) $("#view-all-flat-quizpick-panel").show();
+			else $("#view-all-flat-quizpick-panel").hide();
+		}
+
+		showDialog($stage.dialog.viewAllRules);
+	});
+	// View All Rules OK 버튼 - 값을 room 옵션에 동기화
+	$stage.dialog.viewAllRulesOK.on('click', function () {
+		// view-all- 및 view-all-flat- 값들을 room-에 복사
+		var showCategory = !($data.opts && $data.opts.src === false);
+
+		for (var opt in OPTIONS) {
+			var srcId = showCategory ? 'view-all-' : 'view-all-flat-';
+			var viewAllId = srcId + OPTIONS[opt].name.toLowerCase();
+			var roomId = 'room-' + OPTIONS[opt].name.toLowerCase();
+			var simplId = 'room-simple-' + OPTIONS[opt].name.toLowerCase();
+			var flatId = 'room-flat-' + OPTIONS[opt].name.toLowerCase();
+			var checked = $('#' + viewAllId).is(':checked');
+			$('#' + roomId).prop('checked', checked);
+			$('#' + simplId).prop('checked', checked);
+			$('#' + flatId).prop('checked', checked);
+		}
+		$stage.dialog.viewAllRules.hide();
+	});
+	// View All Injeong Pick 버튼 (category mode)
+	$("#view-all-injeong-pick").on('click', function () {
+		showDialog($stage.dialog.injPick);
+	});
+	// View All Quiz Pick 버튼 (category mode)
+	$("#view-all-quiz-pick").on('click', function () {
+		showDialog($stage.dialog.quizPick);
+	});
+	// View All Injeong Pick 버튼 (flat mode)
+	$("#view-all-flat-injeong-pick").on('click', function () {
+		showDialog($stage.dialog.injPick);
+	});
+	// View All Quiz Pick 버튼 (flat mode)
+	$("#view-all-flat-quiz-pick").on('click', function () {
+		showDialog($stage.dialog.quizPick);
 	});
 	$stage.menu.spectate.on('click', function (e) {
 		var mode = $stage.menu.spectate.hasClass("toggled");
@@ -1133,6 +1373,7 @@ $(document).ready(function () {
 			ow: $("#only-waiting").is(":checked"),
 			ou: $("#only-unlock").is(":checked"),
 			src: $("#show-rule-category").is(":checked"),
+			srv: $("#simple-room-view").is(":checked"),
 			sp: newSoundPack
 		};
 
@@ -1614,6 +1855,34 @@ $(document).ready(function () {
 		$data._quizpick = list;
 		$stage.dialog.quizPick.hide();
 	});
+	// Simple room view - Topic selection button handlers
+	$("#room-simple-injeong-pick").on('click', function (e) {
+		var rule = RULE[MODE[$("#room-mode").val()]];
+		var i;
+
+		$("#injpick-list>div").hide();
+		if (rule.lang == "ko") {
+			$data._ijkey = "#ko-pick-";
+			$("#ko-pick-list").show();
+		} else if (rule.lang == "en") {
+			$data._ijkey = "#en-pick-";
+			$("#en-pick-list").show();
+		}
+		$stage.dialog.injPickNo.trigger('click');
+		for (i in $data._injpick) {
+			$($data._ijkey + $data._injpick[i]).prop('checked', true);
+		}
+		showDialog($stage.dialog.injPick);
+	});
+	$("#room-simple-quiz-pick").on('click', function (e) {
+		var i;
+
+		$("#quizpick-no").trigger('click');
+		for (i in $data._quizpick) {
+			$("#quiz-pick-" + $data._quizpick[i]).prop('checked', true);
+		}
+		showDialog($stage.dialog.quizPick);
+	});
 	$stage.dialog.kickVoteY.on('click', function (e) {
 		send('kickVote', { agree: true });
 		clearTimeout($data._kickTimer);
@@ -1702,21 +1971,35 @@ $(document).ready(function () {
 		else if (spamWarning > 0) spamWarning -= 0.03;
 	}, 1000);
 
-	// 규칙 옵션 동기화 (Category View <-> Flat View)
+	// 규칙 옵션 동기화 (Category View <-> Flat View <-> Simple View)
 	$(document).on('change', '.game-option', function (e) {
 		var id = $(this).attr('id');
-		if (!id || (id.indexOf('room-') !== 0 && id.indexOf('room-flat-') !== 0)) return;
+		if (!id || id.indexOf('room-') !== 0) return;
 
 		var isFlat = id.indexOf('room-flat-') === 0;
-		var key = id.replace(isFlat ? 'room-flat-' : 'room-', '');
-		var targetId = isFlat ? 'room-' + key : 'room-flat-' + key;
-		var $target = $("#" + targetId);
+		var isSimple = id.indexOf('room-simple-') === 0;
+		var key;
+		if (isSimple) {
+			key = id.replace('room-simple-', '');
+		} else if (isFlat) {
+			key = id.replace('room-flat-', '');
+		} else {
+			key = id.replace('room-', '');
+		}
 
-		if ($target.length && $target.prop('checked') !== $(this).prop('checked')) {
-			$target.prop('checked', $(this).prop('checked'));
-			// room-flat-* 변경 시 room-* 변경을 트리거하여 상호 배제 로직 등이 실행되도록 함
-			// room-* 변경 시에는 무한 루프 방지를 위해 트리거하지 않음 (상호 배제 로직은 room-* 기준으로 동작)
-			if (isFlat) $target.trigger('change');
+		var checked = $(this).prop('checked');
+		var targets = ['room-' + key, 'room-flat-' + key, 'room-simple-' + key];
+		for (var i = 0; i < targets.length; i++) {
+			if (targets[i] === id) continue;
+			var $target = $("#" + targets[i]);
+			if ($target.length && $target.prop('checked') !== checked) {
+				$target.prop('checked', checked);
+			}
+		}
+		// room-flat-* 또는 room-simple-* 변경 시 room-* 변경을 트리거하여 상호 배제 로직 등이 실행되도록 함
+		// room-* 변경 시에는 무한 루프 방지를 위해 트리거하지 않음 (상호 배제 로직은 room-* 기준으로 동작)
+		if (isFlat || isSimple) {
+			$("#room-" + key).trigger('change');
 		}
 	});
 
@@ -1726,12 +2009,14 @@ $(document).ready(function () {
 		if ($(this).is(':checked')) {
 			$("#room-injeong, #room-strict, #room-loanword").prop('checked', false);
 			$("#room-flat-injeong, #room-flat-strict, #room-flat-loanword").prop('checked', false);
+			$("#room-simple-injeong, #room-simple-strict, #room-simple-loanword").prop('checked', false);
 		}
 	});
 	$("#room-injeong, #room-strict, #room-loanword").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-unknown").prop('checked', false);
 			$("#room-flat-unknown").prop('checked', false);
+			$("#room-simple-unknown").prop('checked', false);
 		}
 	});
 
@@ -1740,12 +2025,14 @@ $(document).ready(function () {
 		if ($(this).is(':checked')) {
 			$("#room-first, #room-random").prop('checked', false).trigger('change');
 			$("#room-flat-first, #room-flat-random").prop('checked', false);
+			$("#room-simple-first, #room-simple-random").prop('checked', false);
 		}
 	});
 	$("#room-first").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-middle, #room-random").prop('checked', false).trigger('change');
 			$("#room-flat-middle, #room-flat-random").prop('checked', false);
+			$("#room-simple-middle, #room-simple-random").prop('checked', false);
 		}
 	});
 
@@ -1754,11 +2041,14 @@ $(document).ready(function () {
 		if ($(this).is(':checked')) {
 			$("#room-middle, #room-first").prop('checked', false);
 			$("#room-flat-middle, #room-flat-first").prop('checked', false);
+			$("#room-simple-middle, #room-simple-first").prop('checked', false);
 			$("#room-second, #room-speedtoss").prop('checked', false).prop('disabled', true);
 			$("#room-flat-second, #room-flat-speedtoss").prop('checked', false).prop('disabled', true);
+			$("#room-simple-second, #room-simple-speedtoss").prop('checked', false).prop('disabled', true);
 		} else {
 			$("#room-second, #room-speedtoss").prop('disabled', false);
 			$("#room-flat-second, #room-flat-speedtoss").prop('disabled', false);
+			$("#room-simple-second, #room-simple-speedtoss").prop('disabled', false);
 		}
 	});
 
@@ -1766,9 +2056,11 @@ $(document).ready(function () {
 		if ($("#room-second").is(':checked') || $("#room-speedtoss").is(':checked')) {
 			$("#room-random").prop('checked', false).prop('disabled', true);
 			$("#room-flat-random").prop('checked', false).prop('disabled', true);
+			$("#room-simple-random").prop('checked', false).prop('disabled', true);
 		} else {
 			$("#room-random").prop('disabled', false);
 			$("#room-flat-random").prop('disabled', false);
+			$("#room-simple-random").prop('disabled', false);
 		}
 	});
 
@@ -1778,22 +2070,26 @@ $(document).ready(function () {
 		if ($(this).is(':checked')) {
 			var ids = ["room-sami", "room-twotwo", "room-fourfour", "room-fourthree", "room-length3", "room-length4", "room-length5", "room-length6", "room-length7"];
 			var flatIds = ["room-flat-sami", "room-flat-twotwo", "room-flat-fourfour", "room-flat-fourthree", "room-flat-length3", "room-flat-length4", "room-flat-length5", "room-flat-length6", "room-flat-length7"];
+			var simpleIds = ["room-simple-sami", "room-simple-twotwo", "room-simple-fourfour", "room-simple-fourthree", "room-simple-length3", "room-simple-length4", "room-simple-length5", "room-simple-length6", "room-simple-length7"];
 
 			// Uncheck other options in same group (Category View)
 			$("#" + ids.join(", #")).not(this).prop('checked', false);
 
-			// Uncheck all in Flat View then re-sync or just uncheck others?
-			// Simpler: Uncheck all flat counterparts of the group, then check the one corresponding to 'this'.
-			// But 'this' sync is handled by global listener. So we just need to uncheck others in Flat View.
-
 			// Get current ID
 			var currentId = $(this).attr('id');
 			var currentFlatId = currentId.replace('room-', 'room-flat-');
+			var currentSimpleId = currentId.replace('room-', 'room-simple-');
 
 			// Uncheck others in Flat View
 			for (var i = 0; i < flatIds.length; i++) {
 				if (flatIds[i] !== currentFlatId) {
 					$("#" + flatIds[i]).prop('checked', false);
+				}
+			}
+			// Uncheck others in Simple View
+			for (var i = 0; i < simpleIds.length; i++) {
+				if (simpleIds[i] !== currentSimpleId) {
+					$("#" + simpleIds[i]).prop('checked', false);
 				}
 			}
 		}
@@ -1804,12 +2100,14 @@ $(document).ready(function () {
 		if ($(this).is(':checked')) {
 			$("#room-long").prop('checked', false);
 			$("#room-flat-long").prop('checked', false);
+			$("#room-simple-long").prop('checked', false);
 		}
 	});
 	$("#room-long").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-proverb").prop('checked', false);
 			$("#room-flat-proverb").prop('checked', false);
+			$("#room-simple-proverb").prop('checked', false);
 		}
 	});
 
@@ -1820,10 +2118,12 @@ $(document).ready(function () {
 			// 미션이 꺼지면 관련 옵션들도 끄고 비활성화
 			$("#room-easymission, #room-rndmission, #room-missionplus").prop('checked', false).prop('disabled', true);
 			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('checked', false).prop('disabled', true);
+			$("#room-simple-easymission, #room-simple-rndmission, #room-simple-missionplus").prop('checked', false).prop('disabled', true);
 		} else {
 			// 미션이 켜지면 관련 옵션들 활성화
 			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', false);
 			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', false);
+			$("#room-simple-easymission, #room-simple-rndmission, #room-simple-missionplus").prop('disabled', false);
 		}
 	});
 
@@ -1832,12 +2132,14 @@ $(document).ready(function () {
 		if ($(this).is(':checked')) {
 			$("#room-nodueum").prop('checked', false);
 			$("#room-flat-nodueum").prop('checked', false);
+			$("#room-simple-nodueum").prop('checked', false);
 		}
 	});
 	$("#room-nodueum").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-freedueum").prop('checked', false);
 			$("#room-flat-freedueum").prop('checked', false);
+			$("#room-simple-freedueum").prop('checked', false);
 		}
 	});
 
@@ -1866,7 +2168,7 @@ $(document).ready(function () {
 		}
 	}
 
-	$("#room-survival, #room-flat-survival").on('change', function () {
+	$("#room-survival, #room-flat-survival, #room-simple-survival").on('change', function () {
 		updateSurvivalUI($(this).is(':checked'));
 	});
 

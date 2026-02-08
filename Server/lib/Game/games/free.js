@@ -44,8 +44,8 @@ exports.roundReady = function () {
     clearTimeout(my.game.turnTimer);
     my.game.round++;
     my.game.roundTime = my.time * 1000;
+    my.resetChain();
     if (my.game.round <= my.round) {
-        my.game.chain = [];
         if (my.opts.mission) my.game.mission = getMission(my.rule.lang, my.opts);
 
         my.byMaster('roundReady', {
@@ -106,6 +106,7 @@ exports.turnEnd = function () {
 
     // ========== 서바이벌 모드: 타임아웃 = 즉시 KO ==========
     if (my.opts.survival && target && target.game && target.game.alive) {
+        my.logChainEvent(target, 'ko');
         var gameOver = Const.handleSurvivalTimeout(my, DIC, target);
 
         if (!gameOver) {
@@ -199,6 +200,7 @@ exports.turnEnd = function () {
             }
         }
 
+        my.logChainEvent(target, 'timeout');
         my.game._rrt = setTimeout(my.roundReady, 3000);
     });
     clearTimeout(my.game.robotTimer);
@@ -303,7 +305,7 @@ exports.submit = function (client, text) {
                 score = baseScoreWithoutMission + missionBonus + straightBonus;
 
                 if (isReturn) score = 0;
-                my.game.chain.push(text);
+                my.logChainWord(text, client);
                 my.game.roundTime -= t;
 
                 // ========== 서바이벌 모드: 득점 = 다음 사람 데미지 ==========

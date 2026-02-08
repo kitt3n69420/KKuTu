@@ -291,8 +291,6 @@ iframe {
 #room-injpick-panel,
 #room-injpick-panel-flat {
 	width: auto;
-	clear: left;
-	margin-left: 100px;
 }
 
 #room-quizpick-panel,
@@ -1038,11 +1036,16 @@ iframe {
 }
 
 .GameBox .product-title {
-	height: 12px;
+	height: auto;
+	min-height: 12px;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
 }
 
 .GameBox .product-title h5 {
-	float: left;
+	float: none;
+	flex-shrink: 0;
 }
 
 .GameBox div {
@@ -2539,11 +2542,27 @@ iframe {
 }
 
 @keyframes survival-damage-shake {
-	0%, 100% { transform: translateX(0); }
-	20% { transform: translateX(-5px); }
-	40% { transform: translateX(5px); }
-	60% { transform: translateX(-3px); }
-	80% { transform: translateX(3px); }
+
+	0%,
+	100% {
+		transform: translateX(0);
+	}
+
+	20% {
+		transform: translateX(-5px);
+	}
+
+	40% {
+		transform: translateX(5px);
+	}
+
+	60% {
+		transform: translateX(-3px);
+	}
+
+	80% {
+		transform: translateX(3px);
+	}
 }
 
 /* 데미지 점수 표시 */
@@ -2555,4 +2574,42 @@ iframe {
 /* 서바이벌 HP 선택 패널 */
 #room-sur-hp-panel {
 	margin-top: 5px;
+}
+
+/* ======== Simple Room View Styles ======== */
+
+/* Simple Room View 패널 - 2열 레이아웃 */
+#room-simple-rules-panel .dialog-opt {
+	width: 50%;
+	box-sizing: border-box;
+}
+
+#room-simple-rules-panel .dialog-opt label {
+	font-size: 13px;
+	letter-spacing: 0;
+}
+
+/* View All Rules 버튼 */
+#view-all-rules-btn {
+	/* 기본 버튼 스타일과 동일하게 설정 (확인 버튼과 같은 스타일) */
+	/* 너비는 인라인 스타일로 설정됨 (min-width: 120px) */
+}
+
+#view-all-rules-btn:hover {
+	/* 호버 효과 제거 - 기본 버튼 스타일 사용 */
+}
+
+/* View All Rules 모달 - 4열 레이아웃 */
+#ViewAllRulesDiag .dialog-opt {
+	width: 25%;
+	box-sizing: border-box;
+}
+
+#ViewAllRulesDiag .dialog-opt label {
+	font-size: 11px;
+	letter-spacing: -0.5px;
+}
+
+#view-all-rules-content {
+	overflow-x: hidden;
 }

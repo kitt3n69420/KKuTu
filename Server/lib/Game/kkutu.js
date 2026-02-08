@@ -21,6 +21,7 @@ var Cluster = require("cluster");
 var Const = require('../const');
 var Lizard = require('../sub/lizard');
 var JLog = require('../sub/jjlog');
+var DiscordBot = Cluster.isMaster ? require('../sub/discord-bot') : null;
 // 망할 셧다운제 var Ajae = require("../sub/ajae");
 var DB;
 var SHOP;
@@ -291,6 +292,12 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 	};
 	my.chat = function (msg, code) {
 		my.publish('chat', { value: msg });
+		// Log robot chat
+		if (Cluster.isMaster && DiscordBot && !code) {
+			DiscordBot.logChat(my.profile, msg, my.place, true);
+		} else if (Cluster.isWorker) {
+			process.send({ type: "chat-log", profile: my.profile, message: msg, place: my.place, isRobot: true });
+		}
 	};
 	my.profile = {
 		id: my.id,
@@ -507,6 +514,14 @@ exports.Client = function (socket, profile, sid) {
 	my.chat = function (msg, code) {
 		if (my.noChat) return my.send('chat', { notice: true, code: 443 });
 		my.publish('chat', { value: msg, notice: code ? true : false, code: code });
+		// Log chat to Discord
+		if (!code) {
+			if (Cluster.isMaster && DiscordBot) {
+				DiscordBot.logChat(my.profile, msg, my.place, false);
+			} else if (Cluster.isWorker) {
+				process.send({ type: "chat-log", profile: my.profile, message: msg, place: my.place, isRobot: false });
+			}
+		}
 	};
 	my.checkExpire = function () {
 		var now = new Date();
@@ -901,6 +916,19 @@ exports.Client = function (socket, profile, sid) {
 				if ($room.master == my.id) {
 					$room.set(room);
 					exports.publish('room', { target: my.id, room: $room.getData(), modify: true }, room.password);
+					// Discord: 방 설정 변경 로그
+					var roomData = {
+						title: $room.title,
+						password: $room.password,
+						limit: $room.limit,
+						mode: $room.mode,
+						opts: $room.opts
+					};
+					if (Cluster.isMaster && DiscordBot) {
+						DiscordBot.notifyRoomSettings($room.id, roomData);
+					} else if (Cluster.isWorker) {
+						process.send({ type: "room-settings", roomId: $room.id, room: roomData });
+					}
 				} else {
 					my.sendError(400);
 				}
@@ -981,7 +1009,7 @@ exports.Client = function (socket, profile, sid) {
  * @param {Object} my - Room 객체
  * @returns {Object} { aliveCount, aliveTeams, hasTeams, gameOver }
  */
-exports.checkSurvivalStatus = function(my) {
+exports.checkSurvivalStatus = function (my) {
 	var aliveCount = 0;
 	var aliveTeams = new Set();
 	var hasTeams = false;
@@ -1022,7 +1050,7 @@ exports.checkSurvivalStatus = function(my) {
  * @param {number} currentTurn - 현재 턴 인덱스
  * @returns {Object|null} { targetId, damage, newHP, ko } 또는 null (대상 없음)
  */
-exports.applySurvivalDamage = function(my, damage, currentTurn) {
+exports.applySurvivalDamage = function (my, damage, currentTurn) {
 	if (damage <= 0) return null;
 
 	var nextTurn = currentTurn;
@@ -1067,7 +1095,7 @@ exports.applySurvivalDamage = function(my, damage, currentTurn) {
  * @param {Object} extraData - turnEnd에 추가할 데이터 (optional)
  * @returns {boolean} 게임이 종료되었으면 true
  */
-exports.handleSurvivalTimeout = function(my, target, extraData) {
+exports.handleSurvivalTimeout = function (my, target, extraData) {
 	if (!my.opts.survival || !target || !target.game || !target.game.alive) {
 		return false;
 	}
@@ -1098,7 +1126,7 @@ exports.handleSurvivalTimeout = function(my, target, extraData) {
 
 	if (status.gameOver) {
 		clearTimeout(my.game.robotTimer);
-		my.game._rrt = setTimeout(function() {
+		my.game._rrt = setTimeout(function () {
 			my.roundEnd();
 		}, 2000);
 		return true;
@@ -1592,6 +1620,21 @@ exports.Room = function (room, channel) {
 			return caller.sendError(415);
 		}
 
+		function pushRobot(robot) {
+			my.players.push(robot);
+			my.export();
+			my.checkJamsu();
+			// Discord: 봇 입장 로그
+			if (Cluster.isWorker) {
+				process.send({
+					type: "room-join",
+					roomId: my.id,
+					name: (robot.profile && robot.profile.title) || robot.id,
+					isRobot: true
+				});
+			}
+		}
+
 		// 95% chance to use a custom bot name from the dictionary
 		if (Math.random() < 0.95) {
 			if (Math.random() < 0.5) {
@@ -1599,9 +1642,7 @@ exports.Room = function (room, channel) {
 				var name = aiNameCacheSingle.pop();
 				if (name) {
 					// 캐시에서 가져옴
-					my.players.push(new exports.Robot(null, my.id, 2, name));
-					my.export();
-					my.checkJamsu();
+					pushRobot(new exports.Robot(null, my.id, 2, name));
 					// 캐시 부족 시 백그라운드 리필
 					if (aiNameCacheSingle.length < AI_NAME_CACHE_THRESHOLD) {
 						refillAiNameCache();
@@ -1617,9 +1658,7 @@ exports.Room = function (room, channel) {
 							dbName = res.rows[0]._id;
 						}
 
-						my.players.push(new exports.Robot(null, my.id, 2, dbName));
-						my.export();
-						my.checkJamsu();
+						pushRobot(new exports.Robot(null, my.id, 2, dbName));
 						// 리필 트리거
 						refillAiNameCache();
 					});
@@ -1639,9 +1678,7 @@ exports.Room = function (room, channel) {
 						}
 					}
 					var combinedName = w1 + (w2 || '');
-					my.players.push(new exports.Robot(null, my.id, 2, combinedName));
-					my.export();
-					my.checkJamsu();
+					pushRobot(new exports.Robot(null, my.id, 2, combinedName));
 					// 캐시 부족 시 백그라운드 리필
 					if (aiNameCacheFirst.length < AI_NAME_CACHE_THRESHOLD || aiNameCacheSecond.length < AI_NAME_CACHE_THRESHOLD) {
 						refillAiNameCache();
@@ -1653,9 +1690,7 @@ exports.Room = function (room, channel) {
 						if (my.players.length >= my.limit) return;
 
 						if (err || !res || !res.rows || res.rows.length === 0) {
-							my.players.push(new exports.Robot(null, my.id, 2));
-							my.export();
-							my.checkJamsu();
+							pushRobot(new exports.Robot(null, my.id, 2));
 							refillAiNameCache();
 							return;
 						}
@@ -1672,18 +1707,14 @@ exports.Room = function (room, channel) {
 								dbName += res2.rows[0]._id;
 							}
 
-							my.players.push(new exports.Robot(null, my.id, 2, dbName));
-							my.export();
-							my.checkJamsu();
+							pushRobot(new exports.Robot(null, my.id, 2, dbName));
 							refillAiNameCache();
 						});
 					});
 				}
 			}
 		} else {
-			my.players.push(new exports.Robot(null, my.id, 2));
-			my.export();
-			my.checkJamsu();
+			pushRobot(new exports.Robot(null, my.id, 2));
 		}
 	};
 
@@ -1701,6 +1732,19 @@ exports.Room = function (room, channel) {
 				my.players[i].data.personality = personality;
 				my.players[i].data.preferredChar = preferredChar;
 				my.export();
+				// Discord: 봇 설정 변경 로그
+				if (Cluster.isWorker) {
+					process.send({
+						type: "bot-settings",
+						roomId: my.id,
+						botInfo: {
+							name: my.players[i].profile ? my.players[i].profile.title : target,
+							level: level,
+							personality: personality,
+							preferredChar: preferredChar
+						}
+					});
+				}
 				return true;
 			}
 		}
@@ -1714,14 +1758,24 @@ exports.Room = function (room, channel) {
 			if (!my.players[i]) continue;
 			if (!my.players[i].robot) continue;
 			if (!target || my.players[i].id == target) {
+				var removedBot = my.players[i];
 				if (my.gaming) {
-					j = my.game.seq.indexOf(my.players[i]);
+					j = my.game.seq.indexOf(removedBot);
 					if (j != -1) my.game.seq.splice(j, 1);
 				}
 				my.players.splice(i, 1);
 				if (!noEx) {
 					my.export();
 					my.checkJamsu();
+				}
+				// Discord: 봇 퇴장 로그
+				if (Cluster.isWorker) {
+					process.send({
+						type: "room-leave",
+						roomId: my.id,
+						name: (removedBot.profile && removedBot.profile.title) || removedBot.id,
+						isRobot: true
+					});
 				}
 				return true;
 			}
@@ -1749,7 +1803,16 @@ exports.Room = function (room, channel) {
 			client.cameWhenGaming = false;
 			client.form = "J";
 
-			if (!my.practice) process.send({ type: "room-come", target: client.id, id: my.id });
+			if (!my.practice) {
+				process.send({ type: "room-come", target: client.id, id: my.id });
+				// Discord: 방 입장 로그
+				process.send({
+					type: "room-join",
+					roomId: my.id,
+					name: (client.profile && (client.profile.title || client.profile.name)) || client.id,
+					isRobot: false
+				});
+			}
 			my.export(client.id);
 		}
 	};
@@ -1772,6 +1835,13 @@ exports.Room = function (room, channel) {
 			client.form = (len > my.limit) ? "O" : "S";
 
 			process.send({ type: "room-spectate", target: client.id, id: my.id, pw: password });
+			// Discord: 방 입장 로그 (관전자)
+			process.send({
+				type: "room-join",
+				roomId: my.id,
+				name: (client.profile && (client.profile.title || client.profile.name)) || client.id,
+				isRobot: false
+			});
 			my.export(client.id, false, true);
 		}
 	};
@@ -1937,13 +2007,13 @@ exports.Room = function (room, channel) {
 						var gameOver = totalEntities <= 1;
 						if (gameOver) {
 							clearTimeout(my.game._rrt);
-							my.game._rrt = setTimeout(function() {
+							my.game._rrt = setTimeout(function () {
 								my.roundEnd();
 							}, 2000);
 						} else if (isTurn) {
 							// 다음 턴으로 진행
 							clearTimeout(my.game._rrt);
-							my.game._rrt = setTimeout(function() {
+							my.game._rrt = setTimeout(function () {
 								my.turnNext();
 							}, 2000);
 						}
@@ -2033,6 +2103,13 @@ exports.Room = function (room, channel) {
 
 		if (Cluster.isWorker) {
 			if (!my.practice) {
+				// Discord: 방 퇴장 로그
+				process.send({
+					type: "room-leave",
+					roomId: my.id,
+					name: (client.profile && (client.profile.title || client.profile.name)) || client.id,
+					isRobot: false
+				});
 				client.socket.close();
 				process.send({ type: "room-go", target: client.id, id: my.id, removed: !ROOM.hasOwnProperty(my.id) });
 			}
@@ -2161,7 +2238,13 @@ exports.Room = function (room, channel) {
 		var now = (new Date()).getTime();
 
 		my.gaming = true;
-		my.game = {}; 
+
+		// Discord notification for game start
+		if (Cluster.isWorker) {
+			process.send({ type: "game-start", room: my.id });
+		}
+
+		my.game = {};
 		my.game.late = true;
 		my.game.round = 0;
 		my.game.turn = 0;
@@ -2341,6 +2424,40 @@ exports.Room = function (room, channel) {
 				}
 			}
 		}
+	};
+	// Helper: 플레이어/봇 객체에서 표시 이름 추출
+	my.getPlayerName = function (target) {
+		if (!target) return '?';
+		if (target.profile) return target.profile.title || target.profile.name || '?';
+		return (typeof target === 'string') ? target : '?';
+	};
+	my.sendRoundEndNotification = function (round) {
+		if (!my.game.chainLog || my.game.chainLog.length === 0) return;
+		var r = round || my.game.round || 0;
+		var totalRounds = my.round || 0;
+		if (Cluster.isMaster && DiscordBot) {
+			DiscordBot.notifyRoundEnd(my.id, my.game.chainLog, r, totalRounds);
+		} else if (Cluster.isWorker) {
+			process.send({ type: "round-end", room: my.id, chainLog: my.game.chainLog, round: r, totalRounds: totalRounds });
+		}
+	};
+	// Helper: 라운드 전환 시 알림 전송 후 chainLog 초기화
+	my.resetChain = function () {
+		if (my.game.round > 1) my.sendRoundEndNotification(my.game.round - 1);
+		my.game.chain = [];
+		my.game.chainLog = [];
+	};
+	// Helper: chain에 단어 추가 + chainLog에 플레이어 정보 기록
+	my.logChainWord = function (text, client) {
+		my.game.chain.push(text);
+		if (my.game.chainLog) {
+			my.game.chainLog.push({ word: String(text), player: my.getPlayerName(client) });
+		}
+	};
+	// Helper: turnEnd 시 타임아웃/KO를 chainLog에 기록
+	my.logChainEvent = function (target, event) {
+		if (!my.game.chainLog) my.game.chainLog = [];
+		my.game.chainLog.push({ player: my.getPlayerName(target), event: event });
 	};
 	my.roundEnd = function (data) {
 		var i, o, rw;
@@ -2538,6 +2655,21 @@ exports.Room = function (room, channel) {
 		my.gaming = false;
 		my.checkJamsu();
 		my.export();
+		// Discord notification for last round end (game over)
+		my.sendRoundEndNotification();
+		// Discord notification for game over with score rankings
+		{
+			var rankings = res.map(function (r) {
+				var p = DIC[r.id] || (my.players && my.players.find ? my.players.find(function (pl) { return pl && pl.id === r.id; }) : null);
+				var name = (p && p.profile) ? (p.profile.title || p.profile.name) : r.id;
+				return { name: name, score: r.score, rank: r.rank, robot: r.robot };
+			});
+			if (Cluster.isMaster && DiscordBot) {
+				DiscordBot.notifyGameOver(my.id, rankings);
+			} else if (Cluster.isWorker) {
+				process.send({ type: "game-over", room: my.id, rankings: rankings });
+			}
+		}
 		delete my.game.seq;
 		delete my.game.wordLength;
 		delete my.game.dic;
@@ -2810,74 +2942,74 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 	// rank는 0~7
 	switch (Const.GAME_TYPE[mode]) {
 		case "EKT":
-			rw.score += score * 1.4;
+			rw.score += score * 1.9;
 			break;
 		case "ESH":
-			rw.score += score * 0.5;
+			rw.score += score * 1.5;
 			break;
 		case "EKK":
-			rw.score += score * 1.39;
+			rw.score += score * 1.89;
 			break;
 		case "KKT":
-			rw.score += score * 1.42;
+			rw.score += score * 1.82;
 			break;
 		case "KSH":
-			rw.score += score * 0.55;
+			rw.score += score * 1.55;
 			break;
 		case "CSQ":
-			rw.score += score * 0.4;
+			rw.score += score * 1.4;
 			break;
 		case "KSC":
-			rw.score += score * 0.52;
+			rw.score += score * 1.52;
 			break;
 		case 'KCW':
-			rw.score += score * 1.0;
+			rw.score += score * 2.0;
 			break;
 		case 'KTY':
-			rw.score += score * 0.3;
+			rw.score += score * 1.3;
 			break;
 		case 'ETY':
-			rw.score += score * 0.37;
+			rw.score += score * 1.37;
 			break;
 		case 'KAP':
-			rw.score += score * 0.8;
+			rw.score += score * 1.8;
 			break;
 		case 'HUN':
-			rw.score += score * 0.5;
+			rw.score += score * 1.5;
 			break;
 		case 'KDA':
-			rw.score += score * 0.57;
+			rw.score += score * 1.57;
 			break;
 		case 'EDA':
-			rw.score += score * 0.65;
+			rw.score += score * 1.65;
 			break;
 		case 'KSS':
-			rw.score += score * 0.5;
+			rw.score += score * 1.5;
 			break;
 		case 'ESS':
-			rw.score += score * 0.22;
+			rw.score += score * 1.22;
 			break;
 		case 'KFR':
-			rw.score += score * 0.15;
+			rw.score += score * 1.15;
 			break;
 		case 'EFR':
-			rw.score += score * 0.15;
+			rw.score += score * 1.15;
 			break;
 		case "KPQ":
-			rw.score += score * 0.72;
+			rw.score += score * 2.72;
 			break;
 		case "EPQ":
-			rw.score += score * 0.56;
+			rw.score += score * 2.56;
 			break;
 		default:
-			rw.score += score * 0.5;
+			rw.score += score * 1.25;
 			break;
 	}
 	rw.score = rw.score
 		* (0.77 + 0.05 * (all - rank) * (all - rank)) // 순위
-		* 1.25 / (1 + 1.25 * sr * sr) // 점차비(양학했을 수록 ↓)
+		* 1.5 / (1 + 1.25 * sr * sr) // 점차비(양학했을 수록 ↓)
 		;
-	rw.money = 1 + rw.score * 0.1; //0.01에서 대폭 상승한 것이다.
+	rw.money = 1 + rw.score * 0.15; //0.01에서 대폭 상승한 것이다.
 	if (all < 2) {
 		rw.score = rw.score * 0.05;
 		rw.money = rw.money * 0.5;

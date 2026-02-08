@@ -61,8 +61,8 @@ exports.roundReady = function () {
 	clearTimeout(my.game.turnTimer);
 	my.game.round++;
 	my.game.roundTime = my.time * 1000;
+	my.resetChain();
 	if (my.game.round <= my.round) {
-		my.game.chain = [];
 		var problem = generateProblem(0);
 		my.game.question = problem.question;
 		my.game.answer = problem.answer;
@@ -125,6 +125,7 @@ exports.turnEnd = function () {
 	if (my.opts.survival && target && target.game && target.game.alive) {
 		target.game.alive = false;
 		target.game.score = 0;
+		my.logChainEvent(target, 'ko');
 
 		var status = Const.checkSurvivalStatus(my, DIC);
 
@@ -233,6 +234,7 @@ exports.turnEnd = function () {
 		}
 	}
 
+	my.logChainEvent(target, 'timeout');
 	my.game._rrt = setTimeout(my.roundReady, 3000);
 	clearTimeout(my.game.robotTimer);
 };
@@ -263,7 +265,7 @@ exports.submit = function (client, text, data) {
 		t = tv - my.game.turnAt;
 
 		score = my.getScore(my.game.answer, t);
-		my.game.chain.push(inputAnswer);
+		my.logChainWord(inputAnswer, client);
 		my.game.roundTime -= t;
 
 		// 새 문제 생성

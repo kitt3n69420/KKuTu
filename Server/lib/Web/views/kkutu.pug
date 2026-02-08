@@ -69,7 +69,7 @@ block Jungle
 
 block Middle
 	- var VERSION = L('version');
-	- var nick = SESSION.profile && SESSION.profile.nickname;
+	- var nick = SESSION.profile && (SESSION.profile.nickname || SESSION.profile.title || SESSION.profile.name);
 	div#Intro
 		img#intro(src='/img/kkutu/intro.png')
 		// img#intro-start(src='/img/kkutu/intro_start.gif')
@@ -122,6 +122,8 @@ block Middle
 			+SettingOption('only-unlock', L('onlyUnlock'), "width: 200px;")
 			h4
 			+SettingOption('show-rule-category', L('showRuleCategory'), "width: 200px;")
+			h4
+			+SettingOption('simple-room-view', L('simpleRoomView'), "width: 200px;")
 		div.dialog-bar
 			h4= L('language')
 			select#language-setting(style="width: 150px;")
@@ -204,7 +206,7 @@ block Middle
 		div(style='position: absolute; bottom: 10px; left: 10px; right: 10px;')
 			h4(style='float: left; font-size: 12px; padding-top: 5px;')#quick-status
 			button#quick-ok(style='float: right; width: 80px; height: 20px;')= L('OK')
-	+Dialog('RoomDiag', 415, 480)
+	+Dialog('RoomDiag', 415, 475)
 		div.dialog-bar
 			h4= L('roomTitle')
 			input#room-title(placeholder=(nick || L('guest'))+L('roomDefault'), maxlength=20, style="width: 283px;")
@@ -276,6 +278,13 @@ block Middle
 				option(value=90)
 				option(value=120)
 				option(value=150)
+		div.dialog-bar#room-manner-panel(style='display: none;')
+			h4= L('mannerGroup')
+			div(style='float: left; width: 300px;')
+				- var mannerOpts = ['man', 'gen', 'shi', 'etq'];
+				- for(var i in locals.OPTIONS)
+					- if(mannerOpts.indexOf(i) === -1) continue;
+					+GameOption(i, 'room')
 		div.dialog-bar#room-word-settings-wrapper(style='height: auto; overflow: hidden; display: none;')
 			h4= L('wordScope')
 			div(style='float: left; width: 300px;')
@@ -309,25 +318,36 @@ block Middle
 			div(style='float: left; width: 300px;')
 				- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 				- for(var i in locals.OPTIONS)
-					- if(['mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'].indexOf(i) !== -1) continue;
+					- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'].indexOf(i) !== -1) continue;
 					- if(bonusOpts.indexOf(i) !== -1) continue;
 					+GameOption(i, 'room')
-
-			div.dialog-opt#room-injpick-panel
-				button#room-injeong-pick(style='font-size: 11px;')= L('pickInjeong')
-			div.dialog-opt#room-quizpick-panel
-				button#room-quiz-pick(style='font-size: 11px;')= L('pickQuizTopic')
+				div.dialog-opt#room-injpick-panel(style='width: auto;')
+					button#room-injeong-pick(style='font-size: 11px;')= L('pickInjeong')
+				div.dialog-opt#room-quizpick-panel(style='width: auto;')
+					button#room-quiz-pick(style='font-size: 11px;')= L('pickQuizTopic')
 		div.dialog-bar#room-all-rules-panel(style='height: auto;')
 			h4(style='height: 45px;')= L('misc')
-			div(style='float: left; width: 315px;')
+			div(style='float: left; width: 300px;')
 				- for(var i in locals.OPTIONS)
 					+GameOption(i, 'room-flat')
-			div.dialog-opt#room-injpick-panel-flat
-				button#room-injeong-pick-flat(style='font-size: 11px;')= L('pickInjeong')
-			div.dialog-opt#room-quizpick-panel-flat
-				button#room-quiz-pick-flat(style='font-size: 11px;')= L('pickQuizTopic')
+				div.dialog-opt#room-injpick-panel-flat
+					button#room-injeong-pick-flat(style='font-size: 11px;')= L('pickInjeong')
+				div.dialog-opt#room-quizpick-panel-flat
+					button#room-quiz-pick-flat(style='font-size: 11px;')= L('pickQuizTopic')
+		div.dialog-bar#room-simple-rules-panel(style='height: auto; display: none;')
+			h4(style='height: 30px;')= L('misc')
+			div(style='float: left; width: 300px;')
+				- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'spt', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow'];
+				- for(var i in locals.OPTIONS)
+					- if(keyRules.indexOf(i) === -1) continue;
+					+GameOption(i, 'room-simple')
+				div.dialog-opt#room-simple-injpick-panel(style='width: auto; display: none;')
+					button#room-simple-injeong-pick(style='font-size: 11px;')= L('pickInjeong')
+				div.dialog-opt#room-simple-quizpick-panel(style='width: auto; display: none;')
+					button#room-simple-quiz-pick(style='font-size: 11px;')= L('pickQuizTopic')
 		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; left: 5px; width: calc(100% - 10px);')
-			button#room-ok= L('OK')
+			button#room-ok(style='float: right;')= L('OK')
+			button#view-all-rules-btn(style='float: right; margin-right: 10px; display: none; min-width: 120px;')= L('viewAllRules')
 	+Dialog('InjPickDiag', 200, 400, L('pickInjeong'))
 		h4= L('explInjPick')
 		div.dialog-bar
@@ -366,6 +386,66 @@ block Middle
 			- });
 		div.dialog-bar.tail-button
 			button#quizpick-ok= L('OK')
+	+Dialog('ViewAllRulesDiag', 415, 310, L('viewAllRules'))
+		div#view-all-rules-content(style='height: 245px; overflow-y: auto; overflow-x: hidden;')
+			div.dialog-bar#view-all-manner-panel(style='display: none;')
+				h4= L('mannerGroup')
+				div(style='float: left; width: 300px;')
+					- var mannerOpts = ['man', 'gen', 'shi', 'etq'];
+					- for(var i in locals.OPTIONS)
+						- if(mannerOpts.indexOf(i) === -1) continue;
+						+GameOption(i, 'view-all')
+			div.dialog-bar#view-all-word-settings-wrapper(style='height: auto; overflow: hidden; display: none;')
+				h4= L('wordScope')
+				div(style='float: left; width: 300px;')
+					- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng'];
+					- for(var i in locals.OPTIONS)
+						- if(scopeOpts.indexOf(i) === -1) continue;
+						+GameOption(i, 'view-all')
+			div.dialog-bar#view-all-link-method-panel(style='display: none;')
+				h4= L('linkMethod')
+				div(style='float: left; width: 300px;')
+					- var linkOpts = ['mid', 'fir', 'ran', 'sch'];
+					- for(var i in locals.OPTIONS)
+						- if(linkOpts.indexOf(i) === -1) continue;
+						+GameOption(i, 'view-all')
+			div.dialog-bar#view-all-len-limit-panel(style='display: none;')
+				h4= L('lenLimit')
+				div(style='float: left; width: 300px;')
+					- var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
+					- for(var i in locals.OPTIONS)
+						- if(lenOpts.indexOf(i) === -1) continue;
+						+GameOption(i, 'view-all')
+			div.dialog-bar#view-all-bonus-panel(style='height: auto; display: none;')
+				h4(style='height: auto;')= L('bonus')
+				div(style='float: left; width: 300px;')
+					- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
+					- for(var i in locals.OPTIONS)
+						- if(bonusOpts.indexOf(i) === -1) continue;
+						+GameOption(i, 'view-all')
+			div.dialog-bar#view-all-misc-panel(style='height: auto; display: none;')
+				h4(style='height: 45px;')= L('misc')
+				div(style='float: left; width: 300px;')
+					- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
+					- for(var i in locals.OPTIONS)
+						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'].indexOf(i) !== -1) continue;
+						- if(bonusOpts.indexOf(i) !== -1) continue;
+						+GameOption(i, 'view-all')
+					div.dialog-opt#view-all-injpick-panel
+						button#view-all-injeong-pick(style='font-size: 11px;')= L('pickInjeong')
+					div.dialog-opt#view-all-quizpick-panel
+						button#view-all-quiz-pick(style='font-size: 11px;')= L('pickQuizTopic')
+			div.dialog-bar#view-all-flat-panel(style='height: auto;')
+				h4(style='height: 45px;')= L('misc')
+				div(style='float: left; width: 300px;')
+					- for(var i in locals.OPTIONS)
+						+GameOption(i, 'view-all-flat')
+					div.dialog-opt#view-all-flat-injpick-panel
+						button#view-all-flat-injeong-pick(style='font-size: 11px;')= L('pickInjeong')
+					div.dialog-opt#view-all-flat-quizpick-panel
+						button#view-all-flat-quiz-pick(style='font-size: 11px;')= L('pickQuizTopic')
+		div.dialog-bar.tail-button
+			button#view-all-ok= L('OK')
 	+Dialog('PracticeDiag', 300, 205)
 		div.dialog-bar
 			h4= L('selectLevel')

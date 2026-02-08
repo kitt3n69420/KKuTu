@@ -56,6 +56,7 @@ exports.roundReady = function () {
 	clearTimeout(my.game.turnTimer);
 	my.game.round++;
 	my.game.roundTime = my.time * 1000;
+	my.resetChain();
 	if (my.game.round <= my.round) {
 		if (my.opts.triple) {
 			my.game.theme = [];
@@ -66,7 +67,6 @@ exports.roundReady = function () {
 		} else {
 			my.game.theme = my.opts.injpick[Math.floor(Math.random() * ijl)];
 		}
-		my.game.chain = [];
 		if (my.opts.mission) my.game.mission = getMission(my.rule.lang, my.opts);
 		my.byMaster('roundReady', {
 			round: my.game.round,
@@ -127,6 +127,7 @@ exports.turnEnd = function () {
 	if (my.opts.survival && target && target.game && target.game.alive) {
 		target.game.alive = false;
 		target.game.score = 0;
+		my.logChainEvent(target, 'ko');
 
 		var status = Const.checkSurvivalStatus(my, DIC);
 
@@ -235,6 +236,7 @@ exports.turnEnd = function () {
 			}
 		}
 
+		my.logChainEvent(target, 'timeout');
 		my.game._rrt = setTimeout(my.roundReady, 3000);
 	});
 	clearTimeout(my.game.robotTimer);
@@ -308,7 +310,7 @@ exports.submit = function (client, text, data) {
 				score = baseScoreWithoutMission + missionBonus + straightBonus;
 
 				if (isReturn) score = 0;
-				my.game.chain.push(text);
+				my.logChainWord(text, client);
 				my.game.roundTime -= t;
 
 				// ========== 서바이벌 모드: 득점 = 다음 사람 데미지 ==========
