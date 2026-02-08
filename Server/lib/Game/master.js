@@ -327,7 +327,7 @@ Cluster.on("message", function (worker, msg) {
     case "user-publish":
       if ((temp = DIC[msg.data.id])) {
         // 허용된 속성만 화이트리스트 방식으로 병합
-        const ALLOWED_USER_PROPS = ['place', 'ready', 'team', 'form', 'data', 'profile'];
+        const ALLOWED_USER_PROPS = ['game', 'place', 'data', 'profile', 'money', 'equip', 'exordial'];
         for (var i in msg.data) {
           if (!msg.data.hasOwnProperty(i)) continue;
           // Prototype Pollution 방어
