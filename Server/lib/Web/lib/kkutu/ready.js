@@ -233,6 +233,9 @@ $(document).ready(function () {
 		}
 		if (!$data.opts) $data.opts = {};
 
+		// 간단 방 보기 기본값 설정
+		if ($data.opts.srv === undefined) $data.opts.srv = true;
+
 		// localStorage에서 볼륨 설정 먼저 로드 (사운드 로드 전에 적용)
 		var savedSettings = loadVolumeSettings();
 		if (savedSettings.bgmVolume !== null) {
