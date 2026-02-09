@@ -1141,34 +1141,34 @@ $(document).ready(function () {
 		updateSurvivalUI(survivalChecked);
 	});
 	// 나락-무적 상호배타: 나락 체크시 무적 해제
-	$("#room-narak, #room-flat-narak").on('change', function () {
+	$("#room-narak, #room-flat-narak, #view-all-narak, #view-all-flat-narak").on('change', function () {
 		if ($(this).is(':checked')) {
-			$("#room-invincible, #room-flat-invincible").prop('checked', false);
+			$("#room-invincible, #room-flat-invincible, #view-all-invincible, #view-all-flat-invincible").prop('checked', false);
 		}
 	});
 	// 무적(갓모드) 체크시 나락 해제
-	$("#room-invincible, #room-flat-invincible").on('change', function () {
+	$("#room-invincible, #room-flat-invincible, #view-all-invincible, #view-all-flat-invincible").on('change', function () {
 		if ($(this).is(':checked')) {
-			$("#room-narak, #room-flat-narak").prop('checked', false);
+			$("#room-narak, #room-flat-narak, #view-all-narak, #view-all-flat-narak").prop('checked', false);
 		}
 	});
 	// 장문금지-단문금지 상호배타: 장문금지 체크시 단문금지 해제
-	$("#room-nolong, #room-flat-nolong").on('change', function () {
+	$("#room-nolong, #room-flat-nolong, #view-all-nolong, #view-all-flat-nolong").on('change', function () {
 		if ($(this).is(':checked')) {
-			$("#room-noshort, #room-flat-noshort").prop('checked', false);
+			$("#room-noshort, #room-flat-noshort, #view-all-noshort, #view-all-flat-noshort").prop('checked', false);
 		}
 	});
 	// 단문금지 체크시 장문금지 해제, 2글자금지 해제
-	$("#room-noshort, #room-flat-noshort").on('change', function () {
+	$("#room-noshort, #room-flat-noshort, #view-all-noshort, #view-all-flat-noshort").on('change', function () {
 		if ($(this).is(':checked')) {
-			$("#room-nolong, #room-flat-nolong").prop('checked', false);
-			$("#room-no2, #room-flat-no2").prop('checked', false);
+			$("#room-nolong, #room-flat-nolong, #view-all-nolong, #view-all-flat-nolong").prop('checked', false);
+			$("#room-no2, #room-flat-no2, #view-all-no2, #view-all-flat-no2").prop('checked', false);
 		}
 	});
 	// 2글자금지 체크시 단문금지 해제
-	$("#room-no2, #room-flat-no2").on('change', function () {
+	$("#room-no2, #room-flat-no2, #view-all-no2, #view-all-flat-no2").on('change', function () {
 		if ($(this).is(':checked')) {
-			$("#room-noshort, #room-flat-noshort").prop('checked', false);
+			$("#room-noshort, #room-flat-noshort, #view-all-noshort, #view-all-flat-noshort").prop('checked', false);
 		}
 	});
 	// 매너 그룹 상호배타: man, gen, shi, etq 중 하나만 선택 가능
@@ -2083,141 +2083,186 @@ $(document).ready(function () {
 
 	// 상호 배제 규칙 적용
 	// 1. Unknown Word vs (Injeong, Strict, Loanword)
-	$("#room-unknown").on('change', function () {
+	$("#room-unknown, #view-all-unknown, #view-all-flat-unknown").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-injeong, #room-strict, #room-loanword").prop('checked', false);
 			$("#room-flat-injeong, #room-flat-strict, #room-flat-loanword").prop('checked', false);
 			$("#room-simple-injeong, #room-simple-strict, #room-simple-loanword").prop('checked', false);
+			$("#view-all-injeong, #view-all-strict, #view-all-loanword").prop('checked', false);
+			$("#view-all-flat-injeong, #view-all-flat-strict, #view-all-flat-loanword").prop('checked', false);
 		}
 	});
-	$("#room-injeong, #room-strict, #room-loanword").on('change', function () {
+	$("#room-injeong, #room-strict, #room-loanword, #view-all-injeong, #view-all-strict, #view-all-loanword, #view-all-flat-injeong, #view-all-flat-strict, #view-all-flat-loanword").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-unknown").prop('checked', false);
 			$("#room-flat-unknown").prop('checked', false);
 			$("#room-simple-unknown").prop('checked', false);
+			$("#view-all-unknown, #view-all-flat-unknown").prop('checked', false);
 		}
 	});
 
 	// 2. 가온잇기 vs 첫말잇기 vs 랜덤잇기
-	$("#room-middle").on('change', function () {
+	$("#room-middle, #view-all-middle, #view-all-flat-middle").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-first, #room-random").prop('checked', false).trigger('change');
 			$("#room-flat-first, #room-flat-random").prop('checked', false);
 			$("#room-simple-first, #room-simple-random").prop('checked', false);
+			$("#view-all-first, #view-all-random").prop('checked', false);
+			$("#view-all-flat-first, #view-all-flat-random").prop('checked', false);
 		}
 	});
-	$("#room-first").on('change', function () {
+	$("#room-first, #view-all-first, #view-all-flat-first").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-middle, #room-random").prop('checked', false).trigger('change');
 			$("#room-flat-middle, #room-flat-random").prop('checked', false);
 			$("#room-simple-middle, #room-simple-random").prop('checked', false);
+			$("#view-all-middle, #view-all-random").prop('checked', false);
+			$("#view-all-flat-middle, #view-all-flat-random").prop('checked', false);
 		}
 	});
 
 	// 3. 랜덤잇기 vs (세컨드, 부메랑)
-	$("#room-random").on('change', function () {
+	$("#room-random, #view-all-random, #view-all-flat-random").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-middle, #room-first").prop('checked', false);
 			$("#room-flat-middle, #room-flat-first").prop('checked', false);
 			$("#room-simple-middle, #room-simple-first").prop('checked', false);
+			$("#view-all-middle, #view-all-first").prop('checked', false);
+			$("#view-all-flat-middle, #view-all-flat-first").prop('checked', false);
 			$("#room-second, #room-speedtoss").prop('checked', false).prop('disabled', true);
 			$("#room-flat-second, #room-flat-speedtoss").prop('checked', false).prop('disabled', true);
 			$("#room-simple-second, #room-simple-speedtoss").prop('checked', false).prop('disabled', true);
+			$("#view-all-second, #view-all-speedtoss").prop('checked', false).prop('disabled', true);
+			$("#view-all-flat-second, #view-all-flat-speedtoss").prop('checked', false).prop('disabled', true);
 		} else {
 			$("#room-second, #room-speedtoss").prop('disabled', false);
 			$("#room-flat-second, #room-flat-speedtoss").prop('disabled', false);
 			$("#room-simple-second, #room-simple-speedtoss").prop('disabled', false);
+			$("#view-all-second, #view-all-speedtoss").prop('disabled', false);
+			$("#view-all-flat-second, #view-all-flat-speedtoss").prop('disabled', false);
 		}
 	});
 
-	$("#room-second, #room-speedtoss").on('change', function () {
-		if ($("#room-second").is(':checked') || $("#room-speedtoss").is(':checked')) {
+	$("#room-second, #room-speedtoss, #view-all-second, #view-all-speedtoss, #view-all-flat-second, #view-all-flat-speedtoss").on('change', function () {
+		if ($("#room-second").is(':checked') || $("#room-speedtoss").is(':checked') ||
+			$("#view-all-second").is(':checked') || $("#view-all-speedtoss").is(':checked') ||
+			$("#view-all-flat-second").is(':checked') || $("#view-all-flat-speedtoss").is(':checked')) {
 			$("#room-random").prop('checked', false).prop('disabled', true);
 			$("#room-flat-random").prop('checked', false).prop('disabled', true);
 			$("#room-simple-random").prop('checked', false).prop('disabled', true);
+			$("#view-all-random").prop('checked', false).prop('disabled', true);
+			$("#view-all-flat-random").prop('checked', false).prop('disabled', true);
 		} else {
 			$("#room-random").prop('disabled', false);
 			$("#room-flat-random").prop('disabled', false);
 			$("#room-simple-random").prop('disabled', false);
+			$("#view-all-random").prop('disabled', false);
+			$("#view-all-flat-random").prop('disabled', false);
 		}
 	});
 
-	// 4. 글자수 제한 (3-2, 2-2, 4-4, 4-3)
 	// 4. 글자수 제한 (3-2, 2-2, 4-4, 4-3, 3, 4, 5, 6, 7)
-	$("#room-sami, #room-twotwo, #room-fourfour, #room-fourthree, #room-length3, #room-length4, #room-length5, #room-length6, #room-length7").on('change', function () {
+	var lengthNames = ["sami", "twotwo", "fourfour", "fourthree", "length3", "length4", "length5", "length6", "length7"];
+	var lengthRoomSel = lengthNames.map(function (n) { return "#room-" + n; }).join(", ");
+	var lengthViewAllSel = lengthNames.map(function (n) { return "#view-all-" + n; }).join(", ");
+	var lengthViewAllFlatSel = lengthNames.map(function (n) { return "#view-all-flat-" + n; }).join(", ");
+	$(lengthRoomSel + ", " + lengthViewAllSel + ", " + lengthViewAllFlatSel).on('change', function () {
 		if ($(this).is(':checked')) {
-			var ids = ["room-sami", "room-twotwo", "room-fourfour", "room-fourthree", "room-length3", "room-length4", "room-length5", "room-length6", "room-length7"];
-			var flatIds = ["room-flat-sami", "room-flat-twotwo", "room-flat-fourfour", "room-flat-fourthree", "room-flat-length3", "room-flat-length4", "room-flat-length5", "room-flat-length6", "room-flat-length7"];
-			var simpleIds = ["room-simple-sami", "room-simple-twotwo", "room-simple-fourfour", "room-simple-fourthree", "room-simple-length3", "room-simple-length4", "room-simple-length5", "room-simple-length6", "room-simple-length7"];
+			var currentId = $(this).attr('id');
+			// room-* 그룹
+			var ids = lengthNames.map(function (n) { return "room-" + n; });
+			var flatIds = lengthNames.map(function (n) { return "room-flat-" + n; });
+			var simpleIds = lengthNames.map(function (n) { return "room-simple-" + n; });
+			// view-all-* 그룹
+			var vaIds = lengthNames.map(function (n) { return "view-all-" + n; });
+			var vaFlatIds = lengthNames.map(function (n) { return "view-all-flat-" + n; });
 
 			// Uncheck other options in same group (Category View)
 			$("#" + ids.join(", #")).not(this).prop('checked', false);
 
-			// Get current ID
-			var currentId = $(this).attr('id');
-			var currentFlatId = currentId.replace('room-', 'room-flat-');
-			var currentSimpleId = currentId.replace('room-', 'room-simple-');
+			// Get current key
+			var currentKey = currentId.replace(/^(room-|view-all-flat-|view-all-)/, '');
 
 			// Uncheck others in Flat View
 			for (var i = 0; i < flatIds.length; i++) {
-				if (flatIds[i] !== currentFlatId) {
+				if (flatIds[i] !== "room-flat-" + currentKey) {
 					$("#" + flatIds[i]).prop('checked', false);
 				}
 			}
 			// Uncheck others in Simple View
 			for (var i = 0; i < simpleIds.length; i++) {
-				if (simpleIds[i] !== currentSimpleId) {
+				if (simpleIds[i] !== "room-simple-" + currentKey) {
 					$("#" + simpleIds[i]).prop('checked', false);
+				}
+			}
+			// Uncheck others in View All (Category)
+			for (var i = 0; i < vaIds.length; i++) {
+				if (vaIds[i] !== "view-all-" + currentKey) {
+					$("#" + vaIds[i]).prop('checked', false);
+				}
+			}
+			// Uncheck others in View All (Flat)
+			for (var i = 0; i < vaFlatIds.length; i++) {
+				if (vaFlatIds[i] !== "view-all-flat-" + currentKey) {
+					$("#" + vaFlatIds[i]).prop('checked', false);
 				}
 			}
 		}
 	});
 
 	// 5. 속담 vs 장문
-	$("#room-proverb").on('change', function () {
+	$("#room-proverb, #view-all-proverb, #view-all-flat-proverb").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-long").prop('checked', false);
 			$("#room-flat-long").prop('checked', false);
 			$("#room-simple-long").prop('checked', false);
+			$("#view-all-long, #view-all-flat-long").prop('checked', false);
 		}
 	});
-	$("#room-long").on('change', function () {
+	$("#room-long, #view-all-long, #view-all-flat-long").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-proverb").prop('checked', false);
 			$("#room-flat-proverb").prop('checked', false);
 			$("#room-simple-proverb").prop('checked', false);
+			$("#view-all-proverb, #view-all-flat-proverb").prop('checked', false);
 		}
 	});
 
 	// 6. 미션이 꺼져있으면 이지미션, 랜덤미션, 미션플러스 비활성화
-	$("#room-mission").on('change', function () {
+	$("#room-mission, #view-all-mission, #view-all-flat-mission").on('change', function () {
 		var missionEnabled = $(this).is(':checked');
 		if (!missionEnabled) {
 			// 미션이 꺼지면 관련 옵션들도 끄고 비활성화
 			$("#room-easymission, #room-rndmission, #room-missionplus").prop('checked', false).prop('disabled', true);
 			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('checked', false).prop('disabled', true);
 			$("#room-simple-easymission, #room-simple-rndmission, #room-simple-missionplus").prop('checked', false).prop('disabled', true);
+			$("#view-all-easymission, #view-all-rndmission, #view-all-missionplus").prop('checked', false).prop('disabled', true);
+			$("#view-all-flat-easymission, #view-all-flat-rndmission, #view-all-flat-missionplus").prop('checked', false).prop('disabled', true);
 		} else {
 			// 미션이 켜지면 관련 옵션들 활성화
 			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', false);
 			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', false);
 			$("#room-simple-easymission, #room-simple-rndmission, #room-simple-missionplus").prop('disabled', false);
+			$("#view-all-easymission, #view-all-rndmission, #view-all-missionplus").prop('disabled', false);
+			$("#view-all-flat-easymission, #view-all-flat-rndmission, #view-all-flat-missionplus").prop('disabled', false);
 		}
 	});
 
 	// 7. 자유두음 vs 두음 없음 (상호 배제)
-	$("#room-freedueum").on('change', function () {
+	$("#room-freedueum, #view-all-freedueum, #view-all-flat-freedueum").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-nodueum").prop('checked', false);
 			$("#room-flat-nodueum").prop('checked', false);
 			$("#room-simple-nodueum").prop('checked', false);
+			$("#view-all-nodueum, #view-all-flat-nodueum").prop('checked', false);
 		}
 	});
-	$("#room-nodueum").on('change', function () {
+	$("#room-nodueum, #view-all-nodueum, #view-all-flat-nodueum").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-freedueum").prop('checked', false);
 			$("#room-flat-freedueum").prop('checked', false);
 			$("#room-simple-freedueum").prop('checked', false);
+			$("#view-all-freedueum, #view-all-flat-freedueum").prop('checked', false);
 		}
 	});
 
