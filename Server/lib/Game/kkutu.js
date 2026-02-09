@@ -2379,6 +2379,7 @@ exports.Room = function (room, channel) {
 				var survivalHP = my.opts.surHP || 500;
 				o.game.score = survivalHP;
 				o.game.alive = true;  // 생존 상태
+				o.game.survivalSubmitted = false;  // 단어 입력 여부 추적
 			} else {
 				o.game.score = 0;
 			}
@@ -2604,7 +2605,10 @@ exports.Room = function (room, channel) {
 			o = DIC[res[i].id];
 			if (!o) continue; // Should not happen for non-robots
 			var myHumanRank = userRankMap[o.id];
-			if (my.opts && my.opts.apple) {
+			// 서바이벌 모드: 한 번도 단어를 입력하지 않은 플레이어는 0점 처리 (경험치/보상 없음)
+			if (my.opts && my.opts.survival && !o.game.survivalSubmitted) {
+				rw = { score: 0, money: 0 };
+			} else if (my.opts && my.opts.apple) {
 				rw = { score: 0, money: 0 };
 			} else {
 				rw = getRewards(my.mode, o.game.score / res[i].dim, o.game.bonus, myHumanRank, humanCount, sumScore);

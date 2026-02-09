@@ -270,6 +270,7 @@ exports.submit = function (client, text, data) {
 
 					// ========== 서바이벌 모드: 득점 = 다음 사람 데미지 ==========
 					if (my.opts.survival) {
+						client.game.survivalSubmitted = true;
 						var damage = score;
 						var survivalDamageInfo = Const.applySurvivalDamage(my, DIC, damage, my.game.turn);
 						var status = Const.checkSurvivalStatus(my, DIC);

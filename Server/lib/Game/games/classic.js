@@ -1192,6 +1192,7 @@ exports.submit = function (client, text) {
 					function finalizeTurn(isHanbang) {
 						// ========== 서바이벌 모드: 득점 = 다음 사람 데미지 ==========
 						if (my.opts.survival) {
+							client.game.survivalSubmitted = true;
 							var damage = score;
 							var survivalDamageInfo = Const.applySurvivalDamage(my, DIC, damage, my.game.turn);
 
@@ -3373,10 +3374,26 @@ function getAuto(char, subc, type, limit, sort) {
 			}
 			break;
 		case 'KSH':
-			adv = `^(${adc}).`;
+			if (my.opts.noshort) {
+				adv = `^(${adc}).{8,}`;  // 9글자 이상
+			} else if (my.opts.nolong) {
+				adv = `^(${adc}).{1,7}`;  // 2~8글자
+			} else if (my.opts.no2) {
+				adv = `^(${adc}).{2,}`;  // 3글자 이상
+			} else {
+				adv = `^(${adc}).`;
+			}
 			break;
 		case 'ESH':
-			adv = `^(${adc})...`;
+			if (my.opts.noshort) {
+				adv = `^(${adc}).{8,}`;  // 9글자 이상
+			} else if (my.opts.nolong) {
+				adv = `^(${adc}).{1,7}`;  // 2~8글자
+			} else if (my.opts.no2) {
+				adv = `^(${adc}).{2,}`;  // 3글자 이상
+			} else {
+				adv = `^(${adc})...`;
+			}
 			break;
 		case 'KKT':
 			adv = `^(${adc}).{${my.game.wordLength - char.length}}$`;
@@ -3386,6 +3403,8 @@ function getAuto(char, subc, type, limit, sort) {
 				adv = `.{8,}(${adc})$`; // 9글자 이상
 			} else if (my.opts.nolong) {
 				adv = `.{1,7}(${adc})$`; // 2~8글자
+			} else if (my.opts.no2) {
+				adv = `.{2,}(${adc})$`; // 3글자 이상
 			} else {
 				adv = `.(${adc})$`;
 			}
@@ -3394,7 +3413,9 @@ function getAuto(char, subc, type, limit, sort) {
 			if (my.opts.noshort) {
 				adv = `.{8,}(${adc})$`; // 9글자 이상
 			} else if (my.opts.nolong) {
-				adv = `.{3,7}(${adc})$`; // 4~8글자 (EAP는 기본 4글자 이상)
+				adv = `.{1,7}(${adc})$`; // 2~8글자
+			} else if (my.opts.no2) {
+				adv = `.{2,}(${adc})$`; // 3글자 이상
 			} else {
 				adv = `.(${adc})$`;
 			}
