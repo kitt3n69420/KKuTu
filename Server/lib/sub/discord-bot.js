@@ -15,6 +15,7 @@ const CHANNEL_ID = '1469632601089245408';
 const BOT_PERMISSIONS = '9193377795136';
 const MAX_RESULTS = 20;
 const MAX_REGEX_LENGTH = 100;
+const MAX_RANDOM_COUNT = 50;
 
 // State
 let client = null;
@@ -197,6 +198,13 @@ exports.init = async function (token, db, dic, options = {}) {
         });
 
         client.on('interactionCreate', async (interaction) => {
+            if (interaction.isAutocomplete()) {
+                await safeExecute(async () => {
+                    await handleAutocomplete(interaction);
+                }, `Autocomplete: ${interaction.commandName}`);
+                return;
+            }
+
             if (!interaction.isChatInputCommand()) return;
             if (interaction.guildId !== GUILD_ID) return;
 
@@ -316,6 +324,94 @@ async function registerCommands(token) {
                         })
                         .setRequired(false)
                         .setMaxLength(50)
+                ),
+
+            new SlashCommandBuilder()
+                .setName('mission')
+                .setNameLocalizations({ ko: '미션' })
+                .setDescription('Find words with the most occurrences of a mission character')
+                .setDescriptionLocalizations({
+                    ko: '미션 글자가 가장 많이 포함된 단어를 찾아요.'
+                })
+                .addStringOption(opt =>
+                    opt.setName('mission_char')
+                        .setNameLocalizations({ ko: '미션글자' })
+                        .setDescription('Mission character (single character)')
+                        .setDescriptionLocalizations({
+                            ko: '미션 글자 (한 글자)'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(1)
+                )
+                .addStringOption(opt =>
+                    opt.setName('topic')
+                        .setNameLocalizations({ ko: '주제' })
+                        .setDescription('Filter by topic')
+                        .setDescriptionLocalizations({
+                            ko: '주제 필터'
+                        })
+                        .setRequired(false)
+                        .setAutocomplete(true)
+                )
+                .addStringOption(opt =>
+                    opt.setName('target_char')
+                        .setNameLocalizations({ ko: '타겟글자' })
+                        .setDescription('Filter by starting/ending character')
+                        .setDescriptionLocalizations({
+                            ko: '시작/끝 글자 필터'
+                        })
+                        .setRequired(false)
+                        .setMaxLength(1)
+                )
+                .addStringOption(opt =>
+                    opt.setName('position')
+                        .setNameLocalizations({ ko: '위치' })
+                        .setDescription('Position of target character (default: start)')
+                        .setDescriptionLocalizations({
+                            ko: '타겟 글자의 위치 (기본값: 시작)'
+                        })
+                        .setRequired(false)
+                        .addChoices(
+                            { name: 'Start', name_localizations: { ko: '시작' }, value: 'start' },
+                            { name: 'End', name_localizations: { ko: '끝' }, value: 'end' }
+                        )
+                ),
+
+            new SlashCommandBuilder()
+                .setName('topic')
+                .setNameLocalizations({ ko: '주제' })
+                .setDescription('Find longest words belonging to a topic')
+                .setDescriptionLocalizations({
+                    ko: '특정 주제에 속하는 가장 긴 단어를 찾아요.'
+                })
+                .addStringOption(opt =>
+                    opt.setName('topic')
+                        .setNameLocalizations({ ko: '주제' })
+                        .setDescription('Topic to search')
+                        .setDescriptionLocalizations({
+                            ko: '검색할 주제'
+                        })
+                        .setRequired(true)
+                        .setAutocomplete(true)
+                ),
+
+            new SlashCommandBuilder()
+                .setName('random')
+                .setNameLocalizations({ ko: '랜덤' })
+                .setDescription('Get random words from the dictionary')
+                .setDescriptionLocalizations({
+                    ko: '사전에서 랜덤 단어를 뽑아요.'
+                })
+                .addIntegerOption(opt =>
+                    opt.setName('count')
+                        .setNameLocalizations({ ko: '개수' })
+                        .setDescription('Number of words (1-50, default: 1)')
+                        .setDescriptionLocalizations({
+                            ko: '단어 수 (1~50, 기본값: 1)'
+                        })
+                        .setRequired(false)
+                        .setMinValue(1)
+                        .setMaxValue(MAX_RANDOM_COUNT)
                 )
         ];
 
@@ -331,6 +427,24 @@ async function registerCommands(token) {
         JLog.error(`[Discord Bot] Failed to register commands: ${err.message}`);
         console.error('[Discord Bot] Command registration error:', err);
     }
+}
+
+/**
+ * Handle autocomplete interactions for topic selection
+ */
+async function handleAutocomplete(interaction) {
+    const focused = interaction.options.getFocused().toLowerCase();
+
+    const choices = Const.KO_IJP.map(code => ({
+        name: `${getIjpName(code)} (${code})`,
+        value: code
+    }));
+
+    const filtered = focused
+        ? choices.filter(c => c.name.toLowerCase().includes(focused) || c.value.toLowerCase().includes(focused))
+        : choices;
+
+    await interaction.respond(filtered.slice(0, 25));
 }
 
 /**
@@ -358,6 +472,15 @@ async function handleCommand(interaction) {
                 break;
             case 'record':
                 await handleRecord(interaction);
+                break;
+            case 'mission':
+                await handleMission(interaction);
+                break;
+            case 'topic':
+                await handleTopic(interaction);
+                break;
+            case 'random':
+                await handleRandom(interaction);
                 break;
             default:
                 await interaction.reply({ content: '알 수 없는 명령어입니다. 어떻게 하신 거죠?', ephemeral: true });
@@ -436,6 +559,21 @@ async function handleHelp(interaction) {
             {
                 name: '📊 /record (전적) `[유저]`',
                 value: '유저 전적 조회\n비우면 자신의 전적 (오프라인 가능)\n유저 지정 시 온라인 유저만 조회 가능\n예: `/record`, `/record 별명`',
+                inline: false
+            },
+            {
+                name: '🎯 /mission (미션) `<미션글자>` `[주제]` `[타겟글자]` `[위치]`',
+                value: '미션 글자가 가장 많이 들어간 단어 검색\n예: `/mission 가`, `/mission 가 LOL 나 시작`',
+                inline: false
+            },
+            {
+                name: '📂 /topic (주제) `<주제>`',
+                value: '특정 주제의 가장 긴 단어 검색\n예: `/topic LOL`, `/topic 경제`',
+                inline: false
+            },
+            {
+                name: '🎲 /random (랜덤) `[개수]`',
+                value: '랜덤 단어 뽑기 (최대 50개)\n예: `/random`, `/random 10`',
                 inline: false
             }
         )
@@ -845,6 +983,205 @@ async function handleRecord(interaction) {
     } catch (err) {
         JLog.error(`[Discord Bot] Record error: ${err.message}`);
         await interaction.editReply({ content: `❌ 전적 조회 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
+/**
+ * /mission command - Find words with most occurrences of a mission character
+ */
+async function handleMission(interaction) {
+    const missionChar = interaction.options.getString('mission_char');
+    const topic = interaction.options.getString('topic');
+    const targetChar = interaction.options.getString('target_char');
+    const position = interaction.options.getString('position') || 'start';
+
+    if (!missionChar || missionChar.length !== 1) {
+        await interaction.reply({ content: '❌ 미션 글자는 1자여야 합니다.', ephemeral: true });
+        return;
+    }
+
+    if (targetChar && targetChar.length !== 1) {
+        await interaction.reply({ content: '❌ 타겟 글자는 1자여야 합니다.', ephemeral: true });
+        return;
+    }
+
+    if (topic && !Const.KO_IJP.includes(topic)) {
+        await interaction.reply({ content: '❌ 유효하지 않은 주제입니다. 자동완성 목록에서 선택해주세요.', ephemeral: true });
+        return;
+    }
+
+    await interaction.deferReply();
+
+    try {
+        if (!DB || !DB.kkutu || !DB.kkutu['ko']) {
+            await interaction.editReply({ content: '❌ 데이터베이스가 준비되지 않았습니다.' });
+            return;
+        }
+
+        const safeMissionChar = missionChar.replace(/'/g, "''");
+        const conditions = ["_id NOT LIKE '% %'"];
+
+        if (targetChar) {
+            const safeTargetChar = targetChar.replace(/'/g, "''");
+            if (position === 'end') {
+                conditions.push(`_id LIKE '%${safeTargetChar}'`);
+            } else {
+                conditions.push(`_id LIKE '${safeTargetChar}%'`);
+            }
+        }
+
+        if (topic) {
+            const safeTopic = topic.replace(/'/g, "''");
+            conditions.push(`theme ~ '(^|,)${safeTopic}($|,)'`);
+        }
+
+        const whereClause = conditions.join(' AND ');
+        const sql = `SELECT _id FROM kkutu_ko WHERE ${whereClause} ORDER BY (LENGTH(_id) - LENGTH(REPLACE(_id, '${safeMissionChar}', ''))) DESC, LENGTH(_id) DESC LIMIT ${MAX_RESULTS}`;
+
+        const results = await new Promise((resolve, reject) => {
+            DB.kkutu['ko'].direct(sql, function (err, res) {
+                if (err) return reject(err);
+                resolve(res && res.rows ? res.rows : []);
+            });
+        });
+
+        if (results.length === 0) {
+            const descParts = [`미션 "${missionChar}"`];
+            if (targetChar) descParts.push(`"${targetChar}"(으)로 ${position === 'end' ? '끝나는' : '시작하는'}`);
+            if (topic) descParts.push(`주제: ${getIjpName(topic)}`);
+            await interaction.editReply({ content: `🔍 ${descParts.join(' / ')} 조건에 맞는 단어가 없습니다.` });
+            return;
+        }
+
+        const escapedChar = missionChar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const missionRegex = new RegExp(escapedChar, 'g');
+        const resultLines = results.map((w, i) => {
+            const count = (w._id.match(missionRegex) || []).length;
+            return `${i + 1}. **${w._id}** (${w._id.length}자, 미션 ${count}개)`;
+        });
+
+        const titleParts = [];
+        if (targetChar) titleParts.push(`${position === 'end' ? '끝' : '시작'} 글자: ${targetChar}`);
+        if (topic) titleParts.push(`주제: ${getIjpName(topic)}`);
+
+        const embed = new EmbedBuilder()
+            .setTitle(`🎯 미션 "${missionChar}" 검색 결과`)
+            .setColor(0xE91E63)
+            .setDescription(
+                (titleParts.length > 0 ? titleParts.join(' | ') + '\n\n' : '') +
+                resultLines.join('\n')
+            )
+            .setFooter({ text: `총 ${results.length}개 결과` })
+            .setTimestamp();
+
+        await interaction.editReply({ embeds: [embed] });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Mission search error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 검색 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
+/**
+ * /topic command - Find longest words belonging to a topic
+ */
+async function handleTopic(interaction) {
+    const topic = interaction.options.getString('topic');
+
+    if (!Const.KO_IJP.includes(topic)) {
+        await interaction.reply({ content: '❌ 유효하지 않은 주제입니다. 자동완성 목록에서 선택해주세요.', ephemeral: true });
+        return;
+    }
+
+    await interaction.deferReply();
+
+    try {
+        if (!DB || !DB.kkutu || !DB.kkutu['ko']) {
+            await interaction.editReply({ content: '❌ 데이터베이스가 준비되지 않았습니다.' });
+            return;
+        }
+
+        const safeTopic = topic.replace(/'/g, "''");
+        const sql = `SELECT _id FROM kkutu_ko WHERE theme ~ '(^|,)${safeTopic}($|,)' AND _id NOT LIKE '% %' ORDER BY LENGTH(_id) DESC LIMIT ${MAX_RESULTS}`;
+
+        const results = await new Promise((resolve, reject) => {
+            DB.kkutu['ko'].direct(sql, function (err, res) {
+                if (err) return reject(err);
+                resolve(res && res.rows ? res.rows : []);
+            });
+        });
+
+        const topicName = getIjpName(topic);
+
+        if (results.length === 0) {
+            await interaction.editReply({ content: `🔍 주제 "${topicName}" (${topic})에 해당하는 단어가 없습니다.` });
+            return;
+        }
+
+        const resultLines = results.map((w, i) =>
+            `${i + 1}. **${w._id}** (${w._id.length}자)`
+        );
+
+        const embed = new EmbedBuilder()
+            .setTitle(`📂 주제: ${topicName} (${topic})`)
+            .setColor(0x2ECC71)
+            .setDescription(resultLines.join('\n'))
+            .setFooter({ text: `총 ${results.length}개 결과 (길이순)` })
+            .setTimestamp();
+
+        await interaction.editReply({ embeds: [embed] });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Topic search error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 검색 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
+/**
+ * /random command - Get random words from dictionary
+ */
+async function handleRandom(interaction) {
+    const count = interaction.options.getInteger('count') || 1;
+    const safeCount = Math.max(1, Math.min(count, MAX_RANDOM_COUNT));
+
+    await interaction.deferReply();
+
+    try {
+        if (!DB || !DB.kkutu || !DB.kkutu['ko']) {
+            await interaction.editReply({ content: '❌ 데이터베이스가 준비되지 않았습니다.' });
+            return;
+        }
+
+        const sql = `SELECT _id, mean FROM kkutu_ko WHERE _id NOT LIKE '% %' ORDER BY RANDOM() LIMIT ${safeCount}`;
+
+        const results = await new Promise((resolve, reject) => {
+            DB.kkutu['ko'].direct(sql, function (err, res) {
+                if (err) return reject(err);
+                resolve(res && res.rows ? res.rows : []);
+            });
+        });
+
+        if (results.length === 0) {
+            await interaction.editReply({ content: '🔍 단어를 찾을 수 없습니다.' });
+            return;
+        }
+
+        const resultLines = results.map((w, i) => {
+            const meaning = parseMeaning(w.mean);
+            const shortMeaning = meaning
+                ? meaning.split('\n')[0].substring(0, 80)
+                : '*뜻 없음*';
+            return `${i + 1}. **${w._id}** - ${shortMeaning}`;
+        });
+
+        const embed = new EmbedBuilder()
+            .setTitle(`🎲 랜덤 단어 ${results.length}개`)
+            .setColor(0xF39C12)
+            .setDescription(resultLines.join('\n'))
+            .setTimestamp();
+
+        await interaction.editReply({ embeds: [embed] });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Random search error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 검색 중 오류가 발생했습니다: ${err.message}` });
     }
 }
 

@@ -586,6 +586,7 @@
 		"explInjPick": "Select topics to use in the game.",
 		"pickQuizTopic": "Select Quiz Topic",
 		"explQuizPick": "Select topics for the quiz.",
+		"pickTopicTitle": "Selected Topics",
 		"injpickAll": "Select All",
 		"injpickNo": "Deselect All",
 		"cwHorz": "Horz ",

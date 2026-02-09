@@ -1315,8 +1315,9 @@ function updateRoomList(refresh) {
 	}
 }
 function roomListBar(o) {
-	var $R, $ch;
+	var $R, $ch, $rm;
 	var opts = getOptions(o.mode, o.opts, false, mobile);
+	var rule = RULE[MODE[o.mode]];
 	var isSurvival = o.opts && o.opts.survival;
 	var roundOrHP = isSurvival ? ((o.opts.surHP || 500) + " HP") : (L['rounds'] + " " + o.round);
 
@@ -1326,7 +1327,7 @@ function roomListBar(o) {
 		.append($("<div>").addClass("rooms-title ellipse").text(badWords(o.title)))
 		.append($("<div>").addClass("rooms-limit").html(o.players.length + " / " + o.limit))
 		.append($("<div>").width(270)
-			.append($("<div>").addClass("rooms-mode").html(opts.join(" / ").toString()))
+			.append($rm = $("<div>").addClass("rooms-mode").html(opts.join(" / ").toString()))
 			.append($("<div>").addClass("rooms-round").html(roundOrHP))
 			.append($("<div>").addClass("rooms-time").html(o.time + L['SECOND']))
 		)
@@ -1335,6 +1336,31 @@ function roomListBar(o) {
 			if (e.target == $ch.get(0)) return;
 			tryJoin($(e.currentTarget).attr('id').slice(5));
 		});
+
+	var pickTopics = getPickTopicExpl(rule, o.opts);
+	if (pickTopics.length) {
+		var tooltipWidth = mobile ? 250 : 300;
+		$rm.append($("<div>").addClass("expl pick-topic-expl").css({ 'width': tooltipWidth, 'white-space': "normal", 'text-align': "left" })
+			.html("<h5 style='color: #BBBBBB;'>" + L['pickTopicTitle'] + "</h5>" + pickTopics.join(", "))
+		);
+		if (mobile) {
+			$rm.on('touchstart', function (e) {
+				var $e = $(this).children(".expl");
+				if ($e.hasClass("expl-active")) {
+					$e.removeClass("expl-active");
+				} else {
+					$(".expl-active").removeClass("expl-active");
+					$e.addClass("expl-active").css({
+						'left': Math.min(e.originalEvent.touches[0].clientX + 5, $(window).width() - $e.width() - 12),
+						'top': Math.min(e.originalEvent.touches[0].clientY + 23, $(window).height() - $e.height() - 12)
+					});
+				}
+				e.stopPropagation();
+			});
+		}
+	}
+	global.expl($R);
+
 	if (o.gaming) $R.addClass("rooms-gaming");
 	if (o.password) $R.addClass("rooms-locked");
 
@@ -3357,6 +3383,28 @@ function getOptions(mode, opts, hash, abbr) {
 
 	return hash ? R.toString() : R;
 }
+function getPickTopicExpl(rule, opts) {
+	var topics = [];
+	var pickArr, prefix;
+
+	if (rule && rule.opts.indexOf("ijp") != -1 && opts.injpick && opts.injpick.length) {
+		pickArr = opts.injpick;
+		prefix = "theme_";
+		for (var i = 0; i < pickArr.length; i++) {
+			var name = L[prefix + pickArr[i]];
+			if (name) topics.push(name);
+		}
+	}
+	if (rule && rule.opts.indexOf("qij") != -1 && opts.quizpick && opts.quizpick.length) {
+		pickArr = opts.quizpick;
+		prefix = "quiz_";
+		for (var i = 0; i < pickArr.length; i++) {
+			var name = L[prefix + pickArr[i]];
+			if (name) topics.push(name);
+		}
+	}
+	return topics;
+}
 function setRoomHead($obj, room) {
 	var opts = getOptions(room.mode, room.opts, false, mobile);
 	var rule = RULE[MODE[room.mode]];
@@ -3372,6 +3420,28 @@ function setRoomHead($obj, room) {
 		.append($("<h5>").addClass("room-head-round").html(roundOrHP))
 		.append($("<h5>").addClass("room-head-time").html((Math.round(room.time * 10) / 10) + L['SECOND']));
 
+	var pickTopics = getPickTopicExpl(rule, room.opts);
+	if (pickTopics.length) {
+		var tooltipWidth = mobile ? 250 : 300;
+		$rm.append($("<div>").addClass("expl pick-topic-expl").css({ 'width': tooltipWidth, 'white-space': "normal", 'text-align': "left" })
+			.html("<h5 style='color: #BBBBBB;'>" + L['pickTopicTitle'] + "</h5>" + pickTopics.join(", "))
+		);
+		if (mobile) {
+			$rm.on('touchstart', function (e) {
+				var $e = $(this).children(".expl");
+				if ($e.hasClass("expl-active")) {
+					$e.removeClass("expl-active");
+				} else {
+					$(".expl-active").removeClass("expl-active");
+					$e.addClass("expl-active").css({
+						'left': Math.min(e.originalEvent.touches[0].clientX + 5, $(window).width() - $e.width() - 12),
+						'top': Math.min(e.originalEvent.touches[0].clientY + 23, $(window).height() - $e.height() - 12)
+					});
+				}
+				e.stopPropagation();
+			});
+		}
+	}
 
 	global.expl($obj);
 }
