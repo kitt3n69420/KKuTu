@@ -144,7 +144,7 @@ exports.AVAIL_EQUIP = [
 	"blackrobe", "blue_vest", "medal", "orange_vest", "pants_china", "pants_japan", "pants_korea", "pink_vest", "sqpants", "water",
 	"bluecandy", "bokjori", "choco_ice", "lemoncandy", "melon_ice", "pinkcandy", "purple_ice",
 	"black_oxford", "black_shoes", "brown_oxford", "loosesocks", "ilusweater", "kktpixel", "pixgradg", "pixgrado",
-	"Mhead", "Meye", "Mmouth", "Mclothes", "Mshoes", "Mhand"
+	"Mhead", "Meye", "Mmouth", "Mclothes", "Mshoes", "Mhand", "Mback", "Mfront"
 ];
 
 exports.GROUPS = {
