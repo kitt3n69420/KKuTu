@@ -2558,7 +2558,7 @@ function handleSurvivalDamage(data) {
 
 	if ($dmgTarget.length) {
 		$dmgTarget.addClass("survival-damage");
-		addTimeout(function() {
+		addTimeout(function () {
 			$dmgTarget.removeClass("survival-damage");
 		}, 500);
 
@@ -3370,7 +3370,7 @@ function setRoomHead($obj, room) {
 		.append($rm = $("<h5>").addClass("room-head-mode").html(opts.join(" / ")))
 		.append($("<h5>").addClass("room-head-limit").html((mobile ? "" : (L['players'] + " ")) + room.players.length + " / " + room.limit))
 		.append($("<h5>").addClass("room-head-round").html(roundOrHP))
-		.append($("<h5>").addClass("room-head-time").html(room.time + L['SECOND']));
+		.append($("<h5>").addClass("room-head-time").html((Math.round(room.time * 10) / 10) + L['SECOND']));
 
 
 	global.expl($obj);

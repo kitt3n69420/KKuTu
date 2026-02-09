@@ -78,10 +78,10 @@ $lib.Classic.turnGoing = function () {
 
 	$stage.game.turnBar
 		.width($data._timePercent())
-		.html(($data._turnTime * 0.001).toFixed(1) + L['SECOND']);
+		.html((Math.round($data._turnTime / 100) / 10).toFixed(1) + L['SECOND']);
 	$stage.game.roundBar
 		.width($data._roundTime / $data.room.time * 0.1 + "%")
-		.html(($data._roundTime * 0.001).toFixed(1) + L['SECOND']);
+		.html((Math.round($data._roundTime / 100) / 10).toFixed(1) + L['SECOND']);
 
 	if (!$stage.game.roundBar.hasClass("round-extreme")) if ($data._roundTime <= 5000) $stage.game.roundBar.addClass("round-extreme");
 };
@@ -140,8 +140,8 @@ $lib.Classic.turnEnd = function (id, data) {
 	// 서바이벌 모드에서는 자신의 점수/보너스 스플래시 숨김 (데미지만 표시)
 	if (!data.survival) {
 		if (data.bonus) {
-			mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function($target) {
-				return function() {
+			mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function ($target) {
+				return function () {
 					var $bc = $("<div>")
 						.addClass("deltaScore bonus")
 						.css('color', '#66FF66')
@@ -152,8 +152,8 @@ $lib.Classic.turnEnd = function (id, data) {
 			})($uc), 500);
 		}
 		if (data.speedToss) {
-			mobile ? $sc.append("+" + data.speedToss) : addTimeout((function($target) {
-				return function() {
+			mobile ? $sc.append("+" + data.speedToss) : addTimeout((function ($target) {
+				return function () {
 					var $bc = $("<div>")
 						.addClass("deltaScore sumi-sanggwan")
 						.css('color', '#00FFFF') // Cyan
@@ -164,8 +164,8 @@ $lib.Classic.turnEnd = function (id, data) {
 			})($uc), 800);
 		}
 		if (data.straightBonus) {
-			mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function($target) {
-				return function() {
+			mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function ($target) {
+				return function () {
 					var $bc = $("<div>")
 						.addClass("deltaScore straight-bonus")
 						.css('color', '#FFFF00') // Yellow

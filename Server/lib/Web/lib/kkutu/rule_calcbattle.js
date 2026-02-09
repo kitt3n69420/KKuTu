@@ -136,7 +136,7 @@ $lib.Calcbattle.turnGoing = function () {
 	var bRate;
 	var tt;
 
-	tt = $data._spectate ? L['stat_spectate'] : ($data._roundTime * 0.001).toFixed(1) + L['SECOND'];
+	tt = $data._spectate ? L['stat_spectate'] : (Math.round($data._roundTime / 100) / 10).toFixed(1) + L['SECOND'];
 	$rtb
 		.width($data._roundTime / $data.room.time * 0.1 + "%")
 		.html(tt);

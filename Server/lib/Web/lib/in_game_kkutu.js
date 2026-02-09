@@ -308,6 +308,9 @@ $(document).ready(function () {
 		}
 		if (!$data.opts) $data.opts = {};
 
+		// 간단 방 보기 기본값 설정
+		if ($data.opts.srv === undefined) $data.opts.srv = true;
+
 		// localStorage에서 볼륨 설정 먼저 로드 (사운드 로드 전에 적용)
 		var savedSettings = loadVolumeSettings();
 		if (savedSettings.bgmVolume !== null) {
@@ -729,7 +732,7 @@ $(document).ready(function () {
 		$("#show-rule-category").prop('checked', ($data.opts && $data.opts.src !== undefined) ? $data.opts.src : true);
 
 		// 간단 방 보기 설정
-		$("#simple-room-view").prop('checked', $data.opts && $data.opts.srv);
+		$("#simple-room-view").prop('checked', ($data.opts && $data.opts.srv !== undefined) ? $data.opts.srv : true);
 
 		// 현재 로드된 언어 감지
 		// L 객체로부터 실제 언어 감지 시도
@@ -1172,7 +1175,7 @@ $(document).ready(function () {
 	var mannerGroup = ['manner', 'gentle', 'shield', 'etiquette'];
 	mannerGroup.forEach(function (opt) {
 		var selectors = ['#room-' + opt, '#room-flat-' + opt, '#room-simple-' + opt,
-			'#view-all-' + opt, '#view-all-flat-' + opt].join(', ');
+		'#view-all-' + opt, '#view-all-flat-' + opt].join(', ');
 		$(selectors).on('change', function () {
 			if ($(this).is(':checked')) {
 				mannerGroup.forEach(function (other) {
@@ -2375,10 +2378,10 @@ $lib.Classic.turnGoing = function () {
 
 	$stage.game.turnBar
 		.width($data._timePercent())
-		.html(($data._turnTime * 0.001).toFixed(1) + L['SECOND']);
+		.html((Math.round($data._turnTime / 100) / 10).toFixed(1) + L['SECOND']);
 	$stage.game.roundBar
 		.width($data._roundTime / $data.room.time * 0.1 + "%")
-		.html(($data._roundTime * 0.001).toFixed(1) + L['SECOND']);
+		.html((Math.round($data._roundTime / 100) / 10).toFixed(1) + L['SECOND']);
 
 	if (!$stage.game.roundBar.hasClass("round-extreme")) if ($data._roundTime <= 5000) $stage.game.roundBar.addClass("round-extreme");
 };
@@ -2437,8 +2440,8 @@ $lib.Classic.turnEnd = function (id, data) {
 	// 서바이벌 모드에서는 자신의 점수/보너스 스플래시 숨김 (데미지만 표시)
 	if (!data.survival) {
 		if (data.bonus) {
-			mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function($target) {
-				return function() {
+			mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function ($target) {
+				return function () {
 					var $bc = $("<div>")
 						.addClass("deltaScore bonus")
 						.css('color', '#66FF66')
@@ -2449,8 +2452,8 @@ $lib.Classic.turnEnd = function (id, data) {
 			})($uc), 500);
 		}
 		if (data.speedToss) {
-			mobile ? $sc.append("+" + data.speedToss) : addTimeout((function($target) {
-				return function() {
+			mobile ? $sc.append("+" + data.speedToss) : addTimeout((function ($target) {
+				return function () {
 					var $bc = $("<div>")
 						.addClass("deltaScore sumi-sanggwan")
 						.css('color', '#00FFFF') // Cyan
@@ -2461,8 +2464,8 @@ $lib.Classic.turnEnd = function (id, data) {
 			})($uc), 800);
 		}
 		if (data.straightBonus) {
-			mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function($target) {
-				return function() {
+			mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function ($target) {
+				return function () {
 					var $bc = $("<div>")
 						.addClass("deltaScore straight-bonus")
 						.css('color', '#FFFF00') // Yellow
@@ -2538,7 +2541,7 @@ $lib.Jaqwi.turnGoing = function () {
 	if (!$data.room || !$data.room.gaming) clearInterval($data._tTime);
 	$data._roundTime -= TICK;
 
-	tt = $data._spectate ? L['stat_spectate'] : ($data._roundTime * 0.001).toFixed(1) + L['SECOND'];
+	tt = $data._spectate ? L['stat_spectate'] : (Math.round($data._roundTime / 100) / 10).toFixed(1) + L['SECOND'];
 	$rtb
 		.width($data._roundTime / $data.room.time * 0.1 + "%")
 		.html(tt);
@@ -3919,7 +3922,7 @@ $lib.Picture.turnGoing = function () {
         playBGM('jaqwiF');
     }
 
-    tt = $data._spectate ? L['stat_spectate'] : ($data._roundTime * 0.001).toFixed(1) + L['SECOND'];
+    tt = $data._spectate ? L['stat_spectate'] : (Math.round($data._roundTime / 100) / 10).toFixed(1) + L['SECOND'];
     $rtb.width($data._roundTime / $data.room.time * 0.1 + "%").html(tt);
 };
 
@@ -4236,7 +4239,7 @@ $lib.Chainbattle.turnGoing = function () {
 	var bRate;
 	var tt;
 
-	tt = $data._spectate ? L['stat_spectate'] : ($data._roundTime * 0.001).toFixed(1) + L['SECOND'];
+	tt = $data._spectate ? L['stat_spectate'] : (Math.round($data._roundTime / 100) / 10).toFixed(1) + L['SECOND'];
 	$rtb
 		.width($data._roundTime / $data.room.time * 0.1 + "%")
 		.html(tt);
@@ -4511,7 +4514,7 @@ $lib.Calcbattle.turnGoing = function () {
 	var bRate;
 	var tt;
 
-	tt = $data._spectate ? L['stat_spectate'] : ($data._roundTime * 0.001).toFixed(1) + L['SECOND'];
+	tt = $data._spectate ? L['stat_spectate'] : (Math.round($data._roundTime / 100) / 10).toFixed(1) + L['SECOND'];
 	$rtb
 		.width($data._roundTime / $data.room.time * 0.1 + "%")
 		.html(tt);
@@ -4727,7 +4730,7 @@ $lib.Quiz.turnGoing = function () {
 	if (!$data.room || !$data.room.gaming) clearInterval($data._tTime);
 	$data._roundTime -= TICK;
 
-	tt = $data._spectate ? L['stat_spectate'] : ($data._roundTime * 0.001).toFixed(1) + L['SECOND'];
+	tt = $data._spectate ? L['stat_spectate'] : (Math.round($data._roundTime / 100) / 10).toFixed(1) + L['SECOND'];
 	$rtb
 		.width($data._roundTime / $data.room.time * 0.1 + "%")
 		.html(tt);
@@ -7330,7 +7333,7 @@ function handleSurvivalDamage(data) {
 
 	if ($dmgTarget.length) {
 		$dmgTarget.addClass("survival-damage");
-		addTimeout(function() {
+		addTimeout(function () {
 			$dmgTarget.removeClass("survival-damage");
 		}, 500);
 
@@ -8142,7 +8145,7 @@ function setRoomHead($obj, room) {
 		.append($rm = $("<h5>").addClass("room-head-mode").html(opts.join(" / ")))
 		.append($("<h5>").addClass("room-head-limit").html((mobile ? "" : (L['players'] + " ")) + room.players.length + " / " + room.limit))
 		.append($("<h5>").addClass("room-head-round").html(roundOrHP))
-		.append($("<h5>").addClass("room-head-time").html(room.time + L['SECOND']));
+		.append($("<h5>").addClass("room-head-time").html((Math.round(room.time * 10) / 10) + L['SECOND']));
 
 
 	global.expl($obj);
