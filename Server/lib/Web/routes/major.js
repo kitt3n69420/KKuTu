@@ -407,6 +407,90 @@ exports.run = function (Server, page) {
       });
     // res.send(getCFRewards(req.params.word, Number(req.query.l || 0)));
   });
+  Server.get("/craft-check", function (req, res) {
+    if (!req.session.profile) return res.json({ error: 400 });
+    var a = req.query.item1;
+    var b = req.query.item2;
+
+    if (!a || !b) return res.json({ error: 400 });
+    if (!validateInput(a, "string", { maxLength: 64, noSpecialChars: true })) return res.json({ error: 400 });
+    if (!validateInput(b, "string", { maxLength: 64, noSpecialChars: true })) return res.json({ error: 400 });
+
+    var items = [a, b].sort();
+
+    MainDB.kkutu_shop.findOne(["_id", a]).limit(["group", true], ["cost", true]).on(function ($itemA) {
+      if (!$itemA) return res.json({ error: 400 });
+      MainDB.kkutu_shop.findOne(["_id", b]).limit(["group", true], ["cost", true]).on(function ($itemB) {
+        if (!$itemB) return res.json({ error: 400 });
+        if ($itemA.group !== $itemB.group) return res.json({ result: null, reason: "group_mismatch" });
+
+        MainDB.crafting.findOne(["item1", items[0]], ["item2", items[1]]).on(function ($recipe) {
+          if (!$recipe) return res.json({ result: null, reason: "no_recipe" });
+
+          var costA = Math.abs($itemA.cost || 0);
+          var costB = Math.abs($itemB.cost || 0);
+          var craftCost = Math.round(Math.sqrt(costA * costA + costB * costB) / 3);
+
+          res.json({ result: $recipe.result, cost: craftCost });
+        });
+      });
+    });
+  });
+  Server.post("/craft", function (req, res) {
+    if (!req.session.profile) return res.json({ error: 400 });
+    var uid = req.session.profile.id;
+    var a = req.body.item1;
+    var b = req.body.item2;
+
+    if (!a || !b) return res.json({ error: 400 });
+    if (!validateInput(a, "string", { maxLength: 64, noSpecialChars: true })) return res.json({ error: 400 });
+    if (!validateInput(b, "string", { maxLength: 64, noSpecialChars: true })) return res.json({ error: 400 });
+
+    var items = [a, b].sort();
+
+    MainDB.crafting.findOne(["item1", items[0]], ["item2", items[1]]).on(function ($recipe) {
+      if (!$recipe) return res.json({ error: 400 });
+
+      MainDB.users.findOne(["_id", uid]).limit(["money", true], ["box", true]).on(function ($user) {
+        if (!$user) return res.json({ error: 400 });
+        if (!$user.box) $user.box = {};
+
+        if (a === b) {
+          var bd = $user.box[a];
+          var count = (typeof bd === "number") ? bd : (bd && bd.value ? bd.value : 0);
+          if (count < 2) return res.json({ error: 434 });
+        } else {
+          var bdA = $user.box[a];
+          var bdB = $user.box[b];
+          var countA = (typeof bdA === "number") ? bdA : (bdA && bdA.value ? bdA.value : 0);
+          var countB = (typeof bdB === "number") ? bdB : (bdB && bdB.value ? bdB.value : 0);
+          if (countA < 1 || countB < 1) return res.json({ error: 434 });
+        }
+
+        MainDB.kkutu_shop.findOne(["_id", a]).limit(["cost", true]).on(function ($itemA) {
+          MainDB.kkutu_shop.findOne(["_id", b]).limit(["cost", true]).on(function ($itemB) {
+            var costA = Math.abs($itemA ? $itemA.cost : 0);
+            var costB = Math.abs($itemB ? $itemB.cost : 0);
+            var craftCost = Math.round(Math.sqrt(costA * costA + costB * costB) / 3);
+
+            if ($user.money < craftCost) return res.json({ error: 407 });
+
+            consume($user, a, 1, true);
+            consume($user, b, 1, true);
+
+            obtain($user, $recipe.result, 1);
+
+            $user.money -= craftCost;
+
+            MainDB.users.update(["_id", uid]).set(["money", $user.money], ["box", $user.box]).on(function ($fin) {
+              res.send({ result: 200, box: $user.box, money: $user.money, crafted: $recipe.result });
+              JLog.log("[CRAFTED] " + a + " + " + b + " => " + $recipe.result + " by " + uid);
+            });
+          });
+        });
+      });
+    });
+  });
   Server.get("/dict/:word", function (req, res) {
     var word = req.params.word;
     var lang = req.query.lang;

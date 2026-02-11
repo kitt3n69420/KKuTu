@@ -42,6 +42,21 @@
 		background-color: #DDDDDD;
 		transition: all 300ms ease;
 	}
+	.craft-type{
+		float: left;
+		padding: 1px 0px;
+		border: 1px solid #AAAAAA;
+		border-radius: 3px;
+		margin-right: 2px;
+		margin-bottom: 2px;
+		width: 40px;
+		font-size: 11px;
+		text-align: center;
+		cursor: pointer;
+		background-color: #DDDDDD;
+		transition: all 200ms ease;
+	}
+	.craft-type.selected{ color: #FFFFFF; background-color: #1976D2; }
 
 /* NIK */
 .x-gm .users-name::before{ content: "[GM]"; color: #2F77D9; text-shadow: 0px 0px 2px #2AF; }
@@ -55,3 +70,57 @@
 .x-indigo_name{ color: #1C18B9; }
 .x-purple_name{ color: #A939CC; }
 .x-pink_name{ color: #F15F9A; }
+
+/* Gradient Name Effects - Animation (one-direction flow) */
+@keyframes gradient-shift{
+	0%{ background-position: 0% 50%; }
+	100%{ background-position: -200% 50%; }
+}
+/* Gradient text base styles - applied universally to all elements with gradient class */
+[class*="x-gradientname_"]{
+	-webkit-background-clip: text !important;
+	-webkit-text-fill-color: transparent !important;
+	background-clip: text !important;
+	background-size: 200% 100%;
+	animation: gradient-shift 3s linear infinite;
+}
+
+/* Gradient Name - Same color (color + darker version) */
+.x-gradientname_blueblue{ background-image: linear-gradient(90deg, #6ca1eb, #215398, #6ca1eb); }
+.x-gradientname_greengreen{ background-image: linear-gradient(90deg, #81e96a, #2F871B, #81e96a); }
+.x-gradientname_indigoindigo{ background-image: linear-gradient(90deg, #4946C7, #0b094e, #4946C7); }
+.x-gradientname_orangeorange{ background-image: linear-gradient(90deg, #FFB75C, #B37324, #FFB75C); }
+.x-gradientname_pinkpink{ background-image: linear-gradient(90deg, #f48fb7, #A9426C, #f48fb7); }
+.x-gradientname_purplepurple{ background-image: linear-gradient(90deg, #d06eee, #76288F, #d06eee); }
+.x-gradientname_redred{ background-image: linear-gradient(90deg, #FF5C5C, #9d1f1f, #FF5C5C); }
+
+/* Gradient Name - Different colors */
+.x-gradientname_bluegreen{ background-image: linear-gradient(90deg, #2F77D9, #43C227, #2F77D9); }
+.x-gradientname_blueindigo{ background-image: linear-gradient(90deg, #2F77D9, #1C18B9, #2F77D9); }
+.x-gradientname_blueorange{ background-image: linear-gradient(90deg, #2F77D9, #FFA533, #2F77D9); }
+.x-gradientname_bluepink{ background-image: linear-gradient(90deg, #2F77D9, #F15F9A, #2F77D9); }
+.x-gradientname_bluepurple{ background-image: linear-gradient(90deg, #2F77D9, #A939CC, #2F77D9); }
+.x-gradientname_bluered{ background-image: linear-gradient(90deg, #2F77D9, #FF3333, #2F77D9); }
+.x-gradientname_greenindigo{ background-image: linear-gradient(90deg, #43C227, #1C18B9, #43C227); }
+.x-gradientname_greenorange{ background-image: linear-gradient(90deg, #43C227, #FFA533, #43C227); }
+.x-gradientname_greenpink{ background-image: linear-gradient(90deg, #43C227, #F15F9A, #43C227); }
+.x-gradientname_greenpurple{ background-image: linear-gradient(90deg, #43C227, #A939CC, #43C227); }
+.x-gradientname_greenred{ background-image: linear-gradient(90deg, #43C227, #FF3333, #43C227); }
+.x-gradientname_indigoorange{ background-image: linear-gradient(90deg, #1C18B9, #FFA533, #1C18B9); }
+.x-gradientname_indigopink{ background-image: linear-gradient(90deg, #1C18B9, #F15F9A, #1C18B9); }
+.x-gradientname_indigopurple{ background-image: linear-gradient(90deg, #1C18B9, #A939CC, #1C18B9); }
+.x-gradientname_indigored{ background-image: linear-gradient(90deg, #1C18B9, #FF3333, #1C18B9); }
+.x-gradientname_orangepink{ background-image: linear-gradient(90deg, #FFA533, #F15F9A, #FFA533); }
+.x-gradientname_orangepurple{ background-image: linear-gradient(90deg, #FFA533, #A939CC, #FFA533); }
+.x-gradientname_orangered{ background-image: linear-gradient(90deg, #FFA533, #FF3333, #FFA533); }
+.x-gradientname_pinkpurple{ background-image: linear-gradient(90deg, #F15F9A, #A939CC, #F15F9A); }
+.x-gradientname_pinkred{ background-image: linear-gradient(90deg, #F15F9A, #FF3333, #F15F9A); }
+.x-gradientname_purplered{ background-image: linear-gradient(90deg, #A939CC, #FF3333, #A939CC); }
+
+/* Crafting Workshop UI */
+.craft-composable{ background-color: #B3E7B7 !important; cursor: pointer; }
+#craft-top{ box-sizing: border-box; }
+#craft-tray .jt-image{ width: 50px; height: 50px; cursor: pointer; border: 2px solid #CCC; border-radius: 5px; flex-shrink: 0; }
+#craft-tray .jt-image:hover{ opacity: 0.7; }
+.craft-tray-selected{ box-shadow: 0px 0px 3px 2px #5599FF; }
+.craft-result-image{ width: 50px; height: 50px; flex-shrink: 0; }

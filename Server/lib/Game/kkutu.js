@@ -419,7 +419,31 @@ exports.Client = function (socket, profile, sid) {
 			// process.send({ type: 'okg', id: my.id, time: time });
 		};
 	}
+	// WebSocket heartbeat: 서버에서 주기적으로 ping 프레임 전송
+	// 브라우저는 ping에 대해 자동으로 pong을 응답하므로
+	// Cloudflare가 클라이언트→서버 방향 활동으로 인식하여 idle timeout 방지
+	my._missedPongs = 0;
+	my._heartbeat = setInterval(function () {
+		if (socket.readyState === 1) {
+			// FIX: pong 미수신 카운트 체크 — 2회 연속 미응답 시 연결 끊기
+			if (my._missedPongs >= 2) {
+				JLog.warn(`Heartbeat timeout: #${my.id} missed ${my._missedPongs} pongs, disconnecting`);
+				clearInterval(my._heartbeat);
+				socket.close();
+				return;
+			}
+			my._missedPongs++;
+			socket.ping();
+		}
+	}, 25000);
+
+	socket.on('pong', function () {
+		my._lastPong = Date.now();
+		my._missedPongs = 0;
+	});
+
 	socket.on('close', function (code) {
+		clearInterval(my._heartbeat);
 		if (ROOM[my.place]) ROOM[my.place].go(my);
 		if (my.subPlace) my.pracRoom.go(my);
 		exports.onClientClosed(my, code);

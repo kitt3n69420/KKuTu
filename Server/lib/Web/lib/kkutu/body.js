@@ -809,7 +809,6 @@ function onMessage(data) {
 			}
 			showAlert("[#" + data.code + "] " + L['error_' + data.code] + i);
 			break;
-		case 'maintainConnection':
 		default:
 			break;
 	}
@@ -1285,7 +1284,15 @@ function userListBar(o, forInvite) {
 	return $R;
 }
 function addonNickname($R, o) {
-	if (o.equip['NIK']) $R.addClass("x-" + o.equip['NIK']);
+	if (o.equip['NIK']) {
+		var cls = "x-" + o.equip['NIK'];
+		$R.addClass(cls);
+		// For gradient names, also apply to the direct text child for proper text clipping
+		if (o.equip['NIK'].indexOf("gradientname_") === 0) {
+			var $text = $R.find(".users-name, .room-user-name, .game-user-name, .chat-head").first();
+			if ($text.length) $text.addClass(cls);
+		}
+	}
 	if (o.equip['BDG'] == "b1_gm") $R.addClass("x-gm");
 }
 function updateRoomList(refresh) {
@@ -1952,6 +1959,143 @@ function drawCharFactory() {
 		drawCFTray();
 	}
 	trayEmpty();
+}
+function drawCraftWorkshop() {
+	var $tray = $("#craft-tray");
+	var $goods = $("#craft-goods");
+	var $cost = $("#craft-cost");
+	var $preview = $("#craft-result-preview");
+
+	$data._craftTray = [];
+	$data._craftCost = 0;
+	$data._craftResult = null;
+	$preview.empty();
+	$cost.html("");
+	$stage.dialog.craftCompose.removeClass("craft-composable");
+
+	// Collect all groups except spec (word pieces) for craft display
+	var craftFilter = [];
+	$(".craft-type").each(function () {
+		var cat = $(this).attr('id').slice(11);
+		if (cat === 'all' || cat === 'spec') return;
+		var vals = ($(this).attr('value') || "").split(',');
+		for (var v = 0; v < vals.length; v++) {
+			if (vals[v] && craftFilter.indexOf(vals[v]) === -1) craftFilter.push(vals[v]);
+		}
+	});
+
+	renderCraftGoods(craftFilter);
+
+	function renderCraftGoods(filter) {
+		renderGoods($goods, 'craft', filter, null, onCraftGoodsClick);
+	}
+
+	function onCraftGoodsClick(e) {
+		var $target = $(e.currentTarget);
+		var id = $target.attr('id').slice(6);
+		var bd = $data.box[id];
+		var c = 0, ci;
+
+		for (ci = 0; ci < $data._craftTray.length; ci++) {
+			if ($data._craftTray[ci] === id) c++;
+		}
+		var available = (typeof bd === "number") ? bd : (bd && bd.value ? bd.value : 0);
+
+		// Toggle: if item has only 1 and already in tray, remove it
+		if (c > 0 && available <= 1) {
+			var removeIdx = $data._craftTray.indexOf(id);
+			$data._craftTray.splice(removeIdx, 1);
+			drawCraftTray();
+			return;
+		}
+
+		if ($data._craftTray.length >= 2) return;
+		if (available - c > 0) {
+			$data._craftTray.push(id);
+			drawCraftTray();
+		} else {
+			fail(434);
+		}
+	}
+
+	$data._craftGoodsClick = onCraftGoodsClick;
+	$data._renderCraftGoods = renderCraftGoods;
+
+	function trayEmpty() {
+		$tray.html($("<span>").css({ 'font-size': "11px", 'color': "#999" }).html(L['craftTrayHint']));
+		$("#craft-arrow").hide();
+	}
+	trayEmpty();
+
+	function drawCraftTray() {
+		var gd;
+		$tray.empty();
+		$(".craft-tray-selected").removeClass("craft-tray-selected");
+
+		$data._craftTray.forEach(function (item, idx) {
+			gd = iGoods(item);
+			var $img = $("<div>").addClass("jt-image")
+				.css('background-image', "url(" + gd.image + ")")
+				.attr('id', "craft-tray-" + idx)
+				.attr('data-item', item)
+				.on('click', function () {
+					$data._craftTray.splice(idx, 1);
+					drawCraftTray();
+				});
+			var $wrap = $("<div>").css('display', 'inline-block').append($img).append(explainGoods(gd, false));
+			$tray.append($wrap);
+			$("#craft-" + item).addClass("craft-tray-selected");
+		});
+		global.expl($tray);
+
+		$preview.empty();
+		$cost.html("");
+		$stage.dialog.craftCompose.removeClass("craft-composable");
+		$data._craftResult = null;
+		$data._craftCost = 0;
+
+		if ($data._craftTray.length === 0) {
+			trayEmpty();
+			return;
+		}
+
+		$("#craft-arrow").show();
+
+		if ($data._craftTray.length === 2) {
+			var itemA = $data._craftTray[0];
+			var itemB = $data._craftTray[1];
+			var shopA = $data.shop[itemA];
+			var shopB = $data.shop[itemB];
+
+			if (!shopA || !shopB || shopA.group !== shopB.group) {
+				$preview.html("<span style='color:#CC3333; font-size:11px;'>" + L['craftGroupMismatch'] + "</span>");
+				return;
+			}
+
+			$preview.html("<span style='color:#888; font-size:11px;'>" + L['searching'] + "</span>");
+			$.get("/craft-check", { item1: itemA, item2: itemB }, function (res) {
+				if (res.error || !res.result) {
+					$preview.html("<span style='color:#CC3333; font-size:11px;'>" + L['craftNoRecipe'] + "</span>");
+					return;
+				}
+				if (!$data.shop[res.result]) {
+					$preview.html("<span style='color:#CC3333; font-size:11px;'>" + L['craftNoRecipe'] + "</span>");
+					return;
+				}
+				var resultObj = iGoods(res.result);
+				var $resultImg = getImage(resultObj.image).addClass("craft-result-image");
+				var $resultWrap = $("<div>").css('display', 'inline-block').append($resultImg).append(explainGoods(resultObj, false));
+				$preview.empty().append($resultWrap);
+				global.expl($preview);
+				$cost.html(commify(res.cost) + L['ping']);
+				$data._craftCost = res.cost;
+				$data._craftResult = res.result;
+				$stage.dialog.craftCompose.addClass("craft-composable");
+			});
+		} else {
+			$preview.html("<span style='color:#888; font-size:11px;'>" + L['craftSelectSecond'] + "</span>");
+		}
+	}
 }
 function drawLeaderboard(data) {
 	var $board = $stage.dialog.lbTable.empty();

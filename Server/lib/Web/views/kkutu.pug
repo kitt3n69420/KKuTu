@@ -594,6 +594,7 @@ block Middle
 		div.dialog-bar.tail-button
 			button#dress-ok= L('OK')
 			button#dress-cf= L('charFactory')
+			button#dress-craft= L('craftWorkshop')
 			button(onclick=`alert("${L("paybackHelp")}");`)= L('payback')
 	+Dialog('CharFactoryDiag', 500, 410, L('charFactory'))
 		div.dialog-bar(style='width: 300px;')
@@ -608,6 +609,20 @@ block Middle
 			div#cf-goods.goods-box
 		div.dialog-bar.tail-button
 			button#cf-compose= L('cfCompose')
+	+Dialog('CraftingDiag', 500, 300, L('craftWorkshop'))
+		div.dialog-bar#craft-top(style='display: flex; align-items: center; gap: 5px; padding: 5px; border-bottom: 1px solid #CCCCCC; height: 64px;')
+			div#craft-tray(style='display: flex; align-items: center; gap: 5px; min-width: 110px;')
+			span#craft-arrow(style='font-size: 18px; color: #999;') &rArr;
+			div#craft-result-preview(style='min-width: 50px; text-align: center;')
+			div#craft-cost(style='font-size: 12px; white-space: nowrap; margin-left: 5px;')
+			button#craft-compose(style='margin-left: auto; white-space: nowrap;')= L('craftCompose')
+		div.dialog-bar(style='padding: 5px;')
+			div.shop-categories(style='border-bottom: 1px solid #CCCCCC; overflow: hidden; margin-bottom: 3px;')
+				- for(var i in locals.CATEGORIES)
+					- if(locals.CATEGORIES[i] !== 'spec')
+						- var v = locals.GROUPS[locals.CATEGORIES[i]] || [];
+						div.category-filter.craft-type(id="craft-type-" + locals.CATEGORIES[i], value=v.join(','))= L('category_' + locals.CATEGORIES[i])
+			div#craft-goods.goods-box(style='height: 180px; overflow-y: auto;')
 	+Dialog('ChatLogDiag', 350, 500, L('chatLog'))
 		div#chat-log-board(style='height: 475px; font-size: 11px; overflow-y: scroll;')
 	+Dialog('ObtainDiag', 300, 200, L('notice'), true)
@@ -692,7 +707,7 @@ block Middle
 		div.bar-text.my-gauge-text
 	+Product('Chat')
 		div#Chat
-		input#Talk(maxlength=200)
+		input#Talk(maxlength=500)
 		button#ChatBtn= L('send')
 
 

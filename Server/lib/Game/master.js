@@ -315,7 +315,39 @@ Cluster.on("message", function (worker, msg) {
 
           if (x != -1) {
             ROOM[msg.id].players.splice(x, 1);
-            JLog.warn(`^ OK`);
+            JLog.warn(`^ OK (removed from players)`);
+
+            // FIX: 방장이 나간 경우 master 재할당
+            if (ROOM[msg.id].master === msg.target) {
+              var newMaster = null;
+              for (var j = 0; j < ROOM[msg.id].players.length; j++) {
+                var p = ROOM[msg.id].players[j];
+                if (typeof p !== 'object' && DIC[p]) {
+                  newMaster = p;
+                  break;
+                }
+              }
+              if (newMaster) {
+                ROOM[msg.id].master = newMaster;
+                DIC[newMaster].ready = false;
+                JLog.warn(`^ Master reassigned to ${newMaster}`);
+              } else if (ROOM[msg.id].players.length > 0) {
+                // DIC에 없지만 players에는 있는 경우 (cross-channel)
+                ROOM[msg.id].master = ROOM[msg.id].players[0];
+                JLog.warn(`^ Master set to ${ROOM[msg.id].master} (cross-channel, not in DIC)`);
+              } else {
+                // 플레이어가 없으면 방 삭제
+                JLog.warn(`^ No players left, deleting room ${msg.id}`);
+                delete ROOM[msg.id];
+                KKuTu.publish("room", { room: { id: msg.id, players: [] } });
+                break;
+              }
+            }
+
+            // FIX: 방 상태 변경을 브로드캐스트
+            if (ROOM[msg.id]) {
+              KKuTu.publish("room", { room: ROOM[msg.id].getData() });
+            }
           }
         }
         if (msg.removed) {
@@ -426,6 +458,23 @@ Cluster.on("message", function (worker, msg) {
       JLog.warn(`Unhandled IPC message type: ${msg.type}`);
   }
 });
+// FIX: Worker 크래시 시 해당 채널의 방을 Master에서 정리
+exports.cleanupDeadWorkerRooms = function (deadChannel) {
+  var deadRooms = [];
+  for (var id in ROOM) {
+    if (ROOM[id].channel == deadChannel) {
+      deadRooms.push(id);
+    }
+  }
+  deadRooms.forEach(function (id) {
+    JLog.warn(`Cleaning up room ${id} from dead worker @${deadChannel}`);
+    delete ROOM[id];
+    KKuTu.publish("room", { room: { id: id, players: [] } });
+  });
+  if (deadRooms.length > 0) {
+    JLog.warn(`Cleaned up ${deadRooms.length} rooms from dead worker @${deadChannel}`);
+  }
+};
 exports.init = function (_SID, CHAN) {
   SID = _SID;
   MainDB = require("../Web/db");
@@ -622,10 +671,6 @@ function joinNewUser($c) {
 
   JLog.info("New user #" + $c.id);
 
-  if (GLOBAL.WAF)
-    setInterval(() => {
-      $c.send("maintainConnection");
-    }, 20000);
 }
 
 KKuTu.onClientMessage = function ($c, msg) {
