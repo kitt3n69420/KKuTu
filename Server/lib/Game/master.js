@@ -685,6 +685,12 @@ KKuTu.onClientMessage = function ($c, msg) {
     }
   }
 
+  // heartbeat는 recaptcha 여부와 무관하게 항상 처리 (Cloudflare idle timeout 방지)
+  if (msg.type === "heartbeat") {
+    $c._lastHeartbeat = Date.now();
+    return;
+  }
+
   if ($c.passRecaptcha) {
     processClientRequest($c, msg);
   } else {
@@ -718,9 +724,6 @@ function processClientRequest($c, msg) {
       if (!$c.admin) return;
 
       $c.publish("yell", { value: msg.value });
-      break;
-    case "heartbeat":
-      console.log(`[DEBUG] Heartbeat received in MASTER from ${$c.id}`);
       break;
     case "refresh":
       $c.refresh();

@@ -2281,8 +2281,15 @@ $(document).ready(function () {
 		ws.onopen = function (e) {
 			if (heartbeatInterval) clearInterval(heartbeatInterval);
 			heartbeatInterval = setInterval(function () {
-				send('heartbeat');
-			}, 20000);
+				// master 소켓(ws)에 항상 heartbeat 전송 — Cloudflare idle timeout 방지
+				if (ws && ws.readyState === _WebSocket.OPEN) {
+					ws.send(JSON.stringify({ type: 'heartbeat' }));
+				}
+				// 게임방 소켓(rws)이 열려 있으면 별도로 전송
+				if (rws && rws.readyState === _WebSocket.OPEN) {
+					rws.send(JSON.stringify({ type: 'heartbeat' }));
+				}
+			}, 25000);
 			loading();
 			/*if($data.PUBLIC && mobile) $("#ad").append($("<ins>").addClass("daum_ddn_area")
 				.css({ 'display': "none", 'margin-top': "10px", 'width': "100%" })

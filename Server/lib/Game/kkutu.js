@@ -419,28 +419,24 @@ exports.Client = function (socket, profile, sid) {
 			// process.send({ type: 'okg', id: my.id, time: time });
 		};
 	}
-	// WebSocket heartbeat: 서버에서 주기적으로 ping 프레임 전송
-	// 브라우저는 ping에 대해 자동으로 pong을 응답하므로
-	// Cloudflare가 클라이언트→서버 방향 활동으로 인식하여 idle timeout 방지
-	my._missedPongs = 0;
+	// Cloudflare 환경 대응: 앱 레벨 heartbeat
+	// Cloudflare 프록시가 WebSocket ping/pong 프레임을 인터셉트하므로
+	// 앱 레벨 JSON 메시지로 양방향 heartbeat를 수행하여 idle timeout(100s) 방지
+	my._lastHeartbeat = Date.now();
 	my._heartbeat = setInterval(function () {
 		if (socket.readyState === 1) {
-			// FIX: pong 미수신 카운트 체크 — 2회 연속 미응답 시 연결 끊기
-			if (my._missedPongs >= 2) {
-				JLog.warn(`Heartbeat timeout: #${my.id} missed ${my._missedPongs} pongs, disconnecting`);
+			var now = Date.now();
+			// 클라이언트로부터 75초 이상 heartbeat 미수신 시 연결 끊기
+			if (now - my._lastHeartbeat > 75000) {
+				JLog.warn(`Heartbeat timeout: #${my.id} no heartbeat for ${Math.round((now - my._lastHeartbeat) / 1000)}s, disconnecting`);
 				clearInterval(my._heartbeat);
 				socket.close();
 				return;
 			}
-			my._missedPongs++;
-			socket.ping();
+			// 서버→클라이언트 앱 레벨 ping (Cloudflare를 통과하는 일반 메시지)
+			my.send('heartbeat', {});
 		}
 	}, 25000);
-
-	socket.on('pong', function () {
-		my._lastPong = Date.now();
-		my._missedPongs = 0;
-	});
 
 	socket.on('close', function (code) {
 		clearInterval(my._heartbeat);
