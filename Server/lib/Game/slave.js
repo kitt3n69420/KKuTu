@@ -224,6 +224,8 @@ KKuTu.onClientMessage = function ($c, msg) {
   }
 
   switch (msg.type) {
+    case "heartbeat":
+      break;
     case "yell":
       if (!msg.value) return;
       if (!validateInput(msg.value, "string", { maxLength: 200 })) return;

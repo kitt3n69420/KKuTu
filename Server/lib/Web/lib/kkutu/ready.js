@@ -2276,8 +2276,13 @@ $(document).ready(function () {
 
 	// 웹소켓 연결
 	function connect() {
+		var heartbeatInterval;
 		ws = new _WebSocket($data.URL);
 		ws.onopen = function (e) {
+			if (heartbeatInterval) clearInterval(heartbeatInterval);
+			heartbeatInterval = setInterval(function () {
+				send('heartbeat');
+			}, 20000);
 			loading();
 			/*if($data.PUBLIC && mobile) $("#ad").append($("<ins>").addClass("daum_ddn_area")
 				.css({ 'display': "none", 'margin-top': "10px", 'width': "100%" })
@@ -2300,6 +2305,7 @@ $(document).ready(function () {
 			onMessage(JSON.parse(e.data));
 		};
 		ws.onclose = function (e) {
+			if (heartbeatInterval) clearInterval(heartbeatInterval);
 			var ct = L['closed'] + " (#" + e.code + ")";
 
 			if (rws) rws.close();
