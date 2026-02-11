@@ -156,6 +156,8 @@ $(document).ready(function () {
 			dressOK: $("#dress-ok"),
 			charFactory: $("#CharFactoryDiag"),
 			cfCompose: $("#cf-compose"),
+			craftWorkshop: $("#CraftingDiag"),
+			craftCompose: $("#craft-compose"),
 			injPick: $("#InjPickDiag"),
 			injPickAll: $("#injpick-all"),
 			injPickNo: $("#injpick-no"),
@@ -1772,6 +1774,58 @@ $(document).ready(function () {
 				drawMyDress($data._avGroup);
 				updateMe();
 				drawCharFactory();
+			});
+		});
+	});
+	$("#dress-craft").on('click', function (e) {
+		if ($data._gaming) return fail(438);
+		if (showDialog($stage.dialog.craftWorkshop)) drawCraftWorkshop();
+	});
+	$(".craft-type").on('click', function (e) {
+		var $target = $(e.currentTarget);
+		var type = $target.attr('id').slice(11);
+
+		$(".craft-type.selected").removeClass("selected");
+		$target.addClass("selected");
+
+		var filter;
+		if (type === 'all') {
+			var craftFilter = [];
+			$(".craft-type").each(function () {
+				var cat = $(this).attr('id').slice(11);
+				if (cat === 'all' || cat === 'spec') return;
+				var vals = ($(this).attr('value') || "").split(',');
+				for (var v = 0; v < vals.length; v++) {
+					if (vals[v] && craftFilter.indexOf(vals[v]) === -1) craftFilter.push(vals[v]);
+				}
+			});
+			filter = craftFilter;
+		} else {
+			filter = ($target.attr('value') || "").split(',');
+		}
+		if ($data._renderCraftGoods) $data._renderCraftGoods(filter);
+	});
+	$stage.dialog.craftCompose.on('click', function (e) {
+		if (!$stage.dialog.craftCompose.hasClass("craft-composable")) return fail(439);
+		if (!$data._craftTray || $data._craftTray.length !== 2) return fail(439);
+
+		showConfirm(L['craftSureCompose'], function (res) {
+			if (!res) return;
+
+			$.post("/craft", {
+				item1: $data._craftTray[0],
+				item2: $data._craftTray[1]
+			}, function (res) {
+				if (res.error) return fail(res.error);
+				send('refresh');
+				showAlert(L['craftComposed']);
+				$data.users[$data.id].money = res.money;
+				$data.box = res.box;
+				queueObtain({ key: res.crafted, value: 1 });
+
+				drawMyDress($data._avGroup);
+				updateMe();
+				drawCraftWorkshop();
 			});
 		});
 	});

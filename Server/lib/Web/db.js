@@ -82,6 +82,7 @@ Pub.ready = function (isPub) {
 			DB.kkutu_stats_en = new mainAgent.Table("kkutu_stats_en");
 			DB.kkutu_shop = new mainAgent.Table("kkutu_shop");
 			DB.kkutu_shop_desc = new mainAgent.Table("kkutu_shop_desc");
+			DB.crafting = new mainAgent.Table("crafting");
 			DB.kkutu.quiz = new mainAgent.Table("quiz");
 
 			DB.session = new mainAgent.Table("session");

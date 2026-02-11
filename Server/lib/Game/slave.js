@@ -243,7 +243,7 @@ KKuTu.onClientMessage = function ($c, msg) {
           $c.send("error", { code: 401 });
           return;
         }
-      msg.value = msg.value.substr(0, 200);
+      msg.value = msg.value.substr(0, 500);
       // 서버에서는 욕설 필터링을 적용하지 않음 (클라이언트에서 표시 시 처리)
       if (msg.relay) {
         if ($c.subPlace) temp = $c.pracRoom;

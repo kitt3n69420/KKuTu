@@ -51,6 +51,13 @@ if (Cluster.isMaster) {
 			}
 		}
 		JLog.error(`Worker @${chan} ${w.process.pid} died`);
+
+		// FIX: 죽은 Worker의 방을 Master에서 정리
+		var Master = require("./master.js");
+		if (Master.cleanupDeadWorkerRooms) {
+			Master.cleanupDeadWorkerRooms(chan);
+		}
+
 		channels[chan] = Cluster.fork({ SERVER_NO_FORK: true, KKUTU_PORT: Const.ROOM_PORTS[SID] + (chan - 1), CHANNEL: chan });
 	});
 	process.env['KKUTU_PORT'] = (Const.MASTER_PORTS && Const.MASTER_PORTS[SID]) || (Const.MAIN_PORTS[SID] + 30);
