@@ -719,6 +719,9 @@ function processClientRequest($c, msg) {
 
       $c.publish("yell", { value: msg.value });
       break;
+    case "heartbeat":
+      console.log(`[DEBUG] Heartbeat received in MASTER from ${$c.id}`);
+      break;
     case "refresh":
       $c.refresh();
       break;
