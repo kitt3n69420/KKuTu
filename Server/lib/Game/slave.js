@@ -225,6 +225,7 @@ KKuTu.onClientMessage = function ($c, msg) {
 
   switch (msg.type) {
     case "heartbeat":
+      console.log(`[DEBUG] Heartbeat from ${$c.id}`);
       break;
     case "yell":
       if (!msg.value) return;
