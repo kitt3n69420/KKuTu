@@ -431,6 +431,8 @@ exports.Client = function (socket, profile, sid) {
 	}, 25000);
 
 	socket.on('close', function (code) {
+		var elapsed = Math.round((Date.now() - my._lastHeartbeat) / 1000);
+		JLog.warn(`Socket closed #${my.id} code=${code} lastHeartbeat=${elapsed}s ago`);
 		clearInterval(my._heartbeat);
 		if (ROOM[my.place]) ROOM[my.place].go(my);
 		if (my.subPlace) my.pracRoom.go(my);
