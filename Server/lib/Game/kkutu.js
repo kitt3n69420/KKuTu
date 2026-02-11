@@ -425,15 +425,7 @@ exports.Client = function (socket, profile, sid) {
 	my._lastHeartbeat = Date.now();
 	my._heartbeat = setInterval(function () {
 		if (socket.readyState === 1) {
-			var now = Date.now();
-			// 클라이언트로부터 75초 이상 heartbeat 미수신 시 연결 끊기
-			if (now - my._lastHeartbeat > 75000) {
-				JLog.warn(`Heartbeat timeout: #${my.id} no heartbeat for ${Math.round((now - my._lastHeartbeat) / 1000)}s, disconnecting`);
-				clearInterval(my._heartbeat);
-				socket.close();
-				return;
-			}
-			// 서버→클라이언트 앱 레벨 ping (Cloudflare를 통과하는 일반 메시지)
+			// 서버→클라이언트 앱 레벨 heartbeat (Cloudflare를 통과하는 일반 메시지)
 			my.send('heartbeat', {});
 		}
 	}, 25000);
