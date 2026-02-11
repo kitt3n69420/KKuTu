@@ -2280,7 +2280,7 @@ $(document).ready(function () {
 		ws = new _WebSocket($data.URL);
 		ws.onopen = function (e) {
 			if (heartbeatInterval) clearInterval(heartbeatInterval);
-			heartbeatInterval = setInterval(function () {
+			heartbeatInterval = _setInterval(function () {
 				// master 소켓(ws)에 항상 heartbeat 전송 — Cloudflare idle timeout 방지
 				if (ws && ws.readyState === _WebSocket.OPEN) {
 					ws.send(JSON.stringify({ type: 'heartbeat' }));
