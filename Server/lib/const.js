@@ -65,7 +65,7 @@ exports.OPTIONS = {
 	'mir': { name: "Mirror" },        //력입 로꾸거 를어단 :러미\\
 	'ret': { name: "Return" },        //리턴: 쓴 단어 재사용 가능
 	'mid': { name: "Middle" },        //미들잇기: 단어의 가운데 글자로 이음
-	'sch': { name: "Second" },        
+	'sch': { name: "Second" },
 	'vow': { name: "Vowel" },
 	'lng': { name: "Long" },
 	'ln3': { name: "Length3" },
@@ -544,6 +544,7 @@ exports.KO_INJEONG = [
 	"IMS", "VOC", "KRR", "KTV",
 	"NSK", "KOT", "DOT", "DRR", "DGM", "RAG", "LVL",
 	"LOL", "MRN", "MMM", "MAP", "MKK", "MNG",
+	"MAM", "CKR", "BRS", "BTC", "BLA",
 	"MOB", "HYK", "CYP", "HRH", "STA", "OIJ",
 	"KGR", "ESB", "ELW", "OIM", "OVW", "NEX", /*"WOW",*/ //얘는 왜 주석임?
 	"YRY", "KPO", "JLN", "JAN", "ZEL", "POK", "HAI",
@@ -641,7 +642,7 @@ exports.BOT_ITEM_WEIGHTS = {
  * @param {Object} DIC - 플레이어 사전
  * @returns {Object} { aliveCount, aliveTeams, hasTeams, gameOver }
  */
-exports.checkSurvivalStatus = function(my, DIC) {
+exports.checkSurvivalStatus = function (my, DIC) {
 	var aliveCount = 0;
 	var aliveTeams = new Set();
 	var hasTeams = false;
@@ -683,7 +684,7 @@ exports.checkSurvivalStatus = function(my, DIC) {
  * @param {number} currentTurn - 현재 턴 인덱스
  * @returns {Object|null} { targetId, damage, newHP, ko } 또는 null (대상 없음)
  */
-exports.applySurvivalDamage = function(my, DIC, damage, currentTurn) {
+exports.applySurvivalDamage = function (my, DIC, damage, currentTurn) {
 	if (damage <= 0) return null;
 
 	var nextTurn = currentTurn;
@@ -729,7 +730,7 @@ exports.applySurvivalDamage = function(my, DIC, damage, currentTurn) {
  * @param {Object} extraData - turnEnd에 추가할 데이터 (optional)
  * @returns {boolean} 게임이 종료되었으면 true
  */
-exports.handleSurvivalTimeout = function(my, DIC, target, extraData) {
+exports.handleSurvivalTimeout = function (my, DIC, target, extraData) {
 	if (!my.opts.survival || !target || !target.game || !target.game.alive) {
 		return false;
 	}
@@ -760,7 +761,7 @@ exports.handleSurvivalTimeout = function(my, DIC, target, extraData) {
 
 	if (status.gameOver) {
 		clearTimeout(my.game.robotTimer);
-		my.game._rrt = setTimeout(function() {
+		my.game._rrt = setTimeout(function () {
 			my.roundEnd();
 		}, 2000);
 		return true;

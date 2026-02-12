@@ -24,6 +24,7 @@
 var WS = require("ws");
 var Express = require("express");
 var Exession = require("express-session");
+var RedisStore = require("connect-redis")(Exession);
 var Parser = require("body-parser");
 var Server = Express();
 var DB = require("./db");
@@ -38,6 +39,8 @@ var passport = require("passport");
 var { validateInput } = require("./validators");
 var Const = require("../const");
 var https = require("https");
+var fs = require("fs");
+var path = require("path");
 
 var Language = {
   ko_KR: require("./lang/ko_KR.json"),
@@ -57,19 +60,17 @@ require("../sub/checkpub");
 JLog.info("<< KKuTu Web >>");
 Server.set("views", __dirname + "/views");
 Server.set("view engine", "pug");
-Server.use(Express.static(__dirname + "/public"));
+Server.use(Express.static(__dirname + "/public", { maxAge: "1d", etag: true }));
 Server.use(Parser.urlencoded({ extended: true }));
 Server.use(
   Exession({
-    /* use only for redis-installed
-
-  store: new Redission({
-    client: Redis.createClient(),
-    ttl: 3600 * 12
-  }),*/
+    store: new RedisStore({
+      client: require("redis").createClient(),
+      ttl: 3600 * 12
+    }),
     secret: "kkutu",
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
   }),
 );
 //볕뉘 수정
@@ -234,79 +235,51 @@ function GameClient(id, url) {
 ROUTES.forEach(function (v) {
   require(`./routes/${v}`).run(Server, WebInit.page);
 });
-Server.get("/soundpacks", function (req, res) {
-  var fs = require("fs");
-  var path = require("path");
+// 미디어 파일 목록 캐싱 (서버 시작 시 1회 로드, 5분마다 갱신)
+var _mediaCache = { soundpacks: null, bgm: null, commonSounds: null };
+function refreshMediaCache() {
   var baseDir = path.join(__dirname, "public", "media", "kkutu");
-
-  console.log("Scanning sound packs in:", baseDir);
-
   fs.readdir(baseDir, function (err, files) {
-    if (err) {
-      console.error("Error reading sound pack directory:", err);
-      return res.send([]);
-    }
-    console.log("Found files/dirs:", files);
+    if (err) { _mediaCache.soundpacks = []; return; }
     var packs = [];
-    var promises = [];
-
+    var pending = files.length;
+    if (!pending) { _mediaCache.soundpacks = []; return; }
     files.forEach(function (file) {
       var packPath = path.join(baseDir, file);
-      var p = new Promise(function (resolve, reject) {
-        fs.stat(packPath, function (err, stats) {
-          if (!err && stats.isDirectory()) {
-            console.log("Found pack directory:", file);
-            fs.readdir(packPath, function (err, packFiles) {
-              if (!err) {
-                packs.push({
-                  name: file,
-                  files: packFiles,
-                });
-              }
-              resolve();
-            });
-          } else {
-            resolve();
-          }
-        });
+      fs.stat(packPath, function (err, stats) {
+        if (!err && stats.isDirectory()) {
+          fs.readdir(packPath, function (err, packFiles) {
+            if (!err) packs.push({ name: file, files: packFiles });
+            if (--pending === 0) _mediaCache.soundpacks = packs;
+          });
+        } else {
+          if (--pending === 0) _mediaCache.soundpacks = packs;
+        }
       });
-      promises.push(p);
-    });
-
-    Promise.all(promises).then(function () {
-      console.log("Sending packs:", packs);
-      res.send(packs);
     });
   });
+  var bgmDir = path.join(__dirname, "public", "media", "bgm");
+  fs.readdir(bgmDir, function (err, files) {
+    _mediaCache.bgm = err ? [] : files;
+  });
+  var commonDir = path.join(__dirname, "public", "media", "common");
+  fs.readdir(commonDir, function (err, files) {
+    _mediaCache.commonSounds = err ? [] : files;
+  });
+}
+refreshMediaCache();
+setInterval(refreshMediaCache, 300000);
+
+Server.get("/soundpacks", function (req, res) {
+  res.send(_mediaCache.soundpacks || []);
 });
 
 Server.get("/bgm", function (req, res) {
-  var fs = require("fs");
-  var path = require("path");
-  var bgmDir = path.join(__dirname, "public", "media", "bgm");
-
-  fs.readdir(bgmDir, function (err, files) {
-    if (err) {
-      // If directory doesn't exist or other error, return empty list
-      // console.error("Error reading bgm directory:", err);
-      return res.send([]);
-    }
-    // Filter for audio files if necessary, or just send all
-    res.send(files);
-  });
+  res.send(_mediaCache.bgm || []);
 });
 
 Server.get("/common-sounds", function (req, res) {
-  var fs = require("fs");
-  var path = require("path");
-  var commonDir = path.join(__dirname, "public", "media", "common");
-
-  fs.readdir(commonDir, function (err, files) {
-    if (err) {
-      return res.send([]);
-    }
-    res.send(files);
-  });
+  res.send(_mediaCache.commonSounds || []);
 });
 
 Server.get("/", function (req, res) {
@@ -318,57 +291,44 @@ Server.get("/", function (req, res) {
   }
 
   //볕뉘 수정 구문삭제(220~229, 240)
-  DB.session.findOne(["_id", req.session.id]).on(function ($ses) {
-    // var sid = (($ses || {}).profile || {}).sid || "NULL";
-    if (global.isPublic) {
-      onFinish($ses);
-      // DB.jjo_session.findOne([ '_id', sid ]).limit([ 'profile', true ]).on(onFinish);
-    } else {
-      if ($ses) $ses.profile.sid = $ses._id;
-      onFinish($ses);
+  // 세션은 Redis 스토어에서 자동 로드되므로 DB 재조회 불필요
+  var id = req.session.id;
+  if (req.session.profile) {
+    if (!global.isPublic) {
+      req.session.profile.sid = req.session.id;
     }
-  });
-  function onFinish($doc) {
-    var id = req.session.id;
-
-    if ($doc) {
-      req.session.profile = $doc.profile;
-      id = $doc.profile.sid;
-    } else {
-      delete req.session.profile;
-    }
-    var viewName = Const.MAIN_PORTS[server] ? "kkutu" : "portal";
-    console.log(`[DEBUG] server param: ${server}, MAIN_PORTS[server]: ${Const.MAIN_PORTS[server]}, viewName: ${viewName}`);
-    page(req, res, viewName, {
-      _page: "kkutu",
-      _script: viewName == "kkutu" ? "game_kkutu" : undefined,
-      _id: id,
-      PORT: (Const.MASTER_PORTS && Const.MASTER_PORTS[server]) || Const.MAIN_PORTS[server] + 30,
-      ROOM_PORT: Const.ROOM_PORTS[server],
-      HOST: req.hostname,
-      PROTOCOL: Const.IS_SECURED || Const.WAF ? "wss" : "ws",
-      TEST: req.query.test,
-      MOREMI_PART: Const.MOREMI_PART,
-      AVAIL_EQUIP: Const.AVAIL_EQUIP,
-      CATEGORIES: Const.CATEGORIES,
-      GROUPS: Const.GROUPS,
-      MODE: Const.GAME_TYPE,
-      GAME_CATEGORIES: Const.GAME_CATEGORIES,
-      RULE: Const.RULE,
-      OPTIONS: Const.OPTIONS,
-      NICKNAME_LIMIT: GLOBAL.NICKNAME_LIMIT,
-      KO_INJEONG: Const.KO_INJEONG,
-      EN_INJEONG: Const.EN_INJEONG,
-      KO_THEME: Const.KO_THEME,
-      EN_THEME: Const.EN_THEME,
-      IJP_EXCEPT: Const.IJP_EXCEPT,
-      QUIZ_TOPIC: Const.QUIZ_TOPIC,
-      ogImage: "https://kkutu-n.xyz/img/kkutu/logo.png",
-      ogURL: "https://kkutu-n.xyz/",
-      ogTitle: "글자로 놀자! 끄투엔",
-      ogDescription: "끝말잇기가 이렇게 박진감 넘치는 게임이었다니!",
-    });
+    id = req.session.profile.sid || req.session.id;
   }
+  var viewName = Const.MAIN_PORTS[server] ? "kkutu" : "portal";
+  page(req, res, viewName, {
+    _page: "kkutu",
+    _script: viewName == "kkutu" ? "game_kkutu" : undefined,
+    _id: id,
+    PORT: (Const.MASTER_PORTS && Const.MASTER_PORTS[server]) || Const.MAIN_PORTS[server] + 30,
+    ROOM_PORT: Const.ROOM_PORTS[server],
+    HOST: req.hostname,
+    PROTOCOL: Const.IS_SECURED || Const.WAF ? "wss" : "ws",
+    TEST: req.query.test,
+    MOREMI_PART: Const.MOREMI_PART,
+    AVAIL_EQUIP: Const.AVAIL_EQUIP,
+    CATEGORIES: Const.CATEGORIES,
+    GROUPS: Const.GROUPS,
+    MODE: Const.GAME_TYPE,
+    GAME_CATEGORIES: Const.GAME_CATEGORIES,
+    RULE: Const.RULE,
+    OPTIONS: Const.OPTIONS,
+    NICKNAME_LIMIT: GLOBAL.NICKNAME_LIMIT,
+    KO_INJEONG: Const.KO_INJEONG,
+    EN_INJEONG: Const.EN_INJEONG,
+    KO_THEME: Const.KO_THEME,
+    EN_THEME: Const.EN_THEME,
+    IJP_EXCEPT: Const.IJP_EXCEPT,
+    QUIZ_TOPIC: Const.QUIZ_TOPIC,
+    ogImage: "https://kkutu-n.xyz/img/kkutu/logo.png",
+    ogURL: "https://kkutu-n.xyz/",
+    ogTitle: "글자로 놀자! 끄투엔",
+    ogDescription: "끝말잇기가 이렇게 박진감 넘치는 게임이었다니!",
+  });
 });
 
 Server.get("/servers", function (req, res) {

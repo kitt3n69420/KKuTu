@@ -688,7 +688,6 @@ KKuTu.onClientMessage = function ($c, msg) {
   // heartbeat는 recaptcha 여부와 무관하게 항상 처리 (Cloudflare idle timeout 방지)
   if (msg.type === "heartbeat") {
     $c._lastHeartbeat = Date.now();
-    JLog.log(`Heartbeat from #${$c.id}`);
     return;
   }
 

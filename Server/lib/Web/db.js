@@ -45,7 +45,10 @@ Pub.ready = function (isPub) {
 		password: GLOBAL.PG_PASSWORD,
 		port: GLOBAL.PG_PORT,
 		database: GLOBAL.PG_DATABASE,
-		host: GLOBAL.PG_HOST
+		host: GLOBAL.PG_HOST,
+		max: 10,
+		idleTimeoutMillis: 30000,
+		connectionTimeoutMillis: 5000
 	});
 	Redis.on('connect', function () {
 		connectPg();
@@ -57,13 +60,17 @@ Pub.ready = function (isPub) {
 		connectPg(true);
 	});
 	function connectPg(noRedis) {
-		Pg.connect(function (err, pgMain) {
+		// 풀 연결 테스트: 커넥션 1개를 꺼내서 확인 후 즉시 반환
+		Pg.connect(function (err, testClient, release) {
 			if (err) {
 				JLog.error("Error when connect to PostgreSQL server: " + err.toString());
 				return;
 			}
+			release(); // 테스트 커넥션 즉시 풀에 반환
+
 			var redisAgent = noRedis ? null : new Collection.Agent("Redis", Redis);
-			var mainAgent = new Collection.Agent("Postgres", pgMain);
+			// 풀 자체를 origin으로 전달 - 쿼리마다 풀에서 커넥션을 자동 획득/반환
+			var mainAgent = new Collection.Agent("Postgres", Pg);
 
 			var DB = exports;
 			var i;

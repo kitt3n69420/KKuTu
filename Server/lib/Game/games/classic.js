@@ -231,7 +231,6 @@ function getAttackChars(my) {
 				time: Date.now(),
 				data: data
 			};
-			console.log(`[BOT] Updated Attack Cache for ${key}: Tier1=${tier1.length}, Tier2=${tier2.length} (Manner:${getMannerCacheKey(my.opts)})`);
 			resolve(data);
 		});
 	});
@@ -357,7 +356,6 @@ exports.getTitle = function () {
 		// 제시어의 고유한 음절 수가 제시어 글자수보다 2 이상 차이나면 부적절
 		var uniqueChars = new Set(title.split('')).size;
 		if (title.length - uniqueChars >= 2) {
-			console.log(`[TITLE] Rejected "${title}": Too many duplicate chars (${uniqueChars} unique / ${title.length} total)`);
 			R.go(false);
 			return R;
 		}
@@ -371,7 +369,6 @@ exports.getTitle = function () {
 		Lizard.all(list).then(function (res) {
 			for (i = 0; i < res.length; i++) {
 				if (res[i] < 5) {
-					console.log(`[TITLE] Rejected "${title}": Char "${title[i]}" has only ${res[i]} connectable words`);
 					return R.go(false);
 				}
 			}
@@ -822,7 +819,6 @@ exports.turnEnd = function () {
 			var i, p, item;
 			var targetId = (typeof target === 'object') ? target.id : target;
 
-			console.log("[DEBUG] TurnEnd Timeout: targetId=" + targetId);
 			// if (!Const.ROBOT_TIMEOUT_MESSAGES) console.error("[ERROR] ROBOT_TIMEOUT_MESSAGES is undefined!");
 
 			for (i in my.game.seq) {
@@ -834,7 +830,6 @@ exports.turnEnd = function () {
 				}
 
 				if (p && p.robot) {
-					console.log("[DEBUG] Found bot: " + p.id + " (Target: " + targetId + ")");
 					if (p.id !== targetId) {
 						bots.push(p);
 					}
@@ -970,18 +965,15 @@ exports.submit = function (client, text) {
 
 		// EKT: 3글자 이상 단어 입력 시, trigram 모드가 활성화될 것을 미리 예상하여 3-gram으로 매너 체크
 		var gameType = Const.GAME_TYPE[my.mode];
-		console.log(`[PreManner] Mode=${gameType}, Word="${text}", preChar="${preChar}", preSubChar="${preSubChar}", first=${my.opts.first}, middle=${my.opts.middle}, trigramMode=${my.game.kkuTrigramMode}`);
 		if (gameType === 'EKT' && text.length >= 3 && !my.game.ektTrigramMode) {
 			preChar = text.slice(-3); // 강제로 마지막 3글자 사용
 			preSubChar = preChar.slice(1); // 2-gram subChar
-			console.log(`[EKT] PreManner: Forcing trigram check for word "${text}" -> preChar=${preChar}, preSubChar=${preSubChar}`);
 		}
 		// KKU: 3글자 이상 단어 입력 시, trigram 모드 활성화를 예상하여 3-gram으로 매너 체크
 		// 단, First/Middle 규칙에서는 getChar가 이미 올바른 연결 글자를 반환하므로 강제 변경하지 않음
 		if (gameType === 'KKU' && text.length >= 3 && !my.game.kkuTrigramMode && !my.opts.first && !my.opts.middle) {
 			preChar = text.slice(-3); // 강제로 마지막 3글자 사용
 			preSubChar = preChar.slice(1); // 2-gram subChar
-			console.log(`[KKU] PreManner: Forcing trigram check for word "${text}" -> preChar=${preChar}, preSubChar=${preSubChar}`);
 		}
 
 
@@ -1071,12 +1063,10 @@ exports.submit = function (client, text) {
 					var type = Const.GAME_TYPE[my.mode];
 					if (type === 'EKT' && text.length >= 3 && !my.game.ektTrigramMode) {
 						my.game.ektTrigramMode = true;
-						console.log(`[EKT] Trigram mode activated by word: ${text}`);
 					}
 					// KKU: 3글자 이상 단어 사용 시 3-gram 모드 활성화 (EKT와 동일)
 					if (type === 'KKU' && text.length >= 3 && !my.game.kkuTrigramMode) {
 						my.game.kkuTrigramMode = true;
-						console.log(`[KKU] Trigram mode activated by word: ${text}`);
 					}
 					my.game.char = randomResult.char;
 					my.game.subChar = getSubChar.call(my, randomResult.char);
@@ -1087,20 +1077,16 @@ exports.submit = function (client, text) {
 					var type = Const.GAME_TYPE[my.mode];
 					if (type === 'EKT' && text.length >= 3 && !my.game.ektTrigramMode) {
 						my.game.ektTrigramMode = true;
-						console.log(`[EKT] Trigram mode activated by word: ${text}`);
 						// 모드 전환 후 preChar 재계산
 						preChar = getChar.call(my, text);
 						preSubChar = getSubChar.call(my, preChar);
-						console.log(`[EKT] Recalculated preChar after mode activation: ${preChar}`);
 					}
 					// KKU: 3글자 이상 단어 사용 시 3-gram 모드 활성화 (비랜덤 모드, EKT와 동일)
 					if (type === 'KKU' && text.length >= 3 && !my.game.kkuTrigramMode) {
 						my.game.kkuTrigramMode = true;
-						console.log(`[KKU] Trigram mode activated by word: ${text}`);
 						// 모드 전환 후 preChar 재계산
 						preChar = getChar.call(my, text);
 						preSubChar = getSubChar.call(my, preChar);
-						console.log(`[KKU] Recalculated preChar after mode activation: ${preChar}`);
 					}
 					my.game.char = preChar;
 					my.game.subChar = preSubChar;
@@ -1124,7 +1110,6 @@ exports.submit = function (client, text) {
 						// 매너 모드가 활성화되었다면 한방 단어는 이미 거부되었으므로 isHanbang = false
 						// 매너 모드가 비활성화되었을 때만 실제 한방 여부 표시
 						var isHanbang = !isMannerLike(my.opts) && (my.game.nextCharWordCount <= 0);
-						console.log(`[DEBUG] Hanbang Check (cached): nextCharWordCount=${my.game.nextCharWordCount}, manner=${getMannerCacheKey(my.opts)}, isHanbang=${isHanbang}`);
 
 						finalizeTurn(isHanbang);
 
@@ -1174,7 +1159,6 @@ exports.submit = function (client, text) {
 						// 매너 모드가 활성화되었으면 isHanbang = false
 						var remaining = count - used;
 						var isHanbang = !isMannerLike(my.opts) && (remaining <= 0);
-						console.log(`[DEBUG] Hanbang Check (fallback): char=${my.game.char}, sub=${my.game.subChar}, count=${count}, used=${used}, remaining=${remaining}, manner=${getMannerCacheKey(my.opts)}, isHanbang=${isHanbang}, checkChars=${debugCheckChars.join(",")}`);
 
 						// 결과 저장 (turnStart에서도 재사용 가능)
 						my.game.nextCharWordCount = remaining;
@@ -1303,7 +1287,6 @@ exports.submit = function (client, text) {
 			// 비랜덤 모드: 기존 매너 체크
 			else if (!my.opts.unknown) getAuto.call(my, preChar, preSubChar, 1).then(function (w) {
 				var count = (typeof w === 'number') ? w : (w ? 1 : 0);
-				console.log(`[MannerCheck] getAuto result for preChar="${preChar}", preSubChar="${preSubChar}": count=${count}`);
 				var used = 0;
 				var checkChars = [preChar];
 				if (preSubChar) preSubChar.split("|").forEach(function (c) { if (c && checkChars.indexOf(c) == -1) checkChars.push(c); });
@@ -1341,13 +1324,11 @@ exports.submit = function (client, text) {
 				var trigramRemaining = count - used;
 				// 실드: 매너 체크용은 통계 테이블의 raw count만 참고 (사용된 단어 차감 안 함)
 				var trigramMannerRemaining = my.opts.shield ? count : trigramRemaining;
-				console.log(`[MannerCheck] count=${count}, used=${used}, trigramRemaining=${trigramRemaining}, trigramMannerRemaining=${trigramMannerRemaining}, shield=${!!my.opts.shield}, checkChars=${JSON.stringify(checkChars)}`);
 
 				// EKT 3-gram 모드: 3-gram과 2-gram 개수의 합으로 매너 체크
 				function checkMannerAndProceed(totalRemaining, displayRemaining) {
 					if (displayRemaining === undefined) displayRemaining = totalRemaining;
 					var mannerMinRemaining = getMannerMinRemaining(my.opts);
-					console.log(`[MannerCheck] checkMannerAndProceed: totalRemaining=${totalRemaining}, displayRemaining=${displayRemaining}, firstMove=${firstMove}, manner=${getMannerCacheKey(my.opts)}, minRemaining=${mannerMinRemaining}`);
 					// 빨간 글씨 표시용: 항상 사용된 단어를 차감한 값 사용
 					my.game.nextCharWordCount = displayRemaining;
 
@@ -1383,7 +1364,6 @@ exports.submit = function (client, text) {
 								// 사용 가능 단어가 3개 이하일 때: 함정 체크 + 매너 체크 통합
 								// 각 단어가 (1) 자기 자신으로 돌아오지 않고 (2) 이을 단어가 있는지 확인
 								if (availableList.length <= 3) {
-									console.log(`[MannerCheck] Combined trap+manner check for ${availableList.length} words`);
 									var checkPending = availableList.length;
 									var hasValidWord = false;
 
@@ -1408,10 +1388,8 @@ exports.submit = function (client, text) {
 
 										if (linksToSelf) {
 											// 자기 자신으로 돌아오면 비매너
-											console.log(`[MannerCheck] Candidate "${candidateWord}" links back to self -> invalid`);
 											checkPending--;
 											if (checkPending === 0 && !hasValidWord) {
-												console.log(`[MannerCheck] All candidates are traps or dead ends`);
 												denied(403);
 											}
 											return;
@@ -1458,7 +1436,6 @@ exports.submit = function (client, text) {
 												}
 
 												var nextRemaining = nextTotal - nextUsed;
-												console.log(`[MannerCheck] Candidate "${candidateWord}" -> char="${candidateChar}": total=${nextTotal}, used=${nextUsed}, remaining=${nextRemaining}, candidateMatchesNext=${candidateMatchesNext}`);
 
 												if (nextRemaining >= 1) {
 													hasValidWord = true;
@@ -1469,7 +1446,6 @@ exports.submit = function (client, text) {
 													if (hasValidWord) {
 														approved();
 													} else {
-														console.log(`[MannerCheck] All ${availableList.length} candidates are traps or dead ends in manner mode`);
 														denied(403);
 													}
 												}
@@ -1554,7 +1530,6 @@ exports.submit = function (client, text) {
 						// 실드: 매너 체크용은 통계 테이블의 raw count만 참고
 						var mannerTotal = my.opts.shield ? (count + bigramCount) : displayTotal;
 
-						console.log(`[MannerDebug] Combined Check (${gameType}): 3-gram=${preChar}(${trigramRemaining}), 2-gram=${bigramChar}(${bigramRemaining}), mannerTotal=${mannerTotal}, displayTotal=${displayTotal}`);
 
 						checkMannerAndProceed(mannerTotal, displayTotal);
 					});
@@ -1570,7 +1545,6 @@ exports.submit = function (client, text) {
 			// 매너 체크 실패(402/403)이고 선호 글자로 시도한 경우에만 선호 글자 거부 플래그 설정
 			if (client.robot && (code === 402 || code === 403) && client.data._usingPreferredChar) {
 				client.data._preferredCharRejected = true;
-				console.log(`[BOT] Preferred char rejected by manner check (code ${code})`);
 			}
 			if (client.robot) client.data._usingPreferredChar = false;
 			client.publish('turnError', {
@@ -1777,7 +1751,6 @@ exports.readyRobot = function (robot) {
 		personality = 0;
 	}
 
-	console.log(`[BOT] readyRobot: Level=${level}, Personality=${personality}, PrefChar=${preferredChar}, Mode=${Const.GAME_TYPE[my.mode]}`);
 
 	// Helper: Count next words for a given character
 	// Helper: Count next words for a given character using Pre-calculated Stats
@@ -1936,7 +1909,6 @@ exports.readyRobot = function (robot) {
 					var bigramRemaining = bigramCount - bigramUsed;
 					var remaining = trigramRemaining + bigramRemaining;
 
-					console.log(`[BOT] EKT Manner Check: word=${word}, trigram=${trigram}(${trigramCount}-${trigramUsed}=${trigramRemaining}), bigram=${bigram}(${bigramCount}-${bigramUsed}=${bigramRemaining}), remaining=${remaining}`);
 
 					if (remaining >= 1) {
 						results.push(w);
@@ -2001,7 +1973,6 @@ exports.readyRobot = function (robot) {
 		function checkNextWord(list, index) {
 			if (index >= list.length) {
 				// 모든 단어가 매너 체크 실패 → 더 가져오기
-				console.log(`[BOT] KKU: All ${list.length} words failed manner check, fetching more...`);
 				getAuto.call(my, my.game.char, my.game.subChar, 2, 2).then(function (moreList) {
 					if (!moreList || moreList.length === 0) {
 						return denied();
@@ -2055,7 +2026,6 @@ exports.readyRobot = function (robot) {
 					return !my.game.chain || !my.game.chain.includes(d._id);
 				}).length : 0;
 
-				console.log(`[BOT] KKU Manner: word=${word}, next=${trigram}|${bigram}, available=${available}`);
 
 				if (available > 0) {
 					// 매너 통과
@@ -2074,7 +2044,6 @@ exports.readyRobot = function (robot) {
 			if (my.game.late) return;
 			text = w._id;
 			delay += 500 * ROBOT_THINK_COEF[level] * Math.random() / Math.log(1.1 + w.hit);
-			console.log(`[BOT] KKU: Picked word: ${text}`);
 			robot._done.push(text);
 			setTimeout(my.turnRobot, delay, robot, text);
 		}
@@ -2179,7 +2148,6 @@ exports.readyRobot = function (robot) {
 	// Priority 1: Preferred Character Logic (Direct Query)
 	// 매너 계열 규칙에서 선호 글자가 한번 거부당하면 다시 시도하지 않음
 	if (preferredChar && robot.data._preferredCharRejected) {
-		console.log(`[BOT] Preferred Char '${preferredChar}' was previously rejected by manner rules. Skipping to Phase 2.`);
 		preferredChar = null;
 	}
 	if (preferredChar && Math.random() < PREFERRED_CHAR_PROB[level]) {
@@ -2189,7 +2157,6 @@ exports.readyRobot = function (robot) {
 		if (my.game.chain.length === 0) {
 			proceed = countNextWords(preferredChar).then(function (count) {
 				if (count === 0) {
-					console.log(`[BOT] Skipping Preferred Char '${preferredChar}' on first turn (No next words)`);
 					return false;
 				}
 				return true;
@@ -2202,7 +2169,6 @@ exports.readyRobot = function (robot) {
 				return;
 			}
 
-			console.log(`[BOT] Priority 1: Trying Preferred Char: ${preferredChar}`);
 
 
 			var adc = my.game.char + (my.game.subChar ? ("|" + my.game.subChar) : "");
@@ -2351,13 +2317,11 @@ exports.readyRobot = function (robot) {
 				}
 
 				if (list && list.length > 0) {
-					console.log(`[BOT] Priority 1 Success: Found ${list.length} candidates`);
 					// Shuffle the list to add randomness
 					list = shuffle(list);
 					robot.data._usingPreferredChar = true;
 					pickList(list);
 				} else {
-					console.log(`[BOT] Priority 1 Failed: No candidates found for regex ${regex} with flags ${flagMask}, falling back`);
 					decideStrategy();
 				}
 			});
@@ -2375,7 +2339,6 @@ exports.readyRobot = function (robot) {
 
 		// KKU 모드: 별도의 간단한 봇 로직 사용
 		if (isKKU) {
-			console.log(`[BOT] KKU Mode: Using dedicated simple bot logic`);
 			executeKKUBot();
 			return;
 		}
@@ -2386,7 +2349,6 @@ exports.readyRobot = function (robot) {
 
 		// Force Retry Logic
 		if (robot.data.retryCount > 0) {
-			console.log(`[BOT] Forced Retry (Count ${robot.data.retryCount}) with Tier 2 (Previous attempt failed)`);
 			decided = true;
 			strategy = "ATTACK";
 		}
@@ -2399,12 +2361,10 @@ exports.readyRobot = function (robot) {
 
 		// Team Check: Disable attack if next player is teammate
 		var currentTeam = robot.game.team || 0;
-		console.log(`[BOT] Team Check START: current bot team=${currentTeam}, turn=${my.game.turn}, seq.length=${my.game.seq.length}`);
 
 		if (currentTeam !== 0 || my.opts.randomturn) {
 			var nextTurnIndex = (my.game.turn + 1) % my.game.seq.length;
 			var nextPlayer = my.game.seq[nextTurnIndex];
-			console.log(`[BOT] Team Check: nextTurnIndex=${nextTurnIndex}, nextPlayer type=${typeof nextPlayer}`);
 
 			if (typeof nextPlayer === 'string') {
 				nextPlayer = DIC[nextPlayer];
@@ -2412,25 +2372,19 @@ exports.readyRobot = function (robot) {
 
 			if (nextPlayer) {
 				var nextTeam = nextPlayer.robot ? (nextPlayer.game.team || 0) : (nextPlayer.team || 0);
-				console.log(`[BOT] Team Check: nextPlayer.id=${nextPlayer.id}, nextPlayer.robot=${nextPlayer.robot}, nextTeam=${nextTeam}`);
 
 				if (nextTeam !== 0 && nextTeam === currentTeam) {
-					console.log(`[BOT] ✓ TEAMMATE DETECTED! Same team ${currentTeam}. Disabling Attack.`);
 					strategy = "NORMAL";
 					decided = true;
 				} else {
-					console.log(`[BOT] ✗ Not teammates (currentTeam=${currentTeam}, nextTeam=${nextTeam})`);
 				}
 			} else {
-				console.log(`[BOT] Team Check: nextPlayer is null/undefined`);
 			}
 		} else {
-			console.log(`[BOT] Team Check: Current bot has no team (team=0), skipping check`);
 		}
 
 		// First/Random Rules: Disable Attack
 		if (!decided && (my.opts.first || my.opts.random)) {
-			console.log("[BOT] First/Random Rule detected. Disabling Attack Strategy and Special Moves.");
 			strategy = "NORMAL"; // Always Normal
 			decided = true;
 			// Personality Override if Aggressive (>0 -> 0)
@@ -2444,7 +2398,6 @@ exports.readyRobot = function (robot) {
 		if (!decided && effPersonality !== 0 && level >= 2) {
 			var roll = Math.random();
 			var prob = PERSONALITY_CONST[level] * Math.abs(effPersonality);
-			console.log(`[BOT] Priority 2 (Personality): Roll=${roll.toFixed(3)}, Prob=${prob.toFixed(3)}`);
 			if (roll < prob) {
 				// 매너 모드에서는 공격만 금지
 				var allowAttack = !mannerMode;
@@ -2461,7 +2414,6 @@ exports.readyRobot = function (robot) {
 		if (!decided && level >= 2) {
 			var roll = Math.random();
 			var prob = SPECIAL_MOVE_PROB[level];
-			console.log(`[BOT] Priority 3 (Special Move): Roll=${roll.toFixed(3)}, Prob=${prob.toFixed(3)}`);
 			if (roll < prob) {
 				// 매너 모드에서는 공격만 금지
 				var allowAttack = !mannerMode;
@@ -2484,7 +2436,6 @@ exports.readyRobot = function (robot) {
 			}
 		}
 
-		console.log(`[BOT] Final Strategy: ${strategy}`);
 		executeStrategy(strategy);
 	}
 
@@ -2498,7 +2449,6 @@ exports.readyRobot = function (robot) {
 		} : null;
 
 		getAuto.call(my, my.game.char, my.game.subChar, 2, limitMultiplier, sort).then(function (list) {
-			console.log(`[BOT] executeStrategy: ${strategy}, fetched ${list ? list.length : 0} words`);
 			if (list) {
 				// Filter by length limit and done list
 				// EKT 3-gram 모드: 최소 4글자 이상 필터 추가
@@ -2529,7 +2479,6 @@ exports.readyRobot = function (robot) {
 
 				if (list.length === 0) {
 					if (strategy !== "NORMAL") {
-						console.log(`[BOT] Strategy ${strategy} failed (no candidates), falling back to NORMAL`);
 						executeStrategy("NORMAL");
 					} else {
 						denied();
@@ -2658,17 +2607,14 @@ exports.readyRobot = function (robot) {
 								});
 
 								if (list.length > 0) {
-									console.log(`[BOT] ATTACK Success: Found ${list.length} words.`);
 
 									if (Const.GAME_TYPE[my.mode] === "KSH" && my.game.seq && my.game.seq.length === 2) {
 										var safe = list.filter(w => !DUBANG.includes(w._id.slice(-1)));
 										var unsafe = list.filter(w => DUBANG.includes(w._id.slice(-1)));
 
 										if (safe.length > 0) {
-											console.log(`[BOT] Dubang Avoidance: Picking from ${safe.length} safe words.`);
 											list = smartShuffle(safe).concat(smartShuffle(unsafe));
 										} else {
-											console.log(`[BOT] Dubang Avoidance: No safe words.`);
 											list = smartShuffle(unsafe);
 										}
 									} else if (Const.GAME_TYPE[my.mode] === "KSH" && my.opts.freedueum) {
@@ -2676,10 +2622,8 @@ exports.readyRobot = function (robot) {
 										var unsafe = list.filter(w => AVOID_FD.includes(w._id.slice(-1)));
 
 										if (safe.length > 0) {
-											console.log(`[BOT] FreeDueum Avoidance (KSH): Picking from ${safe.length} safe words.`);
 											list = smartShuffle(safe).concat(smartShuffle(unsafe));
 										} else {
-											console.log(`[BOT] FreeDueum Avoidance (KSH): No safe words.`);
 											list = smartShuffle(unsafe);
 										}
 									} else if (Const.GAME_TYPE[my.mode] === "KAP" && my.game.seq && my.game.seq.length === 2) {
@@ -2687,10 +2631,8 @@ exports.readyRobot = function (robot) {
 										var unsafe = list.filter(w => DUBANG_KAP.includes(w._id.charAt(0)));
 
 										if (safe.length > 0) {
-											console.log(`[BOT] Dubang Avoidance (KAP): Picking from ${safe.length} safe words.`);
 											list = smartShuffle(safe).concat(smartShuffle(unsafe));
 										} else {
-											console.log(`[BOT] Dubang Avoidance (KAP): No safe words.`);
 											list = smartShuffle(unsafe);
 										}
 									} else {
@@ -2831,7 +2773,6 @@ exports.readyRobot = function (robot) {
 								}
 							}
 
-							console.log(`[BOT] ATTACK KO: Optimized Query with ${subset.length} random killers...`);
 
 							var query = [
 								['_id', new RegExp(regex)]
@@ -2977,7 +2918,6 @@ exports.readyRobot = function (robot) {
 								}
 							}
 
-							console.log(`[BOT] ATTACK EN: Optimized Query with ${subset.length} random killers...`);
 
 							var query = [
 								['_id', new RegExp(regex)]
@@ -2996,16 +2936,13 @@ exports.readyRobot = function (robot) {
 
 						var startTier1 = true;
 						if (!my.game.chain || my.game.chain.length === 0 || isMannerLike(my.opts)) {
-							console.log("[BOT] First Turn or Manner Mode detected. Skipping Tier 1 (Killer word unavailable).");
 							startTier1 = false;
 						} else if (Math.random() < tier2StartProb) {
-							console.log(`[BOT] Stochastic Skip: Skipping Tier 1 with probability ${tier2StartProb.toFixed(2)}.`);
 							startTier1 = false;
 						}
 
 						// Retry Tier 2 Logic Consumption
 						if (robot.data.retryCount > 0) {
-							console.log(`[BOT] Retry Tier 2 Flag detected (Count ${robot.data.retryCount}). Skipping Tier 1.`);
 							startTier1 = false;
 							// Do NOT delete retryCount here, as we need it for subsequent retries if this one fails too.
 							// It will be cleared in turnStart or when turn ends successfully.
@@ -3013,16 +2950,13 @@ exports.readyRobot = function (robot) {
 
 						if (startTier1) {
 							tryAttack(tier1, function () {
-								console.log("[BOT] Tier 1 failed, trying Tier 2...");
 								tryAttack(tier2, function () {
-									console.log("[BOT] Tier 2 failed, falling back to NORMAL.");
 									executeStrategy("NORMAL");
 								});
 							});
 						} else {
 							// Skip Tier 1, Start at Tier 2
 							tryAttack(tier2, function () {
-								console.log("[BOT] Tier 2 failed (First Turn), falling back to NORMAL.");
 								executeStrategy("NORMAL");
 							});
 						}
@@ -3053,7 +2987,6 @@ exports.readyRobot = function (robot) {
 							var nextTeam = nextPlayer.robot ? (nextPlayer.game.team || 0) : (nextPlayer.team || 0);
 							if (nextTeam !== 0 && nextTeam === currentTeam) {
 								isNextTeammate = true;
-								console.log(`[BOT] Manner Filter: TEAMMATE detected (team ${currentTeam})`);
 							}
 						}
 					}
@@ -3064,24 +2997,18 @@ exports.readyRobot = function (robot) {
 					var useGeneralManner = needsMannerFilter && !useEKTManner;
 
 					if (useEKTManner) {
-						console.log(`[BOT] EKT Manner Filter: Checking ${list.length} words...`);
 						filterEKTManner(list).then(function (filtered) {
 							if (filtered.length > 0) {
-								console.log(`[BOT] EKT Manner Filter: ${filtered.length}/${list.length} words passed`);
 								pickList(filtered);
 							} else {
-								console.log(`[BOT] EKT Manner Filter: No valid words found`);
 								denied();
 							}
 						});
 					} else if (useGeneralManner) {
-						console.log(`[BOT] General Manner Filter: Checking ${list.length} words... (Teammate: ${isNextTeammate})`);
 						filterManner(list).then(function (filtered) {
 							if (filtered.length > 0) {
-								console.log(`[BOT] General Manner Filter: ${filtered.length}/${list.length} words passed`);
 								pickList(filtered);
 							} else {
-								console.log(`[BOT] General Manner Filter: No valid words found`);
 								denied();
 							}
 						});
@@ -3253,7 +3180,6 @@ exports.readyRobot = function (robot) {
 				w = candidate;
 				text = w._id;
 				delay += 500 * ROBOT_THINK_COEF[level] * Math.random() / Math.log(1.1 + w.hit);
-				console.log(`[BOT] Picked word: ${text} (Hit: ${w.hit}, Len: ${text.length}, Source: ${robot.data.candidates.length} candidates)`);
 				after();
 			} else denied();
 		} else denied();
@@ -3426,7 +3352,6 @@ function getAuto(char, subc, type, limit, sort) {
 			break;
 	}
 	if (!char) {
-		console.log(`Undefined char detected! type=${type} adc=${adc}`);
 	}
 
 	// type=1 (존재 여부 확인 Check): kkutu_stats table check
@@ -3515,7 +3440,6 @@ function getAuto(char, subc, type, limit, sort) {
 				if (--pending === 0) {
 					// noshort/no2 모드: 전체 - short = 9글자 이상 또는 3글자 이상 단어 수
 					var finalCount = (my.opts.noshort || my.opts.no2) ? (totalCount - totalShort) : totalCount;
-					console.log(`[DEBUG] getAuto stats: col=${col}, shortCol=${shortCol}, total=${totalCount}, short=${totalShort}, final=${finalCount}, details=[${debugCounts.join(", ")}]`);
 					R.go(finalCount);
 				}
 			}, null, function () {
@@ -3523,7 +3447,6 @@ function getAuto(char, subc, type, limit, sort) {
 				debugCounts.push(`${c}:0(missing)`);
 				if (--pending === 0) {
 					var finalCount = (my.opts.noshort || my.opts.no2) ? (totalCount - totalShort) : totalCount;
-					console.log(`[DEBUG] getAuto stats: col=${col}, shortCol=${shortCol}, total=${totalCount}, short=${totalShort}, final=${finalCount}, details=[${debugCounts.join(", ")}]`);
 					R.go(finalCount);
 				}
 			});
@@ -4078,7 +4001,6 @@ function getRandomChar(text) {
 						var totalCount = count + bigramCount;
 						// 3-gram에 2-gram을 포함한 총합을 캐시
 						my.game._charCountCache[cacheKey] = totalCount;
-						console.log(`[RandomDebug] Cache HIT (2-gram): ${bigramCacheKey}=${bigramCount}, combined=${totalCount}`);
 						processCount(totalCount, idx, char, subChar, cacheKey, false);
 					} else {
 						// 2-gram도 조회 필요
@@ -4089,7 +4011,6 @@ function getRandomChar(text) {
 							var totalCount = count + bigramCount;
 							// 3-gram에 2-gram을 포함한 총합을 캐시
 							my.game._charCountCache[cacheKey] = totalCount;
-							console.log(`[RandomDebug] Cache MISS (2-gram): ${bigramCacheKey}=${bigramCount}, combined=${totalCount}`);
 							processCount(totalCount, idx, char, subChar, cacheKey, false);
 						});
 					}
@@ -4152,7 +4073,6 @@ function getRandomChar(text) {
 			}
 
 			var remaining = count - used;
-			console.log(`[RandomDebug] Word: ${text}, Idx: ${idx}, Char: ${char}, Count: ${count}, Used: ${used}, Remaining: ${remaining}, Cached: ${isCached}, FirstMove: ${firstMove}`);
 
 			// 매너 한도: 최소 1단어
 			var minRemaining = 1;

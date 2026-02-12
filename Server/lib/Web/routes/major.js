@@ -418,23 +418,22 @@ exports.run = function (Server, page) {
 
     var items = [a, b].sort();
 
-    MainDB.kkutu_shop.findOne(["_id", a]).limit(["group", true], ["cost", true]).on(function ($itemA) {
-      if (!$itemA) return res.json({ error: 400 });
-      MainDB.kkutu_shop.findOne(["_id", b]).limit(["group", true], ["cost", true]).on(function ($itemB) {
-        if (!$itemB) return res.json({ error: 400 });
-        if ($itemA.group !== $itemB.group) return res.json({ result: null, reason: "group_mismatch" });
-
-        MainDB.crafting.findOne(["item1", items[0]], ["item2", items[1]]).on(function ($recipe) {
-          if (!$recipe) return res.json({ result: null, reason: "no_recipe" });
-
-          var costA = Math.abs($itemA.cost || 0);
-          var costB = Math.abs($itemB.cost || 0);
-          var craftCost = Math.round(Math.sqrt(costA * costA + costB * costB) / 3);
-
-          res.json({ result: $recipe.result, cost: craftCost });
-        });
-      });
-    });
+    // itemA, itemB, recipe 3개 쿼리를 병렬 실행
+    var _itemA = null, _itemB = null, _recipe = null, _done = 0, _failed = false;
+    function craftCheckDone() {
+      if (_failed) return;
+      if (++_done < 3) return;
+      if (!_itemA || !_itemB) { _failed = true; return res.json({ error: 400 }); }
+      if (_itemA.group !== _itemB.group) { _failed = true; return res.json({ result: null, reason: "group_mismatch" }); }
+      if (!_recipe) { _failed = true; return res.json({ result: null, reason: "no_recipe" }); }
+      var costA = Math.abs(_itemA.cost || 0);
+      var costB = Math.abs(_itemB.cost || 0);
+      var craftCost = Math.round(Math.sqrt(costA * costA + costB * costB) / 3);
+      res.json({ result: _recipe.result, cost: craftCost });
+    }
+    MainDB.kkutu_shop.findOne(["_id", a]).limit(["group", true], ["cost", true]).on(function ($r) { _itemA = $r; craftCheckDone(); });
+    MainDB.kkutu_shop.findOne(["_id", b]).limit(["group", true], ["cost", true]).on(function ($r) { _itemB = $r; craftCheckDone(); });
+    MainDB.crafting.findOne(["item1", items[0]], ["item2", items[1]]).on(function ($r) { _recipe = $r; craftCheckDone(); });
   });
   Server.post("/craft", function (req, res) {
     if (!req.session.profile) return res.json({ error: 400 });
@@ -448,48 +447,53 @@ exports.run = function (Server, page) {
 
     var items = [a, b].sort();
 
-    MainDB.crafting.findOne(["item1", items[0]], ["item2", items[1]]).on(function ($recipe) {
-      if (!$recipe) return res.json({ error: 400 });
+    // recipe, user 쿼리를 병렬 실행
+    var _recipe = null, _user = null, _phase1 = 0, _failed = false;
+    function craftPhase1() {
+      if (_failed) return;
+      if (++_phase1 < 2) return;
+      if (!_recipe) { _failed = true; return res.json({ error: 400 }); }
+      if (!_user) { _failed = true; return res.json({ error: 400 }); }
+      if (!_user.box) _user.box = {};
 
-      MainDB.users.findOne(["_id", uid]).limit(["money", true], ["box", true]).on(function ($user) {
-        if (!$user) return res.json({ error: 400 });
-        if (!$user.box) $user.box = {};
+      if (a === b) {
+        var bd = _user.box[a];
+        var count = (typeof bd === "number") ? bd : (bd && bd.value ? bd.value : 0);
+        if (count < 2) { _failed = true; return res.json({ error: 434 }); }
+      } else {
+        var bdA = _user.box[a];
+        var bdB = _user.box[b];
+        var countA = (typeof bdA === "number") ? bdA : (bdA && bdA.value ? bdA.value : 0);
+        var countB = (typeof bdB === "number") ? bdB : (bdB && bdB.value ? bdB.value : 0);
+        if (countA < 1 || countB < 1) { _failed = true; return res.json({ error: 434 }); }
+      }
 
-        if (a === b) {
-          var bd = $user.box[a];
-          var count = (typeof bd === "number") ? bd : (bd && bd.value ? bd.value : 0);
-          if (count < 2) return res.json({ error: 434 });
-        } else {
-          var bdA = $user.box[a];
-          var bdB = $user.box[b];
-          var countA = (typeof bdA === "number") ? bdA : (bdA && bdA.value ? bdA.value : 0);
-          var countB = (typeof bdB === "number") ? bdB : (bdB && bdB.value ? bdB.value : 0);
-          if (countA < 1 || countB < 1) return res.json({ error: 434 });
-        }
+      // itemA, itemB 가격 조회도 병렬 실행
+      var _itemA = null, _itemB = null, _phase2 = 0;
+      function craftPhase2() {
+        if (_failed) return;
+        if (++_phase2 < 2) return;
+        var costA = Math.abs(_itemA ? _itemA.cost : 0);
+        var costB = Math.abs(_itemB ? _itemB.cost : 0);
+        var craftCost = Math.round(Math.sqrt(costA * costA + costB * costB) / 3);
 
-        MainDB.kkutu_shop.findOne(["_id", a]).limit(["cost", true]).on(function ($itemA) {
-          MainDB.kkutu_shop.findOne(["_id", b]).limit(["cost", true]).on(function ($itemB) {
-            var costA = Math.abs($itemA ? $itemA.cost : 0);
-            var costB = Math.abs($itemB ? $itemB.cost : 0);
-            var craftCost = Math.round(Math.sqrt(costA * costA + costB * costB) / 3);
+        if (_user.money < craftCost) { _failed = true; return res.json({ error: 407 }); }
 
-            if ($user.money < craftCost) return res.json({ error: 407 });
+        consume(_user, a, 1, true);
+        consume(_user, b, 1, true);
+        obtain(_user, _recipe.result, 1);
+        _user.money -= craftCost;
 
-            consume($user, a, 1, true);
-            consume($user, b, 1, true);
-
-            obtain($user, $recipe.result, 1);
-
-            $user.money -= craftCost;
-
-            MainDB.users.update(["_id", uid]).set(["money", $user.money], ["box", $user.box]).on(function ($fin) {
-              res.send({ result: 200, box: $user.box, money: $user.money, crafted: $recipe.result });
-              JLog.log("[CRAFTED] " + a + " + " + b + " => " + $recipe.result + " by " + uid);
-            });
-          });
+        MainDB.users.update(["_id", uid]).set(["money", _user.money], ["box", _user.box]).on(function ($fin) {
+          res.send({ result: 200, box: _user.box, money: _user.money, crafted: _recipe.result });
+          JLog.log("[CRAFTED] " + a + " + " + b + " => " + _recipe.result + " by " + uid);
         });
-      });
-    });
+      }
+      MainDB.kkutu_shop.findOne(["_id", a]).limit(["cost", true]).on(function ($r) { _itemA = $r; craftPhase2(); });
+      MainDB.kkutu_shop.findOne(["_id", b]).limit(["cost", true]).on(function ($r) { _itemB = $r; craftPhase2(); });
+    }
+    MainDB.crafting.findOne(["item1", items[0]], ["item2", items[1]]).on(function ($r) { _recipe = $r; craftPhase1(); });
+    MainDB.users.findOne(["_id", uid]).limit(["money", true], ["box", true]).on(function ($r) { _user = $r; craftPhase1(); });
   });
   Server.get("/dict/:word", function (req, res) {
     var word = req.params.word;

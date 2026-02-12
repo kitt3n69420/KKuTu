@@ -1233,8 +1233,6 @@ exports.logChat = function (profile, message, place, isRobot = false) {
     const senderType = isRobot ? '[봇]' : '';
     const line = `${senderType}**${name}**: ${message}`;
 
-    JLog.log(`[Chat] ${senderType}${name} @ ${location}: ${message}`);
-
     if (!isEnabled || !isReady || !channel) return;
 
     const now = Date.now();

@@ -191,7 +191,6 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 	my.id = target + place + Math.floor(Math.random() * 1000000000);
 	my.robot = true;
 	my.game = { score: 0, bonus: 0, team: 0 };
-	console.log("[DEBUG Robot Constructor] Bot", my.id, "created with game.score=", my.game.score);
 	my.data = {};
 	my.place = place;
 	my.target = target;
@@ -235,7 +234,6 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 				}
 			}
 		}
-		console.log(`[Bot ${my.id}] Equipped items:`, my.equip);
 	})();
 
 	my.getData = function () {
@@ -876,7 +874,6 @@ exports.Client = function (socket, profile, sid) {
 		$room.ready();
 	};
 	my.practice = function (data) {
-		console.log("[DEBUG] my.practice called with:", data);
 		var $room = ROOM[my.place];
 		var ud;
 		var pr;
@@ -1223,9 +1220,9 @@ exports.Room = function (room, channel) {
 					}
 				}
 				if (my.players.length == 0) {
-					if (my._adt) clearTimeout(my._adt);
-					if (my._jst) clearTimeout(my._jst);
-					if (my._jst_stage2) clearTimeout(my._jst_stage2);
+					if (my._adt) { clearTimeout(my._adt); delete my._adt; }
+					if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+					if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
 					delete ROOM[my.id];
 					if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
 					return;
@@ -1302,9 +1299,9 @@ exports.Room = function (room, channel) {
 					}
 				}
 				if (my.players.length == 0) {
-					if (my._adt) clearTimeout(my._adt);
-					if (my._jst) clearTimeout(my._jst);
-					if (my._jst_stage2) clearTimeout(my._jst_stage2);
+					if (my._adt) { clearTimeout(my._adt); delete my._adt; }
+					if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+					if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
 					delete ROOM[my.id];
 					if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
 					return;
@@ -1347,9 +1344,9 @@ exports.Room = function (room, channel) {
 					}
 				}
 				if (my.players.length == 0) {
-					if (my._adt) clearTimeout(my._adt);
-					if (my._jst) clearTimeout(my._jst);
-					if (my._jst_stage2) clearTimeout(my._jst_stage2);
+					if (my._adt) { clearTimeout(my._adt); delete my._adt; }
+					if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+					if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
 					delete ROOM[my.id];
 					if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
 					return;
@@ -1486,7 +1483,7 @@ exports.Room = function (room, channel) {
 										}
 									}
 									if (my.players.length == 0) {
-										if (my._adt) clearTimeout(my._adt);
+										if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 										delete ROOM[my.id];
 										if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
 										return;
@@ -1734,7 +1731,6 @@ exports.Room = function (room, channel) {
 
 	my.setAI = function (target, level, team, personality, preferredChar) {
 		var i;
-		console.log(`[ROOM] setAI: Target=${target}, Level=${level}, Team=${team}, Personality=${personality}, PrefChar=${preferredChar}`);
 
 		for (i in my.players) {
 			if (!my.players[i]) continue;
@@ -1881,9 +1877,9 @@ exports.Room = function (room, channel) {
 			// 방에 플레이어가 아무도 없으면 방 삭제
 			if (my.players.length < 1) {
 				JLog.info(`Room ${my.id} has no players, deleting room`);
-				if (my._adt) clearTimeout(my._adt);
-				if (my._jst) clearTimeout(my._jst);
-				if (my._jst_stage2) clearTimeout(my._jst_stage2);
+				if (my._adt) { clearTimeout(my._adt); delete my._adt; }
+				if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+				if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
 				delete ROOM[my.id];
 				if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
 			}
@@ -2085,9 +2081,9 @@ exports.Room = function (room, channel) {
 			var remainingPlayers = my.players.slice();
 
 			// 타이머 정리 및 방 먼저 삭제 (재귀 호출 방지)
-			if (my._adt) clearTimeout(my._adt);
-			if (my._jst) clearTimeout(my._jst);
-			if (my._jst_stage2) clearTimeout(my._jst_stage2);
+			if (my._adt) { clearTimeout(my._adt); delete my._adt; }
+			if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+			if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
 			delete ROOM[roomId];
 
 			if (Cluster.isWorker) {
@@ -2155,10 +2151,8 @@ exports.Room = function (room, channel) {
 				my.opts.quizpick = room.opts.quizpick || [];
 			} else my.opts.quizpick = [];
 			// 서바이벌 HP 옵션 처리
-			console.log("[DEBUG my.set] room.opts.surHP:", room.opts.surHP, "room.opts:", JSON.stringify(room.opts));
 			if (room.opts.surHP) {
 				my.opts.surHP = room.opts.surHP;
-				console.log("[DEBUG my.set] Set my.opts.surHP to:", my.opts.surHP);
 			}
 		}
 		// APL (Bad Apple) 옵션 체크: opts 복사 후에 수행
@@ -2247,7 +2241,6 @@ exports.Room = function (room, channel) {
 		if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 		if (my._jst) { clearTimeout(my._jst); delete my._jst; }
 		if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
-		console.log("[DEBUG] my.start called with:", pracLevel, personality, preferredChar);
 		var i, j, o, hum = 0;
 		var now = (new Date()).getTime();
 
@@ -2387,7 +2380,6 @@ exports.Room = function (room, channel) {
 
 			o.playAt = now;
 			o.ready = false;
-			console.log("[DEBUG start] Setting score for", o.id, "robot=", o.robot, "game.score before=", o.game.score);
 			// 서바이벌 모드: 점수 대신 체력으로 초기화
 			if (my.opts.survival) {
 				var survivalHP = my.opts.surHP || 500;
@@ -2400,7 +2392,6 @@ exports.Room = function (room, channel) {
 			o.game.bonus = 0;
 			o.game.item = [/*0, 0, 0, 0, 0, 0*/];
 			o.game.wpc = [];
-			console.log("[DEBUG start] After setting, game.score=", o.game.score);
 		}
 		// 서바이벌 모드는 1라운드만 진행
 		if (my.opts.survival) {
@@ -2523,13 +2514,6 @@ exports.Room = function (room, channel) {
 			if (!o) continue;
 			if (!o.game) continue; // Fix: o.game이 없으면 스킵
 
-			// DEBUG: 봇 객체 참조 추적
-			if (o.robot) {
-				var inPlayers = my.players.indexOf(o) !== -1;
-				var inRobots = my.game.robots ? my.game.robots.indexOf(o) !== -1 : false;
-				console.log("[DEBUG roundEnd] Bot", o.id, "score=", o.game.score, "inPlayers=", inPlayers, "inRobots=", inRobots);
-			}
-
 			// Fix: null/undefined 점수를 0으로 처리
 			var playerScore = (typeof o.game.score === 'number') ? o.game.score : 0;
 			sumScore += playerScore;
@@ -2553,7 +2537,6 @@ exports.Room = function (room, channel) {
 
 		// Sort: 1. Team Score (Desc), 2. Team ID (Group ties), 3. Individual Score (Desc)
 		// 서바이벌 모드: alive 상태 기준으로 정렬 (생존자가 위)
-		console.log("[DEBUG roundEnd] Before sort:", JSON.stringify(res.map(function (r) { return { id: r.id, score: r.score, teamScore: r.teamScore, team: r.team, alive: r.alive }; })));
 		res.sort(function (a, b) {
 			// 서바이벌 모드: 생존자가 먼저
 			if (my.opts.survival) {
@@ -2572,7 +2555,6 @@ exports.Room = function (room, channel) {
 			if (tA != tB) return tB - tA;
 			return bScore - aScore;
 		});
-		console.log("[DEBUG roundEnd] After sort:", JSON.stringify(res.map(function (r) { return { id: r.id, score: r.score, teamScore: r.teamScore, team: r.team }; })));
 		rl = res.length;
 
 
