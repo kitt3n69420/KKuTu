@@ -737,7 +737,7 @@ function processClientRequest($c, msg) {
           $c.send("error", { code: 401 });
           return;
         }
-      msg.value = msg.value.substr(0, 200);
+      msg.value = msg.value.substr(0, 500);
       if ($c.admin) {
         if (!processAdmin($c.id, msg.value)) break;
       }

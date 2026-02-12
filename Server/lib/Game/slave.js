@@ -239,7 +239,7 @@ KKuTu.onClientMessage = function ($c, msg) {
       break;
     case "talk":
       if (!msg.value) return;
-      if (!validateInput(msg.value, "string", { maxLength: 200 })) return;
+      if (!validateInput(msg.value, "string", { maxLength: 500 })) return;
       if (!msg.value.substr) return;
       if (!GUEST_PERMISSION.talk)
         if ($c.guest) {
