@@ -2247,7 +2247,7 @@ exports.Room = function (room, channel) {
 		var now = (new Date()).getTime();
 
 		my.gaming = true;
-		my.kicked = []; // 메모리 누수 방지: 게임 시작 시 강퇴 목록 초기화
+		//my.kicked = []; //클로드가 추가한 코드인데 얘는 한번 강퇴되면 다시 못들어오는 걸 이해못하나봄
 
 		// Discord notification for game start
 		if (Cluster.isWorker) {

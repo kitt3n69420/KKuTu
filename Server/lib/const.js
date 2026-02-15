@@ -132,7 +132,7 @@ exports.ROBOT_ANGRY_MESSAGES = [ //봇이 빡치면 보내는 메시지
 exports.ROBOT_FINAL_MESSAGES = [ //봇이 중퇴하기 전에 보내는 메시지
 	"나 안해", "망겜", "개노잼", "니들끼리나 잘 해라", "난 안할거임 ㅅㄱ",
 	"내가 너희랑 다시 하나 봐라", "ㅇㅇ", "게임 뭣같이하네", "ㅂㅂ",
-	"나 탈주함 ㅂㅂ", "이타치가 왜 완전 강한지 알아? 탈주닌자라서"
+	"나 탈주함 ㅅㄱ", "이타치가 왜 강한지 알아? 탈주닌자라서"
 ]
 exports.MOREMI_PART = ["back", "shoes", "clothes", "head", "eye", "mouth", "lhand", "rhand"];
 exports.CATEGORIES = ["all", "spec", "skin", "badge", "head", "eye", "mouth", "clothes", "hs", "back"];
@@ -545,6 +545,7 @@ exports.KO_INJEONG = [
 	"NSK", "KOT", "DOT", "DRR", "DGM", "RAG", "LVL",
 	"LOL", "MRN", "MMM", "MAP", "MKK", "MNG",
 	"MAM", "CKR", "BRS", "BTC", "BLA",
+	"SAO", "WEB", "COL", "JAT", "INC", "HAR",
 	"MOB", "HYK", "CYP", "HRH", "STA", "OIJ",
 	"KGR", "ESB", "ELW", "OIM", "OVW", "NEX", /*"WOW",*/ //얘는 왜 주석임?
 	"YRY", "KPO", "JLN", "JAN", "ZEL", "POK", "HAI",
