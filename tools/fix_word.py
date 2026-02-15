@@ -35,6 +35,9 @@ def generate_variants(word):
     if not word:
         return []
 
+    # 모든 공백 제거 (끄투 단어는 띄어쓰기가 없음)
+    word = word.replace(' ', '')
+
     tokens = word.split()
     all_token_variants = []
     
@@ -83,7 +86,9 @@ def generate_variants(word):
         
     full_variants = []
     for combo in itertools.product(*all_token_variants):
-        full_variants.append(" ".join(combo))
+        # 빈 문자열을 제외하고 공백으로 연결
+        parts = [c for c in combo if c]
+        full_variants.append(" ".join(parts))
         
     return full_variants
 
