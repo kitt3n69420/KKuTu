@@ -615,7 +615,7 @@ exports.readyRobot = function (robot) {
     function after() {
         delay += text.length * ROBOT_TYPE_COEF[level];
         robot._done.push(text);
-        setTimeout(my.turnRobot, delay, robot, text);
+        my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
     }
 };
 function getMission(l, opts) {

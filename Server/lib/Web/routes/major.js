@@ -424,12 +424,28 @@ exports.run = function (Server, page) {
       if (_failed) return;
       if (++_done < 3) return;
       if (!_itemA || !_itemB) { _failed = true; return res.json({ error: 400 }); }
-      if (_itemA.group !== _itemB.group) { _failed = true; return res.json({ result: null, reason: "group_mismatch" }); }
-      if (!_recipe) { _failed = true; return res.json({ result: null, reason: "no_recipe" }); }
-      var costA = Math.abs(_itemA.cost || 0);
-      var costB = Math.abs(_itemB.cost || 0);
-      var craftCost = Math.round(Math.sqrt(costA * costA + costB * costB) / 3);
-      res.json({ result: _recipe.result, cost: craftCost });
+
+      function sendResult(recipe) {
+        var costA = Math.abs(_itemA.cost || 0);
+        var costB = Math.abs(_itemB.cost || 0);
+        var craftCost = Math.round(Math.sqrt(costA * costA + costB * costB) / 3);
+        res.json({ result: recipe.result, cost: craftCost });
+      }
+
+      if (_recipe) return sendResult(_recipe);
+
+      // 정확한 아이템 ID 레시피가 없으면 크래프트 그룹으로 검색
+      var gA = Const.getCraftGroup(a);
+      var gB = Const.getCraftGroup(b);
+      if (!gA && !gB) { _failed = true; return res.json({ result: null, reason: "no_recipe" }); }
+      // 그룹명 또는 원래 아이템 ID를 사용하여 검색
+      var lookupA = gA || a;
+      var lookupB = gB || b;
+      var groupItems = [lookupA, lookupB].sort();
+      MainDB.crafting.findOne(["item1", groupItems[0]], ["item2", groupItems[1]]).on(function ($gr) {
+        if (!$gr) { _failed = true; return res.json({ result: null, reason: "no_recipe" }); }
+        sendResult($gr);
+      });
     }
     MainDB.kkutu_shop.findOne(["_id", a]).limit(["group", true], ["cost", true]).on(function ($r) { _itemA = $r; craftCheckDone(); });
     MainDB.kkutu_shop.findOne(["_id", b]).limit(["group", true], ["cost", true]).on(function ($r) { _itemB = $r; craftCheckDone(); });
@@ -452,45 +468,60 @@ exports.run = function (Server, page) {
     function craftPhase1() {
       if (_failed) return;
       if (++_phase1 < 2) return;
-      if (!_recipe) { _failed = true; return res.json({ error: 400 }); }
       if (!_user) { _failed = true; return res.json({ error: 400 }); }
       if (!_user.box) _user.box = {};
 
-      if (a === b) {
-        var bd = _user.box[a];
-        var count = (typeof bd === "number") ? bd : (bd && bd.value ? bd.value : 0);
-        if (count < 2) { _failed = true; return res.json({ error: 434 }); }
-      } else {
-        var bdA = _user.box[a];
-        var bdB = _user.box[b];
-        var countA = (typeof bdA === "number") ? bdA : (bdA && bdA.value ? bdA.value : 0);
-        var countB = (typeof bdB === "number") ? bdB : (bdB && bdB.value ? bdB.value : 0);
-        if (countA < 1 || countB < 1) { _failed = true; return res.json({ error: 434 }); }
+      function executeCraft(recipe) {
+        if (a === b) {
+          var bd = _user.box[a];
+          var count = (typeof bd === "number") ? bd : (bd && bd.value ? bd.value : 0);
+          if (count < 2) { _failed = true; return res.json({ error: 434 }); }
+        } else {
+          var bdA = _user.box[a];
+          var bdB = _user.box[b];
+          var countA = (typeof bdA === "number") ? bdA : (bdA && bdA.value ? bdA.value : 0);
+          var countB = (typeof bdB === "number") ? bdB : (bdB && bdB.value ? bdB.value : 0);
+          if (countA < 1 || countB < 1) { _failed = true; return res.json({ error: 434 }); }
+        }
+
+        // itemA, itemB 가격 조회도 병렬 실행
+        var _itemA = null, _itemB = null, _phase2 = 0;
+        function craftPhase2() {
+          if (_failed) return;
+          if (++_phase2 < 2) return;
+          var costA = Math.abs(_itemA ? _itemA.cost : 0);
+          var costB = Math.abs(_itemB ? _itemB.cost : 0);
+          var craftCost = Math.round(Math.sqrt(costA * costA + costB * costB) / 3);
+
+          if (_user.money < craftCost) { _failed = true; return res.json({ error: 407 }); }
+
+          consume(_user, a, 1, true);
+          consume(_user, b, 1, true);
+          obtain(_user, recipe.result, 1);
+          _user.money -= craftCost;
+
+          MainDB.users.update(["_id", uid]).set(["money", _user.money], ["box", _user.box]).on(function ($fin) {
+            res.send({ result: 200, box: _user.box, money: _user.money, crafted: recipe.result });
+            JLog.log("[CRAFTED] " + a + " + " + b + " => " + recipe.result + " by " + uid);
+          });
+        }
+        MainDB.kkutu_shop.findOne(["_id", a]).limit(["cost", true]).on(function ($r) { _itemA = $r; craftPhase2(); });
+        MainDB.kkutu_shop.findOne(["_id", b]).limit(["cost", true]).on(function ($r) { _itemB = $r; craftPhase2(); });
       }
 
-      // itemA, itemB 가격 조회도 병렬 실행
-      var _itemA = null, _itemB = null, _phase2 = 0;
-      function craftPhase2() {
-        if (_failed) return;
-        if (++_phase2 < 2) return;
-        var costA = Math.abs(_itemA ? _itemA.cost : 0);
-        var costB = Math.abs(_itemB ? _itemB.cost : 0);
-        var craftCost = Math.round(Math.sqrt(costA * costA + costB * costB) / 3);
+      if (_recipe) return executeCraft(_recipe);
 
-        if (_user.money < craftCost) { _failed = true; return res.json({ error: 407 }); }
-
-        consume(_user, a, 1, true);
-        consume(_user, b, 1, true);
-        obtain(_user, _recipe.result, 1);
-        _user.money -= craftCost;
-
-        MainDB.users.update(["_id", uid]).set(["money", _user.money], ["box", _user.box]).on(function ($fin) {
-          res.send({ result: 200, box: _user.box, money: _user.money, crafted: _recipe.result });
-          JLog.log("[CRAFTED] " + a + " + " + b + " => " + _recipe.result + " by " + uid);
-        });
-      }
-      MainDB.kkutu_shop.findOne(["_id", a]).limit(["cost", true]).on(function ($r) { _itemA = $r; craftPhase2(); });
-      MainDB.kkutu_shop.findOne(["_id", b]).limit(["cost", true]).on(function ($r) { _itemB = $r; craftPhase2(); });
+      // 정확한 아이템 ID 레시피가 없으면 크래프트 그룹으로 검색
+      var gA = Const.getCraftGroup(a);
+      var gB = Const.getCraftGroup(b);
+      if (!gA && !gB) { _failed = true; return res.json({ error: 400 }); }
+      var lookupA = gA || a;
+      var lookupB = gB || b;
+      var groupItems = [lookupA, lookupB].sort();
+      MainDB.crafting.findOne(["item1", groupItems[0]], ["item2", groupItems[1]]).on(function ($gr) {
+        if (!$gr) { _failed = true; return res.json({ error: 400 }); }
+        executeCraft($gr);
+      });
     }
     MainDB.crafting.findOne(["item1", items[0]], ["item2", items[1]]).on(function ($r) { _recipe = $r; craftPhase1(); });
     MainDB.users.findOne(["_id", uid]).limit(["money", true], ["box", true]).on(function ($r) { _user = $r; craftPhase1(); });

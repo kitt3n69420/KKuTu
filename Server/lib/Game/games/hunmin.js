@@ -449,7 +449,7 @@ exports.readyRobot = function (robot) {
 	}
 	function after() {
 		delay += text.length * ROBOT_TYPE_COEF[level];
-		setTimeout(my.turnRobot, delay, robot, text);
+		my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
 	}
 };
 function isChainable(text, theme) {

@@ -2064,13 +2064,6 @@ function drawCraftWorkshop() {
 		if ($data._craftTray.length === 2) {
 			var itemA = $data._craftTray[0];
 			var itemB = $data._craftTray[1];
-			var shopA = $data.shop[itemA];
-			var shopB = $data.shop[itemB];
-
-			if (!shopA || !shopB || shopA.group !== shopB.group) {
-				$preview.html("<span style='color:#CC3333; font-size:11px;'>" + L['craftGroupMismatch'] + "</span>");
-				return;
-			}
 
 			$preview.html("<span style='color:#888; font-size:11px;'>" + L['searching'] + "</span>");
 			$.get("/craft-check", { item1: itemA, item2: itemB }, function (res) {

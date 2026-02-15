@@ -625,6 +625,39 @@ exports.BOT_LEVEL_NAMES = {
 	"4": "초고수"
 };
 
+/**
+ * 크래프트 그룹 시스템
+ *
+ * 아이템 ID를 크래프트 그룹명에 매핑.
+ * crafting DB 테이블의 item1/item2에 아이템 ID 대신 그룹명을 넣으면,
+ * 해당 그룹에 속한 아이템 아무 2개로 조합이 가능해짐.
+ *
+ * 예: "blue_name"은 "colored_name" 그룹에 속함.
+ *     crafting 테이블에 item1="colored_name", item2="colored_name", result="rainbow_name" 레시피가 있으면
+ *     colored_name 그룹의 아무 아이템 2개를 조합하면 rainbow_name이 됨.
+ *
+ * 형식: { "아이템ID": "크래프트그룹명", ... }
+ */
+exports.CRAFT_GROUPS = {
+	// 예시: 색깔 이름 아이템들을 "colored_name" 그룹으로 묶기
+	// "blue_name": "colored_name",
+	// "green_name": "colored_name",
+	// "red_name": "colored_name",
+	// "orange_name": "colored_name",
+	// "pink_name": "colored_name",
+	// "purple_name": "colored_name",
+	// "indigo_name": "colored_name",
+
+	// 예시: 그라데이션 이름 아이템들을 "gradient_name" 그룹으로 묶기
+	// "gradientname_blueblue": "gradient_name",
+	// "gradientname_greengreen": "gradient_name",
+	// ... (이 그룹의 아무 2개 → rainbow_name)
+};
+
+exports.getCraftGroup = function (itemId) {
+	return exports.CRAFT_GROUPS[itemId] || null;
+};
+
 exports.BOT_ITEM_WEIGHTS = {
 	// "item_id": weight (default: 10)
 	"nekomimi": 20,

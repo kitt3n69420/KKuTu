@@ -2247,6 +2247,7 @@ exports.Room = function (room, channel) {
 		var now = (new Date()).getTime();
 
 		my.gaming = true;
+		my.kicked = []; // 메모리 누수 방지: 게임 시작 시 강퇴 목록 초기화
 
 		// Discord notification for game start
 		if (Cluster.isWorker) {
@@ -2423,12 +2424,24 @@ exports.Room = function (room, channel) {
 		clearTimeout(my.game.qTimer);
 		clearTimeout(my.game.robotTimer);
 
-		// 봇별 typingTimer 정리 (chainbattle, typing, calcbattle 등에서 사용)
+		// 봇별 타이머 정리 (typingTimer, _timerCatch, _timer 등)
 		if (my.game.seq) {
 			for (var i in my.game.seq) {
 				var o = my.game.seq[i];
-				if (o && o.robot && o.game && o.game.typingTimer) {
-					clearTimeout(o.game.typingTimer);
+				if (o && o.robot) {
+					if (o.game && o.game.typingTimer) clearTimeout(o.game.typingTimer);
+					if (o._timerCatch) clearTimeout(o._timerCatch);
+					if (o._timer) clearTimeout(o._timer);
+				}
+			}
+		}
+		// robots 배열에서도 타이머 정리 (seq에 없는 봇 포함)
+		if (my.game.robots) {
+			for (var j in my.game.robots) {
+				var r = my.game.robots[j];
+				if (r) {
+					if (r._timerCatch) clearTimeout(r._timerCatch);
+					if (r._timer) clearTimeout(r._timer);
 				}
 			}
 		}
@@ -2454,6 +2467,8 @@ exports.Room = function (room, channel) {
 		if (my.game.round > 1) my.sendRoundEndNotification(my.game.round - 1);
 		my.game.chain = [];
 		my.game.chainLog = [];
+		// 메모리 누수 방지: 라운드마다 글자 수 캐시 초기화
+		delete my.game._charCountCache;
 	};
 	// Helper: chain에 단어 추가 + chainLog에 플레이어 정보 기록
 	my.logChainWord = function (text, client) {
@@ -2672,9 +2687,24 @@ exports.Room = function (room, channel) {
 				process.send({ type: "game-over", room: my.id, rankings: rankings });
 			}
 		}
+		// 메모리 누수 방지: 게임 종료 시 모든 게임 상태 정리
 		delete my.game.seq;
 		delete my.game.wordLength;
 		delete my.game.dic;
+		delete my.game.chain;
+		delete my.game.chainLog;
+		delete my.game.robots;
+		delete my.game.randomTurnOrder;
+		delete my.game.randomTurnIndex;
+		delete my.game._charCountCache;
+		delete my.game.mission;
+		delete my.game.title;
+		// 게임 모드별 상태 정리
+		delete my.game.theme;
+		delete my.game.conso;
+		delete my.game.prisoners;
+		delete my.game.boards;
+		delete my.game.means;
 		my.setAutoDelete();
 	};
 	my.byMaster = function (type, data, nob) {

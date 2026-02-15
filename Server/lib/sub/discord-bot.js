@@ -1193,7 +1193,7 @@ const CHAT_MERGE_MAX = 20;     // 최대 20개 합침
 /**
  * Flush a chat merge entry: send new or edit existing Discord message
  */
-function flushChatEntry(entry) {
+function flushChatEntry(entry, mergeKey) {
     const desc = `${entry.location}:\n${entry.lines.join('\n')}`;
     const truncated = desc.length > 4000 ? desc.substring(0, 4000) : desc;
 
@@ -1214,9 +1214,13 @@ function flushChatEntry(entry) {
                 .setDescription(truncated)
                 .setTimestamp();
             const sent = await channel.send({ embeds: [embed] });
-            entry.discordMessage = sent;
+            // 메모리 누수 방지: sent 참조를 저장하지 않음 (이미 flush 완료)
         }, 'logChat-send');
     }
+    // 메모리 누수 방지: flush 완료 후 엔트리 삭제
+    entry.lines = null;
+    entry.discordMessage = null;
+    if (mergeKey) delete _chatMerge[mergeKey];
 }
 
 /**
@@ -1239,14 +1243,14 @@ exports.logChat = function (profile, message, place, isRobot = false) {
     const mergeKey = `place_${place}`;
     const prev = _chatMerge[mergeKey];
 
-    if (prev && (now - prev.time) < CHAT_MERGE_DELAY && prev.lines.length < CHAT_MERGE_MAX) {
+    if (prev && prev.lines && (now - prev.time) < CHAT_MERGE_DELAY && prev.lines.length < CHAT_MERGE_MAX) {
         // Append to existing buffer
         prev.lines.push(line);
         prev.time = now;
 
         // Reset debounce timer
         clearTimeout(prev.timer);
-        prev.timer = setTimeout(function () { flushChatEntry(prev); }, CHAT_MERGE_DELAY);
+        prev.timer = setTimeout(function () { flushChatEntry(prev, mergeKey); }, CHAT_MERGE_DELAY);
     } else {
         // New buffer entry
         if (prev && prev.timer) clearTimeout(prev.timer);
@@ -1261,7 +1265,7 @@ exports.logChat = function (profile, message, place, isRobot = false) {
         _chatMerge[mergeKey] = entry;
 
         // Flush after delay
-        entry.timer = setTimeout(function () { flushChatEntry(entry); }, CHAT_MERGE_DELAY);
+        entry.timer = setTimeout(function () { flushChatEntry(entry, mergeKey); }, CHAT_MERGE_DELAY);
     }
 };
 

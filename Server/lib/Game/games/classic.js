@@ -2045,7 +2045,7 @@ exports.readyRobot = function (robot) {
 			text = w._id;
 			delay += 500 * ROBOT_THINK_COEF[level] * Math.random() / Math.log(1.1 + w.hit);
 			robot._done.push(text);
-			setTimeout(my.turnRobot, delay, robot, text);
+			my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
 		}
 
 		// 시작
@@ -3189,7 +3189,7 @@ exports.readyRobot = function (robot) {
 		if (my.game.late) return; // Prevent scheduling after round end
 		delay += text.length * ROBOT_TYPE_COEF[level];
 		robot._done.push(text);
-		setTimeout(my.turnRobot, delay, robot, text);
+		my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
 	}
 
 	function getWishList(list) {
