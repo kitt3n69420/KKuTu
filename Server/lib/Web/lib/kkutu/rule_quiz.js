@@ -18,6 +18,20 @@
 
 $lib.Quiz = {};
 
+// 문제 표시 영역의 텍스트가 너무 길면 글자 크기를 자동으로 줄임
+function fitQuizDisplay() {
+	var $el = $stage.game.display;
+	var el = $el[0];
+	if (!el) return;
+	var maxSize = 20;
+	var minSize = 10;
+	$el.css({ 'font-size': maxSize + 'px', 'white-space': 'nowrap' });
+	while (el.scrollWidth > el.clientWidth && maxSize > minSize) {
+		maxSize -= 1;
+		$el.css('font-size', maxSize + 'px');
+	}
+}
+
 $lib.Quiz.roundReady = function (data) {
 	var tv = L['quiz_' + data.topic];
 	var dv = "(" + L['quiz_' + data.difficulty] + ")";
@@ -50,6 +64,7 @@ $lib.Quiz.turnStart = function (data) {
 	var qVal = data.question;
 	if ($data.room.opts.drg) qVal = "<label style='color:" + getRandomColor() + "'>" + qVal + "</label>";
 	$stage.game.display.html($data._question = qVal);
+	fitQuizDisplay();
 
 	clearInterval($data._tTime);
 	$data._tTime = addInterval(turnGoing, TICK);
@@ -95,6 +110,7 @@ $lib.Quiz.turnEnd = function (id, data) {
 		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		var ansColor = ($data.room.opts.drg) ? getRandomColor() : "#FFFF44";
 		$stage.game.display.html($("<label>").css('color', ansColor).html(data.answer));
+		fitQuizDisplay();
 		stopBGM();
 		playSound('horr');
 	} else {

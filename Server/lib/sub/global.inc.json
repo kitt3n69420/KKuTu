@@ -9,6 +9,7 @@
     "ROOM_PORTS": [
         8496
     ],
+    "SESSION_SECRET": "CHANGE_ME_TO_A_RANDOM_SECRET_KEY",
     "NICKNAME_LIMIT": {
         "TERM": 0,
         "REGEX": [

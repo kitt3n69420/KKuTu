@@ -425,6 +425,13 @@ exports.Client = function (socket, profile, sid) {
 		if (socket.readyState === 1) {
 			// 서버→클라이언트 앱 레벨 heartbeat (Cloudflare를 통과하는 일반 메시지)
 			my.send('heartbeat', {});
+
+			// heartbeat 타임아웃 체크: 클라이언트로부터 90초간 응답이 없으면 유령으로 판단하여 종료
+			var elapsed = Date.now() - my._lastHeartbeat;
+			if (elapsed > 90000) {
+				JLog.warn(`Heartbeat timeout #${my.id} (${Math.round(elapsed / 1000)}s), closing ghost connection`);
+				socket.close();
+			}
 		}
 	}, 25000);
 

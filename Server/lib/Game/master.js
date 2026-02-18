@@ -475,6 +475,30 @@ exports.cleanupDeadWorkerRooms = function (deadChannel) {
     JLog.warn(`Cleaned up ${deadRooms.length} rooms from dead worker @${deadChannel}`);
   }
 };
+// Worker 크래시 시 해당 채널에 있던 유저 정리
+exports.cleanupDeadWorkerUsers = function (deadChannel) {
+  var deadUsers = [];
+  for (var id in DIC) {
+    // place가 있는 유저 중 해당 채널의 방에 있던 유저 정리
+    var $c = DIC[id];
+    if ($c.place && ROOM[$c.place] && ROOM[$c.place].channel == deadChannel) {
+      deadUsers.push(id);
+    }
+  }
+  deadUsers.forEach(function (id) {
+    var $c = DIC[id];
+    JLog.warn(`Cleaning up user ${id} from dead worker @${deadChannel}`);
+    $c.place = 0;
+    // 유저에게 방이 사라졌음을 알림
+    if ($c.socket && $c.socket.readyState === 1) {
+      $c.send('roomStuck');
+    }
+  });
+  if (deadUsers.length > 0) {
+    JLog.warn(`Reset ${deadUsers.length} users from dead worker @${deadChannel}`);
+  }
+};
+
 exports.init = function (_SID, CHAN) {
   SID = _SID;
   MainDB = require("../Web/db");
@@ -533,11 +557,13 @@ exports.init = function (_SID, CHAN) {
           $c.admin = GLOBAL.ADMIN.indexOf($c.id) != -1;
           /* Enhanced User Block System [S] */
           $c.remoteAddress = GLOBAL.USER_BLOCK_OPTIONS.USE_X_FORWARDED_FOR
-            ? info.connection.remoteAddress
-            : info.headers["x-forwarded-for"] || info.connection.remoteAddress;
+            ? info.headers["x-forwarded-for"] || info.connection.remoteAddress
+            : info.connection.remoteAddress;
           /* Enhanced User Block System [E] */
 
+          // 기존 접속자 처리: _replaced 플래그로 레이스 컨디션 방지
           if (DIC[$c.id]) {
+            DIC[$c.id]._replaced = true;
             DIC[$c.id].sendError(408);
             DIC[$c.id].socket.close();
           }
@@ -558,38 +584,15 @@ exports.init = function (_SID, CHAN) {
               return;
             }
           }
-          /* Enhanced User Block System [S] */
-          if (
-            GLOBAL.USER_BLOCK_OPTIONS.USE_MODULE &&
-            ((GLOBAL.USER_BLOCK_OPTIONS.BLOCK_IP_ONLY_FOR_GUEST && $c.guest) || !GLOBAL.USER_BLOCK_OPTIONS.BLOCK_IP_ONLY_FOR_GUEST)
-          ) {
-            MainDB.ip_block.findOne(["_id", $c.remoteAddress]).on(function ($body) {
-              if ($body && $body.reasonBlocked) {
-                if ($body.ipBlockedUntil < Date.now()) {
-                  MainDB.ip_block.update(["_id", $c.remoteAddress]).set(["ipBlockedUntil", 0], ["reasonBlocked", null]).on();
-                  JLog.info(`IP 주소 ${$c.remoteAddress}의 이용제한이 해제되었습니다.`);
-                } else {
-                  $c.socket.send(
-                    JSON.stringify({
-                      type: "error",
-                      code: 446,
-                      reasonBlocked: !$body.reasonBlocked ? GLOBAL.USER_BLOCK_OPTIONS.DEFAULT_BLOCKED_TEXT : $body.reasonBlocked,
-                      ipBlockedUntil: !$body.ipBlockedUntil ? GLOBAL.USER_BLOCK_OPTIONS.BLOCKED_FOREVER : $body.ipBlockedUntil,
-                    }),
-                  );
-                  $c.socket.close();
-                  return;
-                }
-              }
-            });
-          }
-          /* Enhanced User Block System [E] */
-          if ($c.isAjae === null) {
-            $c.sendError(441);
-            $c.socket.close();
-            return;
-          }
-          $c.refresh().then(function (ref) {
+
+          // IP 차단 및 refresh를 순차적으로 처리하는 함수
+          function proceedAfterIpCheck() {
+            if ($c.isAjae === null) {
+              $c.sendError(441);
+              $c.socket.close();
+              return;
+            }
+            $c.refresh().then(function (ref) {
             /* Enhanced User Block System [S] */
             let isBlockRelease = false;
 
@@ -640,6 +643,39 @@ exports.init = function (_SID, CHAN) {
               // JLog.info("Black user #" + $c.id);
             }
           });
+          }
+
+          /* Enhanced User Block System [S] */
+          if (
+            GLOBAL.USER_BLOCK_OPTIONS.USE_MODULE &&
+            ((GLOBAL.USER_BLOCK_OPTIONS.BLOCK_IP_ONLY_FOR_GUEST && $c.guest) || !GLOBAL.USER_BLOCK_OPTIONS.BLOCK_IP_ONLY_FOR_GUEST)
+          ) {
+            MainDB.ip_block.findOne(["_id", $c.remoteAddress]).on(function ($body) {
+              if ($body && $body.reasonBlocked) {
+                if ($body.ipBlockedUntil < Date.now()) {
+                  MainDB.ip_block.update(["_id", $c.remoteAddress]).set(["ipBlockedUntil", 0], ["reasonBlocked", null]).on();
+                  JLog.info(`IP 주소 ${$c.remoteAddress}의 이용제한이 해제되었습니다.`);
+                  proceedAfterIpCheck();
+                } else {
+                  $c.socket.send(
+                    JSON.stringify({
+                      type: "error",
+                      code: 446,
+                      reasonBlocked: !$body.reasonBlocked ? GLOBAL.USER_BLOCK_OPTIONS.DEFAULT_BLOCKED_TEXT : $body.reasonBlocked,
+                      ipBlockedUntil: !$body.ipBlockedUntil ? GLOBAL.USER_BLOCK_OPTIONS.BLOCKED_FOREVER : $body.ipBlockedUntil,
+                    }),
+                  );
+                  $c.socket.close();
+                  return;
+                }
+              } else {
+                proceedAfterIpCheck();
+              }
+            });
+          } else {
+            proceedAfterIpCheck();
+          }
+          /* Enhanced User Block System [E] */
         });
     });
     Server.on("error", function (err) {
@@ -870,13 +906,38 @@ function processClientRequest($c, msg) {
 }
 
 KKuTu.onClientClosed = function ($c, code) {
-  // Discord notification (before deleting from DIC to get correct count)
-  DiscordBot.notifyUserLeave($c.profile, Object.keys(DIC).length - 1);
+  if ($c.socket) $c.socket.removeAllListeners();
+
+  // _replaced 플래그: 새 접속으로 교체된 소켓의 close 이벤트일 경우
+  // DIC에서 삭제하면 새 접속까지 끊어지므로 무시
+  if ($c._replaced) {
+    JLog.info(`Replaced socket closed #${$c.id} (ignored)`);
+    return;
+  }
+
+  // DIC에 현재 저장된 객체가 이 $c인지 확인 (이중 안전장치)
+  if (DIC[$c.id] && DIC[$c.id] !== $c) {
+    JLog.info(`Stale socket closed #${$c.id} (DIC has newer client, ignored)`);
+    return;
+  }
+
+  // DIC에 등록되지 않은 클라이언트의 close 이벤트는 무시
+  // (접속 과정에서 실패한 경우 등)
+  if (!DIC[$c.id]) {
+    JLog.info(`Unregistered socket closed #${$c.id} (not in DIC, ignored)`);
+    // server 필드는 정리 (접속 과정에서 설정되었을 수 있음)
+    if (!$c.guest) MainDB.users.update(["_id", $c.id]).set(["server", ""]).on();
+    return;
+  }
 
   delete DIC[$c.id];
-  if ($c._error != 409) MainDB.users.update(["_id", $c.id]).set(["server", ""]).on();
+
+  // Discord notification (삭제 후 정확한 카운트)
+  DiscordBot.notifyUserLeave($c.profile, Object.keys(DIC).length);
+
+  // server 필드를 항상 정리 (유령 방지)
+  if (!$c.guest) MainDB.users.update(["_id", $c.id]).set(["server", ""]).on();
   if ($c.profile) delete DNAME[$c.profile.title || $c.profile.name];
-  if ($c.socket) $c.socket.removeAllListeners();
   if ($c.friends) narrateFriends($c.id, $c.friends, "off");
   KKuTu.publish("disconn", { id: $c.id });
 

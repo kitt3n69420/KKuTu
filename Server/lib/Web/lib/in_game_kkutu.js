@@ -736,6 +736,12 @@ $(document).ready(function () {
 		// 간단 방 보기 설정
 		$("#simple-room-view").prop('checked', ($data.opts && $data.opts.srv !== undefined) ? $data.opts.srv : true);
 
+		// 욕 필터링 설정 (기본 켜짐)
+		$("#no-filter").prop('checked', ($data.opts && $data.opts.nf !== undefined) ? $data.opts.nf : true);
+
+		// 흔들림 없애기 설정 (기본 꺼짐)
+		$("#no-shake").prop('checked', ($data.opts && $data.opts.ns === true));
+
 		// 현재 로드된 언어 감지
 		// L 객체로부터 실제 언어 감지 시도
 		var detectedLang = null;
@@ -1454,6 +1460,8 @@ $(document).ready(function () {
 			ou: $("#only-unlock").is(":checked"),
 			src: $("#show-rule-category").is(":checked"),
 			srv: $("#simple-room-view").is(":checked"),
+			nf: $("#no-filter").is(":checked"),
+			ns: $("#no-shake").is(":checked"),
 			sp: newSoundPack
 		};
 
@@ -4796,6 +4804,20 @@ function drawChainResult(table) {
 
 $lib.Quiz = {};
 
+// 문제 표시 영역의 텍스트가 너무 길면 글자 크기를 자동으로 줄임
+function fitQuizDisplay() {
+	var $el = $stage.game.display;
+	var el = $el[0];
+	if (!el) return;
+	var maxSize = 20;
+	var minSize = 10;
+	$el.css({ 'font-size': maxSize + 'px', 'white-space': 'nowrap' });
+	while (el.scrollWidth > el.clientWidth && maxSize > minSize) {
+		maxSize -= 1;
+		$el.css('font-size', maxSize + 'px');
+	}
+}
+
 $lib.Quiz.roundReady = function (data) {
 	var tv = L['quiz_' + data.topic];
 	var dv = "(" + L['quiz_' + data.difficulty] + ")";
@@ -4828,6 +4850,7 @@ $lib.Quiz.turnStart = function (data) {
 	var qVal = data.question;
 	if ($data.room.opts.drg) qVal = "<label style='color:" + getRandomColor() + "'>" + qVal + "</label>";
 	$stage.game.display.html($data._question = qVal);
+	fitQuizDisplay();
 
 	clearInterval($data._tTime);
 	$data._tTime = addInterval(turnGoing, TICK);
@@ -4873,6 +4896,7 @@ $lib.Quiz.turnEnd = function (id, data) {
 		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
 		var ansColor = ($data.room.opts.drg) ? getRandomColor() : "#FFFF44";
 		$stage.game.display.html($("<label>").css('color', ansColor).html(data.answer));
+		fitQuizDisplay();
 		stopBGM();
 		playSound('horr');
 	} else {
@@ -4956,6 +4980,10 @@ function loading(text) {
 		} else $stage.loading.show().html(text);
 	} else $stage.loading.hide();
 }
+function escapeContent(text) {
+	if (typeof text !== 'string') return text;
+	return text.replace(/</g, "〈").replace(/>/g, "〉");
+}
 function showDialog($d, noToggle) {
 	var size = [$(window).width(), $(window).height()];
 
@@ -4973,7 +5001,7 @@ function showDialog($d, noToggle) {
 }
 function showConfirm(msg, callback, yesText, noText) {
 	if (typeof callback !== 'function') callback = function () { };
-	$stage.dialog.confirmText.html(msg.replace(/\n/g, '<br>'));
+	$stage.dialog.confirmText.html(escapeContent(msg).replace(/\n/g, '<br>'));
 	$stage.dialog.confirmOK.text(yesText || L['OK']);
 	$stage.dialog.confirmNo.text(noText || L['NO']);
 	showDialog($stage.dialog.confirm);
@@ -4988,7 +5016,7 @@ function showConfirm(msg, callback, yesText, noText) {
 	});
 }
 function showAlert(msg, callback) {
-	$stage.dialog.alertText.html(msg.replace(/\n/g, '<br>'));
+	$stage.dialog.alertText.html(escapeContent(msg).replace(/\n/g, '<br>'));
 	showDialog($stage.dialog.alert, true);
 
 	$stage.dialog.alertOK.off('click').on('click', function () {
@@ -5003,7 +5031,7 @@ function tryOpenLink(url) {
 }
 function showPrompt(msg, value, callback) {
 	if (typeof callback !== 'function') callback = function () { };
-	$stage.dialog.inputText.html(msg.replace(/\n/g, '<br>'));
+	$stage.dialog.inputText.html(escapeContent(msg).replace(/\n/g, '<br>'));
 	$stage.dialog.inputInput.val(value || "");
 	showDialog($stage.dialog.input);
 	$stage.dialog.inputInput.focus();
@@ -5059,7 +5087,9 @@ function applyOptions(opt) {
 	$("#only-waiting").attr('checked', $data.opts.ow);
 	$("#only-unlock").attr('checked', $data.opts.ou);
 	$("#show-rule-category").attr('checked', $data.opts.src === true);
-	$("#simple-room-view").attr('checked', ($data.opts.srv !== undefined) ? $data.opts.srv : true);
+	$("#simple-room-view").prop('checked', ($data.opts.srv !== undefined) ? $data.opts.srv : true);
+	$("#no-filter").prop('checked', ($data.opts.nf !== undefined) ? $data.opts.nf : true);
+	$("#no-shake").prop('checked', ($data.opts.ns === true));
 
 	// 사운드팩 설정 (localStorage에 값이 있으면 localStorage, 없으면 cookie)
 	var soundPack = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts.sp || "");
@@ -6434,7 +6464,7 @@ function updateRoom(gaming) {
 	if ($data.room.opts.drg) {
 		$(".GameBox").addClass("psychedelic-bg");
 		$(".jjo-turn-time .graph-bar, .jjo-round-time .graph-bar").addClass("rainbow");
-		if (!mobile) {
+		if (!mobile && !($data.opts && $data.opts.ns)) {
 			var $targets = $(".game-user, .jjoriping, .items, .clock-canvas, .game-input, .chain");
 			$targets.each(function () {
 				var $t = $(this);
@@ -6449,7 +6479,7 @@ function updateRoom(gaming) {
 		if (!$data._drgBgInterval) {
 			$data._drgBgInterval = addInterval(function () {
 				// Apply shake to dynamic elements
-				if (!mobile) {
+				if (!mobile && !($data.opts && $data.opts.ns)) {
 					$(".game-input, .chain, .history-item").each(function () {
 						var $t = $(this);
 						if (!$t.hasClass("shake")) {
@@ -7055,7 +7085,10 @@ function requestRoomInfo(id) {
 
 	$data._roominfo = id;
 	$("#RoomInfoDiag .dialog-title").html(id + L['sRoomInfo']);
-	$("#ri-title").html((o.password ? "<i class='fa fa-lock'></i>&nbsp;" : "") + badWords(o.title));
+	console.log("Room Info Title:", o.title, "BadWords:", badWords(o.title));
+	$("#ri-title").empty();
+	if (o.password) $("#ri-title").append($("<i>").addClass("fa fa-lock")).append("&nbsp;");
+	$("#ri-title").append(document.createTextNode(badWords(o.title)));
 	$("#ri-mode").html(L['mode' + MODE[o.mode]]);
 	$("#ri-round").html(o.round + ", " + o.time + L['SECOND']);
 	$("#ri-limit").html(o.players.length + " / " + o.limit);
@@ -7645,6 +7678,11 @@ function roundEnd(result, data) {
 	var lvUp, sc;
 	var addit, addp;
 
+	// 게임 입력창 숨기기 및 relay 플래그 초기화
+	// (게임 끝 후 채팅이 relay=true로 전송되어 서버에서 차단되는 문제 방지)
+	$stage.game.here.hide();
+	$data._relay = false;
+
 	$(".result-me-expl").empty();
 	$stage.game.display.html(L['roundEnd']);
 	$data._resultPage = 1;
@@ -8108,7 +8146,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 		ta = 'As' + $data._speed;
 	} else {
 		ta = 'Al';
-		vibrate(len);
+		if (!($data.opts && $data.opts.ns)) vibrate(len);
 	}
 	kkt = 'K' + $data._speed;
 
@@ -8676,6 +8714,7 @@ function forkChat() {
 	$stage.chat.scrollTop(999999999);
 }
 function badWords(text) {
+	if ($data.opts && $data.opts.nf === false) return text;
 	return text.replace(BAD, L['captured_nyan']);
 }
 function chatBalloon(text, id, flag) {

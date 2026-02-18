@@ -104,7 +104,7 @@ block Middle
 		button#ExitBtn.for-master.for-normal.for-gaming(style='display: none; background-color: #FFADAD;'): +FA('times')
 		button#ReplayBtn.for-lobby(style='display: none; background-color: #D9FF82;'): +FA('video-camera')
 		button#LeaderboardBtn.for-lobby(style='display: none; background-color: #FFADD3;'): +FA('trophy')
-	+Dialog('SettingDiag', 320, 420, L('settingsText'))
+	+Dialog('SettingDiag', 320, 445, L('settingsText'))
 		div.dialog-bar
 		div.dialog-opt(style="width: 100%; margin-bottom: 5px;")
 			label(for='mute-bgm', style='float: left; width: 100px; text-align: center; padding-top: 5px;')= L('bgm')
@@ -132,6 +132,8 @@ block Middle
 				+SettingOption('only-unlock', L('onlyUnlock'), "width: 100%;")
 				+SettingOption('show-rule-category', L('showRuleCategory'), "width: 100%;")
 				+SettingOption('simple-room-view', L('simpleRoomView'), "width: 100%;")
+				+SettingOption('no-filter', L('noFilter'), "width: 100%;")
+				+SettingOption('no-shake', L('noShake'), "width: 100%;")
 		div.dialog-bar
 			h4= L('language')
 			select#language-setting(style="width: 150px;")

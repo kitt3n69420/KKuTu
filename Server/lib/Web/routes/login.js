@@ -29,39 +29,40 @@ function process(req, accessToken, MainDB, $p, done) {
   $p.sid = req.session.id;
 
   let now = Date.now();
-  $p.sid = req.session.id;
   req.session.admin = GLOBAL.ADMIN.includes($p.id);
   req.session.authType = $p.authType;
   JLog.info("Login Process Started for " + $p.id);
-  MainDB.session
-    .upsert(["_id", req.session.id])
-    .set({
-      profile: $p,
-      createdAt: now,
-    })
-    .on(() => {
-      JLog.info("Session Upsert Completed");
-      MainDB.users.findOne(["_id", $p.id]).on(($body) => {
-        JLog.info("User FindOne Completed. Found: " + !!$body);
-        if ($body) {
-          for (let key in $body) {
-            if ($body[key] && !$p[key]) $p[key] = $body[key];
-          }
-          if ($body.nickname) {
-            $p.nickname = $body.nickname;
-            $p.name = $body.nickname;
-            $p.title = $body.nickname;
-          }
-          MainDB.users.update(["_id", $p.id]).set(["lastLogin", now]).on();
-          // CRITICAL: Update the session in DB with the merged profile
-          MainDB.session.update(["_id", req.session.id]).set(["profile", $p]).on();
-        } else {
-          JLog.info("New User - No existing record found");
-        }
+
+  // 먼저 유저 정보를 조회하여 profile을 완성한 후, 세션에 저장
+  MainDB.users.findOne(["_id", $p.id]).on(($body) => {
+    JLog.info("User FindOne Completed. Found: " + !!$body);
+    if ($body) {
+      for (let key in $body) {
+        if ($body[key] && !$p[key]) $p[key] = $body[key];
+      }
+      if ($body.nickname) {
+        $p.nickname = $body.nickname;
+        $p.name = $body.nickname;
+        $p.title = $body.nickname;
+      }
+      MainDB.users.update(["_id", $p.id]).set(["lastLogin", now]).on();
+    } else {
+      JLog.info("New User - No existing record found");
+    }
+
+    // 병합 완료된 profile을 세션 DB에 한 번만 저장 (레이스 컨디션 방지)
+    MainDB.session
+      .upsert(["_id", req.session.id])
+      .set({
+        profile: $p,
+        createdAt: now,
+      })
+      .on(() => {
+        JLog.info("Session Upsert Completed with merged profile");
         req.session.profile = $p;
         done(null, $p);
       });
-    });
+  });
 }
 
 exports.run = (Server, page) => {
@@ -150,7 +151,7 @@ exports.run = (Server, page) => {
 
         MainDB.session
           .upsert(["_id", req.session.id])
-          .set(["profile", JSON.stringify(lp)], ["createdAt", now])
+          .set(["profile", lp], ["createdAt", now])
           .on(function ($res) {
             req.session.admin = true;
             req.session.profile = lp;

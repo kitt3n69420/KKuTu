@@ -68,7 +68,7 @@ Server.use(
       client: require("redis").createClient(),
       ttl: 3600 * 12
     }),
-    secret: "kkutu",
+    secret: GLOBAL.SESSION_SECRET || "kkutu",
     resave: false,
     saveUninitialized: false,
   }),
@@ -124,7 +124,7 @@ DB.ready = function () {
   setInterval(function () {
     gameServers.forEach(function (v) {
       if (v.socket) v.socket.send(`{"type":"seek"}`);
-      else v.seek = undefined;
+      else v.seek = null;
     });
   }, 4000);
   JLog.success("DB is ready.");

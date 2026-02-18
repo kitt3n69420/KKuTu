@@ -146,8 +146,49 @@ Server.on("connection", function (socket, info) {
 
       /* Enhanced User Block System [S] */
       $c.remoteAddress = GLOBAL.USER_BLOCK_OPTIONS.USE_X_FORWARDED_FOR
-        ? info.connection.remoteAddress
-        : info.headers["x-forwarded-for"] || info.connection.remoteAddress;
+        ? info.headers["x-forwarded-for"] || info.connection.remoteAddress
+        : info.connection.remoteAddress;
+      /* Enhanced User Block System [E] */
+
+      // 기존 접속자 처리: _replaced 플래그로 레이스 컨디션 방지
+      if (DIC[$c.id]) {
+        DIC[$c.id]._replaced = true;
+        DIC[$c.id].send("error", { code: 408 });
+        DIC[$c.id].socket.close();
+      }
+      if (DEVELOP && !Const.TESTER.includes($c.id)) {
+        $c.send("error", { code: 500 });
+        $c.socket.close();
+        return;
+      }
+
+      // IP 차단 확인 후 순차적으로 접속 처리
+      function proceedAfterIpCheck() {
+        $c.refresh().then(function (ref) {
+          if (ref.result == 200) {
+            DIC[$c.id] = $c;
+            DNAME[($c.profile.title || $c.profile.name).replace(/\s/g, "")] = $c.id;
+
+            $c.enter(room, reserve.spec, reserve.pass);
+            if ($c.place == room.id) {
+              $c.publish("connRoom", { user: $c.getData() });
+            } else {
+              // 입장 실패
+              $c.socket.close();
+            }
+            JLog.info(`Chan @${CHAN} New #${$c.id}`);
+          } else {
+            $c.send("error", {
+              code: ref.result,
+              message: ref.black,
+            });
+            $c._error = ref.result;
+            $c.socket.close();
+          }
+        });
+      }
+
+      /* Enhanced User Block System [S] */
       if (
         GLOBAL.USER_BLOCK_OPTIONS.USE_MODULE &&
         ((GLOBAL.USER_BLOCK_OPTIONS.BLOCK_IP_ONLY_FOR_GUEST && $c.guest) || !GLOBAL.USER_BLOCK_OPTIONS.BLOCK_IP_ONLY_FOR_GUEST)
@@ -165,40 +206,12 @@ Server.on("connection", function (socket, info) {
             $c.socket.close();
             return;
           }
+          proceedAfterIpCheck();
         });
+      } else {
+        proceedAfterIpCheck();
       }
       /* Enhanced User Block System [E] */
-      if (DIC[$c.id]) {
-        DIC[$c.id].send("error", { code: 408 });
-        DIC[$c.id].socket.close();
-      }
-      if (DEVELOP && !Const.TESTER.includes($c.id)) {
-        $c.send("error", { code: 500 });
-        $c.socket.close();
-        return;
-      }
-      $c.refresh().then(function (ref) {
-        if (ref.result == 200) {
-          DIC[$c.id] = $c;
-          DNAME[($c.profile.title || $c.profile.name).replace(/\s/g, "")] = $c.id;
-
-          $c.enter(room, reserve.spec, reserve.pass);
-          if ($c.place == room.id) {
-            $c.publish("connRoom", { user: $c.getData() });
-          } else {
-            // 입장 실패
-            $c.socket.close();
-          }
-          JLog.info(`Chan @${CHAN} New #${$c.id}`);
-        } else {
-          $c.send("error", {
-            code: ref.result,
-            message: ref.black,
-          });
-          $c._error = ref.result;
-          $c.socket.close();
-        }
-      });
     });
 });
 Server.on("error", function (err) {
@@ -534,9 +547,29 @@ KKuTu.onClientMessage = function ($c, msg) {
   }
 };
 KKuTu.onClientClosed = function ($c, code) {
+  if ($c.socket) $c.socket.removeAllListeners();
+
+  // _replaced 플래그: 새 접속으로 교체된 소켓의 close 이벤트일 경우
+  // DIC에서 삭제하면 새 접속까지 끊어지므로 무시
+  if ($c._replaced) {
+    JLog.info(`Chan @${CHAN} Replaced socket closed #${$c.id} (ignored)`);
+    return;
+  }
+
+  // DIC에 현재 저장된 객체가 이 $c인지 확인 (이중 안전장치)
+  if (DIC[$c.id] && DIC[$c.id] !== $c) {
+    JLog.info(`Chan @${CHAN} Stale socket closed #${$c.id} (DIC has newer client, ignored)`);
+    return;
+  }
+
+  // DIC에 등록되지 않은 클라이언트의 close 이벤트는 무시
+  if (!DIC[$c.id]) {
+    JLog.info(`Chan @${CHAN} Unregistered socket closed #${$c.id} (not in DIC, ignored)`);
+    return;
+  }
+
   delete DIC[$c.id];
   if ($c.profile) delete DNAME[$c.profile.title || $c.profile.name];
-  if ($c.socket) $c.socket.removeAllListeners();
   KKuTu.publish("disconnRoom", { id: $c.id });
 
   JLog.alert(`Chan @${CHAN} Exit #${$c.id}`);

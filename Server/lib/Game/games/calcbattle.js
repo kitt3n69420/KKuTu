@@ -186,6 +186,26 @@ exports.submit = function (client, text) {
 		client.game.score -= penaltyScore;
 		if (client.game.score < -9999) client.game.score = -9999;
 
+		if (my.opts.one) {
+			client.game.out = true;
+			client.publish('turnEnd', {
+				target: client.id,
+				ok: false,
+				out: true,
+				giveup: true,
+				value: text,
+				score: -penaltyScore,
+				totalScore: client.game.score
+			}, true);
+
+			// 모든 플레이어가 아웃인지 확인
+			traverse.call(my, function (o) {
+				if (!o.game.out) allOut = false;
+			});
+			if (allOut) my.turnEnd();
+			return;
+		}
+
 		if (my.opts.oneback) {
 			// oneback 모드: 문제 시프트
 			client.game.answer = client.game.pendingAnswer;

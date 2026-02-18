@@ -661,6 +661,12 @@ $(document).ready(function () {
 		// 간단 방 보기 설정
 		$("#simple-room-view").prop('checked', ($data.opts && $data.opts.srv !== undefined) ? $data.opts.srv : true);
 
+		// 욕 필터링 설정 (기본 켜짐)
+		$("#no-filter").prop('checked', ($data.opts && $data.opts.nf !== undefined) ? $data.opts.nf : true);
+
+		// 흔들림 없애기 설정 (기본 꺼짐)
+		$("#no-shake").prop('checked', ($data.opts && $data.opts.ns === true));
+
 		// 현재 로드된 언어 감지
 		// L 객체로부터 실제 언어 감지 시도
 		var detectedLang = null;
@@ -1379,6 +1385,8 @@ $(document).ready(function () {
 			ou: $("#only-unlock").is(":checked"),
 			src: $("#show-rule-category").is(":checked"),
 			srv: $("#simple-room-view").is(":checked"),
+			nf: $("#no-filter").is(":checked"),
+			ns: $("#no-shake").is(":checked"),
 			sp: newSoundPack
 		};
 

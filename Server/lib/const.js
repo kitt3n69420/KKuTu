@@ -569,7 +569,10 @@ exports.IJP_EXCEPT = [
 	"OIJ", "TPW"
 ];
 exports.QUIZ_TOPIC = [
-	"MATH", "CAPI", "CHEM", "UNIT" /*, "CNTR" */
+	"MATH", "CAPI", "CHEM", "UNIT", "NUMG", "ASTR", "ARTS" /*, "CNTR" */
+];
+exports.QUIZ_TOPIC_EN = [
+	"MATH", "CAPI", "CHEM", "UNIT", "NUMG", "ASTR", "ARTS" /*, "CNTR" */
 ];
 exports.KO_IJP = exports.KO_INJEONG.concat(exports.KO_THEME).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });
 exports.EN_IJP = exports.EN_INJEONG.concat(exports.EN_THEME).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });

@@ -528,7 +528,7 @@ exports.submit = function (client, text) {
 		if (allOut) my.turnEnd();
 	}
 
-	// 실패 처리 함수 (낙장불입 옵션 적용)
+	// 실패 처리 함수 (이유가 뭐든 무조건 아웃)
 	function handleFail() {
 		client.send('turnEnd', { target: client.id, error: true });
 		if (my.opts.one) handleOut();
