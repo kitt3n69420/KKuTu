@@ -1566,8 +1566,8 @@ body {
 }
 
 .MeBox {
-	width: 200px;
-	height: 190px;
+	width: calc(100% - 10px);
+	height: 95px;
 	cursor: pointer;
 }
 
@@ -1575,51 +1575,78 @@ body {
 	float: left;
 }
 
+.MeBox .product-body {
+	height: 55px;
+	display: flex;
+	align-items: center;
+}
+
+.userlist-board .users-item {
+	cursor: pointer;
+}
+
+.userlist-board .users-item:hover {
+	background-color: #F4F4F4;
+}
+
 .my-image {
-	width: 80px;
-	height: 80px;
+	width: 70px;
+	height: 70px;
+	flex-shrink: 0;
 }
 
 .my-stat {
-	padding: 5px 0px 5px 5px;
-	width: 100px;
+	padding: 3px 0px 3px 5px;
+	width: 120px;
+	flex-shrink: 0;
 }
 
 .my-stat-level {
 	margin: 1px;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 }
 
 .my-stat-name {
-	padding-top: 3px;
-	padding-left: 4px;
-	width: 76px;
-	height: 17px;
+	padding-top: 1px;
+	padding-left: 3px;
+	width: 96px;
+	height: 16px;
+	font-size: 12px;
 	font-weight: bold;
 }
 
 .my-stat-record {
-	margin-top: 5px;
-	width: 100px;
+	margin-top: 3px;
+	width: 100%;
+	font-size: 11px;
 }
 
 .my-stat-ping {
-	margin-top: 5px;
-	width: 100px;
+	margin-top: 2px;
+	width: 100%;
+	font-size: 11px;
+}
+
+.my-okg {
+	display: none;
+}
+
+.my-okg-text {
+	display: none;
 }
 
 .my-level {
-	margin: 13px 0px;
-	width: 190px;
-	font-size: 15px;
+	margin: 0px 0px 2px 0px;
+	width: 100%;
+	font-size: 11px;
 	text-align: center;
 }
 
 .my-gauge {
-	border-radius: 10px;
-	margin: 3px 0px;
-	width: 190px;
+	border-radius: 8px;
+	margin: 2px 0px;
+	width: 100%;
 	height: 30px;
 	overflow: hidden;
 	background-color: #20568E;
@@ -1631,10 +1658,25 @@ body {
 
 .my-gauge-text {
 	margin-top: -25px;
-	width: 190px;
+	width: 100%;
 	color: #FFFFFF;
+	font-size: 11px;
 	text-align: center;
 	text-shadow: 0px 1px 1px #141414;
+}
+
+.MeBox .my-level-gauge {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: 0 5px 0 0;
+}
+
+.MeBox .my-level-gauge div {
+	float: none;
+	width: 100%;
 }
 
 #dress-goods {

@@ -561,11 +561,17 @@ exports.init = function (_SID, CHAN) {
             : info.connection.remoteAddress;
           /* Enhanced User Block System [E] */
 
-          // 기존 접속자 처리: _replaced 플래그로 레이스 컨디션 방지
+          // 기존 접속자 처리: DIC에서 즉시 제거하고 disconn 발행 후 소켓 닫기
           if (DIC[$c.id]) {
-            DIC[$c.id]._replaced = true;
-            DIC[$c.id].sendError(408);
-            DIC[$c.id].socket.close();
+            var old = DIC[$c.id];
+            old._replaced = true;
+            delete DIC[$c.id];
+            if (old.profile) delete DNAME[old.profile.title || old.profile.name];
+            if (!old.guest) MainDB.users.update(["_id", old.id]).set(["server", ""]).on();
+            if (old.friends) narrateFriends(old.id, old.friends, "off");
+            KKuTu.publish("disconn", { id: old.id });
+            old.sendError(408);
+            old.socket.close();
           }
           if (DEVELOP && !Const.TESTER.includes($c.id)) {
             $c.sendError(500);

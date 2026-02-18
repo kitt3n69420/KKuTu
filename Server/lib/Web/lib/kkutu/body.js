@@ -1086,12 +1086,13 @@ function updateUI(myRoom, refresh) {
 
 	$(".kkutu-menu button").hide();
 	for (i in $stage.box) $stage.box[i].hide();
-	$stage.box.me.show();
+	if (!mobile) $stage.box.me.show();
 	$stage.box.chat.show().width(790).height(190);
 	$stage.chat.height(120);
 
 	if (only == "for-lobby") {
 		$data._ar_first = true;
+		$stage.box.me.show();
 		$stage.box.userList.show();
 		if ($data._shop) {
 			$stage.box.roomList.hide();
@@ -1211,7 +1212,7 @@ function updateMe() {
 	$(".my-okg .graph-bar").width(($data._playTime % 600000) / 6000 + "%");
 	$(".my-okg-text").html(prettyTime($data._playTime));
 	$(".my-level").html(L['LEVEL'] + " " + lv);
-	$(".my-gauge .graph-bar").width((my.data.score - prev) / (goal - prev) * 190);
+	$(".my-gauge .graph-bar").css('width', ((my.data.score - prev) / (goal - prev) * 100) + "%");
 	$(".my-gauge-text").html(commify(my.data.score) + " / " + commify(goal));
 }
 function prettyTime(time) {
@@ -1254,11 +1255,24 @@ function updateUserList(refresh) {
 	if (refresh) {
 		$stage.lobby.userList.empty();
 		$stage.dialog.inviteList.empty();
+		if ($stage.dialog.userListBoard && $stage.dialog.userListBoard.length) $stage.dialog.userListBoard.empty();
 		for (i in arr) {
 			o = arr[i];
 			if (o.robot) continue;
 
 			$stage.lobby.userList.append(userListBar(o));
+			if ($stage.dialog.userListBoard && $stage.dialog.userListBoard.length) {
+				var $ul = $("<div>").addClass("invite-item users-item")
+					.append($("<div>").addClass("jt-image users-image").css('background-image', "url('" + o.profile.image + "')"))
+					.append(getLevelImage(o.data.score).addClass("users-level"))
+					.append($("<div>").addClass("users-name").text(getDisplayName(o)))
+					.data('userId', o.id)
+					.on('click', function () {
+						requestProfile($(this).data('userId'));
+					});
+				addonNickname($ul, o);
+				$stage.dialog.userListBoard.append($ul);
+			}
 			if (o.place == 0) $stage.dialog.inviteList.append(userListBar(o, true));
 		}
 	}

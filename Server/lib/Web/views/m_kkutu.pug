@@ -104,6 +104,7 @@ block Middle
 		button#ExitBtn.for-master.for-normal.for-gaming(style='display: none; background-color: #FFADAD;'): +FA('times')
 		button#ReplayBtn.for-lobby(style='display: none; background-color: #D9FF82;'): +FA('video-camera')
 		button#LeaderboardBtn.for-lobby(style='display: none; background-color: #FFADD3;'): +FA('trophy')
+		button#UserListBtn.for-lobby(style='display: none; background-color: #B0D2F3;'): +FA('users')
 	+Dialog('SettingDiag', 320, 445, L('settingsText'))
 		div.dialog-bar
 		div.dialog-opt(style="width: 100%; margin-bottom: 5px;")
@@ -509,6 +510,8 @@ block Middle
 		div.invite-board(style='height: 355px; overflow-y: scroll;')
 		div.dialog-bar.tail-button
 			button#invite-robot= L('inviteRobot')
+	+Dialog('UserListDiag', 300, 420, L('UserList'))
+		div.userlist-board(style='height: 385px; overflow-y: scroll;')
 	+Dialog('RoomInfoDiag', 300, 365)
 		div.dialog-bar.room-info-head
 			h4= L('roomTitle')
@@ -524,7 +527,7 @@ block Middle
 			div#ri-players(style='width: 100%;')
 		div.dialog-bar.tail-button
 			button#room-info-join= L('join')
-	+Dialog('ProfileDiag', 300, 360)
+	+Dialog('ProfileDiag', 300, 390)
 		div.dialog-bar.profile-head
 		div.dialog-bar
 			h4(style='width: 83px;')= L('place')
@@ -604,8 +607,22 @@ block Middle
 		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; right: 10px; width: calc(100% - 20px);')
 			button#input-no= L('NO')
 			button#input-ok= L('OK')
-	+Product('UserList')
-		div 불러오는 중...
+	+Product('Me')
+		div.moremi.my-image
+		div.my-stat
+			div.jt-image.my-stat-level
+			div.my-stat-name.ellipse
+			div.my-stat-record
+			div.my-stat-ping
+			div
+				+GraphBar('my-okg')
+				div.bar-text.my-okg-text
+				+Expl(true)
+					div(style='color: #CCCCCC;')!= L('okgExpl')
+		div.my-level-gauge
+			div.my-level
+			+GraphBar('my-gauge')
+			div.bar-text.my-gauge-text
 	+Product('RoomList')
 		div 불러오는 중...
 	+Product('Shop')

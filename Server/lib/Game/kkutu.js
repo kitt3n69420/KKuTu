@@ -643,7 +643,7 @@ exports.Client = function (socket, profile, sid) {
 				else R.go({ result: 444, black: black });
 			}
 			/* Enhanced User Block System [E] */
-			else if (Cluster.isMaster && $user.server) R.go({ result: 409, black: $user.server });
+			else if (Cluster.isMaster && $user.server && DIC[my.id]) R.go({ result: 409, black: $user.server })
 			else if (exports.NIGHT && my.isAjae === false) R.go({ result: 440 });
 			else R.go({ result: 200 });
 		});

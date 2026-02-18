@@ -103,7 +103,8 @@ $(document).ready(function () {
 			exit: $("#ExitBtn"),
 			notice: $("#NoticeBtn"),
 			replay: $("#ReplayBtn"),
-			leaderboard: $("#LeaderboardBtn")
+			leaderboard: $("#LeaderboardBtn"),
+			userList: $("#UserListBtn")
 		},
 		dialog: {
 			setting: $("#SettingDiag"),
@@ -183,7 +184,9 @@ $(document).ready(function () {
 			inputOK: $("#input-ok"),
 			inputNo: $("#input-no"),
 			viewAllRules: $("#ViewAllRulesDiag"),
-			viewAllRulesOK: $("#view-all-ok")
+			viewAllRulesOK: $("#view-all-ok"),
+			userListDiag: $("#UserListDiag"),
+			userListBoard: $(".userlist-board")
 		},
 		box: {
 			chat: $(".ChatBox"),
@@ -1294,6 +1297,10 @@ $(document).ready(function () {
 	$stage.menu.invite.on('click', function (e) {
 		showDialog($stage.dialog.invite);
 		updateUserList(true);
+	});
+	$stage.menu.userList.on('click', function (e) {
+		updateUserList(true);
+		showDialog($stage.dialog.userListDiag);
 	});
 	$stage.menu.practice.on('click', function (e) {
 		if (RULE[MODE[$data.room.mode]].ai) {
