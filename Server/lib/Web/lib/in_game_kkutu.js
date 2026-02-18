@@ -2465,9 +2465,13 @@ $lib.Classic.turnStart = function (data) {
 	var $u = $("#game-user-" + data.id).addClass("game-user-current");
 	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
 	if (!$data._replay) {
-		// 입력창은 항상 표시, 자기 턴일 때만 불투명 (비활성: 모바일 0.5, 데스크톱 0)
-		var inactiveOpacity = mobile ? 0.5 : 0;
-		$stage.game.here.css('opacity', (data.id == $data.id) ? 1 : inactiveOpacity).show();
+		if (data.id == $data.id) {
+			$stage.game.here.css('opacity', 1).show();
+		} else if (mobile) {
+			$stage.game.here.css('opacity', 0.5).show();
+		} else {
+			$stage.game.here.hide();
+		}
 		if (data.id == $data.id) {
 			$data._relay = true;
 			// 입력창 클리어 제거 - 사용자가 입력 중인 내용 유지
@@ -2526,14 +2530,14 @@ $lib.Classic.turnEnd = function (id, data) {
 	if (data.ok) {
 		checkFailCombo();
 		clearTimeout($data._fail);
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
 		pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0, data.linkIndex, data.straightBonus > 0, data.isHanbang);
 	} else {
 		checkFailCombo(id);
 		$sc.addClass("lost");
 		$(".game-user-current").addClass("game-user-bomb");
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		playSound('timeout');
 	}
 	if (data.hint) {
@@ -2643,8 +2647,10 @@ $lib.Jaqwi.turnStart = function (data) {
 	$(".game-user-bomb").removeClass("game-user-bomb");
 	if ($data.room.game.seq.indexOf($data.id) >= 0) {
 		$stage.game.here.css('opacity', 1).show();
+	} else if (mobile) {
+		$stage.game.here.css('opacity', 0.5).show();
 	} else {
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0).show();
+		$stage.game.here.hide();
 	}
 	var tVal = data.char;
 	if ($data.room.opts.drg) tVal = "<label style='color:" + getRandomColor() + "'>" + tVal + "</label>";
@@ -2687,14 +2693,14 @@ $lib.Jaqwi.turnEnd = function (id, data) {
 	if (data.giveup) {
 		$uc.addClass("game-user-bomb");
 	} else if (data.answer) {
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		var ansColor = ($data.room.opts.drg) ? getRandomColor() : "#FFFF44";
 		$stage.game.display.html($("<label>").css('color', ansColor).html(data.answer));
 		stopBGM();
 		playSound('horr');
 	} else {
 		// if(data.mean) turnHint(data);
-		if (id == $data.id) $stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		if (id == $data.id) mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		addScore(id, data.score, data.totalScore);
 		if ($data._roundTime > 10000) $data._roundTime = 10000;
 		drawObtainedScore($uc, $sc);
@@ -2996,7 +3002,7 @@ $lib.Typing.turnEnd = function (id, data) {
 			if ($data._round < $data.room.round) restGoing(10);
 		} else {
 			if (id == $data.id) {
-				$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+				mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 				$(".jjo-turn-time .graph-bar")
 					.html("GAME OVER")
 					.css({ 'text-align': "center" });
@@ -3070,9 +3076,13 @@ $lib.Hunmin.turnStart = function (data) {
 	var $u = $("#game-user-" + data.id).addClass("game-user-current");
 	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
 	if (!$data._replay) {
-		// 입력창은 항상 표시, 자기 턴일 때만 불투명 (비활성: 모바일 0.5, 데스크톱 0)
-		var inactiveOpacity = mobile ? 0.5 : 0;
-		$stage.game.here.css('opacity', (data.id == $data.id) ? 1 : inactiveOpacity).show();
+		if (data.id == $data.id) {
+			$stage.game.here.css('opacity', 1).show();
+		} else if (mobile) {
+			$stage.game.here.css('opacity', 0.5).show();
+		} else {
+			$stage.game.here.hide();
+		}
 		if (data.id == $data.id) {
 			$data._relay = true;
 			mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
@@ -3114,13 +3124,13 @@ $lib.Hunmin.turnEnd = function (id, data) {
 	addScore(id, data.score, data.totalScore);
 	if (data.ok) {
 		clearTimeout($data._fail);
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
 		pushDisplay(data.value, data.mean, data.theme, data.wc);
 	} else {
 		$sc.addClass("lost");
 		$(".game-user-current").addClass("game-user-bomb");
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		playSound('timeout');
 	}
 	if (data.hint) {
@@ -3201,9 +3211,13 @@ $lib.Daneo.turnStart = function (data) {
 	var $u = $("#game-user-" + data.id).addClass("game-user-current");
 	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
 	if (!$data._replay) {
-		// 입력창은 항상 표시, 자기 턴일 때만 불투명 (비활성: 모바일 0.5, 데스크톱 0)
-		var inactiveOpacity = mobile ? 0.5 : 0;
-		$stage.game.here.css('opacity', (data.id == $data.id) ? 1 : inactiveOpacity).show();
+		if (data.id == $data.id) {
+			$stage.game.here.css('opacity', 1).show();
+		} else if (mobile) {
+			$stage.game.here.css('opacity', 0.5).show();
+		} else {
+			$stage.game.here.hide();
+		}
 		if (data.id == $data.id) {
 			$data._relay = true;
 			mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
@@ -3246,13 +3260,13 @@ $lib.Daneo.turnEnd = function (id, data) {
 	addScore(id, data.score, data.totalScore);
 	if (data.ok) {
 		clearTimeout($data._fail);
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
 		pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0);
 	} else {
 		$sc.addClass("lost");
 		$(".game-user-current").addClass("game-user-bomb");
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		playSound('timeout');
 	}
 	if (data.hint) {
@@ -3351,9 +3365,13 @@ $lib.Free.turnStart = function (data) {
     var $u = $("#game-user-" + data.id).addClass("game-user-current");
     if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
     if (!$data._replay) {
-        // 입력창은 항상 표시, 자기 턴일 때만 불투명 (비활성: 모바일 0.5, 데스크톱 0)
-        var inactiveOpacity = mobile ? 0.5 : 0;
-        $stage.game.here.css('opacity', (data.id == $data.id) ? 1 : inactiveOpacity).show();
+        if (data.id == $data.id) {
+            $stage.game.here.css('opacity', 1).show();
+        } else if (mobile) {
+            $stage.game.here.css('opacity', 0.5).show();
+        } else {
+            $stage.game.here.hide();
+        }
         if (data.id == $data.id) {
             $data._relay = true;
             mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
@@ -3399,14 +3417,14 @@ $lib.Free.turnEnd = function (id, data) {
     if (data.ok) {
         checkFailCombo();
         clearTimeout($data._fail);
-        $stage.game.here.css('opacity', mobile ? 0.5 : 0);
+        mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
         $stage.game.chain.html(++$data.chain);
         pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0);
     } else {
         checkFailCombo(id);
         $sc.addClass("lost");
         $(".game-user-current").addClass("game-user-bomb");
-        $stage.game.here.css('opacity', mobile ? 0.5 : 0);
+        mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
         playSound('timeout');
     }
     if (data.hint) {
@@ -4169,8 +4187,13 @@ $lib.Calcrelay.turnStart = function (data) {
 	var $u = $("#game-user-" + data.id).addClass("game-user-current");
 	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
 	if (!$data._replay) {
-		var inactiveOpacity = mobile ? 0.5 : 0;
-		$stage.game.here.css('opacity', (data.id == $data.id) ? 1 : inactiveOpacity).show();
+		if (data.id == $data.id) {
+			$stage.game.here.css('opacity', 1).show();
+		} else if (mobile) {
+			$stage.game.here.css('opacity', 0.5).show();
+		} else {
+			$stage.game.here.hide();
+		}
 		if (data.id == $data.id) {
 			$data._relay = true;
 			mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
@@ -4218,7 +4241,7 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 	addScore(id, data.score, data.totalScore);
 	if (data.ok) {
 		clearTimeout($data._fail);
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
 		// 정답 표시 (daneo/free처럼 pushDisplay 사용)
 		pushDisplay(data.value, null, null, null, false, null, false);
@@ -4229,7 +4252,7 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 	} else {
 		$sc.addClass("lost");
 		$(".game-user-current").addClass("game-user-bomb");
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		playSound('timeout');
 		// 정답 표시 후 원래 문제 복원
 		if (data.answer !== undefined) {
@@ -4424,7 +4447,7 @@ $lib.Chainbattle.turnEnd = function (id, data) {
 	} else if (data.out) {
 		// 게임오버 (one 규칙)
 		if (id == $data.id) {
-			$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+			mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 			$(".jjo-turn-time .graph-bar")
 				.html("GAME OVER")
 				.css({ 'text-align': "center" });
@@ -4436,7 +4459,7 @@ $lib.Chainbattle.turnEnd = function (id, data) {
 	} else if (data.speed) {
 		// 라운드 종료 (시간 만료)
 		clearInterval($data._tTime);
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 
 		addTimeout(drawChainSpeed, 1000, data.speed);
 		stopBGM();
@@ -4739,7 +4762,7 @@ $lib.Calcbattle.turnEnd = function (id, data) {
 	} else if (data.out) {
 		// 게임오버 (one 규칙)
 		if (id == $data.id) {
-			$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+			mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 			$(".jjo-turn-time .graph-bar")
 				.html("GAME OVER")
 				.css({ 'text-align': "center" });
@@ -4842,8 +4865,10 @@ $lib.Quiz.turnStart = function (data) {
 	$(".game-user-bomb").removeClass("game-user-bomb");
 	if ($data.room.game.seq.indexOf($data.id) >= 0) {
 		$stage.game.here.css('opacity', 1).show();
+	} else if (mobile) {
+		$stage.game.here.css('opacity', 0.5).show();
 	} else {
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0).show();
+		$stage.game.here.hide();
 	}
 
 	// 문제 표시 (jaqwi와 다른 부분)
@@ -4893,14 +4918,14 @@ $lib.Quiz.turnEnd = function (id, data) {
 	if (data.giveup) {
 		$uc.addClass("game-user-bomb");
 	} else if (data.answer) {
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		var ansColor = ($data.room.opts.drg) ? getRandomColor() : "#FFFF44";
 		$stage.game.display.html($("<label>").css('color', ansColor).html(data.answer));
 		fitQuizDisplay();
 		stopBGM();
 		playSound('horr');
 	} else {
-		if (id == $data.id) $stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		if (id == $data.id) mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		addScore(id, data.score, data.totalScore);
 		if ($data._roundTime > 10000) $data._roundTime = 10000;
 		drawObtainedScore($uc, $sc);
@@ -4966,7 +4991,7 @@ function send(type, data, toMaster) {
 	}
 
 	// Exempt 'draw' and 'test' from spam counter
-	if (type != "test" && type != "draw") if (spamCount++ > 10) {
+	if (type != "test" && type != "draw"&& type != "team") if (spamCount++ > 10) {
 		if (++spamWarning >= 3) return subj.close();
 		spamCount = 5;
 	}
@@ -7508,7 +7533,11 @@ function clearBoard() {
 		if (window.badAppleFrames) window.badAppleFrames = null;
 	}
 	loading();
-	$stage.game.here.css('opacity', mobile ? 0.5 : 0).show();
+	if (mobile) {
+		$stage.game.here.css('opacity', 0.5).show();
+	} else {
+		$stage.game.here.hide();
+	}
 	$stage.dialog.result.hide();
 	$stage.dialog.dress.hide();
 	$stage.dialog.charFactory.hide();
@@ -7618,7 +7647,7 @@ function handleSurvivalKO(id, data, $sc, $uc) {
 	playSound('timeout');
 	$sc.addClass("lost");
 	$(".game-user-current").addClass("game-user-bomb");
-	$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+	mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 
 	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	return true;

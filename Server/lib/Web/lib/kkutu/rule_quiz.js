@@ -56,8 +56,10 @@ $lib.Quiz.turnStart = function (data) {
 	$(".game-user-bomb").removeClass("game-user-bomb");
 	if ($data.room.game.seq.indexOf($data.id) >= 0) {
 		$stage.game.here.css('opacity', 1).show();
+	} else if (mobile) {
+		$stage.game.here.css('opacity', 0.5).show();
 	} else {
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0).show();
+		$stage.game.here.hide();
 	}
 
 	// 문제 표시 (jaqwi와 다른 부분)
@@ -107,14 +109,14 @@ $lib.Quiz.turnEnd = function (id, data) {
 	if (data.giveup) {
 		$uc.addClass("game-user-bomb");
 	} else if (data.answer) {
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		var ansColor = ($data.room.opts.drg) ? getRandomColor() : "#FFFF44";
 		$stage.game.display.html($("<label>").css('color', ansColor).html(data.answer));
 		fitQuizDisplay();
 		stopBGM();
 		playSound('horr');
 	} else {
-		if (id == $data.id) $stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		if (id == $data.id) mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		addScore(id, data.score, data.totalScore);
 		if ($data._roundTime > 10000) $data._roundTime = 10000;
 		drawObtainedScore($uc, $sc);

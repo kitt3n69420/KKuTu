@@ -2597,7 +2597,11 @@ function clearBoard() {
 		if (window.badAppleFrames) window.badAppleFrames = null;
 	}
 	loading();
-	$stage.game.here.css('opacity', mobile ? 0.5 : 0).show();
+	if (mobile) {
+		$stage.game.here.css('opacity', 0.5).show();
+	} else {
+		$stage.game.here.hide();
+	}
 	$stage.dialog.result.hide();
 	$stage.dialog.dress.hide();
 	$stage.dialog.charFactory.hide();
@@ -2707,7 +2711,7 @@ function handleSurvivalKO(id, data, $sc, $uc) {
 	playSound('timeout');
 	$sc.addClass("lost");
 	$(".game-user-current").addClass("game-user-bomb");
-	$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+	mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 
 	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	return true;

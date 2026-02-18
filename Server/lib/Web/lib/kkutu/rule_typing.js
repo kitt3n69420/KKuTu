@@ -139,7 +139,7 @@ $lib.Typing.turnEnd = function (id, data) {
 			if ($data._round < $data.room.round) restGoing(10);
 		} else {
 			if (id == $data.id) {
-				$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+				mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 				$(".jjo-turn-time .graph-bar")
 					.html("GAME OVER")
 					.css({ 'text-align': "center" });

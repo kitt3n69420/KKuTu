@@ -49,8 +49,13 @@ $lib.Calcrelay.turnStart = function (data) {
 	var $u = $("#game-user-" + data.id).addClass("game-user-current");
 	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
 	if (!$data._replay) {
-		var inactiveOpacity = mobile ? 0.5 : 0;
-		$stage.game.here.css('opacity', (data.id == $data.id) ? 1 : inactiveOpacity).show();
+		if (data.id == $data.id) {
+			$stage.game.here.css('opacity', 1).show();
+		} else if (mobile) {
+			$stage.game.here.css('opacity', 0.5).show();
+		} else {
+			$stage.game.here.hide();
+		}
 		if (data.id == $data.id) {
 			$data._relay = true;
 			mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
@@ -98,7 +103,7 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 	addScore(id, data.score, data.totalScore);
 	if (data.ok) {
 		clearTimeout($data._fail);
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
 		// 정답 표시 (daneo/free처럼 pushDisplay 사용)
 		pushDisplay(data.value, null, null, null, false, null, false);
@@ -109,7 +114,7 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 	} else {
 		$sc.addClass("lost");
 		$(".game-user-current").addClass("game-user-bomb");
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		playSound('timeout');
 		// 정답 표시 후 원래 문제 복원
 		if (data.answer !== undefined) {

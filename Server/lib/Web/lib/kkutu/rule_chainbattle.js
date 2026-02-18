@@ -169,7 +169,7 @@ $lib.Chainbattle.turnEnd = function (id, data) {
 	} else if (data.out) {
 		// 게임오버 (one 규칙)
 		if (id == $data.id) {
-			$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+			mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 			$(".jjo-turn-time .graph-bar")
 				.html("GAME OVER")
 				.css({ 'text-align': "center" });
@@ -181,7 +181,7 @@ $lib.Chainbattle.turnEnd = function (id, data) {
 	} else if (data.speed) {
 		// 라운드 종료 (시간 만료)
 		clearInterval($data._tTime);
-		$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 
 		addTimeout(drawChainSpeed, 1000, data.speed);
 		stopBGM();

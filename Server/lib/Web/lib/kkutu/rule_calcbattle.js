@@ -241,7 +241,7 @@ $lib.Calcbattle.turnEnd = function (id, data) {
 	} else if (data.out) {
 		// 게임오버 (one 규칙)
 		if (id == $data.id) {
-			$stage.game.here.css('opacity', mobile ? 0.5 : 0);
+			mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 			$(".jjo-turn-time .graph-bar")
 				.html("GAME OVER")
 				.css({ 'text-align': "center" });
