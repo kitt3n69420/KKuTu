@@ -1092,12 +1092,14 @@ function updateUI(myRoom, refresh) {
 
 	if (only == "for-lobby") {
 		$data._ar_first = true;
-		$stage.box.me.show();
 		$stage.box.userList.show();
 		if ($data._shop) {
 			$stage.box.roomList.hide();
 			$stage.box.shop.show();
+			if (mobile) $stage.box.me.hide();
+			else $stage.box.me.show();
 		} else {
+			$stage.box.me.show();
 			$stage.box.roomList.show();
 			$stage.box.shop.hide();
 		}
@@ -1753,14 +1755,17 @@ function drawScore($obj, score) {
 		$obj.append($("<div>").addClass("game-user-score-char").html(sc[i]));
 	}
 }
-function drawMyDress(avGroup) {
+function drawMyDress(avGroup, resetFields) {
 	var $view = $("#dress-view");
 	var my = $data.users[$data.id];
 
 	renderMoremi($view, my.equip);
 	$(".dress-type.selected").removeClass("selected");
 	$("#dress-type-all").addClass("selected");
-	$("#dress-exordial").val(my.exordial);
+	$("#dress-category-select").val($("#dress-category-select option:first").val());
+	if (resetFields) {
+		$("#dress-exordial").val(my.exordial);
+	}
 	drawMyGoods(avGroup || true);
 }
 function renderGoods($target, preId, filter, equip, onClick) {
@@ -1992,6 +1997,7 @@ function drawCraftWorkshop() {
 	$preview.empty();
 	$cost.html("");
 	$stage.dialog.craftCompose.removeClass("craft-composable");
+	$("#craft-category-select").val($("#craft-category-select option:first").val());
 
 	// Collect all groups except spec (word pieces) for craft display
 	var craftFilter = [];
@@ -3014,6 +3020,7 @@ function loadShop() {
 	});
 	$(".shop-type.selected").removeClass("selected");
 	$("#shop-type-all").addClass("selected");
+	$("#m-shop-category").val($("#m-shop-category option:first").val());
 }
 function filterShop(by) {
 	var isAll = by === true;

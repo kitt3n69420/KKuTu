@@ -94,7 +94,7 @@ block Middle
 		button#SetRoomBtn.for-master(style='display: none; background-color: #B0D2F3;'): +FA('magic')
 		button#NewRoomBtn.for-lobby(style='display: none; background-color: #8EC0F3;'): +FA('magic')
 		button#QuickRoomBtn.for-lobby(style='display: none; background-color: #B0D2F3;'): +FA('bolt')
-		//- button#ShopBtn.for-lobby(style='display: none; background-color: #B3E7B7;'): +FA('shopping-bag')
+		button#ShopBtn.for-lobby(style='display: none; background-color: #B3E7B7;'): +FA('shopping-bag')
 		button#DictionaryBtn.for-lobby.for-master.for-normal.for-gaming(style='display: none; background-color: #73D07A;'): +FA('book')
 		//- button#WordPlusBtn.for-lobby.for-master.for-normal.for-gaming(style='display: none; background-color: #73D07A;')= L('wordPlus')
 		button#InviteBtn.for-master(style='display: none; background-color: #9FE669;'): +FA('envelope')
@@ -102,7 +102,7 @@ block Middle
 		button#ReadyBtn.for-normal(style='display: none; background-color: #FFC67F;'): +FA('play')
 		button#StartBtn.for-master(style='display: none; background-color: #FFB576;'): +FA('play-circle')
 		button#ExitBtn.for-master.for-normal.for-gaming(style='display: none; background-color: #FFADAD;'): +FA('times')
-		button#ReplayBtn.for-lobby(style='display: none; background-color: #D9FF82;'): +FA('video-camera')
+		//- button#ReplayBtn.for-lobby(style='display: none; background-color: #D9FF82;'): +FA('video-camera')
 		button#LeaderboardBtn.for-lobby(style='display: none; background-color: #FFADD3;'): +FA('trophy')
 		button#UserListBtn.for-lobby(style='display: none; background-color: #B0D2F3;'): +FA('users')
 	+Dialog('SettingDiag', 320, 445, L('settingsText'))
@@ -545,6 +545,60 @@ block Middle
 			button#profile-level= L('aiSetting')
 			button#profile-dress= L('dress')
 			button#profile-handover= L('handover')
+	+Dialog('DressDiag', 300, 420, L('dress'))
+		div.dress-top
+			div.moremi#dress-view
+			div.dress-top-inputs
+				div.dialog-bar
+					h4= L('myNickname')
+					input#dress-nickname(type='text', placeholder=L('myNicknameX'), maxlength=12)
+				div.dialog-bar
+					h4= L('myExordial')
+					input#dress-exordial(type='text', placeholder=L('myExordialX'), maxlength=100)
+		div.dialog-bar
+			h4= L('myMoremi')
+			select#dress-category-select
+				- for(var i in locals.CATEGORIES)
+					- var v = locals.GROUPS[locals.CATEGORIES[i]] || [];
+					option(value=v.join(','), data-type=locals.CATEGORIES[i])= L('category_' + locals.CATEGORIES[i])
+		div#dress-goods
+		div.dialog-bar.tail-button
+			button#dress-ok= L('OK')
+			button#dress-cf= L('charFactory')
+			button#dress-craft= L('craftWorkshop')
+	+Dialog('CharFactoryDiag', 300, 420, L('charFactory'))
+		div.dialog-bar(style='width: 100%;')
+			div#cf-tray
+		div.dialog-bar(style='width: 100%;')
+			div#cf-dict
+		div.dialog-bar(style='width: 100%;')
+			h4(style='border-bottom: 1px solid #CCCCCC; width: 100%; height: 20px;')= L('cfReward')
+			div#cf-reward
+		div.dialog-bar(style='width: 100%;')
+			div#cf-cost
+		div.dialog-bar
+			div#cf-goods.goods-box
+		div.dialog-bar.tail-button
+			button#cf-compose= L('cfCompose')
+	+Dialog('CraftingDiag', 300, 380, L('craftWorkshop'))
+		div.dialog-bar#craft-top(style='display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 5px; border-bottom: 1px solid #CCCCCC;')
+			div#craft-tray(style='display: flex; align-items: center; gap: 5px; min-width: 110px;')
+			span#craft-arrow(style='font-size: 18px; color: #999;') &rArr;
+			div#craft-result-preview(style='min-width: 50px; text-align: center;')
+			div#craft-cost(style='font-size: 12px; white-space: nowrap;')
+			button#craft-compose(style='white-space: nowrap;')= L('craftCompose')
+		div.dialog-bar
+			select#craft-category-select
+				- for(var i in locals.CATEGORIES)
+					- if(locals.CATEGORIES[i] !== 'spec')
+						- var v = locals.GROUPS[locals.CATEGORIES[i]] || [];
+						option(value=v.join(','), data-type=locals.CATEGORIES[i])= L('category_' + locals.CATEGORIES[i])
+		div.shop-categories(style='display: none;')
+			- for(var i in locals.CATEGORIES)
+				- if(locals.CATEGORIES[i] !== 'spec')
+					- var v = locals.GROUPS[locals.CATEGORIES[i]] || [];
+					div.category-filter.craft-type(id="craft-type-" + locals.CATEGORIES[i], value=v.join(','))= L('category_' + locals.CATEGORIES[i])
+		div#craft-goods.goods-box(style='height: 220px; overflow-y: auto;')
 	+Dialog('KickVoteDiag', 300, 160, L('kickVote'))
 		div.dialog-bar#kick-vote-text(style='text-align: center;')
 		div.dialog-bar(style='text-align: center;')= L('kickVoteNotice')
@@ -553,7 +607,7 @@ block Middle
 		div.dialog-bar.tail-button
 			button#kick-vote-no= L('disagree')
 			button#kick-vote-yes= L('agree')
-	+Dialog('PurchaseDiag', 300, 205, L('purchase'))
+	+Dialog('PurchaseDiag', 300, 310, L('purchase'))
 		div.dialog-bar
 			h4= L('pingBefore')
 			h4.dialog-bar-value.purchase-ping#purchase-ping-before
@@ -563,6 +617,9 @@ block Middle
 		div.dialog-bar
 			h4= L('pingAfter')
 			h4.dialog-bar-value.purchase-ping#purchase-ping-after
+		div.dialog-bar
+			h4= L('moremiAfter')
+			div.moremi#moremi-after(style='float: left; width: 100px; height: 100px;')
 		div.dialog-bar
 			h4#purchase-item-name(style='width: 100%; font-weight: bold;')
 		div.dialog-bar
@@ -626,7 +683,11 @@ block Middle
 	+Product('RoomList')
 		div 불러오는 중...
 	+Product('Shop')
-		div 불러오는 중...
+		select#m-shop-category.m-shop-category
+			- for(var i in locals.CATEGORIES)
+				- var v = locals.GROUPS[locals.CATEGORIES[i]] || [];
+				option(value=v.join(','), data-type=locals.CATEGORIES[i])= L('category_' + locals.CATEGORIES[i])
+		div#shop-shelf
 	+Product('Room')
 		div.team-selector
 			div.team-button#team-0.team-0= L('teamSolo')

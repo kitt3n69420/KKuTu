@@ -142,14 +142,14 @@ exports.turnEnd = function () {
 
 		if (status.gameOver) {
 			clearTimeout(my.game.robotTimer);
-			my.game._rrt = setTimeout(function() {
+			my.game._rrt = setTimeout(function () {
 				my.roundEnd();
 			}, 2000);
 			return;
 		}
 
 		clearTimeout(my.game.robotTimer);
-		my.game._rrt = setTimeout(function() {
+		my.game._rrt = setTimeout(function () {
 			my.turnNext();
 		}, 2000);
 		return;
@@ -294,13 +294,13 @@ exports.submit = function (client, text, data) {
 			if (status.gameOver) {
 				clearTimeout(my.game.turnTimer);
 				clearTimeout(my.game.robotTimer);
-				my.game._rrt = setTimeout(function() {
+				my.game._rrt = setTimeout(function () {
 					my.roundEnd();
 				}, 2000);
 			} else {
 				clearTimeout(my.game.turnTimer);
 				clearTimeout(my.game.robotTimer);
-				my.game._rrt = setTimeout(function() {
+				my.game._rrt = setTimeout(function () {
 					my.turnNext();
 				}, my.game.turnTime / 6);
 			}

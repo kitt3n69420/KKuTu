@@ -1706,8 +1706,8 @@ iframe {
 }
 
 .dress-equipped {
-	padding: 0px;
-	border: 2px solid #FFB861;
+	outline: 2px solid #FFB861;
+	outline-offset: -2px;
 }
 
 .dress-expl {
@@ -1783,8 +1783,8 @@ iframe {
 }
 
 .cf-tray-selected {
-	padding: 0px;
-	border: 2px solid #61B8FF;
+	outline: 2px solid #61B8FF;
+	outline-offset: -2px;
 }
 
 #cf-dict {

@@ -605,8 +605,7 @@ body {
 }
 
 .ShopBox {
-	width: 790px;
-	height: 360px;
+	width: calc(100% - 10px);
 }
 
 .ShopBox div {
@@ -614,7 +613,23 @@ body {
 }
 
 .ShopBox .product-body {
-	height: 330px;
+	width: calc(100% - 10px);
+}
+
+#m-shop-category {
+	width: 100%;
+	margin-bottom: 4px;
+}
+
+#shop-shelf {
+	width: 100%;
+	height: 300px;
+	overflow-x: hidden;
+	overflow-y: scroll;
+}
+
+#shop-shelf .goods {
+	width: calc(100% - 10px);
 }
 
 .RoomBox {
@@ -1567,7 +1582,7 @@ body {
 
 .MeBox {
 	width: calc(100% - 10px);
-	height: 95px;
+	min-height: 95px;
 	cursor: pointer;
 }
 
@@ -1576,7 +1591,7 @@ body {
 }
 
 .MeBox .product-body {
-	height: 55px;
+	min-height: 25px;
 	display: flex;
 	align-items: center;
 }
@@ -1667,11 +1682,12 @@ body {
 
 .MeBox .my-level-gauge {
 	flex: 1;
-	min-width: 0;
+	min-width: 120px;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	padding: 0 5px 0 0;
+	overflow: visible;
 }
 
 .MeBox .my-level-gauge div {
@@ -1679,10 +1695,171 @@ body {
 	width: 100%;
 }
 
+/* Mobile DressDiag Layout */
+#DressDiag {
+	width: calc(100% - 20px) !important;
+	max-width: 340px;
+	height: auto !important;
+	max-height: 85vh;
+}
+
+#DressDiag .dialog-body {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.dress-top {
+	display: flex;
+	gap: 8px;
+	padding: 5px 0;
+	float: left;
+	width: 100%;
+}
+
+.dress-top #dress-view {
+	width: 80px;
+	height: 80px;
+	flex-shrink: 0;
+}
+
+.dress-top-inputs {
+	flex: 1;
+	min-width: 0;
+}
+
+.dress-top-inputs .dialog-bar h4 {
+	width: 55px;
+	font-size: 11px;
+}
+
+.dress-top-inputs .dialog-bar input {
+	width: calc(100% - 60px);
+}
+
 #dress-goods {
+	margin-top: 5px;
+	height: 200px;
+	overflow-y: auto;
+	float: left;
+	width: 100%;
+}
+
+#DressDiag .dress-item {
+	width: 48px;
+	height: 48px;
+}
+
+#DressDiag .dress-item-image {
+	width: 48px;
+	height: 48px;
+}
+
+#DressDiag .tail-button {
+	padding-top: 5px;
+	border-top: 1px solid #EEE;
+}
+
+#DressDiag .tail-button button {
+	width: auto;
+	min-width: 70px;
+}
+
+.goods-box {
 	margin-top: 5px;
 	height: 125px;
 	overflow-y: scroll;
+}
+
+/* Mobile CharFactory */
+#CharFactoryDiag {
+	width: calc(100% - 20px) !important;
+	max-width: 340px;
+}
+
+#cf-tray {
+	border-bottom: 1px solid #CCCCCC;
+	height: 32px;
+}
+
+#cf-tray div {
+	width: 30px;
+	height: 30px;
+	cursor: pointer;
+}
+
+.cf-tray-selected {
+	outline: 2px solid #61B8FF;
+	outline-offset: -2px;
+}
+
+#cf-dict {
+	margin: 2px 0px;
+	height: 80px;
+	color: #BBBBBB;
+	overflow-y: scroll;
+	background-color: #111111;
+}
+
+#cf-reward {
+	float: left;
+	width: 100%;
+	height: 80px;
+	overflow-y: scroll;
+}
+
+.cf-rew-item {
+	float: left;
+	border-bottom: 1px dashed #BBDEFB;
+	margin-bottom: 1px;
+}
+
+.cf-rew-item div {
+	float: left;
+}
+
+.cf-rew-image {
+	width: 30px;
+	height: 30px;
+}
+
+.cf-rew-value {
+	width: 100%;
+}
+
+.cf-rew-rate {
+	padding-top: 6px;
+	width: 50px;
+	text-align: right;
+}
+
+#cf-cost {
+	text-align: center;
+	background-color: #BBDEFB;
+}
+
+.cf-composable {
+	background-color: #FFAD31;
+}
+
+#CharFactoryDiag .goods-box {
+	float: left;
+	width: 100%;
+	height: 100px;
+	overflow-y: auto;
+}
+
+/* Mobile CraftingDiag */
+#CraftingDiag {
+	width: calc(100% - 20px) !important;
+	max-width: 340px;
+}
+
+#CraftingDiag .goods-box {
+	float: left;
+	width: 100%;
+	height: 150px;
+	overflow-y: auto;
 }
 
 .dress-type {
@@ -1722,8 +1899,8 @@ body {
 }
 
 .dress-equipped {
-	padding: 0px;
-	border: 2px solid #FFB861;
+	outline: 2px solid #FFB861;
+	outline-offset: -2px;
 }
 
 .dress-expl {

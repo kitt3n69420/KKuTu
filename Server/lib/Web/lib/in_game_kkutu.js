@@ -1363,6 +1363,12 @@ $(document).ready(function () {
 
 		filterShop(type == 'all' || $target.attr('value'));
 	});
+	$("#m-shop-category").on('change', function (e) {
+		var $opt = $(this).find(':selected');
+		var type = $opt.data('type');
+
+		filterShop(type == 'all' || $opt.attr('value'));
+	});
 	$stage.menu.dict.on('click', function (e) {
 		showDialog($stage.dialog.dict);
 	});
@@ -1772,7 +1778,11 @@ $(document).ready(function () {
 			if (res.error) return fail(res.error);
 
 			$data.box = res;
-			drawMyDress();
+			if (!Object.keys($data.shop).length) {
+				processShop(function () { drawMyDress(undefined, true); });
+			} else {
+				drawMyDress(undefined, true);
+			}
 		});
 	});
 	$stage.dialog.dressOK.on('click', function (e) {
@@ -1842,6 +1852,15 @@ $(document).ready(function () {
 
 		drawMyGoods(type == 'all' || $target.attr('value'));
 	});
+	$("#dress-category-select").on('change', function (e) {
+		var $opt = $(this).find(':selected');
+		var type = $opt.data('type');
+
+		$(".dress-type.selected").removeClass("selected");
+		$("#dress-type-" + type).addClass("selected");
+
+		drawMyGoods(type == 'all' || $opt.val());
+	});
 	$("#dress-cf").on('click', function (e) {
 		if ($data._gaming) return fail(438);
 		if (showDialog($stage.dialog.charFactory)) drawCharFactory();
@@ -1892,6 +1911,30 @@ $(document).ready(function () {
 			filter = craftFilter;
 		} else {
 			filter = ($target.attr('value') || "").split(',');
+		}
+		if ($data._renderCraftGoods) $data._renderCraftGoods(filter);
+	});
+	$("#craft-category-select").on('change', function () {
+		var $opt = $(this).find(':selected');
+		var type = $opt.data('type');
+
+		$(".craft-type.selected").removeClass("selected");
+		$("#craft-type-" + type).addClass("selected");
+
+		var filter;
+		if (type === 'all') {
+			var craftFilter = [];
+			$(".craft-type").each(function () {
+				var cat = $(this).attr('id').slice(11);
+				if (cat === 'all' || cat === 'spec') return;
+				var vals = ($(this).attr('value') || "").split(',');
+				for (var v = 0; v < vals.length; v++) {
+					if (vals[v] && craftFilter.indexOf(vals[v]) === -1) craftFilter.push(vals[v]);
+				}
+			});
+			filter = craftFilter;
+		} else {
+			filter = ($opt.val() || "").split(',');
 		}
 		if ($data._renderCraftGoods) $data._renderCraftGoods(filter);
 	});
@@ -6035,12 +6078,14 @@ function updateUI(myRoom, refresh) {
 
 	if (only == "for-lobby") {
 		$data._ar_first = true;
-		$stage.box.me.show();
 		$stage.box.userList.show();
 		if ($data._shop) {
 			$stage.box.roomList.hide();
 			$stage.box.shop.show();
+			if (mobile) $stage.box.me.hide();
+			else $stage.box.me.show();
 		} else {
+			$stage.box.me.show();
 			$stage.box.roomList.show();
 			$stage.box.shop.hide();
 		}
@@ -6696,14 +6741,17 @@ function drawScore($obj, score) {
 		$obj.append($("<div>").addClass("game-user-score-char").html(sc[i]));
 	}
 }
-function drawMyDress(avGroup) {
+function drawMyDress(avGroup, resetFields) {
 	var $view = $("#dress-view");
 	var my = $data.users[$data.id];
 
 	renderMoremi($view, my.equip);
 	$(".dress-type.selected").removeClass("selected");
 	$("#dress-type-all").addClass("selected");
-	$("#dress-exordial").val(my.exordial);
+	$("#dress-category-select").val($("#dress-category-select option:first").val());
+	if (resetFields) {
+		$("#dress-exordial").val(my.exordial);
+	}
 	drawMyGoods(avGroup || true);
 }
 function renderGoods($target, preId, filter, equip, onClick) {
@@ -6935,6 +6983,7 @@ function drawCraftWorkshop() {
 	$preview.empty();
 	$cost.html("");
 	$stage.dialog.craftCompose.removeClass("craft-composable");
+	$("#craft-category-select").val($("#craft-category-select option:first").val());
 
 	// Collect all groups except spec (word pieces) for craft display
 	var craftFilter = [];
@@ -7957,6 +8006,7 @@ function loadShop() {
 	});
 	$(".shop-type.selected").removeClass("selected");
 	$("#shop-type-all").addClass("selected");
+	$("#m-shop-category").val($("#m-shop-category option:first").val());
 }
 function filterShop(by) {
 	var isAll = by === true;

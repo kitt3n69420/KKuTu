@@ -1288,6 +1288,12 @@ $(document).ready(function () {
 
 		filterShop(type == 'all' || $target.attr('value'));
 	});
+	$("#m-shop-category").on('change', function (e) {
+		var $opt = $(this).find(':selected');
+		var type = $opt.data('type');
+
+		filterShop(type == 'all' || $opt.attr('value'));
+	});
 	$stage.menu.dict.on('click', function (e) {
 		showDialog($stage.dialog.dict);
 	});
@@ -1697,7 +1703,11 @@ $(document).ready(function () {
 			if (res.error) return fail(res.error);
 
 			$data.box = res;
-			drawMyDress();
+			if (!Object.keys($data.shop).length) {
+				processShop(function () { drawMyDress(undefined, true); });
+			} else {
+				drawMyDress(undefined, true);
+			}
 		});
 	});
 	$stage.dialog.dressOK.on('click', function (e) {
@@ -1767,6 +1777,15 @@ $(document).ready(function () {
 
 		drawMyGoods(type == 'all' || $target.attr('value'));
 	});
+	$("#dress-category-select").on('change', function (e) {
+		var $opt = $(this).find(':selected');
+		var type = $opt.data('type');
+
+		$(".dress-type.selected").removeClass("selected");
+		$("#dress-type-" + type).addClass("selected");
+
+		drawMyGoods(type == 'all' || $opt.val());
+	});
 	$("#dress-cf").on('click', function (e) {
 		if ($data._gaming) return fail(438);
 		if (showDialog($stage.dialog.charFactory)) drawCharFactory();
@@ -1817,6 +1836,30 @@ $(document).ready(function () {
 			filter = craftFilter;
 		} else {
 			filter = ($target.attr('value') || "").split(',');
+		}
+		if ($data._renderCraftGoods) $data._renderCraftGoods(filter);
+	});
+	$("#craft-category-select").on('change', function () {
+		var $opt = $(this).find(':selected');
+		var type = $opt.data('type');
+
+		$(".craft-type.selected").removeClass("selected");
+		$("#craft-type-" + type).addClass("selected");
+
+		var filter;
+		if (type === 'all') {
+			var craftFilter = [];
+			$(".craft-type").each(function () {
+				var cat = $(this).attr('id').slice(11);
+				if (cat === 'all' || cat === 'spec') return;
+				var vals = ($(this).attr('value') || "").split(',');
+				for (var v = 0; v < vals.length; v++) {
+					if (vals[v] && craftFilter.indexOf(vals[v]) === -1) craftFilter.push(vals[v]);
+				}
+			});
+			filter = craftFilter;
+		} else {
+			filter = ($opt.val() || "").split(',');
 		}
 		if ($data._renderCraftGoods) $data._renderCraftGoods(filter);
 	});
