@@ -1485,6 +1485,13 @@ $(document).ready(function () {
 		} else {
 			updateLobbyBGM(newLobbyBGM, newSoundPack);
 		}
+
+		// 병맛 사운드팩 이스터에그: 캐릭터 리렌더링
+		if (previousSoundPack === '병맛' || newSoundPack === '병맛') {
+			updateMe();
+			updateUserList(true);
+			if ($data.room) updateRoom(false);
+		}
 	});
 	$("#mute-bgm").on('click', function () {
 		$data.muteBGM = !$data.muteBGM;

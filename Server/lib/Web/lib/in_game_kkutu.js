@@ -1560,6 +1560,13 @@ $(document).ready(function () {
 		} else {
 			updateLobbyBGM(newLobbyBGM, newSoundPack);
 		}
+
+		// 병맛 사운드팩 이스터에그: 캐릭터 리렌더링
+		if (previousSoundPack === '병맛' || newSoundPack === '병맛') {
+			updateMe();
+			updateUserList(true);
+			if ($data.room) updateRoom(false);
+		}
 	});
 	$("#mute-bgm").on('click', function () {
 		$data.muteBGM = !$data.muteBGM;
@@ -5041,7 +5048,7 @@ function send(type, data, toMaster) {
 	}
 
 	// Exempt 'draw' and 'test' from spam counter
-	if (type != "test" && type != "draw"&& type != "team") if (spamCount++ > 10) {
+	if (type != "test" && type != "draw" && type != "team") if (spamCount++ > 10) {
 		if (++spamWarning >= 3) return subj.close();
 		spamCount = 5;
 	}
@@ -7993,6 +8000,7 @@ function loadShop() {
 		}
 		res.goods.sort(function (a, b) { return b.updatedAt - a.updatedAt; }).forEach(function (item, index, my) {
 			if (item.cost < 0) return;
+			if (!L[item._id]) return;
 			var url = iImage(false, item);
 
 			$body.append($("<div>").attr('id', "goods_" + item._id).addClass("goods")
@@ -9037,6 +9045,14 @@ function renderMoremi(target, equip) {
 	var savedLang = localStorage.getItem('kkutu_lang');
 	if (savedLang === 'nya') {
 		equip['Mhead'] = 'nekomimi';
+	}
+
+	// Easter Egg for 'troll' sound pack
+	var savedVolume = loadVolumeSettings();
+	if (savedVolume.soundPack === '병맛') {
+		equip['Meye'] = 'hidden_eye';
+		equip['Mmouth'] = 'nocomment';
+		equip['Mclothes'] = 'troll';
 	}
 
 	// Random Moremi Item (Drug Mode) Logic Removed - Handled in Interval
