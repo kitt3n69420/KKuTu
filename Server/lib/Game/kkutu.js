@@ -1748,6 +1748,8 @@ exports.Room = function (room, channel) {
 				my.players[i].setLevel(level);
 				my.players[i].setTeam(team);
 				if (!my.players[i].data) my.players[i].data = {};
+				my.players[i].personality = personality;
+				my.players[i].preferredChar = preferredChar;
 				my.players[i].data.personality = personality;
 				my.players[i].data.preferredChar = preferredChar;
 				my.export();

@@ -1271,7 +1271,24 @@ exports.submit = function (client, text) {
 			}
 			// 랜덤 모드: getRandomChar로 매너 체크
 			var isRandomMode = my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second;
-			if (!my.opts.unknown && isRandomMode) {
+			if (my.opts.unknown && isRandomMode) {
+				// unknown 단어는 DB 조회 없이 글자 중 무작위 선택
+				var isKo = my.rule.lang === 'ko';
+				var validIndices = [];
+				for (var i = 0; i < text.length; i++) {
+					var ch = text.charAt(i);
+					if (isKo ? /[가-힣ㄱ-ㅣ0-9]/.test(ch) : /[a-zA-Z0-9]/.test(ch)) {
+						validIndices.push(i);
+					}
+				}
+				if (validIndices.length > 0) {
+					var randIdx = validIndices[Math.floor(Math.random() * validIndices.length)];
+					my.game._pendingRandomResult = { index: randIdx, char: text.charAt(randIdx) };
+					approved();
+				} else {
+					denied();
+				}
+			} else if (!my.opts.unknown && isRandomMode) {
 				// 랜덤 모드 매너 체크를 preApproved에서 실행
 				getRandomChar.call(my, text).then(function (randomResult) {
 					if (randomResult) {
@@ -1562,12 +1579,10 @@ exports.submit = function (client, text) {
 			if ($doc) denied(410);
 			else {
 				var valid = true;
-				if (isMannerLike(my.opts)) {
-					var nextLen = getNextTurnLength.call(my);
+				var isRandomMode = my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second;
+				if (isMannerLike(my.opts) && !isRandomMode) {
 					if (my.rule.lang == "ko") {
 						if (!preChar.match(/[가-힣ㄱ-ㅎㅏ-ㅣ0-9]/)) valid = false;
-						// Additional length check for manner mode if needed?
-						// Assuming getAuto handles the connectivity check.
 					} else {
 						if (!/^[a-zA-Z0-9]+$/.test(preChar)) valid = false;
 					}

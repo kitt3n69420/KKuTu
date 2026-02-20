@@ -745,6 +745,11 @@ $(document).ready(function () {
 		// 흔들림 없애기 설정 (기본 꺼짐)
 		$("#no-shake").prop('checked', ($data.opts && $data.opts.ns === true));
 
+		// 이스터에그 끄기 설정 (기본 꺼짐)
+		$("#no-easter-egg").prop('checked', savedSettings.noEasterEgg === true);
+		// 봇 설정 자동 적용 (기본 꺼짐)
+		$("#ai-auto-apply").prop('checked', savedSettings.aiAutoApply === true);
+
 		// 현재 로드된 언어 감지
 		// L 객체로부터 실제 언어 감지 시도
 		var detectedLang = null;
@@ -1453,6 +1458,7 @@ $(document).ready(function () {
 	$stage.dialog.settingOK.on('click', function (e) {
 		e.preventDefault();
 		var previousSoundPack = $data.opts.sp || "";
+		var previousNoEasterEgg = loadVolumeSettings().noEasterEgg === true;
 		var newSoundPack = $("#sound-pack").val();
 		var newLobbyBGM = $("#lobby-bgm").val();
 		var newLang = $("#language-setting").val();
@@ -1485,7 +1491,9 @@ $(document).ready(function () {
 			bgmMute: $data.opts.mb,
 			effectMute: $data.opts.me,
 			soundPack: $data.opts.sp,
-			lobbyBGM: newLobbyBGM
+			lobbyBGM: newLobbyBGM,
+			noEasterEgg: $("#no-easter-egg").is(":checked"),
+			aiAutoApply: $("#ai-auto-apply").is(":checked")
 		});
 
 		// 언어 설정 저장
@@ -1562,7 +1570,9 @@ $(document).ready(function () {
 		}
 
 		// 병맛 사운드팩 이스터에그: 캐릭터 리렌더링
-		if (previousSoundPack === '병맛' || newSoundPack === '병맛') {
+		// 병맛 팩 변경 또는 이스터에그 on/off 변경 시 리렌더링
+		var newNoEasterEgg = $("#no-easter-egg").is(":checked");
+		if (previousSoundPack === '병맛' || newSoundPack === '병맛' || newNoEasterEgg !== previousNoEasterEgg) {
 			updateMe();
 			updateUserList(true);
 			if ($data.room) updateRoom(false);
@@ -1591,6 +1601,13 @@ $(document).ready(function () {
 	$stage.dialog.profileLevel.on('click', function (e) {
 		$("#PracticeDiag .dialog-title").html(L['robot']);
 		$("#ai-team").prop('disabled', false);
+		var bot = $data.robots[$data._profiled];
+		if (bot && loadVolumeSettings().aiAutoApply === true) {
+			$("#practice-level").val(bot.level != null ? bot.level : 2);
+			$("#ai-team").val(bot.game ? (bot.game.team || 0) : 0);
+			$("#ai-personality").val(bot.personality || 0);
+			$("#ai-preferred-char").val(bot.preferredChar || '');
+		}
 		showDialog($stage.dialog.practice);
 	});
 	$stage.dialog.practiceOK.on('click', function (e) {
@@ -5188,9 +5205,9 @@ function applyOptions(opt) {
 
 function loadVolumeSettings() {
 	try {
-		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null };
+		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null };
 	} catch (e) {
-		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null };
+		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null };
 	}
 }
 
@@ -7250,9 +7267,33 @@ function requestProfile(id) {
 		$stage.dialog.profileLevel.show();
 		$stage.dialog.profileLevel.prop('disabled', $data.id != $data.room.master);
 		$("#profile-place").html($data.room.id + L['roomNumber']);
+
+		var $header = $rec.parent().find(".profile-record-field").first();
+		$header.find(".profile-field-name").html(L['selectLevel']);
+		$header.find(".profile-field-record").html(L['aiPersonality']);
+		$header.find(".profile-field-score").html(L['aiPreferredChar']);
+
+		var levelText = L['aiLevel' + (o.level != null ? o.level : 2)] || '';
+		var personalityVal = o.personality || 0;
+		var personalityText;
+		if (personalityVal < -0.3) personalityText = L['aiPersonality_long'];
+		else if (personalityVal > 0.3) personalityText = L['aiPersonality_aggressive'];
+		else personalityText = L['aiPersonality_neutral'];
+		personalityText += ' (' + (Math.round(personalityVal * 100) / 100) + ')';
+		var prefCharText = o.preferredChar || '-';
+
+		$rec.css('width', '100%').append($("<div>").addClass("profile-record-field")
+			.append($("<div>").addClass("profile-field-name").html(levelText))
+			.append($("<div>").addClass("profile-field-record").html(personalityText))
+			.append($("<div>").addClass("profile-field-score").html(prefCharText))
+		);
 	} else {
 		$stage.dialog.profileLevel.hide();
 		$("#profile-place").html(o.place ? (o.place + L['roomNumber']) : L['lobby']);
+		var $header = $rec.parent().find(".profile-record-field").first();
+		$header.find(".profile-field-name").html(L['gameMode']);
+		$header.find(".profile-field-record").html(L['record']);
+		$header.find(".profile-field-score").html(L['recordScore']);
 		for (i in o.data.record) {
 			var r = o.data.record[i];
 
@@ -8426,7 +8467,7 @@ function pushHistory(text, mean, theme, wc) {
 	});
 	$v.append($w = $("<div>").addClass("history-mean ellipse").append(val))
 		.append($x = $("<div>").addClass("expl").css({ 'width': 200, 'white-space': "normal" })
-			.html("<h5 style='color: #BBBBBB;'>" + val.html() + "</h5>")
+			.html("<h5 style='color: #FFFFFF; margin-bottom: 4px;'>" + displayText + "</h5><h5 style='color: #BBBBBB;'>" + val.html() + "</h5>")
 		);
 	global.expl($v);
 }
@@ -9043,13 +9084,15 @@ function renderMoremi(target, equip) {
 
 	// Easter Egg for 'nya' language
 	var savedLang = localStorage.getItem('kkutu_lang');
-	if (savedLang === 'nya') {
+	var savedVolume = loadVolumeSettings();
+	var easterEggDisabled = savedVolume.noEasterEgg === true;
+
+	if (!easterEggDisabled && savedLang === 'nya') {
 		equip['Mhead'] = 'nekomimi';
 	}
 
 	// Easter Egg for 'troll' sound pack
-	var savedVolume = loadVolumeSettings();
-	if (savedVolume.soundPack === '병맛') {
+	if (!easterEggDisabled && savedVolume.soundPack === '병맛') {
 		equip['Meye'] = 'hidden_eye';
 		equip['Mmouth'] = 'nocomment';
 		equip['Mclothes'] = 'troll';

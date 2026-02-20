@@ -670,6 +670,11 @@ $(document).ready(function () {
 		// 흔들림 없애기 설정 (기본 꺼짐)
 		$("#no-shake").prop('checked', ($data.opts && $data.opts.ns === true));
 
+		// 이스터에그 끄기 설정 (기본 꺼짐)
+		$("#no-easter-egg").prop('checked', savedSettings.noEasterEgg === true);
+		// 봇 설정 자동 적용 (기본 꺼짐)
+		$("#ai-auto-apply").prop('checked', savedSettings.aiAutoApply === true);
+
 		// 현재 로드된 언어 감지
 		// L 객체로부터 실제 언어 감지 시도
 		var detectedLang = null;
@@ -1378,6 +1383,7 @@ $(document).ready(function () {
 	$stage.dialog.settingOK.on('click', function (e) {
 		e.preventDefault();
 		var previousSoundPack = $data.opts.sp || "";
+		var previousNoEasterEgg = loadVolumeSettings().noEasterEgg === true;
 		var newSoundPack = $("#sound-pack").val();
 		var newLobbyBGM = $("#lobby-bgm").val();
 		var newLang = $("#language-setting").val();
@@ -1410,7 +1416,9 @@ $(document).ready(function () {
 			bgmMute: $data.opts.mb,
 			effectMute: $data.opts.me,
 			soundPack: $data.opts.sp,
-			lobbyBGM: newLobbyBGM
+			lobbyBGM: newLobbyBGM,
+			noEasterEgg: $("#no-easter-egg").is(":checked"),
+			aiAutoApply: $("#ai-auto-apply").is(":checked")
 		});
 
 		// 언어 설정 저장
@@ -1487,7 +1495,9 @@ $(document).ready(function () {
 		}
 
 		// 병맛 사운드팩 이스터에그: 캐릭터 리렌더링
-		if (previousSoundPack === '병맛' || newSoundPack === '병맛') {
+		// 병맛 팩 변경 또는 이스터에그 on/off 변경 시 리렌더링
+		var newNoEasterEgg = $("#no-easter-egg").is(":checked");
+		if (previousSoundPack === '병맛' || newSoundPack === '병맛' || newNoEasterEgg !== previousNoEasterEgg) {
 			updateMe();
 			updateUserList(true);
 			if ($data.room) updateRoom(false);
@@ -1516,6 +1526,13 @@ $(document).ready(function () {
 	$stage.dialog.profileLevel.on('click', function (e) {
 		$("#PracticeDiag .dialog-title").html(L['robot']);
 		$("#ai-team").prop('disabled', false);
+		var bot = $data.robots[$data._profiled];
+		if (bot && loadVolumeSettings().aiAutoApply === true) {
+			$("#practice-level").val(bot.level != null ? bot.level : 2);
+			$("#ai-team").val(bot.game ? (bot.game.team || 0) : 0);
+			$("#ai-personality").val(bot.personality || 0);
+			$("#ai-preferred-char").val(bot.preferredChar || '');
+		}
 		showDialog($stage.dialog.practice);
 	});
 	$stage.dialog.practiceOK.on('click', function (e) {

@@ -42,6 +42,15 @@ html
 			meta(property='og:title', content=locals.ogTitle || "쪼롤 - League of Legends 정보 검색 사이트")
 			meta(property='og:description', content=locals.ogDescription || "롤 전적검색은 JJO.KR")
 
+		//- Google Analytics
+		script(async, src='https://www.googletagmanager.com/gtag/js?id=G-KJ151B7SHY')
+		script.
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+
+			gtag('config', 'G-KJ151B7SHY');
+
 		+PageHead()
 			block Preload
 		block CSS

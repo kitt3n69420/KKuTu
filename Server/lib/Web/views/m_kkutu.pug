@@ -105,7 +105,7 @@ block Middle
 		//- button#ReplayBtn.for-lobby(style='display: none; background-color: #D9FF82;'): +FA('video-camera')
 		button#LeaderboardBtn.for-lobby(style='display: none; background-color: #FFADD3;'): +FA('trophy')
 		button#UserListBtn.for-lobby(style='display: none; background-color: #B0D2F3;'): +FA('users')
-	+Dialog('SettingDiag', 320, 445, L('settingsText'))
+	+Dialog('SettingDiag', 320, 485, L('settingsText'))
 		div.dialog-bar
 		div.dialog-opt(style="width: 100%; margin-bottom: 5px;")
 			label(for='mute-bgm', style='float: left; width: 100px; text-align: center; padding-top: 5px;')= L('bgm')
@@ -135,6 +135,8 @@ block Middle
 				+SettingOption('simple-room-view', L('simpleRoomView'), "width: 100%;")
 				+SettingOption('no-filter', L('noFilter'), "width: 100%;")
 				+SettingOption('no-shake', L('noShake'), "width: 100%;")
+				+SettingOption('no-easter-egg', L('noEasterEgg'), "width: 100%;")
+			+SettingOption('ai-auto-apply', L('aiAutoApply'), "width: 100%;")
 		div.dialog-bar
 			h4= L('language')
 			select#language-setting(style="width: 150px;")
