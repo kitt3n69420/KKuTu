@@ -55,7 +55,7 @@ exports.roundReady = function () {
 	clearTimeout(my.game.turnTimer);
 	my.game.round++;
 	my.game.roundTime = my.time * 1000;
-	my.resetChain();
+	if (!my.opts.onlyonce || my.game.round === 1) my.resetChain();
 	if (my.game.round <= my.round) {
 		if (my.opts.length3) my.game.theme = getTheme3(my.game.done);
 		else my.game.theme = getTheme(2, my.game.done);

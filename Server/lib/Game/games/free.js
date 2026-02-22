@@ -44,7 +44,7 @@ exports.roundReady = function () {
     clearTimeout(my.game.turnTimer);
     my.game.round++;
     my.game.roundTime = my.time * 1000;
-    my.resetChain();
+    if (!my.opts.onlyonce || my.game.round === 1) my.resetChain();
     if (my.game.round <= my.round) {
         if (my.opts.mission) my.game.mission = getMission(my.rule.lang, my.opts);
 
@@ -301,8 +301,37 @@ exports.submit = function (client, text) {
                     }
                 }
 
-                // 최종 점수 = 기본 점수 + 미션 보너스 + 스트레이트 보너스
-                score = baseScoreWithoutMission + missionBonus + straightBonus;
+                // Full House Bonus Logic
+                var fullHouseBonus = 0;
+                var fullHouseChars = [];
+                if (client.game.lastWord && client.game.lastWord.length > 0) {
+                    var prevWord = client.game.lastWord;
+                    var prevChars = prevWord.split('');
+                    var currentChars = text.split('');
+                    var matchCount = 0;
+                    var matchedIndices = [];
+
+                    for (var k = 0; k < prevChars.length; k++) {
+                        var foundIdx = currentChars.indexOf(prevChars[k]);
+                        if (foundIdx !== -1) {
+                            matchCount++;
+                            matchedIndices.push(foundIdx);
+                            currentChars[foundIdx] = null; // Mark as used
+                        } else {
+                            break; // If any character is missing, fail Full House
+                        }
+                    }
+
+                    if (matchCount === prevChars.length) {
+                        fullHouseBonus = Math.round(baseScoreWithoutMission * 1.5);
+                        if (my.opts.bbungtwigi) fullHouseBonus *= 2; // 뻥튀기: 보너스 2배
+                        fullHouseChars = matchedIndices;
+                    }
+                }
+                client.game.lastWord = text;
+
+                // 최종 점수 = 기본 점수 + 미션 보너스 + 스트레이트 보너스 + 풀하우스 보너스
+                score = baseScoreWithoutMission + missionBonus + straightBonus + fullHouseBonus;
 
                 if (isReturn) score = 0;
                 my.logChainWord(text, client);
@@ -323,6 +352,8 @@ exports.submit = function (client, text) {
                         score: score,
                         bonus: missionBonus,
                         straightBonus: straightBonus,
+                        fullHouseBonus: (typeof fullHouseBonus !== 'undefined' && fullHouseBonus > 0) ? fullHouseBonus : undefined,
+                        fullHouseChars: (typeof fullHouseChars !== 'undefined') ? fullHouseChars : [],
                         baby: $doc.baby,
                         totalScore: client.game.score,
                         survival: true,
@@ -367,6 +398,8 @@ exports.submit = function (client, text) {
                     score: score,
                     bonus: missionBonus,
                     straightBonus: straightBonus, // Send Straight Bonus
+                    fullHouseBonus: (typeof fullHouseBonus !== 'undefined' && fullHouseBonus > 0) ? fullHouseBonus : undefined,
+                    fullHouseChars: (typeof fullHouseChars !== 'undefined') ? fullHouseChars : [],
                     baby: $doc.baby,
                     totalScore: client.game.score
                 }, true);
@@ -554,6 +587,13 @@ exports.readyRobot = function (robot) {
     }
 
     // Strategy 1 & 2: Mission X/O, Unknown X
+    var preferredChar = robot.data.preferredChar;
+    var usePreferred = false;
+    if (preferredChar) {
+        if (my.rule.lang == "ko" && /[가-힣]/.test(preferredChar)) usePreferred = true;
+        else if (my.rule.lang == "en" && /[a-zA-Z]/.test(preferredChar)) usePreferred = true;
+    }
+
     getAuto.call(my, null, 2).then(function (list) {
         if (list.length) {
             // Filter by mission if active (Strategy 2)
@@ -573,6 +613,18 @@ exports.readyRobot = function (robot) {
             if (level < 4) {
                 list = list.slice(0, Math.min(list.length, ROBOT_CANDIDATE_LIMIT[level])); // Take top N
                 list = shuffle(list); // Shuffle them
+            }
+
+            // Preferred char: prioritize words ending with preferredChar
+            if (usePreferred) {
+                var preferredList = list.filter(function (item) {
+                    return item._id[item._id.length - 1] === preferredChar;
+                });
+                if (preferredList.length > 0) {
+                    list = preferredList.concat(list.filter(function (item) {
+                        return item._id[item._id.length - 1] !== preferredChar;
+                    }));
+                }
             }
 
             pickList(list);

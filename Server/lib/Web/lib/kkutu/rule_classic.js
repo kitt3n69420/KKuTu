@@ -112,7 +112,7 @@ $lib.Classic.turnEnd = function (id, data) {
 		clearTimeout($data._fail);
 		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
-		pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0, data.linkIndex, data.straightBonus > 0, data.isHanbang);
+		pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0, data.linkIndex, data.straightBonus > 0, data.isHanbang, data.fullHouseChars);
 	} else {
 		checkFailCombo(id);
 		$sc.addClass("lost");
@@ -178,6 +178,18 @@ $lib.Classic.turnEnd = function (id, data) {
 					drawObtainedScore($target, $bc);
 				};
 			})($uc), 1100);
+		}
+		if (data.fullHouseBonus) {
+			mobile ? $sc.append("+" + data.fullHouseBonus) : addTimeout((function ($target) {
+				return function () {
+					var $bc = $("<div>")
+						.addClass("deltaScore full-house-bonus")
+						.css('color', '#c26eff') // Purple
+						.html("+" + data.fullHouseBonus);
+
+					drawObtainedScore($target, $bc);
+				};
+			})($uc), 1400); // Trigger after straight bonus
 		}
 		drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	} else {

@@ -3140,7 +3140,7 @@ function vibrate(level) {
 function getRandomColor() {
 	return "hsl(" + Math.floor(Math.random() * 360) + ", 100%, 85%)";
 }
-function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang) {
+function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars) {
 	var len;
 	var mode = MODE[$data.room.mode];
 	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK";
@@ -3297,6 +3297,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 			var isSumiChar = isSumi && (charIdx === sumiIdx);
 			var isStraightChar = isStraight && (isRev ? (charIdx === 0) : (charIdx === len - 1));
 			var isLinking = (RULE[mode].rule === "Classic") && (linkingIndices.indexOf(charIdx) !== -1);
+			var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(charIdx) !== -1;
 
 			$stage.game.display.append($l = $("<div>")
 				.addClass("display-text")
@@ -3306,7 +3307,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				.html(displayText.charAt(charIdx))
 			);
 			j++;
-			addTimeout(function ($l, snd, isSumiChar, isStraightChar, isLinking, isHanbang, originalChar) {
+			addTimeout(function ($l, snd, isSumiChar, isStraightChar, isLinking, isHanbang, originalChar, isFullHouseChar) {
 				var anim = { 'margin-top': 0 };
 
 				playSound(snd);
@@ -3320,18 +3321,22 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 					anim['font-size'] = 24;
 				} else if (originalChar == $data.mission || matchesEasyMission(originalChar, $data.mission)) {
 					playSound('mission');
-					$l.css({ 'color': "#66FF66" }); // Green (Priority 2 -> 3)
+					$l.css({ 'color': "#00FF00" }); // Green (Priority 2 -> 3)
+					anim['font-size'] = 24;
+				} else if (isFullHouseChar) {
+					playSound('mission');
+					$l.css({ 'color': "#c26eff" }); // Purple (Priority 4)
 					anim['font-size'] = 24;
 				} else if (isLinking) {
 					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
 					if (isHanbang) playSound('missing');
 					$l.css({ 'color': isHanbang ? "#FF6666" : "rgb(146, 203, 250)" });
-					if (!isSumiChar && !isStraightChar) anim['font-size'] = 20; // Normal size unless bonus
+					anim['font-size'] = 20; // Normal size unless bonus
 				} else {
 					anim['font-size'] = 20;
 				}
 				$l.show().animate(anim, 100);
-			}, Number(i) * tick, $l, ta, isSumiChar, isStraightChar, isLinking, isHanbang, text.charAt(charIdx));
+			}, Number(i) * tick, $l, ta, isSumiChar, isStraightChar, isLinking, isHanbang, text.charAt(charIdx), isFullHouseChar);
 		}
 		i = $stage.game.display.children("div").get(0);
 		$(i).css(isRev ? 'margin-right' : 'margin-left', ($stage.game.display.width() - 20 * len) * 0.5);
@@ -3353,6 +3358,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 
 				var isLinking = linkingIndices.indexOf(idx) !== -1;
 				var isStraightChar = isStraight && (idx === 0);
+				var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(idx) !== -1;
 
 				if (isSumiChar) {
 					playSound('mission');
@@ -3363,6 +3369,9 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				} else if (t == $data.mission || matchesEasyMission(t, $data.mission)) {
 					playSound('mission');
 					j = "<label style='color: #66FF66;'>" + t_disp + "</label>" + j;
+				} else if (isFullHouseChar) {
+					playSound('mission');
+					j = "<label style='color: #c26eff;'>" + t_disp + "</label>" + j;
 				} else if (isLinking) {
 					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
 					if (isHanbang) playSound('missing');
@@ -3379,6 +3388,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				var isSumiChar = isSumi && (idx === sumiIdx);
 				var isStraightChar = isStraight && (idx === len - 1); // Normal: Last char
 				var isLinking = (RULE[mode].rule === "Classic") && (linkingIndices.indexOf(idx) !== -1);
+				var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(idx) !== -1;
 
 				if (isSumiChar) {
 					playSound('mission');
@@ -3389,6 +3399,9 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				} else if (t == $data.mission || matchesEasyMission(t, $data.mission)) {
 					playSound('mission');
 					j += "<label style='color: #66FF66;'>" + t_disp + "</label>";
+				} else if (isFullHouseChar) {
+					playSound('mission');
+					j += "<label style='color: #c26eff;'>" + t_disp + "</label>";
 				} else if (isLinking) {
 					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
 					if (isHanbang) playSound('missing');

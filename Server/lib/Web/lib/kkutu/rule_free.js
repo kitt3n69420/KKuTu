@@ -105,7 +105,7 @@ $lib.Free.turnEnd = function (id, data) {
         clearTimeout($data._fail);
         mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
         $stage.game.chain.html(++$data.chain);
-        pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0);
+        pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0, false, data.fullHouseChars);
     } else {
         checkFailCombo(id);
         $sc.addClass("lost");
@@ -121,8 +121,8 @@ $lib.Free.turnEnd = function (id, data) {
     // 서바이벌 모드에서는 자신의 점수/보너스 스플래시 숨김 (데미지만 표시)
     if (!data.survival) {
         if (data.bonus) {
-            mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function($target) {
-                return function() {
+            mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function ($target) {
+                return function () {
                     var $bc = $("<div>")
                         .addClass("deltaScore bonus")
                         .css('color', '#66FF66') // Green
@@ -133,8 +133,8 @@ $lib.Free.turnEnd = function (id, data) {
             })($uc), 500);
         }
         if (data.straightBonus) {
-            mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function($target) {
-                return function() {
+            mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function ($target) {
+                return function () {
                     var $bc = $("<div>")
                         .addClass("deltaScore straight-bonus")
                         .css('color', '#FFFF00') // Yellow
@@ -143,6 +143,18 @@ $lib.Free.turnEnd = function (id, data) {
                     drawObtainedScore($target, $bc);
                 };
             })($uc), 800);
+        }
+        if (data.fullHouseBonus) {
+            mobile ? $sc.append("+" + data.fullHouseBonus) : addTimeout((function ($target) {
+                return function () {
+                    var $bc = $("<div>")
+                        .addClass("deltaScore full-house-bonus")
+                        .css('color', '#c26eff') // Purple
+                        .html("+" + data.fullHouseBonus);
+
+                    drawObtainedScore($target, $bc);
+                };
+            })($uc), 1100); // Trigger after straight bonus
         }
         drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
     } else {

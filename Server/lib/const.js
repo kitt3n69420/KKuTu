@@ -27,8 +27,8 @@ exports.SPAM_LIMIT = 7;
 exports.BLOCKED_LENGTH = 10000;
 exports.KICK_BY_SPAM = 9;
 exports.MAX_OBSERVER = 8;
-exports.JAMSU_WARN_TIME = 90000; //10만보다 크면 안 된다!
-exports.JAMSU_WARN2_TIME = 90000;
+exports.JAMSU_WARN_TIME = 300000; // 이제 10만보다 커도 된다!!
+exports.JAMSU_WARN2_TIME = 240000;
 exports.JAMSU_BOOM_TIME = 60000;
 exports.TESTER = GLOBAL.ADMIN.concat([
 	"Input tester id here"
@@ -81,6 +81,7 @@ exports.OPTIONS = {
 	'drg': { name: "Drg" },
 	'spt': { name: "SpeedToss" },
 	'stt': { name: "Straight" },
+	'fho': { name: "FullHouse" },  // 풀하우스: 이전 단어의 문자를 포함하면 보너스
 	'fir': { name: "First" },
 	'ran': { name: "Random" },
 	'vin': { name: "VowelInv" },
@@ -95,7 +96,8 @@ exports.OPTIONS = {
 	'apd': { name: "AntiTroll" },
 	'rnt': { name: "RandomTurn" },
 	'nol': { name: "NoLong" },     // 장문 금지: 9글자 이상 금지
-	'nos': { name: "NoShort" }     // 단문 금지: 8글자 이하 금지
+	'nos': { name: "NoShort" },    // 단문 금지: 8글자 이하 금지
+	'obo': { name: "OnlyOnce" }   // 한번만: 전체 게임에서 한 번 쓴 단어는 재사용 불가
 
 };
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
@@ -173,7 +175,7 @@ exports.RULE = {
 	'EKT': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "fho"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -182,7 +184,7 @@ exports.RULE = {
 	'ESH': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -191,7 +193,7 @@ exports.RULE = {
 	'KKT': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -200,7 +202,7 @@ exports.RULE = {
 	'KSH': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -245,7 +247,7 @@ exports.RULE = {
 	'KAP': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -255,7 +257,7 @@ exports.RULE = {
 	'EAP': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "rnt", "sur", "nol", "nos", "no2"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "rnt", "sur", "nol", "nos", "no2", "obo", "fho"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -266,7 +268,7 @@ exports.RULE = {
 	'HUN': {
 		lang: "ko",
 		rule: "Hunmin",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god", "rnt", "sur"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god", "rnt", "sur", "obo", "fho"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -275,7 +277,7 @@ exports.RULE = {
 	'KDA': {
 		lang: "ko",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2"],
+		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho"],
 		time: 1,
 		ai: true,
 		ewq: false
@@ -283,7 +285,7 @@ exports.RULE = {
 	'EDA': {
 		lang: "en",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2"],
+		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -328,7 +330,7 @@ exports.RULE = {
 	'KFR': {
 		lang: "ko",
 		rule: "Free",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -337,7 +339,7 @@ exports.RULE = {
 	'EFR': {
 		lang: "en",
 		rule: "Free",
-		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2"],
+		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -346,7 +348,7 @@ exports.RULE = {
 	'EKK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "rnt", "sur"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "rnt", "sur", "obo"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -364,7 +366,7 @@ exports.RULE = {
 	'KAK': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -374,7 +376,7 @@ exports.RULE = {
 	'EAK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "sur"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "sur", "obo"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -384,7 +386,7 @@ exports.RULE = {
 	'KKU': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "mid", "sch", "spd", "drg", "stt", "fir", "bbg", "nar", "god", "apd", "rnt", "sur"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "mid", "sch", "spd", "drg", "stt", "fir", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "fho"],
 		time: 1,
 		ai: true,
 		big: false,

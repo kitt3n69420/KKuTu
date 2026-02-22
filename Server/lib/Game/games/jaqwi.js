@@ -29,11 +29,39 @@ exports.init = function (_DB, _DIC) {
 	DB = _DB;
 	DIC = _DIC;
 };
+
+// 주제를 공평하게 분배한 순서 배열을 만든다.
+function buildThemeQueue(topics, rounds) {
+	var pool = [];
+	var remaining = rounds;
+
+	while (remaining >= topics.length) {
+		for (var i = 0; i < topics.length; i++) pool.push(topics[i]);
+		remaining -= topics.length;
+	}
+
+	if (remaining > 0) {
+		var rest = topics.slice();
+		for (var j = 0; j < remaining; j++) {
+			var idx = Math.floor(Math.random() * rest.length);
+			pool.push(rest[idx]);
+			rest.splice(idx, 1);
+		}
+	}
+
+	for (var k = pool.length - 1; k > 0; k--) {
+		var r = Math.floor(Math.random() * (k + 1));
+		var tmp = pool[k]; pool[k] = pool[r]; pool[r] = tmp;
+	}
+	return pool;
+}
+
 exports.getTitle = function () {
 	var R = new Lizard.Tail();
 	var my = this;
 
 	my.game.done = [];
+	my.game.themeQueue = buildThemeQueue(my.opts.injpick, my.round);
 	setTimeout(function () {
 		R.go("①②③④⑤⑥⑦⑧⑨⑩");
 	}, 500);
@@ -53,7 +81,7 @@ exports.roundReady = function () {
 	my.game.round++;
 	my.game.roundTime = my.time * 1000;
 	if (my.game.round <= my.round) {
-		my.game.theme = my.opts.injpick[Math.floor(Math.random() * ijl)];
+		my.game.theme = my.game.themeQueue.shift() || my.opts.injpick[Math.floor(Math.random() * ijl)];
 		getAnswer.call(my, my.game.theme).then(function ($ans) {
 			if (!my.game.done) return;
 

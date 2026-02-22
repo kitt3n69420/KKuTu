@@ -43,11 +43,43 @@ exports.init = function (_DB, _DIC) {
 	DIC = _DIC;
 };
 
+// 주제를 공평하게 분배한 순서 배열을 만든다.
+function buildThemeQueue(topics, rounds) {
+	var pool = [];
+	var remaining = rounds;
+
+	while (remaining >= topics.length) {
+		for (var i = 0; i < topics.length; i++) pool.push(topics[i]);
+		remaining -= topics.length;
+	}
+
+	if (remaining > 0) {
+		var rest = topics.slice();
+		for (var j = 0; j < remaining; j++) {
+			var idx = Math.floor(Math.random() * rest.length);
+			pool.push(rest[idx]);
+			rest.splice(idx, 1);
+		}
+	}
+
+	for (var k = pool.length - 1; k > 0; k--) {
+		var r = Math.floor(Math.random() * (k + 1));
+		var tmp = pool[k]; pool[k] = pool[r]; pool[r] = tmp;
+	}
+	return pool;
+}
+
 exports.getTitle = function () {
 	var R = new Lizard.Tail();
 	var my = this;
 
 	my.game.done = [];
+	var topics = my.opts.quizpick;
+	if (topics && Array.isArray(topics) && topics.length > 0) {
+		my.game.themeQueue = buildThemeQueue(topics, my.round);
+	} else {
+		my.game.themeQueue = [];
+	}
 	setTimeout(function () {
 		R.go("①②③④⑤⑥⑦⑧⑨⑩");
 	}, 500);
@@ -61,7 +93,6 @@ exports.roundReady = function () {
 	// 주제가 선택되지 않았거나 빈 배열이면 에러 처리
 	if (!topics || !Array.isArray(topics) || topics.length === 0) {
 		console.error("[QUIZ] No topic selected! Game cannot start without topic selection.");
-		// 게임을 시작할 수 없으므로 그냥 리턴
 		return;
 	}
 
@@ -82,7 +113,9 @@ exports.roundReady = function () {
 	my.game.roundTime = my.time * 1000;
 
 	if (my.game.round <= my.round) {
-		my.game.topic = topics[Math.floor(Math.random() * ijl)];
+		my.game.topic = (my.game.themeQueue && my.game.themeQueue.length > 0)
+			? my.game.themeQueue.shift()
+			: topics[Math.floor(Math.random() * ijl)];
 
 		getQuestion.call(my, my.game.topic, my.game.difficulty).then(function ($q) {
 			if (!my.game.done) return;

@@ -34,7 +34,7 @@ const RIEUL_TO_NIEUN = [4449, 4450, 4457, 4460, 4462, 4467];
 const RIEUL_TO_IEUNG = [4451, 4455, 4456, 4461, 4466, 4469];
 const NIEUN_TO_IEUNG = [4455, 4461, 4466, 4469];
 const PRIORITY_ATTACK_CHARS = ["렁", "듈", "븐", "튬", "쾃", "럿", "듐", "픔", "뮴", "읃", "읓", "읔", "읕", "읖", "읗", "냑", "녘"];
-const PRIORITY_ATTACK_CHARS_MANNER = ["릇", "륨", "늄", "럴", "텝", "슭", "픈", "깟", "왑", "븨", "껏"];
+const PRIORITY_ATTACK_CHARS_MANNER = ["릇", "럴", "텝", "슭", "픈", "깟", "왑", "븨", "껏"];
 const PRIORITY_KAP_ATTACK_CHARS = ["녈", "맞", "흰", "뉸", "뒷", "헛", "붉", "뻐", "첫", "룍", "뇩", "넓", "홑", "맆", "렾", "녚", "갯", "받", "뉼", "앉", "높", "롶", "돼", "윗", "넙", "랼", "된", "뾰", "햇", "엑", "좁", "굳", "왼", "뻔", "빤", "륽", "늙", "뺑", "엎", "같", "띾", "꺾", "닫", "랕", "뙤", "돋", "쨍", "씽", "꽈", "귓", "므", "쌩", "샐", "잦", "섞", "덮", "맏", "얽", "왱", "긁", "짧", "걷", "헥", "잿"];
 const PRIORITY_KAP_ATTACK_CHARS_MANNER = ["겉", "쩔", "떠", "녑", "훌", "숫", "붙", "곧", "랒", "쫄", "쏠", "녓", "갸", "콧", "갖", "썰", "뻥", "삥", "쩌", "뗑", "꺄", "쐐", "헝", "갤", "촬", "옵", "찡", "믿", "줴", "촐", "놓", "쓴", "맑", "칡", "핸", "힌", "싀", "깁", "씀", "뭍"];
 const DUBANG = ["괙", "귁", "껙", "꿕", "뀍", "늡", "릅", "돨", "똴", "뙁", "뛸", "뜩", "띡", "띨", "멫", "몇", "뱍", "뷩", "뷩", "븩", "뽓", "뿅", "솰", "쏼", "었", "쟘", "좍", "좜", "좸", "줅", "줍", "쥄", "쫙", "챱", "홱", "깟", "팅", "넬"]
@@ -43,7 +43,7 @@ const PRIORITY_ATTACK_CHARS_EN = ["ght", "ock", "ick", "ird", "ert", "ork", "eck
 const PRIORITY_ATTACK_CHARS_MANNER_EN = ["ack", "ark", "ics", "orm", "ers", "ify", "ons", "omb", "ngs", "ump", "owl", "ift", "urn", "rie", "eek", "oud", "elf", "irt", "ild", "kie", "itz", "rld", "iew", "thm", "els", "awl", "awn", "rue", "yew", "eft", "oft", "ffy", "uld", "hew", "ivy", "rtz", "egs", "tew", "oux", "rns", "ebs", "tua", "tyl", "efy", "ohm", "omp", "bbs", "ltz", "ggs", "oek", "xxv", "few", "wyn", "orr", "utz", "enn", "ebb", "hns", "ogs", "ruz", "ibs", "uhr", "nyl"];
 const PRIORITY_KAP_ATTACK_CHARS_EN = ["j", "q", "x", "z"];
 const AVOID_FD = ["렁", "냑", "럿", "럴"];
-const AVOID_VI = ["렁", "냑", "럿", "럴", "륨", "늄", "윰", "켓", "껏", "귬"];
+const AVOID_VI = ["렁", "냑", "럿", "럴", "켓", "껏", "줘", "텝"];
 const EKT_BIGRAMS = ["co", "un", "in", "re", "ca", "de", "ma", "pr", "di", "st", "pa", "ch", "se", "an", "ba", "pe", "tr", "su", "me", "ha", "sa", "po", "mo", "mi", "he", "sp", "la", "br", "no", "sh", "be", "ho", "sc", "cr", "li", "th", "te", "bo", "ar", "al", "gr", "ta", "fo", "so", "ex", "ra", "en", "lo", "ac", "si", "le", "ne", "pl", "pi", "bu", "to", "ga", "bl", "cl", "do", "bi", "hy", "fa", "fi", "ph", "fl", "ro", "im", "wa", "mu", "as", "vi", "fr", "pu", "am", "da", "ap", "ce", "cu", "ve", "ad", "na", "wi", "go", "ab", "ge", "hi", "va", "ti", "ov", "qu", "dr", "fe", "or", "sl", "ri", "gl", "au", "we", "tu", "wo", "sy", "ni", "fu", "hu", "el", "ru", "lu", "wh", "cy", "at", "gu", "du", "em", "ci", "ki", "ka", "ag", "my"];
 const VOWEL_INV_MAP = {
 	0: 4, 4: 0, 1: 5, 5: 1, 2: 6, 6: 2, 3: 7, 7: 3,
@@ -499,7 +499,8 @@ exports.roundReady = function () {
 			}
 		}
 	}
-	my.resetChain();
+	if (!my.opts.onlyonce || my.game.round === 1) my.resetChain();
+	my.game.roundChainCount = 0;
 	if (my.game.round <= my.round) {
 		// EKT: 매 라운드마다 EKT_BIGRAMS에서 랜덤 bigram 직접 선택
 		if (Const.GAME_TYPE[my.mode] === 'EKT') {
@@ -961,7 +962,7 @@ exports.submit = function (client, text) {
 		if (!my.game.chain) return;
 		var preChar = getChar.call(my, text);
 		var preSubChar = getSubChar.call(my, preChar);
-		var firstMove = my.game.chain.length < 1;
+		var firstMove = my.game.roundChainCount < 1;
 
 		// EKT: 3글자 이상 단어 입력 시, trigram 모드가 활성화될 것을 미리 예상하여 3-gram으로 매너 체크
 		var gameType = Const.GAME_TYPE[my.mode];
@@ -1051,6 +1052,7 @@ exports.submit = function (client, text) {
 				// EKT 모드 활성화는 단어가 완전히 승인된 후로 이동 (랜덤 체크 통과 후)
 
 				my.logChainWord(text, client);
+				my.game.roundChainCount++;
 				my.game.roundTime -= t;
 
 				// Random Linking Logic
@@ -1237,6 +1239,38 @@ exports.submit = function (client, text) {
 						}
 						// ========== 서바이벌 모드 끝 ==========
 
+						// Full House Bonus Logic
+						var fullHouseBonus = 0;
+						var fullHouseChars = [];
+						if (client.game.lastWord && client.game.lastWord.length > 0) {
+							var prevWord = client.game.lastWord;
+							var prevChars = prevWord.split('');
+							var currentChars = text.split('');
+							var matchCount = 0;
+							var matchedIndices = [];
+
+							for (var k = 0; k < prevChars.length; k++) {
+								var foundIdx = currentChars.indexOf(prevChars[k]);
+								if (foundIdx !== -1) {
+									matchCount++;
+									matchedIndices.push(foundIdx);
+									currentChars[foundIdx] = null; // Mark as used
+								} else {
+									break; // If any character is missing, fail Full House
+								}
+							}
+
+							if (matchCount === prevChars.length) {
+								fullHouseBonus = Math.round(baseScoreWithoutMission * 1.5);
+								if (my.opts.bbungtwigi) fullHouseBonus *= 2; // 뻥튀기: 보너스 2배
+								fullHouseChars = matchedIndices;
+							}
+						}
+						client.game.lastWord = text;
+
+						// 최종 점수 = 기본 점수 + 미션 보너스 + 스피드보너스 + 스트레이트 보너스 + 풀하우스 보너스
+						score = baseScoreWithoutMission + missionBonus + speedTossBonus + straightBonus + fullHouseBonus;
+
 						client.game.score += score;
 						client.publish('turnEnd', {
 							ok: true,
@@ -1248,6 +1282,8 @@ exports.submit = function (client, text) {
 							bonus: missionBonus,
 							speedToss: speedTossBonus,
 							straightBonus: straightBonus, // Send Straight Bonus
+							fullHouseBonus: fullHouseBonus > 0 ? fullHouseBonus : undefined,
+							fullHouseChars: fullHouseChars,
 							baby: $doc.baby,
 							totalScore: client.game.score,
 							linkIndex: linkIdx, // Send Link Index
@@ -2362,8 +2398,14 @@ exports.readyRobot = function (robot) {
 		var isKKT = (Const.GAME_TYPE[my.mode] == "KKT" || Const.GAME_TYPE[my.mode] == "EKK" || Const.GAME_TYPE[my.mode] == "KAK" || Const.GAME_TYPE[my.mode] == "EAK");
 		var decided = false;
 
+		// 첫 턴: 매너 체크와 같은 이유로 Attack 전략 금지
+		if (my.game.roundChainCount < 1) {
+			strategy = "NORMAL";
+			decided = true;
+		}
+
 		// Force Retry Logic
-		if (robot.data.retryCount > 0) {
+		if (!decided && robot.data.retryCount > 0) {
 			decided = true;
 			strategy = "ATTACK";
 		}

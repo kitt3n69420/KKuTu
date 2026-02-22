@@ -795,6 +795,41 @@ $(document).ready(function () {
 		$d.find(".dialog-title").html(L['newRoom']);
 		$("#room-mode").trigger('change');
 	});
+
+	window.updateViewAllRulesBtn = function () {
+		var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'spt', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo'];
+		var count = 0;
+		for (var i in OPTIONS) {
+			if (true || keyRules.indexOf(i) === -1) {
+				var name = OPTIONS[i].name.toLowerCase();
+				if (window.RULE_CHECKBOXES[name] && window.RULE_CHECKBOXES[name].first().is(':checked')) {
+					count++;
+				}
+			}
+		}
+		var baseText = L['viewAllRules'];
+		if (count > 0) {
+			$("#view-all-rules-btn").text(baseText + " (" + count + ")");
+		} else {
+			$("#view-all-rules-btn").text(baseText);
+		}
+	};
+
+	window.RULE_CHECKBOXES = window.RULE_CHECKBOXES || {};
+	for (var opt_i in OPTIONS) {
+		var name = OPTIONS[opt_i].name.toLowerCase();
+		window.RULE_CHECKBOXES[name] = $('#room-' + name + ', #room-flat-' + name + ', #room-simple-' + name + ', #view-all-' + name + ', #view-all-flat-' + name);
+		window.RULE_CHECKBOXES[name].data('opt-name', name);
+
+		window.RULE_CHECKBOXES[name].on('change', function () {
+			var n = $(this).data('opt-name');
+			window.RULE_CHECKBOXES[n].prop('checked', $(this).is(':checked'));
+			setTimeout(function () {
+				if (window.updateViewAllRulesBtn) window.updateViewAllRulesBtn();
+			}, 10);
+		});
+	}
+
 	$stage.menu.setRoom.on('click', function (e) {
 		var $d;
 		var rule = RULE[MODE[$data.room.mode]];
@@ -808,9 +843,9 @@ $(document).ready(function () {
 		$("#room-time").val($data.room.time / rule.time);
 		for (i in OPTIONS) {
 			k = OPTIONS[i].name.toLowerCase();
-			$("#room-" + k).attr('checked', $data.room.opts[k]);
-			$("#room-flat-" + k).attr('checked', $data.room.opts[k]);
+			if (window.RULE_CHECKBOXES[k]) window.RULE_CHECKBOXES[k].prop('checked', $data.room.opts[k] || false);
 		}
+		if (window.updateViewAllRulesBtn) window.updateViewAllRulesBtn();
 		$data._injpick = $data.room.opts.injpick;
 
 		// 서바이벌 HP 설정 복원
@@ -966,6 +1001,13 @@ $(document).ready(function () {
 		updateGameOptions(rule.opts, 'room');
 		updateGameOptions(rule.opts, 'room-flat');
 
+		// 현재 모드에서 지원하지 않는 규칙 강제 해제
+		for (var k in OPTIONS) {
+			var optName = OPTIONS[k].name.toLowerCase();
+			if (rule.opts.indexOf(k) === -1 && window.RULE_CHECKBOXES[optName]) {
+				window.RULE_CHECKBOXES[optName].prop('checked', false);
+			}
+		}
 
 		// Check if category view is enabled (default: true)
 		var showCategory = !($data.opts && $data.opts.src === false);
@@ -1157,66 +1199,44 @@ $(document).ready(function () {
 		updateSurvivalUI(survivalChecked);
 	});
 	// 나락-무적 상호배타: 나락 체크시 무적 해제
-	$("#room-narak, #room-flat-narak, #view-all-narak, #view-all-flat-narak").on('change', function () {
-		if ($(this).is(':checked')) {
-			$("#room-invincible, #room-flat-invincible, #view-all-invincible, #view-all-flat-invincible").prop('checked', false);
-		}
+	window.RULE_CHECKBOXES['narak'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['invincible'].prop('checked', false);
 	});
 	// 무적(갓모드) 체크시 나락 해제
-	$("#room-invincible, #room-flat-invincible, #view-all-invincible, #view-all-flat-invincible").on('change', function () {
-		if ($(this).is(':checked')) {
-			$("#room-narak, #room-flat-narak, #view-all-narak, #view-all-flat-narak").prop('checked', false);
-		}
+	window.RULE_CHECKBOXES['invincible'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['narak'].prop('checked', false);
 	});
 	// 장문금지-단문금지 상호배타: 장문금지 체크시 단문금지 해제
-	$("#room-nolong, #room-flat-nolong, #view-all-nolong, #view-all-flat-nolong").on('change', function () {
-		if ($(this).is(':checked')) {
-			$("#room-noshort, #room-flat-noshort, #view-all-noshort, #view-all-flat-noshort").prop('checked', false);
-		}
+	window.RULE_CHECKBOXES['nolong'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['noshort'].prop('checked', false);
 	});
 	// 단문금지 체크시 장문금지 해제, 2글자금지 해제
-	$("#room-noshort, #room-flat-noshort, #view-all-noshort, #view-all-flat-noshort").on('change', function () {
+	window.RULE_CHECKBOXES['noshort'].on('change', function () {
 		if ($(this).is(':checked')) {
-			$("#room-nolong, #room-flat-nolong, #view-all-nolong, #view-all-flat-nolong").prop('checked', false);
-			$("#room-no2, #room-flat-no2, #view-all-no2, #view-all-flat-no2").prop('checked', false);
+			window.RULE_CHECKBOXES['nolong'].prop('checked', false);
+			window.RULE_CHECKBOXES['no2'].prop('checked', false);
 		}
 	});
 	// 2글자금지 체크시 단문금지 해제
-	$("#room-no2, #room-flat-no2, #view-all-no2, #view-all-flat-no2").on('change', function () {
-		if ($(this).is(':checked')) {
-			$("#room-noshort, #room-flat-noshort, #view-all-noshort, #view-all-flat-noshort").prop('checked', false);
-		}
+	window.RULE_CHECKBOXES['no2'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['noshort'].prop('checked', false);
 	});
 	// 매너 그룹 상호배타: man, gen, shi, etq 중 하나만 선택 가능
 	var mannerGroup = ['manner', 'gentle', 'shield', 'etiquette'];
 	mannerGroup.forEach(function (opt) {
-		var selectors = ['#room-' + opt, '#room-flat-' + opt, '#room-simple-' + opt,
-		'#view-all-' + opt, '#view-all-flat-' + opt].join(', ');
-		$(selectors).on('change', function () {
+		window.RULE_CHECKBOXES[opt].on('change', function () {
 			if ($(this).is(':checked')) {
 				mannerGroup.forEach(function (other) {
-					if (other !== opt) {
-						$('#room-' + other + ', #room-flat-' + other + ', #room-simple-' + other +
-							', #view-all-' + other + ', #view-all-flat-' + other).prop('checked', false);
-					}
+					if (other !== opt) window.RULE_CHECKBOXES[other].prop('checked', false);
 				});
 			}
 		});
 	});
+
 	// View All Rules Dialog 버튼 핸들러
 	$("#view-all-rules-btn").on('click', function () {
 		var v = $("#room-mode").val();
 		var rule = RULE[MODE[v]];
-
-		// room- 체크박스 값을 view-all- 및 view-all-flat-에 복사
-		for (var opt in OPTIONS) {
-			var roomId = 'room-' + OPTIONS[opt].name.toLowerCase();
-			var viewAllId = 'view-all-' + OPTIONS[opt].name.toLowerCase();
-			var viewAllFlatId = 'view-all-flat-' + OPTIONS[opt].name.toLowerCase();
-			var checked = $('#' + roomId).is(':checked');
-			$('#' + viewAllId).prop('checked', checked);
-			$('#' + viewAllFlatId).prop('checked', checked);
-		}
 
 		// view-all 패널의 옵션 표시/숨김 업데이트
 		updateGameOptions(rule.opts, 'view-all');
@@ -1305,22 +1325,8 @@ $(document).ready(function () {
 
 		showDialog($stage.dialog.viewAllRules);
 	});
-	// View All Rules OK 버튼 - 값을 room 옵션에 동기화
+	// View All Rules OK 버튼
 	$stage.dialog.viewAllRulesOK.on('click', function () {
-		// view-all- 및 view-all-flat- 값들을 room-에 복사
-		var showCategory = !($data.opts && $data.opts.src === false);
-
-		for (var opt in OPTIONS) {
-			var srcId = showCategory ? 'view-all-' : 'view-all-flat-';
-			var viewAllId = srcId + OPTIONS[opt].name.toLowerCase();
-			var roomId = 'room-' + OPTIONS[opt].name.toLowerCase();
-			var simplId = 'room-simple-' + OPTIONS[opt].name.toLowerCase();
-			var flatId = 'room-flat-' + OPTIONS[opt].name.toLowerCase();
-			var checked = $('#' + viewAllId).is(':checked');
-			$('#' + roomId).prop('checked', checked);
-			$('#' + simplId).prop('checked', checked);
-			$('#' + flatId).prop('checked', checked);
-		}
 		$stage.dialog.viewAllRules.hide();
 	});
 	// View All Injeong Pick 버튼 (category mode)
@@ -2606,7 +2612,7 @@ $lib.Classic.turnEnd = function (id, data) {
 		clearTimeout($data._fail);
 		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
-		pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0, data.linkIndex, data.straightBonus > 0, data.isHanbang);
+		pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0, data.linkIndex, data.straightBonus > 0, data.isHanbang, data.fullHouseChars);
 	} else {
 		checkFailCombo(id);
 		$sc.addClass("lost");
@@ -2672,6 +2678,18 @@ $lib.Classic.turnEnd = function (id, data) {
 					drawObtainedScore($target, $bc);
 				};
 			})($uc), 1100);
+		}
+		if (data.fullHouseBonus) {
+			mobile ? $sc.append("+" + data.fullHouseBonus) : addTimeout((function ($target) {
+				return function () {
+					var $bc = $("<div>")
+						.addClass("deltaScore full-house-bonus")
+						.css('color', '#c26eff') // Purple
+						.html("+" + data.fullHouseBonus);
+
+					drawObtainedScore($target, $bc);
+				};
+			})($uc), 1400); // Trigger after straight bonus
 		}
 		drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	} else {
@@ -3336,7 +3354,7 @@ $lib.Daneo.turnEnd = function (id, data) {
 		clearTimeout($data._fail);
 		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
-		pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0);
+		pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0, false, data.fullHouseChars);
 	} else {
 		$sc.addClass("lost");
 		$(".game-user-current").addClass("game-user-bomb");
@@ -3377,6 +3395,18 @@ $lib.Daneo.turnEnd = function (id, data) {
 					drawObtainedScore($target, $bc);
 				};
 			})($uc), 800);
+		}
+		if (data.fullHouseBonus) {
+			mobile ? $sc.append("+" + data.fullHouseBonus) : addTimeout((function ($target) {
+				return function () {
+					var $bc = $("<div>")
+						.addClass("deltaScore full-house-bonus")
+						.css('color', '#c26eff') // Purple
+						.html("+" + data.fullHouseBonus);
+
+					drawObtainedScore($target, $bc);
+				};
+			})($uc), 1100); // Trigger after straight bonus
 		}
 		drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	} else {
@@ -3493,7 +3523,7 @@ $lib.Free.turnEnd = function (id, data) {
         clearTimeout($data._fail);
         mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
         $stage.game.chain.html(++$data.chain);
-        pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0);
+        pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0, false, data.fullHouseChars);
     } else {
         checkFailCombo(id);
         $sc.addClass("lost");
@@ -3509,8 +3539,8 @@ $lib.Free.turnEnd = function (id, data) {
     // 서바이벌 모드에서는 자신의 점수/보너스 스플래시 숨김 (데미지만 표시)
     if (!data.survival) {
         if (data.bonus) {
-            mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function($target) {
-                return function() {
+            mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function ($target) {
+                return function () {
                     var $bc = $("<div>")
                         .addClass("deltaScore bonus")
                         .css('color', '#66FF66') // Green
@@ -3521,8 +3551,8 @@ $lib.Free.turnEnd = function (id, data) {
             })($uc), 500);
         }
         if (data.straightBonus) {
-            mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function($target) {
-                return function() {
+            mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function ($target) {
+                return function () {
                     var $bc = $("<div>")
                         .addClass("deltaScore straight-bonus")
                         .css('color', '#FFFF00') // Yellow
@@ -3531,6 +3561,18 @@ $lib.Free.turnEnd = function (id, data) {
                     drawObtainedScore($target, $bc);
                 };
             })($uc), 800);
+        }
+        if (data.fullHouseBonus) {
+            mobile ? $sc.append("+" + data.fullHouseBonus) : addTimeout((function ($target) {
+                return function () {
+                    var $bc = $("<div>")
+                        .addClass("deltaScore full-house-bonus")
+                        .css('color', '#c26eff') // Purple
+                        .html("+" + data.fullHouseBonus);
+
+                    drawObtainedScore($target, $bc);
+                };
+            })($uc), 1100); // Trigger after straight bonus
         }
         drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
     } else {
@@ -8150,7 +8192,7 @@ function vibrate(level) {
 function getRandomColor() {
 	return "hsl(" + Math.floor(Math.random() * 360) + ", 100%, 85%)";
 }
-function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang) {
+function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars) {
 	var len;
 	var mode = MODE[$data.room.mode];
 	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK";
@@ -8307,6 +8349,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 			var isSumiChar = isSumi && (charIdx === sumiIdx);
 			var isStraightChar = isStraight && (isRev ? (charIdx === 0) : (charIdx === len - 1));
 			var isLinking = (RULE[mode].rule === "Classic") && (linkingIndices.indexOf(charIdx) !== -1);
+			var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(charIdx) !== -1;
 
 			$stage.game.display.append($l = $("<div>")
 				.addClass("display-text")
@@ -8316,7 +8359,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				.html(displayText.charAt(charIdx))
 			);
 			j++;
-			addTimeout(function ($l, snd, isSumiChar, isStraightChar, isLinking, isHanbang, originalChar) {
+			addTimeout(function ($l, snd, isSumiChar, isStraightChar, isLinking, isHanbang, originalChar, isFullHouseChar) {
 				var anim = { 'margin-top': 0 };
 
 				playSound(snd);
@@ -8330,18 +8373,22 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 					anim['font-size'] = 24;
 				} else if (originalChar == $data.mission || matchesEasyMission(originalChar, $data.mission)) {
 					playSound('mission');
-					$l.css({ 'color': "#66FF66" }); // Green (Priority 2 -> 3)
+					$l.css({ 'color': "#00FF00" }); // Green (Priority 2 -> 3)
+					anim['font-size'] = 24;
+				} else if (isFullHouseChar) {
+					playSound('mission');
+					$l.css({ 'color': "#c26eff" }); // Purple (Priority 4)
 					anim['font-size'] = 24;
 				} else if (isLinking) {
 					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
 					if (isHanbang) playSound('missing');
 					$l.css({ 'color': isHanbang ? "#FF6666" : "rgb(146, 203, 250)" });
-					if (!isSumiChar && !isStraightChar) anim['font-size'] = 20; // Normal size unless bonus
+					anim['font-size'] = 20; // Normal size unless bonus
 				} else {
 					anim['font-size'] = 20;
 				}
 				$l.show().animate(anim, 100);
-			}, Number(i) * tick, $l, ta, isSumiChar, isStraightChar, isLinking, isHanbang, text.charAt(charIdx));
+			}, Number(i) * tick, $l, ta, isSumiChar, isStraightChar, isLinking, isHanbang, text.charAt(charIdx), isFullHouseChar);
 		}
 		i = $stage.game.display.children("div").get(0);
 		$(i).css(isRev ? 'margin-right' : 'margin-left', ($stage.game.display.width() - 20 * len) * 0.5);
@@ -8363,6 +8410,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 
 				var isLinking = linkingIndices.indexOf(idx) !== -1;
 				var isStraightChar = isStraight && (idx === 0);
+				var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(idx) !== -1;
 
 				if (isSumiChar) {
 					playSound('mission');
@@ -8373,6 +8421,9 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				} else if (t == $data.mission || matchesEasyMission(t, $data.mission)) {
 					playSound('mission');
 					j = "<label style='color: #66FF66;'>" + t_disp + "</label>" + j;
+				} else if (isFullHouseChar) {
+					playSound('mission');
+					j = "<label style='color: #c26eff;'>" + t_disp + "</label>" + j;
 				} else if (isLinking) {
 					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
 					if (isHanbang) playSound('missing');
@@ -8389,6 +8440,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				var isSumiChar = isSumi && (idx === sumiIdx);
 				var isStraightChar = isStraight && (idx === len - 1); // Normal: Last char
 				var isLinking = (RULE[mode].rule === "Classic") && (linkingIndices.indexOf(idx) !== -1);
+				var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(idx) !== -1;
 
 				if (isSumiChar) {
 					playSound('mission');
@@ -8399,6 +8451,9 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				} else if (t == $data.mission || matchesEasyMission(t, $data.mission)) {
 					playSound('mission');
 					j += "<label style='color: #66FF66;'>" + t_disp + "</label>";
+				} else if (isFullHouseChar) {
+					playSound('mission');
+					j += "<label style='color: #c26eff;'>" + t_disp + "</label>";
 				} else if (isLinking) {
 					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
 					if (isHanbang) playSound('missing');

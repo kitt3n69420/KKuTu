@@ -507,22 +507,26 @@ exports.Client = function (socket, profile, sid) {
 		var i;
 		var now = new Date(), st = now - my._pub;
 
-		if (st <= Const.SPAM_ADD_DELAY) my.spam++;
-		else if (st >= Const.SPAM_CLEAR_DELAY) my.spam = 0;
-		if (my.spam >= Const.SPAM_LIMIT) {
-			if (!my.blocked) my.numSpam = 0;
-			my.blocked = true;
+		if (type == 'chat') {
+			if (st <= Const.SPAM_ADD_DELAY) my.spam++;
+			else if (st >= Const.SPAM_CLEAR_DELAY) my.spam = 0;
 		}
-		if (!noBlock) {
-			my._pub = now;
-			if (my.blocked) {
-				if (st < Const.BLOCKED_LENGTH) {
-					if (++my.numSpam >= Const.KICK_BY_SPAM) {
-						if (Cluster.isWorker) process.send({ type: "kick", target: my.id });
-						return my.socket.close();
-					}
-					return my.send('blocked');
-				} else my.blocked = false;
+		if (type == 'chat') {
+			if (my.spam >= Const.SPAM_LIMIT) {
+				if (!my.blocked) my.numSpam = 0;
+				my.blocked = true;
+			}
+			if (!noBlock) {
+				my._pub = now;
+				if (my.blocked) {
+					if (st < Const.BLOCKED_LENGTH) {
+						if (++my.numSpam >= Const.KICK_BY_SPAM) {
+							if (Cluster.isWorker) process.send({ type: "kick", target: my.id });
+							return my.socket.close();
+						}
+						return my.send('blocked');
+					} else my.blocked = false;
+				}
 			}
 		}
 		data.profile = my.profile;

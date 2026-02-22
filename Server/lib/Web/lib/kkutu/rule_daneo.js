@@ -98,7 +98,7 @@ $lib.Daneo.turnEnd = function (id, data) {
 		clearTimeout($data._fail);
 		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
-		pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0);
+		pushDisplay(data.value, data.mean, data.theme, data.wc, false, null, data.straightBonus > 0, false, data.fullHouseChars);
 	} else {
 		$sc.addClass("lost");
 		$(".game-user-current").addClass("game-user-bomb");
@@ -139,6 +139,18 @@ $lib.Daneo.turnEnd = function (id, data) {
 					drawObtainedScore($target, $bc);
 				};
 			})($uc), 800);
+		}
+		if (data.fullHouseBonus) {
+			mobile ? $sc.append("+" + data.fullHouseBonus) : addTimeout((function ($target) {
+				return function () {
+					var $bc = $("<div>")
+						.addClass("deltaScore full-house-bonus")
+						.css('color', '#c26eff') // Purple
+						.html("+" + data.fullHouseBonus);
+
+					drawObtainedScore($target, $bc);
+				};
+			})($uc), 1100); // Trigger after straight bonus
 		}
 		drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	} else {
