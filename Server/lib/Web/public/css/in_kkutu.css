@@ -2613,3 +2613,113 @@ iframe {
 #view-all-rules-content {
 	overflow-x: hidden;
 }
+
+/* =========================================
+   UI Type: New & UI Mode: Dark/Light
+   ========================================= */
+
+/* Dark Mode Gradient Background */
+body.theme-new.mode-dark #wrapper {
+	background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+}
+
+/* Light Mode Gradient Background */
+body.theme-new.mode-light #wrapper {
+	background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+/* Top bar frosted glass */
+body.theme-new #Top {
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.theme-new.mode-dark #Top {
+	background-color: rgba(15, 23, 42, 0.8);
+}
+
+body.theme-new.mode-light #Top {
+	background-color: rgba(255, 255, 255, 0.8);
+	border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Menus */
+body.theme-new.mode-dark .kkutu-menu button {
+	background-color: transparent;
+	color: #94a3b8;
+	border: none;
+	transition: all 0.3s ease;
+}
+
+body.theme-new.mode-dark .kkutu-menu button:hover,
+body.theme-new.mode-dark .kkutu-menu button.active {
+	color: #38bdf8;
+	background-color: rgba(56, 189, 248, 0.1);
+	border-radius: 8px;
+}
+
+/* Room Items Glassy Cards */
+body.theme-new .rooms-item {
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	border-radius: 12px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	background-color: transparent;
+}
+
+body.theme-new.mode-dark .rooms-item {
+	background-color: rgba(30, 41, 59, 0.6);
+}
+
+body.theme-new.mode-dark .rooms-gaming {
+	background-color: rgba(127, 29, 29, 0.4);
+	border-color: rgba(248, 113, 113, 0.2);
+}
+
+body.theme-new.mode-dark .rooms-create {
+	background-color: rgba(12, 74, 110, 0.4);
+	border-color: rgba(56, 189, 248, 0.2);
+}
+
+/* Light Mode Rooms */
+body.theme-new.mode-light .rooms-item {
+	background-color: rgba(255, 255, 255, 0.6);
+	border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body.theme-new.mode-light .rooms-gaming {
+	background-color: rgba(254, 226, 226, 0.6);
+}
+
+body.theme-new.mode-light .rooms-create {
+	background-color: rgba(224, 242, 254, 0.6);
+}
+
+/* User List Glassy Cards */
+body.theme-new.mode-dark .users-item {
+	background-color: rgba(30, 41, 59, 0.5);
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+body.theme-new.mode-light .users-item {
+	background-color: rgba(255, 255, 255, 0.5);
+	border-radius: 8px;
+	border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Leaderboard */
+body.theme-new.mode-dark #ranking {
+	color: #f1f5f9;
+}
+
+body.theme-new.mode-dark #ranking th {
+	background-color: rgba(15, 23, 42, 0.8);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.theme-new.mode-dark #ranking td {
+	border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}

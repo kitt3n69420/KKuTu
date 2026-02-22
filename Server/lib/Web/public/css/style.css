@@ -708,3 +708,87 @@ code {
 
 	animation: hypnotic-spin 6s linear infinite;
 }
+
+/* =========================================
+   UI Type: New & UI Mode: Dark/Light
+   ========================================= */
+
+/* Base Dark Mode */
+body.theme-new.mode-dark {
+    background-color: #0f172a;
+    color: #f1f5f9;
+}
+
+body.theme-new.mode-dark input,
+body.theme-new.mode-dark select,
+body.theme-new.mode-dark textarea,
+body.theme-new.mode-dark button {
+    background-color: rgba(31, 41, 55, 0.7);
+    color: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.theme-new.mode-dark input:focus,
+body.theme-new.mode-dark select:focus,
+body.theme-new.mode-dark textarea:focus,
+body.theme-new.mode-dark button:hover {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(31, 41, 55, 0.9);
+}
+
+/* Glassmorphism for Dialogs & Panels */
+body.theme-new .dialog,
+body.theme-new .Product {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Dark Mode Panels */
+body.theme-new.mode-dark .dialog,
+body.theme-new.mode-dark .Product {
+    background-color: rgba(15, 23, 42, 0.6);
+}
+
+body.theme-new.mode-dark .dialog-head {
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+}
+
+body.theme-new.mode-dark .dialog-head.no-close {
+    background: transparent;
+}
+
+/* Light Mode Panels */
+body.theme-new.mode-light .dialog,
+body.theme-new.mode-light .Product {
+    background-color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+body.theme-new.mode-light .dialog-head {
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    color: #333;
+}
+
+/* Tooltips */
+body.theme-new.mode-dark .expl {
+    background-color: rgba(31, 41, 55, 0.95);
+    color: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+}
+body.theme-new.mode-light .expl {
+    background-color: rgba(255, 255, 255, 0.95);
+    color: #333;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}

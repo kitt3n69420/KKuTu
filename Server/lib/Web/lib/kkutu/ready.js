@@ -258,6 +258,13 @@ $(document).ready(function () {
 		$data.muteBGM = savedSettings.bgmMute !== null ? savedSettings.bgmMute : ($data.opts.mb || false);
 		$data.muteEff = savedSettings.effectMute !== null ? savedSettings.effectMute : ($data.opts.me || false);
 
+		// 초기 UI 테마 적용
+		var initUiType = savedSettings.uiType || "legacy";
+		var initUiMode = savedSettings.uiMode || "light";
+		$('body').removeClass(function (index, className) {
+			return (className.match(/(^|\s)(theme-|mode-)\S+/g) || []).join(' ');
+		}).addClass('theme-' + initUiType).addClass('mode-' + initUiMode);
+
 
 		// 로비 BGM 설정 가져오기
 		$.get("/bgm", function (bgms) {
@@ -657,6 +664,10 @@ $(document).ready(function () {
 
 		// 로비 BGM 선택 설정
 		$("#lobby-bgm").val(savedSettings.lobbyBGM || "");
+
+		// UI 설정 초기화
+		$("#ui-type").val(savedSettings.uiType || "legacy");
+		$("#ui-mode").val(savedSettings.uiMode || "light");
 
 		// 규칙 카테고리 보기 설정
 		$("#show-rule-category").prop('checked', ($data.opts && $data.opts.src !== undefined) ? $data.opts.src : true);
@@ -1392,6 +1403,8 @@ $(document).ready(function () {
 		var previousNoEasterEgg = loadVolumeSettings().noEasterEgg === true;
 		var newSoundPack = $("#sound-pack").val();
 		var newLobbyBGM = $("#lobby-bgm").val();
+		var newUiType = $("#ui-type").val();
+		var newUiMode = $("#ui-mode").val();
 		var newLang = $("#language-setting").val();
 		var savedLang = localStorage.getItem('kkutu_lang'); // 이전에 저장된 언어 확인
 
@@ -1424,8 +1437,15 @@ $(document).ready(function () {
 			soundPack: $data.opts.sp,
 			lobbyBGM: newLobbyBGM,
 			noEasterEgg: $("#no-easter-egg").is(":checked"),
-			aiAutoApply: $("#ai-auto-apply").is(":checked")
+			aiAutoApply: $("#ai-auto-apply").is(":checked"),
+			uiType: newUiType,
+			uiMode: newUiMode
 		});
+
+		// UI 설정 적용 (body class 업데이트)
+		$('body').removeClass(function (index, className) {
+			return (className.match(/(^|\s)(theme-|mode-)\S+/g) || []).join(' ');
+		}).addClass('theme-' + newUiType).addClass('mode-' + newUiMode);
 
 		// 언어 설정 저장
 		if (newLang) {

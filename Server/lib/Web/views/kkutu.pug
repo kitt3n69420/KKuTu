@@ -146,6 +146,16 @@ block Middle
 			h4= L('lobbyBgm')
 			select#lobby-bgm(style="width: 150px;")
 				option(value="")= L('default')
+		div.dialog-bar
+			h4= L('uiType')
+			select#ui-type(style="width: 150px;")
+				option(value="legacy")= L('uiLegacy')
+				option(value="new")= L('uiNew')
+		div.dialog-bar
+			h4= L('uiMode')
+			select#ui-mode(style="width: 150px;")
+				option(value="light")= L('uiLight')
+				option(value="dark")= L('uiDark')
 		div.dialog-bar.tail-button
 			button#setting-ok= L('save')
 			button#setting-server= L('changeServer')

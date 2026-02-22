@@ -184,6 +184,13 @@ function applyOptions(opt) {
 	var soundPack = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts.sp || "");
 	$("#sound-pack").val(soundPack);
 
+	// UI 설정 적용
+	var uiType = savedSettings.uiType || 'legacy';
+	var uiMode = savedSettings.uiMode || 'light';
+	$('body').removeClass(function (index, className) {
+		return (className.match(/(^|\s)(theme-|mode-)\S+/g) || []).join(' ');
+	}).addClass('theme-' + uiType).addClass('mode-' + uiMode);
+
 	// 슬라이더 값 설정
 	$(".bgmVolume").val($data.BGMVolume * 100);
 	$(".effectVolume").val($data.EffectVolume * 100);
