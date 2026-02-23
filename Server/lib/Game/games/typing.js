@@ -180,7 +180,7 @@ exports.submit = function (client, text) {
 			traverse.call(my, function (o) {
 				if (!o.game.out) allOut = false;
 			});
-			console.log(`[DEBUG] OneChance: Player ${client.id} OUT. AllOut=${allOut}`);
+			// console.log(`[DEBUG] OneChance: Player ${client.id} OUT. AllOut=${allOut}`);
 			if (allOut) my.turnEnd();
 			return;
 		}

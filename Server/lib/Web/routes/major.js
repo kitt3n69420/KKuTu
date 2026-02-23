@@ -53,8 +53,8 @@ exports.run = function (Server, page) {
   Server.get("/box", function (req, res) {
     if (req.session.profile) {
       /*if(Const.ADMIN.indexOf(req.session.profile.id) == -1){
-				return res.send({ error: 555 });
-			}*/
+        return res.send({ error: 555 });
+      }*/
     } else {
       return res.send({ error: 400 });
     }
@@ -168,8 +168,8 @@ exports.run = function (Server, page) {
         .update(["_id", req.session.profile.id])
         .set(["exordial", exordial.slice(0, 100)])
         .on();
-    console.log("[DEBUG] /profile received nickname:", nickname);
-    if (rawNickname) console.log("[DEBUG] /profile received raw nickname: " + rawNickname + " -> " + nickname);
+    // console.log("[DEBUG] /profile received nickname:", nickname);
+    // if (rawNickname) console.log("[DEBUG] /profile received raw nickname: " + rawNickname + " -> " + nickname);
     if (!nickname) return res.send({ result: 200 });
 
     // 서버 측 닉네임 욕설 필터링 적용
