@@ -43,6 +43,27 @@ exports.roundReady = function () {
 
     clearTimeout(my.game.turnTimer);
     my.game.round++;
+
+    if (my.opts.straight && my.game.seq) {
+        var i, p;
+        for (i in my.game.seq) {
+            p = (typeof my.game.seq[i] === 'string') ? DIC[my.game.seq[i]] : my.game.seq[i];
+            if (p && p.game) {
+                p.game.straightStreak = 0;
+                delete p.game.lastWordLen;
+            }
+        }
+    }
+
+    // Full House용 lastWord는 옵션과 무관하게 라운드마다 초기화
+    if (my.game.seq) {
+        var _i, _p;
+        for (_i in my.game.seq) {
+            _p = (typeof my.game.seq[_i] === 'string') ? DIC[my.game.seq[_i]] : my.game.seq[_i];
+            if (_p && _p.game) delete _p.game.lastWord;
+        }
+    }
+
     my.game.roundTime = my.time * 1000;
     if (!my.opts.onlyonce || my.game.round === 1) my.resetChain();
     if (my.game.round <= my.round) {
@@ -305,7 +326,7 @@ exports.submit = function (client, text) {
                 // Full House Bonus Logic
                 var fullHouseBonus = 0;
                 var fullHouseChars = [];
-                if (client.game.lastWord && client.game.lastWord.length > 0) {
+                if (my.opts.fullhouse && client.game.lastWord && client.game.lastWord.length > 0 && text.length > client.game.lastWord.length) {
                     var prevWord = client.game.lastWord;
                     var prevChars = prevWord.split('');
                     var currentChars = text.split('');
