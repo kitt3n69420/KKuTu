@@ -449,9 +449,9 @@ exports.Client = function (socket, profile, sid) {
 		if (!msg) return;
 
 		try { data = JSON.parse(msg); } catch (e) { data = { error: 400 }; }
-		if (data.type !== "heartbeat") {
-			JLog.log(`Chan @${channel} Msg #${my.id}: ${msg}`);
-			if (Cluster.isWorker) process.send({ type: "tail-report", id: my.id, chan: channel, place: my.place, msg: data.error ? msg : data });
+		const TAIL_TYPES = ["enter","setRoom","leave","start","kick","kickVote","handover","setAI","form","team"];
+		if (Cluster.isWorker && !data.error && TAIL_TYPES.indexOf(data.type) !== -1) {
+			process.send({ type: "tail-report", id: my.id, chan: channel, place: my.place, msg: data });
 		}
 
 		exports.onClientMessage(my, data);
@@ -669,7 +669,6 @@ exports.Client = function (socket, profile, sid) {
 		).on(function (__res) {
 			DB.redis.getGlobal(my.id).then(function (_res) {
 				DB.redis.putGlobal(my.id, my.data.score).then(function (res) {
-					JLog.log(`FLUSHED [${my.id}] PTS=${my.data.score} MNY=${my.money}`);
 					R.go({ id: my.id, prev: _res });
 				});
 			});
@@ -1648,15 +1647,6 @@ exports.Room = function (room, channel) {
 			my.players.push(robot);
 			my.export();
 			my.checkJamsu();
-			// Discord: 봇 입장 로그
-			if (Cluster.isWorker) {
-				process.send({
-					type: "room-join",
-					roomId: my.id,
-					name: (robot.profile && robot.profile.title) || robot.id,
-					isRobot: true
-				});
-			}
 		}
 
 		// 95% chance to use a custom bot name from the dictionary
@@ -1792,15 +1782,6 @@ exports.Room = function (room, channel) {
 				if (!noEx) {
 					my.export();
 					my.checkJamsu();
-				}
-				// Discord: 봇 퇴장 로그
-				if (Cluster.isWorker) {
-					process.send({
-						type: "room-leave",
-						roomId: my.id,
-						name: (removedBot.profile && removedBot.profile.title) || removedBot.id,
-						isRobot: true
-					});
 				}
 				return true;
 			}
@@ -2408,6 +2389,9 @@ exports.Room = function (room, channel) {
 			o.game.bonus = 0;
 			o.game.item = [/*0, 0, 0, 0, 0, 0*/];
 			o.game.wpc = [];
+			delete o.game.lastWord;
+			delete o.game.lastWordLen;
+			o.game.straightStreak = 0;
 		}
 		// 서바이벌 모드는 1라운드만 진행
 		if (my.opts.survival) {

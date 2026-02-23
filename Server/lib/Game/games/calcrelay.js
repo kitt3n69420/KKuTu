@@ -113,6 +113,7 @@ exports.turnEnd = function () {
 	var score;
 
 	if (my.game.loading) {
+		clearTimeout(my.game.turnTimer);
 		my.game.turnTimer = setTimeout(my.turnEnd, 100);
 		return;
 	}

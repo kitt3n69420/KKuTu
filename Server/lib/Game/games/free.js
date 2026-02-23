@@ -98,6 +98,7 @@ exports.turnEnd = function () {
     target = DIC[my.game.seq[my.game.turn]] || my.game.seq[my.game.turn];
 
     if (my.game.loading) {
+        clearTimeout(my.game.turnTimer);
         my.game.turnTimer = setTimeout(my.turnEnd, 100);
         return;
     }
