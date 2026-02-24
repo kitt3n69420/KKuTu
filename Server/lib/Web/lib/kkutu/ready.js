@@ -1604,9 +1604,9 @@ $(document).ready(function () {
 
 		// Read Survival HP Dropdown
 		var surHPVal = $("#room-sur-hp").val();
-		console.log("[DEBUG] surHP dropdown value:", surHPVal, "survival checked:", opts['survival']);
+		// console.log("[DEBUG] surHP dropdown value:", surHPVal, "survival checked:", opts['survival']);
 		if (surHPVal) opts['surHP'] = parseInt(surHPVal);
-		console.log("[DEBUG] Final opts.surHP:", opts['surHP']);
+		// console.log("[DEBUG] Final opts.surHP:", opts['surHP']);
 
 		send($data.typeRoom, {
 			title: $("#room-title").val().trim() || $("#room-title").attr('placeholder').trim(),

@@ -354,7 +354,7 @@ KKuTu.onClientMessage = function ($c, msg) {
       $c.start();
       break;
     case "practice":
-      console.log("[DEBUG] practice case reached, msg:", JSON.stringify(msg));
+      // console.log("[DEBUG] practice case reached, msg:", JSON.stringify(msg));
       if (!ROOM[$c.place]) return;
       if (ROOM[$c.place].gaming) return;
       if (!GUEST_PERMISSION.practice) if ($c.guest) return;
@@ -364,19 +364,19 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (msg.preferredChar === "") msg.preferredChar = undefined;
 
       if (!validateInput(msg.level, "number")) {
-        console.log("[DEBUG] practice: level validation failed", msg.level);
+        // console.log("[DEBUG] practice: level validation failed", msg.level);
         return;
       }
       if (msg.personality !== undefined && !validateInput(msg.personality, "number")) {
-        console.log("[DEBUG] practice: personality validation failed", msg.personality);
+        // console.log("[DEBUG] practice: personality validation failed", msg.personality);
         return;
       }
       if (msg.preferredChar !== undefined && !validateInput(msg.preferredChar, "string", { maxLength: 1 })) {
-        console.log("[DEBUG] practice: preferredChar validation failed", msg.preferredChar);
+        // console.log("[DEBUG] practice: preferredChar validation failed", msg.preferredChar);
         return;
       }
       if (isNaN((msg.level = Number(msg.level)))) {
-        console.log("[DEBUG] practice: level NaN check failed");
+        // console.log("[DEBUG] practice: level NaN check failed");
         return;
       }
       if (ROOM[$c.place].rule.ai) {
@@ -385,7 +385,7 @@ KKuTu.onClientMessage = function ($c, msg) {
 
       if (msg.personality !== undefined) msg.personality = Number(msg.personality);
 
-      console.log("[DEBUG] slave.js practice msg:", msg);
+      //console.log("[DEBUG] slave.js practice msg:", msg);
 
       $c.practice({
         level: msg.level,
