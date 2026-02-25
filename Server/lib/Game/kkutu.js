@@ -197,8 +197,16 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 	my.equip = { robot: true };
 	my.personality = personality || 0;
 	my.preferredChar = preferredChar || "";
+	my.mute = false;
+	my.anger = 0;
+	my.canRageQuit = false;
+	my.fastMode = false;
 	my.data.personality = my.personality;
 	my.data.preferredChar = my.preferredChar;
+	my.data.mute = my.mute;
+	my.data.canRageQuit = my.canRageQuit;
+	my.data.anger = my.anger;
+	my.data.fastMode = my.fastMode;
 
 	// Randomly equip items
 	(function () {
@@ -255,6 +263,10 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 			profile: my.profile,
 			personality: my.personality,
 			preferredChar: my.preferredChar,
+			mute: my.mute,
+			canRageQuit: my.canRageQuit,
+			anger: my.anger,
+			fastMode: my.fastMode,
 			ready: true
 		};
 	};
@@ -296,6 +308,84 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 		} else if (Cluster.isWorker) {
 			process.send({ type: "chat-log", profile: my.profile, message: msg, place: my.place, isRobot: true });
 		}
+	};
+	my._rageQuitting = false;
+	my.adjustAnger = function (delta) {
+		if (my._rageQuitting) return;
+		my.anger = Math.max(0, Math.min(10, my.anger + delta));
+		my.data.anger = my.anger;
+		if (my.canRageQuit && my.anger >= 10) {
+			my.rageQuit();
+		}
+	};
+	my.rageQuit = function () {
+		if (my._rageQuitting) return;
+		my._rageQuitting = true;
+		var msg = Const.ROBOT_FINAL_MESSAGES[Math.floor(Math.random() * Const.ROBOT_FINAL_MESSAGES.length)];
+		my.chat(msg);
+		setTimeout(function () {
+			var room = ROOM[place];
+			if (!room) return;
+			// 봇 퇴장 알림 전송
+			my.publish('disconnRoom', { id: my.id, profile: my.profile, robot: true });
+			if (room.gaming && room.game && room.game.seq) {
+				var seqIndex = room.game.seq.indexOf(my);
+				if (seqIndex != -1) {
+					if (room.opts && room.opts.survival) {
+						// 서바이벌 모드: KO 처리
+						my.game.alive = false;
+						my.game.score = 0;
+						room.byMaster('survivalKO', { target: my.id, reason: 'ragequit' }, true);
+						var isTurn = room.game.turn == seqIndex;
+						var status = Const.checkSurvivalStatus(room, DIC);
+						if (status.gameOver) {
+							clearTimeout(room.game._rrt);
+							room.game._rrt = setTimeout(function () { room.roundEnd(); }, 2000);
+						} else if (isTurn) {
+							clearTimeout(room.game._rrt);
+							room.game.loading = false;
+							room.game._rrt = setTimeout(function () { room.turnNext(); }, 2000);
+						}
+					} else {
+						// 비서바이벌 모드
+						var isTurn = room.game.turn == seqIndex;
+						if (room.game.seq.length <= 2) {
+							room.game.seq.splice(seqIndex, 1);
+							room.roundEnd();
+						} else {
+							if (isTurn && room.rule.ewq) {
+								clearTimeout(room.game._rrt);
+								room.game.loading = false;
+								if (Cluster.isWorker) room.turnEnd();
+							}
+							room.game.seq.splice(seqIndex, 1);
+							if (room.opts && room.opts.randomturn) {
+								room.game.randomTurnOrder = [];
+								room.game.randomTurnIndex = 0;
+								for (var rt = 0; rt < room.game.seq.length * 2; rt++) {
+									room.game.randomTurnOrder.push(rt % room.game.seq.length);
+								}
+								room.game.randomTurnOrder = shuffle(room.game.randomTurnOrder);
+								room.game.turn = room.game.randomTurnOrder[0];
+							} else {
+								if (room.game.turn > seqIndex) {
+									room.game.turn--;
+									if (room.game.turn < 0) room.game.turn = room.game.seq.length - 1;
+								}
+								if (room.game.turn >= room.game.seq.length) room.game.turn = 0;
+							}
+						}
+					}
+				}
+				// players에서도 제거
+				var pIdx = room.players.indexOf(my);
+				if (pIdx != -1) room.players.splice(pIdx, 1);
+				room.export();
+				room.checkJamsu();
+			} else {
+				room.removeAI(my.id);
+			}
+		}, 500);
 	};
 	my.profile = {
 		id: my.id,
@@ -927,7 +1017,7 @@ exports.Client = function (socket, profile, sid) {
 		my.subPlace = my.pracRoom.id;
 		my.pracRoom.come(my);
 		// 연습 중에는 checkJamsu 호출하지 않음 (isPracticing=true 상태)
-		my.pracRoom.start(data.level, data.personality, data.preferredChar);
+		my.pracRoom.start(data.level, data.personality, data.preferredChar, data.mute, data.canRageQuit, data.fastMode);
 		my.pracRoom.game.hum = 1;
 
 	};
@@ -1732,7 +1822,7 @@ exports.Room = function (room, channel) {
 		}
 	};
 
-	my.setAI = function (target, level, team, personality, preferredChar) {
+	my.setAI = function (target, level, team, personality, preferredChar, mute, canRageQuit, fastMode) {
 		var i;
 
 		for (i in my.players) {
@@ -1744,8 +1834,14 @@ exports.Room = function (room, channel) {
 				if (!my.players[i].data) my.players[i].data = {};
 				my.players[i].personality = personality;
 				my.players[i].preferredChar = preferredChar;
+				my.players[i].mute = !!mute;
+				my.players[i].canRageQuit = !!canRageQuit;
+				my.players[i].fastMode = !!fastMode;
 				my.players[i].data.personality = personality;
 				my.players[i].data.preferredChar = preferredChar;
+				my.players[i].data.mute = !!mute;
+				my.players[i].data.canRageQuit = !!canRageQuit;
+				my.players[i].data.fastMode = !!fastMode;
 				my.export();
 				// Discord: 봇 설정 변경 로그
 				if (Cluster.isWorker) {
@@ -2233,7 +2329,7 @@ exports.Room = function (room, channel) {
 			my.start();
 		} else DIC[my.master].sendError(412);
 	};
-	my.start = function (pracLevel, personality, preferredChar) {
+	my.start = function (pracLevel, personality, preferredChar, pracMute, pracCanRageQuit, pracFastMode) {
 		if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 		if (my._jst) { clearTimeout(my._jst); delete my._jst; }
 		if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
@@ -2256,6 +2352,12 @@ exports.Room = function (room, channel) {
 		my.game.robots = [];
 		if (my.practice) {
 			my.game.robots.push(o = new exports.Robot(my.master, my.id, pracLevel, null, personality, preferredChar));
+			o.mute = !!pracMute;
+			o.canRageQuit = !!pracCanRageQuit;
+			o.fastMode = !!pracFastMode;
+			o.data.mute = o.mute;
+			o.data.canRageQuit = o.canRageQuit;
+			o.data.fastMode = o.fastMode;
 			my.game.seq.push(o, my.master);
 		} else {
 			for (i in my.players) {
@@ -2409,6 +2511,7 @@ exports.Room = function (room, channel) {
 		delete my._teams;
 	};
 	my.roundReady = function () {
+		clearTimeout(my.game._rrt);
 		if (!my.gaming) return;
 
 		return my.route("roundReady");
@@ -2453,10 +2556,11 @@ exports.Room = function (room, channel) {
 		if (!my.game.chainLog || my.game.chainLog.length === 0) return;
 		var r = round || my.game.round || 0;
 		var totalRounds = my.round || 0;
+		var logCopy = my.game.chainLog.slice();
 		if (Cluster.isMaster && DiscordBot) {
-			DiscordBot.notifyRoundEnd(my.id, my.game.chainLog, r, totalRounds);
+			DiscordBot.notifyRoundEnd(my.id, logCopy, r, totalRounds);
 		} else if (Cluster.isWorker) {
-			process.send({ type: "round-end", room: my.id, chainLog: my.game.chainLog, round: r, totalRounds: totalRounds });
+			process.send({ type: "round-end", room: my.id, chainLog: logCopy, round: r, totalRounds: totalRounds });
 		}
 	};
 	// Helper: 라운드 전환 시 알림 전송 후 chainLog 초기화
@@ -2480,6 +2584,9 @@ exports.Room = function (room, channel) {
 		my.game.chainLog.push({ player: my.getPlayerName(target), event: event });
 	};
 	my.roundEnd = function (data) {
+		if (my._roundEnding) return;
+		my._roundEnding = true;
+
 		var i, o, rw;
 		var res = [];
 		var users = {};
@@ -2667,6 +2774,7 @@ exports.Room = function (room, channel) {
 			});
 		});
 		my.gaming = false;
+		my._roundEnding = false;
 		my.checkJamsu();
 		my.export();
 		// Discord notification for last round end (game over)

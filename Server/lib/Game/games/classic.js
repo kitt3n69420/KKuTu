@@ -763,6 +763,15 @@ exports.turnEnd = function () {
 		target.game.score = 0;
 		my.logChainEvent(target, 'ko');
 
+		// 봇 분노: 타임아웃된 봇의 분노 조정
+		if (target.robot && target.adjustAnger) {
+			if (my.game.isHanbang) {
+				target.adjustAnger(3);
+			} else {
+				target.adjustAnger(1);
+			}
+		}
+
 		var wasHanbang = my.game.isHanbang;
 		var status = Const.checkSurvivalStatus(my, DIC);
 
@@ -775,6 +784,23 @@ exports.turnEnd = function () {
 			ko: true,
 			koReason: 'timeout'
 		}, true);
+
+		// 봇 분노: 다른 봇들의 팀 관계 기반 분노 조정 (서바이벌)
+		if (target && my.game.seq) {
+			var targetTeamSv = target.robot ? (target.game.team || 0) : (target.team || 0);
+			for (var si in my.game.seq) {
+				var sp = (typeof my.game.seq[si] === 'string') ? DIC[my.game.seq[si]] : my.game.seq[si];
+				if (sp && sp.robot && sp.id !== target.id && sp.adjustAnger) {
+					var spTeam = sp.game.team || 0;
+					var isTeammateSv = (targetTeamSv !== 0 && spTeam !== 0 && targetTeamSv === spTeam);
+					if (isTeammateSv) {
+						sp.adjustAnger(0.5);
+					} else {
+						sp.adjustAnger(-0.5);
+					}
+				}
+			}
+		}
 
 		if (status.gameOver) {
 			clearTimeout(my.game.robotTimer);
@@ -816,6 +842,16 @@ exports.turnEnd = function () {
 			}
 			if (score !== 0) target.game.score += score;
 		}
+
+	// 봇 분노: 타임아웃된 봇의 분노 조정 (비서바이벌)
+	if (target && target.robot && target.adjustAnger) {
+		if (my.game.isHanbang) {
+			target.adjustAnger(3);
+		} else {
+			target.adjustAnger(1);
+		}
+	}
+
 	getAuto.call(my, my.game.char, my.game.subChar, 0).then(function (w) {
 		my.byMaster('turnEnd', {
 			ok: false,
@@ -863,13 +899,22 @@ exports.turnEnd = function () {
 				}
 
 				for (i in bots) {
-					var rand = Math.random();
-					if (rand < prob) {
-						(function (bot) {
-							// Check team relation
-							var botTeam = bot.game.team || 0;
-							var isTeammate = (targetTeam !== 0 && targetTeam === botTeam);
+					(function (bot) {
+						// Check team relation
+						var botTeam = bot.game.team || 0;
+						var isTeammate = (targetTeam !== 0 && botTeam !== 0 && targetTeam === botTeam);
 
+						// 봇 분노: 팀 관계에 따른 분노 조정
+						if (bot.adjustAnger) {
+							if (isTeammate) {
+								bot.adjustAnger(0.5);
+							} else {
+								bot.adjustAnger(-0.5);
+							}
+						}
+
+						var rand = Math.random();
+						if (rand < prob && !bot.mute) {
 							setTimeout(function () {
 								var msgs = isTeammate ?
 									Const.ROBOT_TIMEOUT_MESSAGES_SAMETEAM :
@@ -881,8 +926,8 @@ exports.turnEnd = function () {
 								var msg = msgs[Math.floor(Math.random() * msgs.length)];
 								bot.chat(msg);
 							}, 500 + Math.random() * 1000);
-						})(bots[i]);
-					}
+						}
+					})(bots[i]);
 				}
 			}
 		}
@@ -1030,33 +1075,41 @@ exports.submit = function (client, text) {
 				// Straight Rule Logic
 				var straightBonus = 0;
 				if (my.opts.straight) {
-					var currentLen = text.length;
-					var prevLen = client.game.lastWordLen;
-
-					if (typeof prevLen === 'undefined') {
-						// First word for this player. Don't build streak.
+					if (isReturn) {
 						client.game.straightStreak = 0;
-					} else if (currentLen - prevLen === 1) {
-						// Condition met: increment streak
-						client.game.straightStreak = (client.game.straightStreak || 0) + 1;
+						client.game.lastWordLen = undefined;
 					} else {
-						// Condition not met: reset streak
-						client.game.straightStreak = 0;
-					}
+						var currentLen = text.length;
+						var prevLen = client.game.lastWordLen;
 
-					client.game.lastWordLen = currentLen;
+						if (typeof prevLen === 'undefined') {
+							// First word for this player. Don't build streak.
+							client.game.straightStreak = 0;
+						} else if (currentLen - prevLen === 1) {
+							// Condition met: increment streak
+							client.game.straightStreak = (client.game.straightStreak || 0) + 1;
+						} else {
+							// Condition not met: reset streak
+							client.game.straightStreak = 0;
+						}
 
-					if (client.game.straightStreak >= 2) {
-						var multiplier = (Math.log(client.game.straightStreak - 1) / Math.log(4)) + 0.5;
-						straightBonus = Math.round(baseScoreWithoutMission * multiplier);
-						if (my.opts.bbungtwigi) straightBonus *= 2; // 뻥튀기: 스트레이트 보너스 2배
+						client.game.lastWordLen = currentLen;
+
+						if (client.game.straightStreak >= 2) {
+							var multiplier = (Math.log(client.game.straightStreak - 1) / Math.log(4)) + 0.5;
+							straightBonus = Math.round(baseScoreWithoutMission * multiplier);
+							if (my.opts.bbungtwigi) straightBonus *= 2; // 뻥튀기: 스트레이트 보너스 2배
+						}
 					}
 				}
 
 				// 최종 점수 = 기본 점수 + 미션 보너스 + 스피드토스 보너스 + 스트레이트 보너스
-				score = baseScoreWithoutMission + missionBonus + speedTossBonus + straightBonus;
+				score = isReturn ? 0 : baseScoreWithoutMission + missionBonus + speedTossBonus + straightBonus;
 
-				if (isReturn) score = 0;
+				if (isReturn) {
+					missionBonus = 0;
+					speedTossBonus = 0;
+				}
 				my.game.dic[text] = (my.game.dic[text] || 0) + 1;
 
 				// EKT 모드 활성화는 단어가 완전히 승인된 후로 이동 (랜덤 체크 통과 후)
@@ -1127,9 +1180,12 @@ exports.submit = function (client, text) {
 
 						// 봇 승리 메시지
 						if (client.robot && isHanbang) {
-							setTimeout(function () {
-								client.chat(Const.ROBOT_VICTORY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_VICTORY_MESSAGES.length)]);
-							}, 500);
+							if (client.adjustAnger) client.adjustAnger(-2);
+							if (!client.mute) {
+								setTimeout(function () {
+									client.chat(Const.ROBOT_VICTORY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_VICTORY_MESSAGES.length)]);
+								}, 500);
+							}
 						}
 						return;
 					}
@@ -1179,9 +1235,12 @@ exports.submit = function (client, text) {
 
 						// 봇 승리 메시지
 						if (client.robot && isHanbang) {
-							setTimeout(function () {
-								client.chat(Const.ROBOT_VICTORY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_VICTORY_MESSAGES.length)]);
-							}, 500);
+							if (client.adjustAnger) client.adjustAnger(-2);
+							if (!client.mute) {
+								setTimeout(function () {
+									client.chat(Const.ROBOT_VICTORY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_VICTORY_MESSAGES.length)]);
+								}, 500);
+							}
 						}
 					});
 
@@ -1280,6 +1339,16 @@ exports.submit = function (client, text) {
 
 						// 최종 점수 = 기본 점수 + 미션 보너스 + 스피드보너스 + 스트레이트 보너스 + 풀하우스 보너스
 						score = baseScoreWithoutMission + missionBonus + speedTossBonus + straightBonus + fullHouseBonus;
+
+						if (isReturn) {
+							score = 0;
+							missionBonus = 0;
+							speedTossBonus = 0;
+							straightBonus = 0;
+							fullHouseBonus = 0;
+							fullHouseChars = [];
+							client.game.straightStreak = 0;
+						}
 
 						client.game.score += score;
 						client.publish('turnEnd', {
@@ -1615,7 +1684,7 @@ exports.submit = function (client, text) {
 				value: text
 			}, true);
 			if (my.opts.one) my.turnEnd();
-			else if (client.robot && text.indexOf("T.T") == -1 && !Const.ROBOT_DEFEAT_MESSAGES.includes(text) && text.indexOf("..") == -1 && text.indexOf("??") == -1 && !(text.length === 3 && text[0] === text[1] && text[1] === text[2])) {
+			else if (client.robot && text.indexOf("T.T") == -1 && !Const.ROBOT_DEFEAT_MESSAGES.includes(text) && !Const.ROBOT_ANGRY_MESSAGES.includes(text) && text.indexOf("..") == -1 && text.indexOf("??") == -1 && !(text.length === 3 && text[0] === text[1] && text[1] === text[2])) {
 				setTimeout(function () {
 					my.readyRobot(client);
 				}, 1000);
@@ -2503,6 +2572,9 @@ exports.readyRobot = function (robot) {
 			}
 		}
 
+		// 빠른 모드: ATTACK/LONG 전략 금지
+		if (robot.fastMode && (strategy === "ATTACK" || strategy === "LONG")) strategy = "NORMAL";
+
 		executeStrategy(strategy);
 	}
 
@@ -3191,15 +3263,22 @@ exports.readyRobot = function (robot) {
 	}
 
 	function denied() {
-		// Prepare Defeat Message
-		var secondMsg = Const.ROBOT_DEFEAT_MESSAGES[Math.floor(Math.random() * Const.ROBOT_DEFEAT_MESSAGES.length)];
+		// Prepare Defeat Message (분노 5 이상이면 ANGRY 메시지)
+		var secondMsg;
+		if (robot.anger >= 5) {
+			secondMsg = Const.ROBOT_ANGRY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_ANGRY_MESSAGES.length)];
+		} else {
+			secondMsg = Const.ROBOT_DEFEAT_MESSAGES[Math.floor(Math.random() * Const.ROBOT_DEFEAT_MESSAGES.length)];
+		}
 
 		// If round is late (ended), only send Defeat Message and exit.
 		// Do not send Char Message (spam) or queue any moves (after).
 		if (my.game.late) {
-			setTimeout(function () {
-				robot.chat(secondMsg);
-			}, 500);
+			if (!robot.mute) {
+				setTimeout(function () {
+					robot.chat(secondMsg);
+				}, 500);
+			}
 			return;
 		}
 
@@ -3225,10 +3304,12 @@ exports.readyRobot = function (robot) {
 		text = firstMsg;
 		after();
 
-		delay += 200;
+		if (!robot.mute) {
+			delay += 200;
 
-		text = secondMsg;
-		after();
+			text = secondMsg;
+			after();
+		}
 	}
 
 	function pickList(list) {

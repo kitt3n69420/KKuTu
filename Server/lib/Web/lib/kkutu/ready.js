@@ -1074,6 +1074,7 @@ $(document).ready(function () {
 		if (!mobile) {
 			if (simpleRoomView) {
 				$("#RoomDiag").css("width", "330px");
+				$("#RoomDiag .dialog-title").css("width", "310px");
 				// Adjust internal widths for narrow layout
 				$("#room-title, #room-pw, #room-limit, #room-category, #room-mode").css("width", "200px");
 				// Adjust round/time/sur-hp elements for narrow layout
@@ -1086,6 +1087,7 @@ $(document).ready(function () {
 				$("#room-simple-rules-panel .dialog-opt").css({ "margin": "0px", "padding": "1px 0px" });
 			} else {
 				$("#RoomDiag").css("width", "415px");
+				$("#RoomDiag .dialog-title").css("width", "395px");
 				// Restore original widths for wide layout
 				$("#room-title, #room-pw, #room-limit, #room-category, #room-mode").css("width", "283px");
 				// Restore round/time/sur-hp original widths
@@ -1538,6 +1540,13 @@ $(document).ready(function () {
 			$("#ai-team").val(bot.game ? (bot.game.team || 0) : 0);
 			$("#ai-personality").val(bot.personality || 0);
 			$("#ai-preferred-char").val(bot.preferredChar || '');
+			$("#ai-mute").prop('checked', bot.mute || false);
+			$("#ai-rage-quit").prop('checked', bot.canRageQuit || false);
+			$("#ai-fast-mode").prop('checked', bot.fastMode || false);
+		} else {
+			$("#ai-mute").prop('checked', false);
+			$("#ai-rage-quit").prop('checked', false);
+			$("#ai-fast-mode").prop('checked', false);
 		}
 		showDialog($stage.dialog.practice);
 	});
@@ -1552,7 +1561,10 @@ $(document).ready(function () {
 				level: level,
 				team: team,
 				personality: $("#ai-personality").val(),
-				preferredChar: $("#ai-preferred-char").val()
+				preferredChar: $("#ai-preferred-char").val(),
+				mute: $("#ai-mute").is(':checked'),
+				canRageQuit: $("#ai-rage-quit").is(':checked'),
+				fastMode: $("#ai-fast-mode").is(':checked')
 			});
 		} else {
 			var personality = $("#ai-personality").val();
@@ -1565,7 +1577,10 @@ $(document).ready(function () {
 			send('practice', {
 				level: level,
 				personality: personality,
-				preferredChar: preferredChar
+				preferredChar: preferredChar,
+				mute: $("#ai-mute").is(':checked'),
+				canRageQuit: $("#ai-rage-quit").is(':checked'),
+				fastMode: $("#ai-fast-mode").is(':checked')
 			});
 		}
 	});

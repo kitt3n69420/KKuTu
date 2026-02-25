@@ -491,6 +491,9 @@ function onMessage(data) {
 				delete $data.usersR[data.id];
 				notice(($target.profile.title || $target.profile.name) + L['hasLeft']);
 				updateUserList();
+			} else if (data.robot && data.profile) {
+				// 봇 퇴장 알림
+				notice((data.profile.title || data.profile.name) + L['hasLeft']);
 			}
 			break;
 		case 'yell':
@@ -2277,6 +2280,17 @@ function requestProfile(id) {
 			.append($("<div>").addClass("profile-field-record").html(personalityText))
 			.append($("<div>").addClass("profile-field-score").html(prefCharText))
 		);
+
+		// 봇 옵션 표시 (대화 끄기, 중퇴 가능)
+		var optTexts = [];
+		if (o.mute) optTexts.push(L['aiMute']);
+		if (o.canRageQuit) optTexts.push(L['aiRageQuit']);
+		if (o.fastMode) optTexts.push(L['aiFastMode']);
+		if (optTexts.length > 0) {
+			$rec.append($("<div>").addClass("profile-record-field")
+				.append($("<div>").css({ width: '100%', textAlign: 'center', fontSize: '11px', color: '#888' }).html(optTexts.join(' / ')))
+			);
+		}
 	} else {
 		$stage.dialog.profileLevel.hide();
 		$("#profile-place").html(o.place ? (o.place + L['roomNumber']) : L['lobby']);

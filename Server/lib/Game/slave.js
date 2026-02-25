@@ -391,6 +391,9 @@ KKuTu.onClientMessage = function ($c, msg) {
         level: msg.level,
         personality: msg.personality,
         preferredChar: msg.preferredChar,
+        mute: !!msg.mute,
+        canRageQuit: !!msg.canRageQuit,
+        fastMode: !!msg.fastMode,
       });
       break;
     case "invite":
@@ -518,8 +521,11 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (msg.preferredChar !== undefined) {
         if (typeof msg.preferredChar !== "string" || msg.preferredChar.length > 1) return;
       }
+      if (msg.mute !== undefined && !validateInput(msg.mute, "boolean")) return;
+      if (msg.canRageQuit !== undefined && !validateInput(msg.canRageQuit, "boolean")) return;
+      if (msg.fastMode !== undefined && !validateInput(msg.fastMode, "boolean")) return;
 
-      ROOM[$c.place].setAI(msg.target, Math.round(msg.level), Math.round(msg.team), msg.personality, msg.preferredChar);
+      ROOM[$c.place].setAI(msg.target, Math.round(msg.level), Math.round(msg.team), msg.personality, msg.preferredChar, msg.mute, msg.canRageQuit, msg.fastMode);
       break;
     case "draw":
       // Picture Quiz drawing message handler

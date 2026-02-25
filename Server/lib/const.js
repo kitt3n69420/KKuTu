@@ -129,12 +129,13 @@ exports.ROBOT_DEFEAT_MESSAGES = [ // 봇이 한방단어를 받았을 때 보내
 exports.ROBOT_ANGRY_MESSAGES = [ //봇이 빡치면 보내는 메시지
 	"이건 불공평해", "억까 제발좀", "아오!!!!!!", "개짜증나",
 	"ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", "냥냥",
-	"야!!!", "치트 쓰지마", "사기치지마", "너 어디사냐?"
+	"야!!!", "치트 쓰지마", "사기치지마", "너 어디사냐?",
+	"억까겜", "작작 해라?", "적당히 하자?"
 ]
 exports.ROBOT_FINAL_MESSAGES = [ //봇이 중퇴하기 전에 보내는 메시지
 	"나 안해", "망겜", "개노잼", "니들끼리나 잘 해라", "난 안할거임 ㅅㄱ",
 	"내가 너희랑 다시 하나 봐라", "ㅇㅇ", "게임 뭣같이하네", "ㅂㅂ",
-	"나 탈주함 ㅅㄱ", "이타치가 왜 강한지 알아? 탈주닌자라서"
+	"나 탈주함 ㅅㄱ", "이타치가 왜 짱센지 알아? 탈주닌자라서", "엄크"
 ]
 exports.MOREMI_PART = ["back", "shoes", "clothes", "head", "eye", "mouth", "lhand", "rhand"];
 exports.CATEGORIES = ["all", "spec", "skin", "badge", "head", "eye", "mouth", "clothes", "hs", "back"];

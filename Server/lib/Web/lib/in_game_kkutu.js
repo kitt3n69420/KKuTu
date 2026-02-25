@@ -1149,6 +1149,7 @@ $(document).ready(function () {
 		if (!mobile) {
 			if (simpleRoomView) {
 				$("#RoomDiag").css("width", "330px");
+				$("#RoomDiag .dialog-title").css("width", "310px");
 				// Adjust internal widths for narrow layout
 				$("#room-title, #room-pw, #room-limit, #room-category, #room-mode").css("width", "200px");
 				// Adjust round/time/sur-hp elements for narrow layout
@@ -1161,6 +1162,7 @@ $(document).ready(function () {
 				$("#room-simple-rules-panel .dialog-opt").css({ "margin": "0px", "padding": "1px 0px" });
 			} else {
 				$("#RoomDiag").css("width", "415px");
+				$("#RoomDiag .dialog-title").css("width", "395px");
 				// Restore original widths for wide layout
 				$("#room-title, #room-pw, #room-limit, #room-category, #room-mode").css("width", "283px");
 				// Restore round/time/sur-hp original widths
@@ -1613,6 +1615,13 @@ $(document).ready(function () {
 			$("#ai-team").val(bot.game ? (bot.game.team || 0) : 0);
 			$("#ai-personality").val(bot.personality || 0);
 			$("#ai-preferred-char").val(bot.preferredChar || '');
+			$("#ai-mute").prop('checked', bot.mute || false);
+			$("#ai-rage-quit").prop('checked', bot.canRageQuit || false);
+			$("#ai-fast-mode").prop('checked', bot.fastMode || false);
+		} else {
+			$("#ai-mute").prop('checked', false);
+			$("#ai-rage-quit").prop('checked', false);
+			$("#ai-fast-mode").prop('checked', false);
 		}
 		showDialog($stage.dialog.practice);
 	});
@@ -1627,7 +1636,10 @@ $(document).ready(function () {
 				level: level,
 				team: team,
 				personality: $("#ai-personality").val(),
-				preferredChar: $("#ai-preferred-char").val()
+				preferredChar: $("#ai-preferred-char").val(),
+				mute: $("#ai-mute").is(':checked'),
+				canRageQuit: $("#ai-rage-quit").is(':checked'),
+				fastMode: $("#ai-fast-mode").is(':checked')
 			});
 		} else {
 			var personality = $("#ai-personality").val();
@@ -1640,7 +1652,10 @@ $(document).ready(function () {
 			send('practice', {
 				level: level,
 				personality: personality,
-				preferredChar: preferredChar
+				preferredChar: preferredChar,
+				mute: $("#ai-mute").is(':checked'),
+				canRageQuit: $("#ai-rage-quit").is(':checked'),
+				fastMode: $("#ai-fast-mode").is(':checked')
 			});
 		}
 	});
@@ -5543,6 +5558,9 @@ function onMessage(data) {
 				delete $data.usersR[data.id];
 				notice(($target.profile.title || $target.profile.name) + L['hasLeft']);
 				updateUserList();
+			} else if (data.robot && data.profile) {
+				// 봇 퇴장 알림
+				notice((data.profile.title || data.profile.name) + L['hasLeft']);
 			}
 			break;
 		case 'yell':
@@ -7329,6 +7347,17 @@ function requestProfile(id) {
 			.append($("<div>").addClass("profile-field-record").html(personalityText))
 			.append($("<div>").addClass("profile-field-score").html(prefCharText))
 		);
+
+		// 봇 옵션 표시 (대화 끄기, 중퇴 가능)
+		var optTexts = [];
+		if (o.mute) optTexts.push(L['aiMute']);
+		if (o.canRageQuit) optTexts.push(L['aiRageQuit']);
+		if (o.fastMode) optTexts.push(L['aiFastMode']);
+		if (optTexts.length > 0) {
+			$rec.append($("<div>").addClass("profile-record-field")
+				.append($("<div>").css({ width: '100%', textAlign: 'center', fontSize: '11px', color: '#888' }).html(optTexts.join(' / ')))
+			);
+		}
 	} else {
 		$stage.dialog.profileLevel.hide();
 		$("#profile-place").html(o.place ? (o.place + L['roomNumber']) : L['lobby']);

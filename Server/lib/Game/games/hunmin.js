@@ -122,6 +122,11 @@ exports.turnEnd = function () {
 		target.game.score = 0;
 		my.logChainEvent(target, 'ko');
 
+		// 봇 분노: 타임아웃된 봇의 분노 조정
+		if (target.robot && target.adjustAnger) {
+			target.adjustAnger(1);
+		}
+
 		var status = Const.checkSurvivalStatus(my, DIC);
 
 		my.byMaster('turnEnd', {
@@ -133,6 +138,23 @@ exports.turnEnd = function () {
 			ko: true,
 			koReason: 'timeout'
 		}, true);
+
+		// 봇 분노: 다른 봇들의 팀 관계 기반 분노 조정 (서바이벌)
+		if (target && my.game.seq) {
+			var targetTeamSv = target.robot ? (target.game.team || 0) : (target.team || 0);
+			for (var si in my.game.seq) {
+				var sp = (typeof my.game.seq[si] === 'string') ? DIC[my.game.seq[si]] : my.game.seq[si];
+				if (sp && sp.robot && sp.id !== target.id && sp.adjustAnger) {
+					var spTeam = sp.game.team || 0;
+					var isTeammateSv = (targetTeamSv !== 0 && spTeam !== 0 && targetTeamSv === spTeam);
+					if (isTeammateSv) {
+						sp.adjustAnger(0.5);
+					} else {
+						sp.adjustAnger(-0.5);
+					}
+				}
+			}
+		}
 
 		if (status.gameOver) {
 			clearTimeout(my.game.robotTimer);
@@ -163,6 +185,12 @@ exports.turnEnd = function () {
 		}
 		if (score !== 0) target.game.score += score;
 	}
+
+	// 봇 분노: 타임아웃된 봇의 분노 조정 (비서바이벌)
+	if (target && target.robot && target.adjustAnger) {
+		target.adjustAnger(1);
+	}
+
 	getAuto.call(my, my.game.theme, 0).then(function (w) {
 		my.byMaster('turnEnd', {
 			ok: false,
@@ -206,13 +234,22 @@ exports.turnEnd = function () {
 				}
 
 				for (i in bots) {
-					var rand = Math.random();
-					if (rand < prob) {
-						(function (bot) {
-							// Check team relation
-							var botTeam = bot.game.team || 0;
-							var isTeammate = (targetTeam !== 0 && targetTeam === botTeam);
+					(function (bot) {
+						// Check team relation
+						var botTeam = bot.game.team || 0;
+						var isTeammate = (targetTeam !== 0 && botTeam !== 0 && targetTeam === botTeam);
 
+						// 봇 분노: 팀 관계에 따른 분노 조정
+						if (bot.adjustAnger) {
+							if (isTeammate) {
+								bot.adjustAnger(0.5);
+							} else {
+								bot.adjustAnger(-0.5);
+							}
+						}
+
+						var rand = Math.random();
+						if (rand < prob && !bot.mute) {
 							setTimeout(function () {
 								var msgs = isTeammate ?
 									Const.ROBOT_TIMEOUT_MESSAGES_SAMETEAM :
@@ -223,8 +260,8 @@ exports.turnEnd = function () {
 								var msg = msgs[Math.floor(Math.random() * msgs.length)];
 								bot.chat(msg);
 							}, 500 + Math.random() * 1000);
-						})(bots[i]);
-					}
+						}
+					})(bots[i]);
 				}
 			}
 		}
@@ -245,7 +282,8 @@ exports.submit = function (client, text, data) {
 	if (getPlayerId(mgt) !== getPlayerId(client)) return client.chat(text);
 	if (!my.game.theme) return;
 	if (isChainable(text, my.game.theme)) {
-		if (my.game.chain.indexOf(text) == -1 || my.opts.return) {
+		var isRecentDuplicate = my.opts.return && my.game.chain.slice(-5).indexOf(text) != -1;
+		if (my.game.chain.indexOf(text) == -1 || (my.opts.return && !isRecentDuplicate)) {
 			my.game.loading = true;
 			function onDB($doc) {
 				function preApproved() {
@@ -257,15 +295,20 @@ exports.submit = function (client, text, data) {
 					clearTimeout(my.game.turnTimer);
 					t = tv - my.game.turnAt;
 
+					var isReturn = my.opts.return && my.game.chain.includes(text);
+
 					// 기본 점수 계산 (미션 보너스 포함)
-					var baseScore = my.getScore(text, t);
+					var baseScore = my.getScore(text, t, isReturn);
 					// 미션 보너스 제외한 순수 기본 점수
 					var baseScoreWithoutMission = my.getScore(text, t, true);
 					// 미션 보너스만 추출
 					var missionBonus = (my.game.mission === true) ? baseScore - baseScoreWithoutMission : 0;
 
 					score = baseScore;
-					if (my.opts.return && my.game.chain.includes(text)) score = 0;
+					if (isReturn) {
+						score = 0;
+						missionBonus = 0;
+					}
 					my.logChainWord(text, client);
 					my.game.roundTime -= t;
 
@@ -362,7 +405,10 @@ exports.submit = function (client, text, data) {
 				}, ROBOT_START_DELAY[client.level]);
 				return;
 			}
-			client.publish('turnError', { code: 409, value: text }, true);
+			client.publish('turnError', {
+				code: isRecentDuplicate ? 411 : 409,
+				value: text
+			}, true);
 			if (my.opts.one) my.turnEnd();
 		}
 	} else {
@@ -433,7 +479,12 @@ exports.readyRobot = function (robot) {
 		} else denied();
 	});
 	function denied() {
-		text = Const.ROBOT_DEFEAT_MESSAGES_2[Math.floor(Math.random() * Const.ROBOT_DEFEAT_MESSAGES_2.length)];
+		if (robot.mute) return;
+		if (robot.anger >= 5) {
+			text = Const.ROBOT_ANGRY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_ANGRY_MESSAGES.length)];
+		} else {
+			text = Const.ROBOT_DEFEAT_MESSAGES_2[Math.floor(Math.random() * Const.ROBOT_DEFEAT_MESSAGES_2.length)];
+		}
 		after();
 	}
 	function pickList(list) {

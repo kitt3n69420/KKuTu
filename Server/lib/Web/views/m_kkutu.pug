@@ -451,7 +451,7 @@ block Middle
 						button#view-all-flat-quiz-pick(style='font-size: 11px;')= L('pickQuizTopic')
 		div.dialog-bar.tail-button
 			button#view-all-ok= L('OK')
-	+Dialog('PracticeDiag', 300, 205)
+	+Dialog('PracticeDiag', 300, 310)
 		div.dialog-bar
 			h4= L('selectLevel')
 			select#practice-level
@@ -479,6 +479,15 @@ block Middle
 		div.dialog-bar.ai-setting-only
 			h4= L('aiPreferredChar')
 			input#ai-preferred-char(type='text', maxlength='1', style='width: 50px; text-align: center;')
+		div.dialog-bar.ai-setting-only
+			h4= L('aiMute')
+			input#ai-mute(type='checkbox')
+		div.dialog-bar.ai-setting-only
+			h4= L('aiRageQuit')
+			input#ai-rage-quit(type='checkbox')
+		div.dialog-bar.ai-setting-only
+			h4= L('aiFastMode')
+			input#ai-fast-mode(type='checkbox')
 		div.dialog-bar.tail-button
 			button#practice-ok= L('OK')
 	+Dialog('ResultDiag', 300, 420, L('gameResult'), true)

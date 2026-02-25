@@ -128,6 +128,11 @@ exports.turnEnd = function () {
 		target.game.score = 0;
 		my.logChainEvent(target, 'ko');
 
+		// 봇 분노: 타임아웃된 봇의 분노 조정
+		if (target.robot && target.adjustAnger) {
+			target.adjustAnger(1);
+		}
+
 		var status = Const.checkSurvivalStatus(my, DIC);
 
 		my.byMaster('turnEnd', {
@@ -140,6 +145,23 @@ exports.turnEnd = function () {
 			ko: true,
 			koReason: 'timeout'
 		}, true);
+
+		// 봇 분노: 다른 봇들의 팀 관계 기반 분노 조정 (서바이벌)
+		if (target && my.game.seq) {
+			var targetTeamSv = target.robot ? (target.game.team || 0) : (target.team || 0);
+			for (var si in my.game.seq) {
+				var sp = (typeof my.game.seq[si] === 'string') ? DIC[my.game.seq[si]] : my.game.seq[si];
+				if (sp && sp.robot && sp.id !== target.id && sp.adjustAnger) {
+					var spTeam = sp.game.team || 0;
+					var isTeammateSv = (targetTeamSv !== 0 && spTeam !== 0 && targetTeamSv === spTeam);
+					if (isTeammateSv) {
+						sp.adjustAnger(0.5);
+					} else {
+						sp.adjustAnger(-0.5);
+					}
+				}
+			}
+		}
 
 		if (status.gameOver) {
 			clearTimeout(my.game.robotTimer);
@@ -170,6 +192,12 @@ exports.turnEnd = function () {
 		}
 		if (score !== 0) target.game.score += score;
 	}
+
+	// 봇 분노: 타임아웃된 봇의 분노 조정 (비서바이벌)
+	if (target && target.robot && target.adjustAnger) {
+		target.adjustAnger(1);
+	}
+
 	my.byMaster('turnEnd', {
 		ok: false,
 		target: target ? target.id : null,
@@ -212,13 +240,22 @@ exports.turnEnd = function () {
 			}
 
 			for (i in bots) {
-				var rand = Math.random();
-				if (rand < prob) {
-					(function (bot) {
-						// Check team relation
-						var botTeam = bot.game.team || 0;
-						var isTeammate = (targetTeam !== 0 && targetTeam === botTeam);
+				(function (bot) {
+					// Check team relation
+					var botTeam = bot.game.team || 0;
+					var isTeammate = (targetTeam !== 0 && botTeam !== 0 && targetTeam === botTeam);
 
+					// 봇 분노: 팀 관계에 따른 분노 조정
+					if (bot.adjustAnger) {
+						if (isTeammate) {
+							bot.adjustAnger(0.5);
+						} else {
+							bot.adjustAnger(-0.5);
+						}
+					}
+
+					var rand = Math.random();
+					if (rand < prob && !bot.mute) {
 						setTimeout(function () {
 							var msgs = isTeammate ?
 								Const.ROBOT_TIMEOUT_MESSAGES_SAMETEAM :
@@ -229,8 +266,8 @@ exports.turnEnd = function () {
 							var msg = msgs[Math.floor(Math.random() * msgs.length)];
 							bot.chat(msg);
 						}, 500 + Math.random() * 1000);
-					})(bots[i]);
-				}
+					}
+				})(bots[i]);
 			}
 		}
 	}

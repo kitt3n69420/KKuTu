@@ -1,5 +1,5 @@
-var DB = require('../Web/db');
-var Const = require('../const');
+var DB = require('../Server/lib/Web/db');
+var Const = require('../Server/lib/const');
 
 DB.ready = function () {
     console.log("Stats Helper: DB Ready. Starting population...");
