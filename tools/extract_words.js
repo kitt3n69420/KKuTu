@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Load Global Config
-const globalPath = path.join(__dirname, 'lib', 'sub', 'global.json');
+const globalPath = path.join('../server', 'lib', 'sub', 'global.json');
 let globalConfig;
 try {
     globalConfig = require(globalPath);
