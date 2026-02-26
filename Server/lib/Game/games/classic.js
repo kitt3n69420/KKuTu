@@ -51,6 +51,29 @@ const VOWEL_INV_MAP = {
 	12: 17, 17: 12
 };
 var AttackCache = {};
+var StatsCache = {};
+var StatsCacheSize = 0;
+var STATS_CACHE_TTL = 300000; // 5분
+var STATS_CACHE_MAX = 5000;
+
+function getStatsCache(key) {
+	var entry = StatsCache[key];
+	if (!entry) return undefined;
+	if (Date.now() - entry.time >= STATS_CACHE_TTL) {
+		delete StatsCache[key];
+		StatsCacheSize--;
+		return undefined;
+	}
+	return entry.value;
+}
+function setStatsCache(key, value) {
+	if (!StatsCache[key]) StatsCacheSize++;
+	StatsCache[key] = { value: value, time: Date.now() };
+	if (StatsCacheSize > STATS_CACHE_MAX) {
+		StatsCache = {};
+		StatsCacheSize = 0;
+	}
+}
 
 // Helper function to get player ID (supports both robot objects and player ID strings)
 function getPlayerId(player) {
@@ -1961,19 +1984,29 @@ exports.readyRobot = function (robot) {
 			var totalShort = 0;
 
 			chars.forEach(c => {
-				table.findOne(['_id', c]).on(function (doc) {
-					if (doc && doc[col]) {
-						total += doc[col];
-					}
-					if (shortCol && doc && doc[shortCol]) {
-						totalShort += doc[shortCol];
-					}
+				var cacheKey = c + ":" + col + (shortCol ? ":" + shortCol : "");
+				var cached = getStatsCache(cacheKey);
+				if (cached !== undefined) {
+					total += cached.count;
+					totalShort += cached.short;
 					if (--pending === 0) {
-						// noshort 모드: 전체 - short = 9글자 이상 단어 수
+						var finalTotal = shortCol ? (total - totalShort) : total;
+						resolve(finalTotal);
+					}
+					return;
+				}
+				table.findOne(['_id', c]).on(function (doc) {
+					var charCount = (doc && doc[col]) ? doc[col] : 0;
+					var shortCount = (shortCol && doc && doc[shortCol]) ? doc[shortCol] : 0;
+					setStatsCache(cacheKey, { count: charCount, short: shortCount });
+					total += charCount;
+					totalShort += shortCount;
+					if (--pending === 0) {
 						var finalTotal = shortCol ? (total - totalShort) : total;
 						resolve(finalTotal);
 					}
 				}, null, function () {
+					setStatsCache(cacheKey, { count: 0, short: 0 });
 					if (--pending === 0) {
 						var finalTotal = shortCol ? (total - totalShort) : total;
 						resolve(finalTotal);
@@ -3262,14 +3295,27 @@ exports.readyRobot = function (robot) {
 				var pSub = charsToCheck.length;
 
 				charsToCheck.forEach(c => {
+					var cacheKey = c + ":" + col;
+					var cached = getStatsCache(cacheKey);
+					if (cached !== undefined) {
+						if (cached.count > 0) valid = true;
+						if (--pSub === 0) {
+							if (valid) results.push(w);
+							if (--pending === 0) resolve(results.concat(restList));
+						}
+						return;
+					}
 					table.findOne(['_id', c]).on(function (doc) {
-						if (doc && doc[col] > 0) valid = true;
+						var charCount = (doc && doc[col]) ? doc[col] : 0;
+						setStatsCache(cacheKey, { count: charCount, short: 0 });
+						if (charCount > 0) valid = true;
 
 						if (--pSub === 0) {
 							if (valid) results.push(w);
-							if (--pending === 0) resolve(results.concat(restList)); // Append unchecked stats as fallback? Or just return filtered. Better return filtered.
+							if (--pending === 0) resolve(results.concat(restList));
 						}
-					}, null, function () { // Error/Null
+					}, null, function () {
+						setStatsCache(cacheKey, { count: 0, short: 0 });
 						if (--pSub === 0) {
 							if (valid) results.push(w);
 							if (--pending === 0) resolve(results.concat(restList));
@@ -3589,27 +3635,39 @@ function getAuto(char, subc, type, limit, sort) {
 			}
 		}
 
-		// 다중 findOne 병렬 호출 (안정성을 위해 $in 대신 사용)
+		// 다중 findOne 병렬 호출 (캐시 적용)
 		var pending = charsToCheck.length;
 		var totalCount = 0;
 		var totalShort = 0;
 		var debugCounts = [];
 
 		charsToCheck.forEach(function (c) {
+			var cacheKey = c + ":" + col + (shortCol ? ":" + shortCol : "");
+			var cached = getStatsCache(cacheKey);
+			if (cached !== undefined) {
+				totalCount += cached.count;
+				totalShort += cached.short;
+				debugCounts.push(`${c}:${cached.count}(cached)`);
+				if (--pending === 0) {
+					var finalCount = (my.opts.noshort || my.opts.no2) ? (totalCount - totalShort) : totalCount;
+					R.go(finalCount);
+				}
+				return;
+			}
 			table.findOne(['_id', c]).on(function ($st) {
 				var charCount = ($st && $st[col]) ? $st[col] : 0;
 				var shortCount = (shortCol && $st && $st[shortCol]) ? $st[shortCol] : 0;
+				setStatsCache(cacheKey, { count: charCount, short: shortCount });
 				totalCount += charCount;
 				totalShort += shortCount;
 				debugCounts.push(`${c}:${charCount}` + (shortCol ? `-${shortCount}` : ''));
 
 				if (--pending === 0) {
-					// noshort/no2 모드: 전체 - short = 9글자 이상 또는 3글자 이상 단어 수
 					var finalCount = (my.opts.noshort || my.opts.no2) ? (totalCount - totalShort) : totalCount;
 					R.go(finalCount);
 				}
 			}, null, function () {
-				// Error/Empty - 통계에 없으면 0으로 처리
+				setStatsCache(cacheKey, { count: 0, short: 0 });
 				debugCounts.push(`${c}:0(missing)`);
 				if (--pending === 0) {
 					var finalCount = (my.opts.noshort || my.opts.no2) ? (totalCount - totalShort) : totalCount;
