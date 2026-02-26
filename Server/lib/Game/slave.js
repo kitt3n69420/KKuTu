@@ -101,6 +101,26 @@ process.on("message", function (msg) {
     case "room-invalid":
       delete ROOM[msg.room.id];
       break;
+    case "room-go":
+      // master에서 소켓이 끊겨 퇴장 처리된 경우, slave에서도 동기화
+      if (ROOM[msg.id]) {
+        var goTarget = DIC[msg.target];
+        if (goTarget) {
+          ROOM[msg.id].go(goTarget);
+        } else {
+          // DIC에 없지만 players에 남아있을 수 있음 — 수동 제거
+          var px = ROOM[msg.id].players.indexOf(msg.target);
+          if (px != -1) {
+            ROOM[msg.id].players.splice(px, 1);
+            ROOM[msg.id].export();
+            JLog.warn(`Chan @${CHAN} room-go: Removed stale player ${msg.target} from room ${msg.id}`);
+          }
+        }
+      }
+      if (msg.removed && ROOM[msg.id]) {
+        delete ROOM[msg.id];
+      }
+      break;
     default:
       JLog.warn(`Unhandled IPC message type: ${msg.type}`);
   }
@@ -152,9 +172,14 @@ Server.on("connection", function (socket, info) {
 
       // 기존 접속자 처리: _replaced 플래그로 레이스 컨디션 방지
       if (DIC[$c.id]) {
-        DIC[$c.id]._replaced = true;
-        DIC[$c.id].send("error", { code: 408 });
-        DIC[$c.id].socket.close();
+        var old = DIC[$c.id];
+        old._replaced = true;
+        // 동기적으로 방에서 먼저 제거 (socket.close는 비동기라 enter()보다 늦게 처리됨)
+        if (old.place && ROOM[old.place]) {
+          ROOM[old.place].go(old);
+        }
+        old.send("error", { code: 408 });
+        old.socket.close();
       }
       if (DEVELOP && !Const.TESTER.includes($c.id)) {
         $c.send("error", { code: 500 });

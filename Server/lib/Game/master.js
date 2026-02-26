@@ -565,6 +565,10 @@ exports.init = function (_SID, CHAN) {
           if (DIC[$c.id]) {
             var old = DIC[$c.id];
             old._replaced = true;
+            // 동기적으로 방에서 먼저 제거 (socket.close는 비동기라 Room.go보다 늦게 처리됨)
+            if (old.place && ROOM[old.place]) {
+              ROOM[old.place].go(old);
+            }
             delete DIC[$c.id];
             if (old.profile) delete DNAME[old.profile.title || old.profile.name];
             if (!old.guest) MainDB.users.update(["_id", old.id]).set(["server", ""]).on();

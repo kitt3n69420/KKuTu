@@ -805,7 +805,14 @@ exports.Client = function (socket, profile, sid) {
 				return my.sendError(429);
 			}
 			if ($room.players.indexOf(my.id) != -1) {
-				return my.sendError(409);
+				// 재접속으로 인해 이전 자신이 players에 남아있는 경우 자동 정리
+				if (DIC[my.id] === my) {
+					var staleIdx = $room.players.indexOf(my.id);
+					$room.players.splice(staleIdx, 1);
+					JLog.warn(`enter: Auto-removed stale self ${my.id} from room ${$room.id} players`);
+				} else {
+					return my.sendError(409);
+				}
 			}
 			if (Cluster.isMaster) {
 				my.send('preRoom', { id: $room.id, pw: room.password, channel: $room.channel });
@@ -2216,6 +2223,11 @@ exports.Room = function (room, channel) {
 				process.send({ type: "room-go", target: client.id, id: my.id, removed: !ROOM.hasOwnProperty(my.id) });
 			}
 			my.export(client.id, kickVote);
+		} else if (Cluster.isMaster && !my.practice) {
+			// master에서 소켓이 끊겨 Room.go가 실행된 경우, slave에게도 퇴장 알림
+			if (CHAN[my.channel]) {
+				CHAN[my.channel].send({ type: "room-go", target: client.id, id: my.id, removed: !ROOM.hasOwnProperty(my.id) });
+			}
 		}
 	};
 	my.set = function (room) {
