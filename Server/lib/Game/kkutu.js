@@ -85,12 +85,15 @@ function refillAiNameCache() {
 	// 단일 단어 캐시 리필 (2~7글자)
 	if (aiNameCacheSingle.length < AI_NAME_CACHE_THRESHOLD) {
 		pending++;
-		var q1 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 7 ORDER BY RANDOM() LIMIT ${AI_NAME_CACHE_SIZE}`;
+		var q1 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 7 OFFSET floor(random() * (SELECT GREATEST(1, reltuples::bigint - ${AI_NAME_CACHE_SIZE}) FROM pg_class WHERE relname = 'kkutu_ko')) LIMIT ${AI_NAME_CACHE_SIZE}`;
 		DB.kkutu['ko'].direct(q1, function (err, res) {
 			if (!err && res && res.rows) {
-				res.rows.forEach(function (row) {
-					aiNameCacheSingle.push(row._id);
-				});
+				var shuffled = res.rows.slice();
+				for (var si = shuffled.length - 1; si > 0; si--) {
+					var sj = Math.floor(Math.random() * (si + 1));
+					var st = shuffled[si]; shuffled[si] = shuffled[sj]; shuffled[sj] = st;
+				}
+				shuffled.forEach(function (row) { aiNameCacheSingle.push(row._id); });
 				JLog.info(`[AI_NAME_CACHE] Single cache refilled: ${aiNameCacheSingle.length} words`);
 			}
 			pending--;
@@ -101,12 +104,10 @@ function refillAiNameCache() {
 	// 첫 번째 단어 캐시 리필 (2~5글자)
 	if (aiNameCacheFirst.length < AI_NAME_CACHE_THRESHOLD) {
 		pending++;
-		var q2 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 ORDER BY RANDOM() LIMIT ${AI_NAME_CACHE_SIZE}`;
+		var q2 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 OFFSET floor(random() * (SELECT GREATEST(1, reltuples::bigint - ${AI_NAME_CACHE_SIZE}) FROM pg_class WHERE relname = 'kkutu_ko')) LIMIT ${AI_NAME_CACHE_SIZE}`;
 		DB.kkutu['ko'].direct(q2, function (err, res) {
 			if (!err && res && res.rows) {
-				res.rows.forEach(function (row) {
-					aiNameCacheFirst.push(row._id);
-				});
+				res.rows.forEach(function (row) { aiNameCacheFirst.push(row._id); });
 				JLog.info(`[AI_NAME_CACHE] First cache refilled: ${aiNameCacheFirst.length} words`);
 			}
 			pending--;
@@ -117,12 +118,10 @@ function refillAiNameCache() {
 	// 두 번째 단어 캐시 리필 (2~5글자)
 	if (aiNameCacheSecond.length < AI_NAME_CACHE_THRESHOLD) {
 		pending++;
-		var q3 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 ORDER BY RANDOM() LIMIT ${AI_NAME_CACHE_SIZE}`;
+		var q3 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 OFFSET floor(random() * (SELECT GREATEST(1, reltuples::bigint - ${AI_NAME_CACHE_SIZE}) FROM pg_class WHERE relname = 'kkutu_ko')) LIMIT ${AI_NAME_CACHE_SIZE}`;
 		DB.kkutu['ko'].direct(q3, function (err, res) {
 			if (!err && res && res.rows) {
-				res.rows.forEach(function (row) {
-					aiNameCacheSecond.push(row._id);
-				});
+				res.rows.forEach(function (row) { aiNameCacheSecond.push(row._id); });
 				JLog.info(`[AI_NAME_CACHE] Second cache refilled: ${aiNameCacheSecond.length} words`);
 			}
 			pending--;
@@ -175,13 +174,32 @@ exports.publish = function (type, data, _room) {
 	var i;
 
 	if (Cluster.isMaster) {
-		for (i in DIC) {
-			DIC[i].send(type, data);
+		var r = Object.assign({ type: type }, data);
+		var msg = JSON.stringify(r);
+
+		if (type == "conn" || type == "disconn") {
+			for (i in DIC) {
+				if (DIC[i].place == 0 && DIC[i].socket && DIC[i].socket.readyState == 1) {
+					DIC[i].socket.send(msg);
+				}
+			}
+		} else {
+			for (i in DIC) {
+				if (DIC[i].socket && DIC[i].socket.readyState == 1) {
+					DIC[i].socket.send(msg);
+				}
+			}
 		}
 	} else if (Cluster.isWorker) {
 		if (type == "room") process.send({ type: "room-publish", data: data, password: _room });
-		else for (i in DIC) {
-			DIC[i].send(type, data);
+		else {
+			var r = Object.assign({ type: type }, data);
+			var msg = JSON.stringify(r);
+			for (i in DIC) {
+				if (DIC[i].socket && DIC[i].socket.readyState == 1) {
+					DIC[i].socket.send(msg);
+				}
+			}
 		}
 	}
 };
@@ -757,10 +775,10 @@ exports.Client = function (socket, profile, sid) {
 			equip ? ['equip', my.equip] : undefined,
 			friends ? ['friends', my.friends] : undefined
 		).on(function (__res) {
-			DB.redis.getGlobal(my.id).then(function (_res) {
-				DB.redis.putGlobal(my.id, my.data.score).then(function (res) {
-					R.go({ id: my.id, prev: _res });
-				});
+			var prevRank = DB.redis.getGlobal(my.id);
+			DB.redis.putGlobal(my.id, my.data.score);
+			prevRank.then(function (_res) {
+				R.go({ id: my.id, prev: _res });
 			});
 		});
 		return R;
@@ -1760,7 +1778,7 @@ exports.Room = function (room, channel) {
 					}
 				} else {
 					// 캐시 비어있음 - DB에서 조회
-					var q = "SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 7 ORDER BY RANDOM() LIMIT 1";
+					var q = "SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 7 OFFSET floor(random() * 1200000) LIMIT 1";
 					DB.kkutu['ko'].direct(q, function (err, res) {
 						if (my.players.length >= my.limit) return;
 						var dbName;
@@ -1796,7 +1814,7 @@ exports.Room = function (room, channel) {
 					}
 				} else {
 					// 캐시 비어있음 - DB에서 조회
-					var q1 = "SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 ORDER BY RANDOM() LIMIT 1";
+					var q1 = "SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 OFFSET floor(random() * 1200000) LIMIT 1";
 					DB.kkutu['ko'].direct(q1, function (err, res) {
 						if (my.players.length >= my.limit) return;
 
@@ -1809,7 +1827,7 @@ exports.Room = function (room, channel) {
 						var dbW1 = res.rows[0]._id;
 						var dbRem = 7 - dbW1.length;
 
-						var q2 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND ${dbRem} ORDER BY RANDOM() LIMIT 1`;
+						var q2 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND ${dbRem} OFFSET floor(random() * 1200000) LIMIT 1`;
 						DB.kkutu['ko'].direct(q2, function (err2, res2) {
 							if (my.players.length >= my.limit) return;
 

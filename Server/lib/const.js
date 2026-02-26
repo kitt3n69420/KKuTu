@@ -550,7 +550,7 @@ exports.KO_INJEONG = [
 	"LOL", "MMM", "MAP", "MKK", "MNG",
 	"MAM", "CKR", "BRS", "BTC", "BLA",
 	"SAO", "WEB", "COL", "JAT", "INC", "HAR",
-	"MOB", "HR/*  */H", "STA", "OIJ",
+	"MOB", "HRH", "STA", "OIJ",
 	"KGR", "ESB", "ELW", "OVW", "NEX", /*"WOW",*/ //얘는 왜 주석임?
 	"KPO", "JLN", "JAN", "ZEL", "POK", "HAI",
 	"HSS", "KMV", "HDC", "HOS", "FRC", "TPW", "MCJ" //,"WMV" // 아 까먹었다

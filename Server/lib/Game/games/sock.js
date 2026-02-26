@@ -66,11 +66,16 @@ exports.roundReady = function () {
 	if (my.game.round <= effectiveRound) {
 		var sql = "SELECT _id FROM kkutu_" + my.rule.lang + " WHERE _id ~ '" + conf.reg.source + "' AND hit >= 1";
 		if (conf.add) sql += " AND " + conf.add[0] + " ~ '" + conf.add[1].source + "'";
-		sql += " ORDER BY RANDOM() LIMIT 1234";
+		var estimatedRows = my.rule.lang === 'ko' ? 1300000 : 150000;
+		sql += " OFFSET floor(random() * " + Math.max(1, estimatedRows - 1500) + ") LIMIT 1500";
 
 		DB.kkutu[my.rule.lang].direct(sql, function (err, res) {
 			if (err || !res) return;
-			var $docs = res.rows;
+			var $docs = res.rows.slice();
+			for (var si = $docs.length - 1; si > 0; si--) {
+				var sj = Math.floor(Math.random() * (si + 1));
+				var st = $docs[si]; $docs[si] = $docs[sj]; $docs[sj] = st;
+			}
 			while (w = $docs.shift()) {
 				words.push(w._id);
 				i = w._id.length;

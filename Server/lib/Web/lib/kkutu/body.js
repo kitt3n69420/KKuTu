@@ -1164,6 +1164,14 @@ function updateUI(myRoom, refresh) {
 	$data._only = only;
 	setLocation($data.place);
 	$(".kkutu-menu ." + only).show();
+	if (mobile) {
+		if (only == "for-lobby") {
+			$("body").css("overflow-y", "auto");
+		} else {
+			$("body").css("overflow-y", "hidden");
+			window.scrollTo(0, 0);
+		}
+	}
 }
 function animModified(cls) {
 	$(cls).addClass("room-head-modified");

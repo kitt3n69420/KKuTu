@@ -1150,14 +1150,20 @@ async function handleRandom(interaction) {
             return;
         }
 
-        const sql = `SELECT _id, mean FROM kkutu_ko WHERE _id NOT LIKE '% %' ORDER BY RANDOM() LIMIT ${safeCount}`;
+        const sql = `SELECT _id, mean FROM kkutu_ko WHERE _id NOT LIKE '% %' OFFSET floor(random() * GREATEST(1, (SELECT reltuples::bigint - ${safeCount * 3} FROM pg_class WHERE relname = 'kkutu_ko'))) LIMIT ${safeCount * 3}`;
 
-        const results = await new Promise((resolve, reject) => {
+        let results = await new Promise((resolve, reject) => {
             DB.kkutu['ko'].direct(sql, function (err, res) {
                 if (err) return reject(err);
                 resolve(res && res.rows ? res.rows : []);
             });
         });
+        // 셔플 후 요청 개수만큼 자르기
+        for (var i = results.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var t = results[i]; results[i] = results[j]; results[j] = t;
+        }
+        results = results.slice(0, safeCount);
 
         if (results.length === 0) {
             await interaction.editReply({ content: '🔍 단어를 찾을 수 없습니다.' });

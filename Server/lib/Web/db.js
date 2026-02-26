@@ -46,7 +46,7 @@ Pub.ready = function (isPub) {
 		port: GLOBAL.PG_PORT,
 		database: GLOBAL.PG_DATABASE,
 		host: GLOBAL.PG_HOST,
-		max: 10,
+		max: 25,
 		idleTimeoutMillis: 30000,
 		connectionTimeoutMillis: 5000
 	});
