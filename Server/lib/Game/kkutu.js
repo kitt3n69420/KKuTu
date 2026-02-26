@@ -311,8 +311,12 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 
 		data.profile = my.profile;
 		if (my.target == null) {
+			var r = Object.assign({ type: type }, data);
+			var msg = JSON.stringify(r);
 			for (i in DIC) {
-				if (DIC[i].place == place) DIC[i].send(type, data);
+				if (DIC[i].place == place && DIC[i].socket && DIC[i].socket.readyState == 1) {
+					DIC[i].socket.send(msg);
+				}
 			}
 		} else if (DIC[my.target]) {
 			DIC[my.target].send(type, data);
@@ -639,8 +643,14 @@ exports.Client = function (socket, profile, sid) {
 		}
 		data.profile = my.profile;
 		if (my.subPlace && type != 'chat') my.send(type, data);
-		else for (i in DIC) {
-			if (DIC[i].place == my.place) DIC[i].send(type, data);
+		else {
+			var r = Object.assign({ type: type }, data);
+			var msg = JSON.stringify(r);
+			for (i in DIC) {
+				if (DIC[i].place == my.place && DIC[i].socket && DIC[i].socket.readyState == 1) {
+					DIC[i].socket.send(msg);
+				}
+			}
 		}
 		if (Cluster.isWorker && type == 'user') process.send({ type: "user-publish", data: data });
 	};
