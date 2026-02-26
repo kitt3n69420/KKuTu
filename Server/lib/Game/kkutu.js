@@ -197,7 +197,7 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 	my.equip = { robot: true };
 	my.personality = personality || 0;
 	my.preferredChar = preferredChar || "";
-	my.mute = false;
+	my.mute = true;
 	my.anger = 0;
 	my.canRageQuit = false;
 	my.fastMode = false;
@@ -324,7 +324,7 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 		var msg = Const.ROBOT_FINAL_MESSAGES[Math.floor(Math.random() * Const.ROBOT_FINAL_MESSAGES.length)];
 		my.chat(msg);
 		setTimeout(function () {
-			var room = ROOM[place];
+			var room = ROOM[place] || (DIC[my.target] && DIC[my.target].pracRoom);
 			if (!room) return;
 			// 봇 퇴장 알림 전송
 			my.publish('disconnRoom', { id: my.id, profile: my.profile, robot: true });
@@ -2790,6 +2790,16 @@ exports.Room = function (room, channel) {
 				DiscordBot.notifyGameOver(my.id, rankings);
 			} else if (Cluster.isWorker) {
 				process.send({ type: "game-over", room: my.id, rankings: rankings });
+			}
+		}
+		// 게임 종료 시 봇 분노 수치 절반으로 감소
+		if (my.game.robots) {
+			for (i in my.game.robots) {
+				o = my.game.robots[i];
+				if (o && o.robot) {
+					o.anger /= 2;
+					o.data.anger = o.anger;
+				}
 			}
 		}
 		// 메모리 누수 방지: 게임 종료 시 모든 게임 상태 정리

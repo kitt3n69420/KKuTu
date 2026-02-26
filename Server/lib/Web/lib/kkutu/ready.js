@@ -219,6 +219,14 @@ $(document).ready(function () {
 		showAlert(L['websocketUnsupport']);
 		return;
 	}
+	// 레벨 아이콘 팩 목록 로드
+	$.get("/levelpacks", function (levelPacks) {
+		var $lpSel = $("#level-pack");
+		levelPacks.forEach(function (name) {
+			$lpSel.append($("<option>").val(name).text(name));
+		});
+	});
+
 	$.get("/soundpacks", function (packs) {
 		console.log("Loaded sound packs:", packs);
 		var $sel = $("#sound-pack");
@@ -258,6 +266,9 @@ $(document).ready(function () {
 		$data.muteBGM = savedSettings.bgmMute !== null ? savedSettings.bgmMute : ($data.opts.mb || false);
 		$data.muteEff = savedSettings.effectMute !== null ? savedSettings.effectMute : ($data.opts.me || false);
 
+		// 레벨 아이콘 팩 설정 적용
+		var currentLevelPack = savedSettings.levelPack !== null ? savedSettings.levelPack : ($data.opts && $data.opts.lp);
+		$data.levelPackUrl = currentLevelPack ? '/img/kkutu/lv/' + currentLevelPack + '.png' : '/img/kkutu/lv/newlv.png';
 
 		// 로비 BGM 설정 가져오기
 		$.get("/bgm", function (bgms) {
@@ -655,6 +666,9 @@ $(document).ready(function () {
 		// 사운드팩 선택 설정
 		$("#sound-pack").val(savedSettings.soundPack || "");
 
+		// 레벨 아이콘 팩 선택 설정
+		$("#level-pack").val(savedSettings.levelPack || "");
+
 		// 로비 BGM 선택 설정
 		$("#lobby-bgm").val(savedSettings.lobbyBGM || "");
 
@@ -722,7 +736,7 @@ $(document).ready(function () {
 	});
 
 	window.updateViewAllRulesBtn = function () {
-		var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'spt', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo'];
+		var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp'];
 		var count = 0;
 		for (var i in OPTIONS) {
 			if (true || keyRules.indexOf(i) === -1) {
@@ -941,7 +955,7 @@ $(document).ready(function () {
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
-		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 
 		if (showCategory) {
@@ -1176,7 +1190,7 @@ $(document).ready(function () {
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
-		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 
 		if (showCategory) {
@@ -1325,6 +1339,16 @@ $(document).ready(function () {
 		if (RULE[MODE[$data.room.mode]].ai) {
 			$("#PracticeDiag .dialog-title").html(L['practice']);
 			$("#ai-team").val(0).prop('disabled', true);
+			var saved = loadVolumeSettings();
+			if (saved.aiAutoApply === true) {
+				$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
+				$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
+				$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
+			} else {
+				$("#ai-mute").prop('checked', false);
+				$("#ai-rage-quit").prop('checked', false);
+				$("#ai-fast-mode").prop('checked', false);
+			}
 			showDialog($stage.dialog.practice);
 		} else {
 			send('practice', { level: -1 });
@@ -1391,8 +1415,10 @@ $(document).ready(function () {
 	$stage.dialog.settingOK.on('click', function (e) {
 		e.preventDefault();
 		var previousSoundPack = $data.opts.sp || "";
+		var previousLevelPack = $data.opts.lp || "";
 		var previousNoEasterEgg = loadVolumeSettings().noEasterEgg === true;
 		var newSoundPack = $("#sound-pack").val();
+		var newLevelPack = $("#level-pack").val();
 		var newLobbyBGM = $("#lobby-bgm").val();
 		var newLang = $("#language-setting").val();
 		var savedLang = localStorage.getItem('kkutu_lang'); // 이전에 저장된 언어 확인
@@ -1414,7 +1440,8 @@ $(document).ready(function () {
 			srv: $("#simple-room-view").is(":checked"),
 			nf: $("#no-filter").is(":checked"),
 			ns: $("#no-shake").is(":checked"),
-			sp: newSoundPack
+			sp: newSoundPack,
+			lp: newLevelPack
 		};
 
 		// localStorage에 볼륨 설정 저장
@@ -1424,6 +1451,7 @@ $(document).ready(function () {
 			bgmMute: $data.opts.mb,
 			effectMute: $data.opts.me,
 			soundPack: $data.opts.sp,
+			levelPack: newLevelPack,
 			lobbyBGM: newLobbyBGM,
 			noEasterEgg: $("#no-easter-egg").is(":checked"),
 			aiAutoApply: $("#ai-auto-apply").is(":checked")
@@ -1502,13 +1530,32 @@ $(document).ready(function () {
 			updateLobbyBGM(newLobbyBGM, newSoundPack);
 		}
 
+		// 흔들림 끄기 옵션 즉시 적용
+		if ($data.opts.ns) {
+			$(".shake").removeClass("shake").css("animation-duration", "");
+		}
+
+		// 레벨 아이콘 팩 변경 시 리렌더링
+		if (previousLevelPack !== newLevelPack) {
+			$data.levelPackUrl = newLevelPack ? '/img/kkutu/lv/' + newLevelPack + '.png' : '/img/kkutu/lv/newlv.png';
+			updateMe();
+			updateUserList(true);
+			if ($data.room) {
+				if ($data.room.gaming) updateRoom(true);
+				else updateRoom(false);
+			}
+		}
+
 		// 병맛 사운드팩 이스터에그: 캐릭터 리렌더링
 		// 병맛 팩 변경 또는 이스터에그 on/off 변경 시 리렌더링
 		var newNoEasterEgg = $("#no-easter-egg").is(":checked");
 		if (previousSoundPack === '병맛' || newSoundPack === '병맛' || newNoEasterEgg !== previousNoEasterEgg) {
 			updateMe();
 			updateUserList(true);
-			if ($data.room) updateRoom(false);
+			if ($data.room) {
+				if ($data.room.gaming) updateRoom(true);
+				else updateRoom(false);
+			}
 		}
 	});
 	$("#mute-bgm").on('click', function () {
@@ -1535,14 +1582,19 @@ $(document).ready(function () {
 		$("#PracticeDiag .dialog-title").html(L['robot']);
 		$("#ai-team").prop('disabled', false);
 		var bot = $data.robots[$data._profiled];
-		if (bot && loadVolumeSettings().aiAutoApply === true) {
+		var saved = loadVolumeSettings();
+		if (bot && saved.aiAutoApply === true) {
 			$("#practice-level").val(bot.level != null ? bot.level : 2);
 			$("#ai-team").val(bot.game ? (bot.game.team || 0) : 0);
 			$("#ai-personality").val(bot.personality || 0);
 			$("#ai-preferred-char").val(bot.preferredChar || '');
-			$("#ai-mute").prop('checked', bot.mute || false);
+			$("#ai-mute").prop('checked', !bot.mute);
 			$("#ai-rage-quit").prop('checked', bot.canRageQuit || false);
 			$("#ai-fast-mode").prop('checked', bot.fastMode || false);
+		} else if (saved.aiAutoApply === true) {
+			$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
+			$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
+			$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
 		} else {
 			$("#ai-mute").prop('checked', false);
 			$("#ai-rage-quit").prop('checked', false);
@@ -1553,6 +1605,11 @@ $(document).ready(function () {
 	$stage.dialog.practiceOK.on('click', function (e) {
 		var level = $("#practice-level").val();
 		var team = $("#ai-team").val();
+		var aiMute = !$("#ai-mute").is(':checked');
+		var aiRageQuit = $("#ai-rage-quit").is(':checked');
+		var aiFastMode = $("#ai-fast-mode").is(':checked');
+
+		saveVolumeSettings({ aiMute: aiMute, aiRageQuit: aiRageQuit, aiFastMode: aiFastMode });
 
 		$stage.dialog.practice.hide();
 		if ($("#PracticeDiag .dialog-title").html() == L['robot']) {
@@ -1562,9 +1619,9 @@ $(document).ready(function () {
 				team: team,
 				personality: $("#ai-personality").val(),
 				preferredChar: $("#ai-preferred-char").val(),
-				mute: $("#ai-mute").is(':checked'),
-				canRageQuit: $("#ai-rage-quit").is(':checked'),
-				fastMode: $("#ai-fast-mode").is(':checked')
+				mute: aiMute,
+				canRageQuit: aiRageQuit,
+				fastMode: aiFastMode
 			});
 		} else {
 			var personality = $("#ai-personality").val();
@@ -1578,9 +1635,9 @@ $(document).ready(function () {
 				level: level,
 				personality: personality,
 				preferredChar: preferredChar,
-				mute: $("#ai-mute").is(':checked'),
-				canRageQuit: $("#ai-rage-quit").is(':checked'),
-				fastMode: $("#ai-fast-mode").is(':checked')
+				mute: aiMute,
+				canRageQuit: aiRageQuit,
+				fastMode: aiFastMode
 			});
 		}
 	});

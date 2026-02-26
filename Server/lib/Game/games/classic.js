@@ -75,11 +75,13 @@ function shouldDeepCheck(opts) {
 }
 
 // 매너 체크용 state 비트마스크 (에티켓: 항상 injeong OFF 강제)
+// bit0=noInjeong(1), bit1=strict(2), bit2=noLoan(4), bit3=allpos(8)
 function getMannerState(opts) {
 	var state = 0;
 	if (!opts.injeong || opts.etiquette) state |= 1;
 	if (opts.strict) state |= 2;
 	if (opts.loanword) state |= 4;
+	if (opts.allpos) state |= 8;
 	return state;
 }
 
@@ -309,10 +311,10 @@ exports.getTitle = function () {
 			R.go(EXAMPLE);
 			return;
 		}
-		DB.kkutu[l.lang].find(
-			['_id', new RegExp(eng + ".{" + Math.max(1, my.round - 1) + "}$")],
-			// [ 'hit', { '$lte': h } ],
-			(l.lang == "ko") ? ['type', Const.KOR_GROUP] : ['_id', Const.ENG_ID]
+		var titleTypeFilter = (l.lang == "ko") ? (my.opts.allpos ? null : ['type', Const.KOR_GROUP]) : ['_id', Const.ENG_ID];
+		var titleArgs = [['_id', new RegExp(eng + ".{" + Math.max(1, my.round - 1) + "}$")]];
+		if (titleTypeFilter) titleArgs.push(titleTypeFilter);
+		DB.kkutu[l.lang].find.apply(DB.kkutu[l.lang], titleArgs
 			// '$where', eng+"this._id.length == " + Math.max(2, my.round) + " && this.hit <= " + h
 		).limit(20).on(function ($md) {
 			var list;
@@ -644,6 +646,7 @@ exports.turnStart = function (force) {
 			if (si.robot) {
 				si._done = [];
 				if (si.data) delete si.data.retryCount;
+				if (si._pendingAnger) { si.adjustAnger(si._pendingAnger); si._pendingAnger = 0; }
 				my.readyRobot(si);
 			}
 	} else {
@@ -701,6 +704,7 @@ exports.turnStart = function (force) {
 				if (si.robot) {
 					si._done = [];
 					if (si.data) delete si.data.retryCount; // Reset Retry Count for new turn
+					if (si._pendingAnger) { si.adjustAnger(si._pendingAnger); si._pendingAnger = 0; }
 					my.readyRobot(si);
 				}
 		});
@@ -765,11 +769,7 @@ exports.turnEnd = function () {
 
 		// 봇 분노: 타임아웃된 봇의 분노 조정
 		if (target.robot && target.adjustAnger) {
-			if (my.game.isHanbang) {
-				target.adjustAnger(3);
-			} else {
-				target.adjustAnger(1);
-			}
+			target.adjustAnger(1);
 		}
 
 		var wasHanbang = my.game.isHanbang;
@@ -845,11 +845,7 @@ exports.turnEnd = function () {
 
 	// 봇 분노: 타임아웃된 봇의 분노 조정 (비서바이벌)
 	if (target && target.robot && target.adjustAnger) {
-		if (my.game.isHanbang) {
-			target.adjustAnger(3);
-		} else {
-			target.adjustAnger(1);
-		}
+		target.adjustAnger(1);
 	}
 
 	getAuto.call(my, my.game.char, my.game.subChar, 0).then(function (w) {
@@ -916,6 +912,7 @@ exports.turnEnd = function () {
 						var rand = Math.random();
 						if (rand < prob && !bot.mute) {
 							setTimeout(function () {
+								if (bot._rageQuitting) return;
 								var msgs = isTeammate ?
 									Const.ROBOT_TIMEOUT_MESSAGES_SAMETEAM :
 									Const.ROBOT_TIMEOUT_MESSAGES;
@@ -1187,6 +1184,13 @@ exports.submit = function (client, text) {
 								}, 500);
 							}
 						}
+						// 한방을 받는 다음 차례 봇에게 분노 +2 예약 (턴 시작 시 적용)
+						if (isHanbang && my.game.seq) {
+							var nextTurn = (my.game.turn + 1) % my.game.seq.length;
+							var nextPlayer = my.game.seq[nextTurn];
+							if (typeof nextPlayer === 'string') nextPlayer = DIC[nextPlayer];
+							if (nextPlayer && nextPlayer.robot) nextPlayer._pendingAnger = (nextPlayer._pendingAnger || 0) + 2;
+						}
 						return;
 					}
 
@@ -1241,6 +1245,13 @@ exports.submit = function (client, text) {
 									client.chat(Const.ROBOT_VICTORY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_VICTORY_MESSAGES.length)]);
 								}, 500);
 							}
+						}
+						// 한방을 받는 다음 차례 봇에게 분노 +2 예약 (턴 시작 시 적용)
+						if (isHanbang && my.game.seq) {
+							var nextTurn = (my.game.turn + 1) % my.game.seq.length;
+							var nextPlayer = my.game.seq[nextTurn];
+							if (typeof nextPlayer === 'string') nextPlayer = DIC[nextPlayer];
+							if (nextPlayer && nextPlayer.robot) nextPlayer._pendingAnger = (nextPlayer._pendingAnger || 0) + 2;
 						}
 					});
 
@@ -1719,7 +1730,7 @@ exports.submit = function (client, text) {
 			}
 		} else if ($doc) {
 			if (!my.opts.injeong && ($doc.flag & Const.KOR_FLAG.INJEONG)) denied();
-			else if (my.opts.strict && (!$doc.type.match(Const.KOR_STRICT) || $doc.flag >= 4)) denied(406);
+			else if (!my.opts.allpos && my.opts.strict && (!$doc.type.match(Const.KOR_STRICT) || $doc.flag >= 4)) denied(406);
 			else if (my.opts.loanword && ($doc.flag & Const.KOR_FLAG.LOANWORD)) denied(405);
 			else preApproved();
 		} else {
@@ -1810,8 +1821,10 @@ exports.submit = function (client, text) {
 
 		return false;
 	}
-	DB.kkutu[l].findOne(['_id', text],
-		(l == "ko") ? ['type', Const.KOR_GROUP] : ['_id', Const.ENG_ID]
+	var typeFilter = (l == "ko") ? (my.opts.allpos ? null : ['type', Const.KOR_GROUP]) : ['_id', Const.ENG_ID];
+	var findArgs = [['_id', text]];
+	if (typeFilter) findArgs.push(typeFilter);
+	DB.kkutu[l].findOne.apply(DB.kkutu[l], findArgs
 	).limit(['mean', true], ['theme', true], ['type', true], ['hit', true], ['flag', true]).on(onDB);
 };
 exports.getScore = function (text, delay, ignoreMission) {
@@ -1888,9 +1901,8 @@ exports.readyRobot = function (robot) {
 		return new Promise(function (resolve, reject) {
 			if (!char) return resolve(0);
 
-			// Determine State Index (0-15, bit 3 = freeDueum, 에티켓: 항상 injeong OFF 강제)
+			// Determine State Index (0-15, bit3=allpos, 에티켓: 항상 injeong OFF 강제)
 			var state = getMannerState(my.opts);
-			if (my.opts.freedueum) state |= 8;
 
 			var isKo = my.rule.lang === 'ko';
 			var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
@@ -2145,7 +2157,9 @@ exports.readyRobot = function (robot) {
 
 			if (!my.opts.injeong) query.push(['flag', { '$nand': Const.KOR_FLAG.INJEONG }]);
 			if (my.opts.loanword) query.push(['flag', { '$nand': Const.KOR_FLAG.LOANWORD }]);
-			if (my.opts.strict) {
+			if (my.opts.allpos) {
+				// allpos: 품사 필터 없음
+			} else if (my.opts.strict) {
 				query.push(['type', Const.KOR_STRICT], ['flag', { $lte: 3 }]);
 			} else {
 				query.push(['type', Const.KOR_GROUP]);
@@ -2401,7 +2415,9 @@ exports.readyRobot = function (robot) {
 				if (my.opts.loanword) flagMask |= Const.KOR_FLAG.LOANWORD;
 
 				// Strict: If ON, exclude SPACED, SATURI, OLD, MUNHWA
-				if (my.opts.strict) {
+				if (my.opts.allpos) {
+					// allpos: 품사 필터 없음
+				} else if (my.opts.strict) {
 					flagMask |= (Const.KOR_FLAG.SPACED | Const.KOR_FLAG.SATURI | Const.KOR_FLAG.OLD | Const.KOR_FLAG.MUNHWA);
 					query.push(['type', Const.KOR_STRICT]);
 				} else {
@@ -2921,7 +2937,9 @@ exports.readyRobot = function (robot) {
 							if (!my.opts.injeong) flagMask |= Const.KOR_FLAG.INJEONG;
 							if (my.opts.loanword) flagMask |= Const.KOR_FLAG.LOANWORD;
 
-							if (my.opts.strict) {
+							if (my.opts.allpos) {
+								// allpos: 품사 필터 없음
+							} else if (my.opts.strict) {
 								flagMask |= (Const.KOR_FLAG.SPACED | Const.KOR_FLAG.SATURI | Const.KOR_FLAG.OLD | Const.KOR_FLAG.MUNHWA);
 								query.push(['type', Const.KOR_STRICT]);
 							} else {
@@ -3263,9 +3281,10 @@ exports.readyRobot = function (robot) {
 	}
 
 	function denied() {
-		// Prepare Defeat Message (분노 5 이상이면 ANGRY 메시지)
+		if (robot._rageQuitting) return;
+		// Prepare Defeat Message (분노 6 이상이면 ANGRY 메시지)
 		var secondMsg;
-		if (robot.anger >= 5) {
+		if (robot.anger >= 6) {
 			secondMsg = Const.ROBOT_ANGRY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_ANGRY_MESSAGES.length)];
 		} else {
 			secondMsg = Const.ROBOT_DEFEAT_MESSAGES[Math.floor(Math.random() * Const.ROBOT_DEFEAT_MESSAGES.length)];
@@ -3505,9 +3524,8 @@ function getAuto(char, subc, type, limit, sort) {
 	// type=1 (존재 여부 확인 Check): kkutu_stats table check
 	// KKU는 통계 테이블이 없으므로 DB 직접 쿼리로 fallback
 	if (bool && char && gameType !== 'KKU') {
-		// Bitmask State (통계 테이블은 0-7만 지원, 에티켓: 항상 injeong OFF 강제)
+		// Bitmask State (bit0=noInjeong, bit1=strict, bit2=noLoan, bit3=allpos)
 		var state = getMannerState(my.opts);
-		// freedueum(bit 3)은 통계 테이블에 없으므로 제외
 
 		var isKo = my.rule.lang === 'ko';
 		var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
@@ -3617,10 +3635,15 @@ function getAuto(char, subc, type, limit, sort) {
 			if (my.opts.loanword) aqs.push(['flag', {
 				'$nand': Const.KOR_FLAG.LOANWORD
 			}]);
-			if (my.opts.strict) aqs.push(['type', Const.KOR_STRICT], ['flag', {
-				$lte: 3
-			}]);
-			else aqs.push(['type', Const.KOR_GROUP]);
+			if (my.opts.allpos) {
+				// allpos: 품사 필터 없이 모든 단어 허용
+			} else if (my.opts.strict) {
+				aqs.push(['type', Const.KOR_STRICT], ['flag', {
+					$lte: 3
+				}]);
+			} else {
+				aqs.push(['type', Const.KOR_GROUP]);
+			}
 		} else {
 			aqs.push(['_id', Const.ENG_ID]);
 		}

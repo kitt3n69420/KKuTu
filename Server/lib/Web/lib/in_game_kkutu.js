@@ -38,7 +38,43 @@ var OPTIONS;
 var MAX_LEVEL = 360;
 var TICK = 30;
 var EXP = [];
-var BAD = new RegExp(["\ub290\uc73c*[^\uac00-\ud7a3]*\uae08\ub9c8?", "\ub2c8[^\uac00-\ud7a3]*(\uc5c4|\uc570|\uc5e0)", "(\u3144|\u3145\u3142|\u3142\u3145)", "\ubbf8\uce5c(\ub144|\ub188)?", "(\ubcd1|\ube05|\ube59)[^\uac00-\ud7a3]*\uc2e0", "\ubcf4[^\uac00-\ud7a3]*\uc9c0", "(\uc0c8|\uc100|\uc314|\uc34c)[^\uac00-\ud7a3]*(\uae30|\ub07c)", "\uc139[^\uac00-\ud7a3]*\uc2a4", "(\uc2dc|\uc528|\uc26c|\uc4b8)\uc774*\uc785?[^\uac00-\ud7a3]*(\ubc1c|\ube68|\ubc8c|\ubed8|\ud314|\ud384)", "\uc2ed[^\uac00-\ud7a3]*\uc0c8", "\uc539", "(\uc560|\uc5d0)[^\uac00-\ud7a3]*\ubbf8", "\uc790[^\uac00-\ud7a3]*\uc9c0", "\uc874[^\uac00-\ud7a3]*\ub098", "\uc886|\uc8f6", "\uc9c0\ub784", "\ucc3d[^\uac00-\ud7a3]*(\ub140|\ub144|\ub188)", "fuck", "sex"].join('|'), "g");
+var BAD = new RegExp(["느으*[^가-힣]*금마?", 
+	"(?<!밀레)니[^가-힣]*(엄|앰|엠)", 
+	"(ㅄ|ㅅㅂ|ㅆㅂ|ㅂㅅ|ㄴㄱㅁ|ㄴㅇㅁ|ㅈㄹ)", 
+	"미(친|띤)(년|놈)?", 
+	"(병|븅|빙|벙)[^가-힣]*신", 
+	"(새|섀|쌔|썌|색|섁|쌕|썍)[^가-힣]*(기|끼)", 
+	"(섹|야)[^가-힣]*스", "교[^가-힣]*미", "발[^가-힣]*정",
+	"(시|씨|쉬|쒸|슈|쓔)이*입?[^가-힣]*(발|빨|벌|뻘|팔|펄)", 
+	"십[^가-힣]*새", "씹", "딸[^가-힣]*딸[^가-힣]*이",
+	"(?<!(흰|노른|검은))자[^가-힣]*위",
+	"(애|에)[^가-힣]*(미|비)", 
+	"(자|보|쟈|쥬|뷰)[^가-힣]*지", 
+	"(존|졸|ㅈ)[^가-힣]*(나|라)", "좆|죶|좃|죳", 
+	"(지|야)[^가-힣]*랄", 
+	"창[^가-힣]*(녀|년|놈)", 
+	"야[^가-힣]*(동|덩|둉|짤)",
+	"(?<!라)운[^가-힣]*지",
+	"자[^가-힣]*(살|해)",
+	"tlqkf", "torl", "tprtm", "wlfkf",
+	"[mf][a4@][g]{2,}[o0][t+]",        // faggot, f4ggot, f@ggot
+    "f[a4@]g",                         // fag
+    "(r[e3]|[b8][a4@][s5])t[a4@]rd",   // retard, r3tard, bastard
+    "n[i1!]gg([e3]r|[a4@])",           // nigger
+    "b[i1!][t+0]ch",                   // bitch
+    "sh[i1!][t+0]",                    // shit
+    "f[u*u][c|k]{1,}",                 // fuck, f*ck
+    "p[u*u][s]{2}y",                   // pussy
+	"c(u|oo)m",
+	"[s5][e3]x",
+	"p[o0]rn", "kys",
+	"y[i1!|]ff",
+    "d[i1!]ck",
+	"[s5]u[i!1]c[i!1]d[e3]",
+	"m[a@4][s5]tur[b8][a4]t([i1!][o0]n|[e3]|[o0]r)",
+	"j[]e3rk([1i]n|[0f]ff).*",
+    "(h[a@4]nd|f[0o][0o]t|t[i1!]t|bl[0o]w)j[o0]b"
+    ].join('|'), "g");
 
 var ws, rws;
 var $stage;
@@ -294,6 +330,14 @@ $(document).ready(function () {
 		showAlert(L['websocketUnsupport']);
 		return;
 	}
+	// 레벨 아이콘 팩 목록 로드
+	$.get("/levelpacks", function (levelPacks) {
+		var $lpSel = $("#level-pack");
+		levelPacks.forEach(function (name) {
+			$lpSel.append($("<option>").val(name).text(name));
+		});
+	});
+
 	$.get("/soundpacks", function (packs) {
 		console.log("Loaded sound packs:", packs);
 		var $sel = $("#sound-pack");
@@ -333,6 +377,9 @@ $(document).ready(function () {
 		$data.muteBGM = savedSettings.bgmMute !== null ? savedSettings.bgmMute : ($data.opts.mb || false);
 		$data.muteEff = savedSettings.effectMute !== null ? savedSettings.effectMute : ($data.opts.me || false);
 
+		// 레벨 아이콘 팩 설정 적용
+		var currentLevelPack = savedSettings.levelPack !== null ? savedSettings.levelPack : ($data.opts && $data.opts.lp);
+		$data.levelPackUrl = currentLevelPack ? '/img/kkutu/lv/' + currentLevelPack + '.png' : '/img/kkutu/lv/newlv.png';
 
 		// 로비 BGM 설정 가져오기
 		$.get("/bgm", function (bgms) {
@@ -730,6 +777,9 @@ $(document).ready(function () {
 		// 사운드팩 선택 설정
 		$("#sound-pack").val(savedSettings.soundPack || "");
 
+		// 레벨 아이콘 팩 선택 설정
+		$("#level-pack").val(savedSettings.levelPack || "");
+
 		// 로비 BGM 선택 설정
 		$("#lobby-bgm").val(savedSettings.lobbyBGM || "");
 
@@ -797,7 +847,7 @@ $(document).ready(function () {
 	});
 
 	window.updateViewAllRulesBtn = function () {
-		var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'spt', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo'];
+		var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp'];
 		var count = 0;
 		for (var i in OPTIONS) {
 			if (true || keyRules.indexOf(i) === -1) {
@@ -1016,7 +1066,7 @@ $(document).ready(function () {
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
-		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 
 		if (showCategory) {
@@ -1251,7 +1301,7 @@ $(document).ready(function () {
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
-		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 
 		if (showCategory) {
@@ -1400,6 +1450,16 @@ $(document).ready(function () {
 		if (RULE[MODE[$data.room.mode]].ai) {
 			$("#PracticeDiag .dialog-title").html(L['practice']);
 			$("#ai-team").val(0).prop('disabled', true);
+			var saved = loadVolumeSettings();
+			if (saved.aiAutoApply === true) {
+				$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
+				$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
+				$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
+			} else {
+				$("#ai-mute").prop('checked', false);
+				$("#ai-rage-quit").prop('checked', false);
+				$("#ai-fast-mode").prop('checked', false);
+			}
 			showDialog($stage.dialog.practice);
 		} else {
 			send('practice', { level: -1 });
@@ -1466,8 +1526,10 @@ $(document).ready(function () {
 	$stage.dialog.settingOK.on('click', function (e) {
 		e.preventDefault();
 		var previousSoundPack = $data.opts.sp || "";
+		var previousLevelPack = $data.opts.lp || "";
 		var previousNoEasterEgg = loadVolumeSettings().noEasterEgg === true;
 		var newSoundPack = $("#sound-pack").val();
+		var newLevelPack = $("#level-pack").val();
 		var newLobbyBGM = $("#lobby-bgm").val();
 		var newLang = $("#language-setting").val();
 		var savedLang = localStorage.getItem('kkutu_lang'); // 이전에 저장된 언어 확인
@@ -1489,7 +1551,8 @@ $(document).ready(function () {
 			srv: $("#simple-room-view").is(":checked"),
 			nf: $("#no-filter").is(":checked"),
 			ns: $("#no-shake").is(":checked"),
-			sp: newSoundPack
+			sp: newSoundPack,
+			lp: newLevelPack
 		};
 
 		// localStorage에 볼륨 설정 저장
@@ -1499,6 +1562,7 @@ $(document).ready(function () {
 			bgmMute: $data.opts.mb,
 			effectMute: $data.opts.me,
 			soundPack: $data.opts.sp,
+			levelPack: newLevelPack,
 			lobbyBGM: newLobbyBGM,
 			noEasterEgg: $("#no-easter-egg").is(":checked"),
 			aiAutoApply: $("#ai-auto-apply").is(":checked")
@@ -1577,13 +1641,32 @@ $(document).ready(function () {
 			updateLobbyBGM(newLobbyBGM, newSoundPack);
 		}
 
+		// 흔들림 끄기 옵션 즉시 적용
+		if ($data.opts.ns) {
+			$(".shake").removeClass("shake").css("animation-duration", "");
+		}
+
+		// 레벨 아이콘 팩 변경 시 리렌더링
+		if (previousLevelPack !== newLevelPack) {
+			$data.levelPackUrl = newLevelPack ? '/img/kkutu/lv/' + newLevelPack + '.png' : '/img/kkutu/lv/newlv.png';
+			updateMe();
+			updateUserList(true);
+			if ($data.room) {
+				if ($data.room.gaming) updateRoom(true);
+				else updateRoom(false);
+			}
+		}
+
 		// 병맛 사운드팩 이스터에그: 캐릭터 리렌더링
 		// 병맛 팩 변경 또는 이스터에그 on/off 변경 시 리렌더링
 		var newNoEasterEgg = $("#no-easter-egg").is(":checked");
 		if (previousSoundPack === '병맛' || newSoundPack === '병맛' || newNoEasterEgg !== previousNoEasterEgg) {
 			updateMe();
 			updateUserList(true);
-			if ($data.room) updateRoom(false);
+			if ($data.room) {
+				if ($data.room.gaming) updateRoom(true);
+				else updateRoom(false);
+			}
 		}
 	});
 	$("#mute-bgm").on('click', function () {
@@ -1610,14 +1693,19 @@ $(document).ready(function () {
 		$("#PracticeDiag .dialog-title").html(L['robot']);
 		$("#ai-team").prop('disabled', false);
 		var bot = $data.robots[$data._profiled];
-		if (bot && loadVolumeSettings().aiAutoApply === true) {
+		var saved = loadVolumeSettings();
+		if (bot && saved.aiAutoApply === true) {
 			$("#practice-level").val(bot.level != null ? bot.level : 2);
 			$("#ai-team").val(bot.game ? (bot.game.team || 0) : 0);
 			$("#ai-personality").val(bot.personality || 0);
 			$("#ai-preferred-char").val(bot.preferredChar || '');
-			$("#ai-mute").prop('checked', bot.mute || false);
+			$("#ai-mute").prop('checked', !bot.mute);
 			$("#ai-rage-quit").prop('checked', bot.canRageQuit || false);
 			$("#ai-fast-mode").prop('checked', bot.fastMode || false);
+		} else if (saved.aiAutoApply === true) {
+			$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
+			$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
+			$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
 		} else {
 			$("#ai-mute").prop('checked', false);
 			$("#ai-rage-quit").prop('checked', false);
@@ -1628,6 +1716,11 @@ $(document).ready(function () {
 	$stage.dialog.practiceOK.on('click', function (e) {
 		var level = $("#practice-level").val();
 		var team = $("#ai-team").val();
+		var aiMute = !$("#ai-mute").is(':checked');
+		var aiRageQuit = $("#ai-rage-quit").is(':checked');
+		var aiFastMode = $("#ai-fast-mode").is(':checked');
+
+		saveVolumeSettings({ aiMute: aiMute, aiRageQuit: aiRageQuit, aiFastMode: aiFastMode });
 
 		$stage.dialog.practice.hide();
 		if ($("#PracticeDiag .dialog-title").html() == L['robot']) {
@@ -1637,9 +1730,9 @@ $(document).ready(function () {
 				team: team,
 				personality: $("#ai-personality").val(),
 				preferredChar: $("#ai-preferred-char").val(),
-				mute: $("#ai-mute").is(':checked'),
-				canRageQuit: $("#ai-rage-quit").is(':checked'),
-				fastMode: $("#ai-fast-mode").is(':checked')
+				mute: aiMute,
+				canRageQuit: aiRageQuit,
+				fastMode: aiFastMode
 			});
 		} else {
 			var personality = $("#ai-personality").val();
@@ -1653,9 +1746,9 @@ $(document).ready(function () {
 				level: level,
 				personality: personality,
 				preferredChar: preferredChar,
-				mute: $("#ai-mute").is(':checked'),
-				canRageQuit: $("#ai-rage-quit").is(':checked'),
-				fastMode: $("#ai-fast-mode").is(':checked')
+				mute: aiMute,
+				canRageQuit: aiRageQuit,
+				fastMode: aiFastMode
 			});
 		}
 	});
@@ -5262,9 +5355,9 @@ function applyOptions(opt) {
 
 function loadVolumeSettings() {
 	try {
-		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null };
+		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null };
 	} catch (e) {
-		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null };
+		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null };
 	}
 }
 
@@ -5561,6 +5654,7 @@ function onMessage(data) {
 			} else if (data.robot && data.profile) {
 				// 봇 퇴장 알림
 				notice((data.profile.title || data.profile.name) + L['hasLeft']);
+				delete $data.robots[data.id];
 			}
 			break;
 		case 'yell':
@@ -6127,10 +6221,24 @@ function processRoom(data) {
 			for (i in data.room.readies) {
 				if (!$data.users[i]) continue;
 				$data.users[i].game.ready = data.room.readies[i].r;
+				$data.users[i].game.form = data.room.readies[i].f;
 				$data.users[i].game.team = data.room.readies[i].t;
 			}
 		} else {
 			$data.setRoom(data.room.id, null);
+		}
+	}
+	// 봇 데이터 실시간 동기화: room.players에서 봇 정보를 $data.robots에 반영
+	if (data.myRoom && data.room.players) {
+		for (i in data.room.players) {
+			o = data.room.players[i];
+			if (o && o.robot && o.id) {
+				$data.robots[o.id] = o;
+			}
+		}
+		// 프로필 다이얼로그가 봇을 표시 중이면 갱신
+		if ($data._profiled && $data.robots[$data._profiled] && $stage.dialog.profile.is(':visible')) {
+			requestProfile($data._profiled);
 		}
 	}
 }
@@ -7348,16 +7456,15 @@ function requestProfile(id) {
 			.append($("<div>").addClass("profile-field-score").html(prefCharText))
 		);
 
-		// 봇 옵션 표시 (대화 끄기, 중퇴 가능)
-		var optTexts = [];
-		if (o.mute) optTexts.push(L['aiMute']);
-		if (o.canRageQuit) optTexts.push(L['aiRageQuit']);
-		if (o.fastMode) optTexts.push(L['aiFastMode']);
-		if (optTexts.length > 0) {
-			$rec.append($("<div>").addClass("profile-record-field")
-				.append($("<div>").css({ width: '100%', textAlign: 'center', fontSize: '11px', color: '#888' }).html(optTexts.join(' / ')))
-			);
-		}
+		// 봇 옵션 표시 (한 줄 3열)
+		var fastText = o.fastMode ? L['aiFastMode_on'] : L['aiFastMode_off'];
+		var muteText = o.mute ? L['aiMute_off'] : L['aiMute_on'];
+		var rqText = o.canRageQuit ? L['aiRageQuit_on'] : L['aiRageQuit_off'];
+		$rec.append($("<div>").addClass("profile-record-field")
+			.append($("<div>").addClass("profile-field-name").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(fastText))
+			.append($("<div>").addClass("profile-field-record").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(muteText))
+			.append($("<div>").addClass("profile-field-score").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(rqText))
+		);
 	} else {
 		$stage.dialog.profileLevel.hide();
 		$("#profile-place").html(o.place ? (o.place + L['roomNumber']) : L['lobby']);
@@ -8658,7 +8765,7 @@ function getLevelImage(score) {
 	// return getImage("/img/kkutu/lv/lv" + zeroPadding(lv+1, 4) + ".png");
 	return $("<div>").css({
 		'float': "left",
-		'background-image': "url('/img/kkutu/lv/newlv.png')",
+		'background-image': "url('" + ($data.levelPackUrl || '/img/kkutu/lv/newlv.png') + "')",
 		'background-position': lX + "% " + lY + "%",
 		'background-size': "2560%"
 	});

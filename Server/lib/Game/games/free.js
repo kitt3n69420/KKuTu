@@ -524,8 +524,7 @@ exports.submit = function (client, text) {
             // Injeong check applies to all languages if flag exists
             if (!my.opts.injeong && ($doc.flag & Const.KOR_FLAG.INJEONG)) denied();
             else if (l == "ko") {
-                if (my.opts.strict && (!$doc.type.match(Const.KOR_STRICT) || $doc.flag >= 4)) denied(406);
-                else if (my.opts.loanword && ($doc.flag & Const.KOR_FLAG.LOANWORD)) denied(405);
+                if (my.opts.loanword && ($doc.flag & Const.KOR_FLAG.LOANWORD)) denied(405);
                 else preApproved();
             } else {
                 preApproved();
@@ -534,8 +533,9 @@ exports.submit = function (client, text) {
             denied();
         }
     }
-    DB.kkutu[l].findOne(['_id', text],
-        (l == "ko") ? ['type', Const.KOR_GROUP] : ['_id', Const.ENG_ID]
+    var findArgs = [['_id', text]];
+    if (l != "ko") findArgs.push(['_id', Const.ENG_ID]);
+    DB.kkutu[l].findOne.apply(DB.kkutu[l], findArgs
     ).limit(['mean', true], ['theme', true], ['type', true], ['hit', true], ['flag', true]).on(onDB);
 };
 exports.getScore = function (text, delay, ignoreMission) {
@@ -788,8 +788,7 @@ function getAuto(char, type) {
     if (!my.opts.injeong) aqs.push(['flag', { '$nand': Const.KOR_FLAG.INJEONG }]);
     if (my.rule.lang == "ko") {
         if (my.opts.loanword) aqs.push(['flag', { '$nand': Const.KOR_FLAG.LOANWORD }]);
-        if (my.opts.strict) aqs.push(['type', Const.KOR_STRICT], ['flag', { $lte: 3 }]);
-        else aqs.push(['type', Const.KOR_GROUP]);
+        // free 모드: 품사 필터 없음 (모든 품사 허용)
     } else {
         aqs.push(['_id', Const.ENG_ID]);
     }

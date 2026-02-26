@@ -27,6 +27,22 @@ block JS
 	- var v = locals.appVersion || '1.0.0'
 	script(type='text/javascript', src='/js/jquery.js?v=' + v)
 	script(type='text/javascript', src='/js/in_game_kkutu_help.min.js?v=' + v)
+	script.
+		$(function() {
+			try {
+				var settings = JSON.parse(localStorage.getItem("kkutu_volume")) || {};
+				var levelPack = settings.levelPack;
+				if (levelPack) {
+					var url = "/img/kkutu/lv/" + levelPack + ".png";
+					$("#box-c5p2 tbody div").each(function() {
+						var bg = $(this).css("background-image");
+						if (bg && bg.indexOf("newlv.png") !== -1) {
+							$(this).css("background-image", "url('" + url + "')");
+						}
+					});
+				}
+			} catch(e) {}
+		});
 
 block CSS
 	link(rel='stylesheet', href='/css/in_game_kkutu_help.css?v=' + v)

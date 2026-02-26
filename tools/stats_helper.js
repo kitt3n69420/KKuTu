@@ -49,14 +49,17 @@ function populateStats() {
                     if (!statsKo[startChar]) statsKo[startChar] = createEmptyStatsKo();
                     if (!statsKo[endChar]) statsKo[endChar] = createEmptyStatsKo();
 
-                    for (var state = 0; state < 8; state++) {
+                    for (var state = 0; state < 16; state++) {
                         var reqNoInjeong = (state & 1);
                         var reqStrict = (state & 2);
                         var reqNoLoan = (state & 4);
+                        var reqAllpos = (state & 8);
 
                         var valid = true;
                         if (reqNoInjeong && isInjeong) valid = false;
-                        if (reqStrict) {
+                        if (reqAllpos) {
+                            // allpos: 품사 제한 없음 (모든 단어 허용)
+                        } else if (reqStrict) {
                             if (!isStrict) valid = false;
                         } else {
                             // Normal mode: Must match KOR_GROUP (Valid POS)
@@ -85,7 +88,7 @@ function populateStats() {
                     // English Logic
                     // User Request: Only words with length >= 4
                     // Store 1~3 char n-grams (prefixes)
-                    // 16 Columns (Start counts only)
+                    // 16 Columns (Start counts only, bit 3 = allpos reserved for EN future use)
 
                     if (w.indexOf(' ') >= 0) return;
 
@@ -134,16 +137,16 @@ function populateStats() {
 
 function createEmptyStatsKo() {
     return {
-        start2: new Array(8).fill(0),
-        start3: new Array(8).fill(0),
-        start4: new Array(8).fill(0),
-        startshort: new Array(8).fill(0),
-        startall: new Array(8).fill(0),
-        end2: new Array(8).fill(0),
-        end3: new Array(8).fill(0),
-        end4: new Array(8).fill(0),
-        endshort: new Array(8).fill(0),
-        endall: new Array(8).fill(0)
+        start2: new Array(16).fill(0),
+        start3: new Array(16).fill(0),
+        start4: new Array(16).fill(0),
+        startshort: new Array(16).fill(0),
+        startall: new Array(16).fill(0),
+        end2: new Array(16).fill(0),
+        end3: new Array(16).fill(0),
+        end4: new Array(16).fill(0),
+        endshort: new Array(16).fill(0),
+        endall: new Array(16).fill(0)
     };
 }
 
@@ -159,9 +162,9 @@ function saveStatsKo(stats) {
         var total = keys.length;
         var current = 0;
 
-        // Generate Columns String
+        // Generate Columns String (16 states: bit0=noInjeong, bit1=strict, bit2=noLoan, bit3=allpos)
         var cols = [];
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < 16; i++) {
             cols.push(`start2_${i} INTEGER DEFAULT 0`);
             cols.push(`start3_${i} INTEGER DEFAULT 0`);
             cols.push(`start4_${i} INTEGER DEFAULT 0`);
@@ -206,7 +209,7 @@ function saveStatsKo(stats) {
                         var d = stats[key];
                         var data = { _id: key };
 
-                        for (let i = 0; i < 8; i++) {
+                        for (let i = 0; i < 16; i++) {
                             data[`start2_${i}`] = d.start2[i];
                             data[`start3_${i}`] = d.start3[i];
                             data[`start4_${i}`] = d.start4[i];

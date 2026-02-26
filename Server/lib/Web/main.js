@@ -236,7 +236,7 @@ ROUTES.forEach(function (v) {
   require(`./routes/${v}`).run(Server, WebInit.page);
 });
 // 미디어 파일 목록 캐싱 (서버 시작 시 1회 로드, 5분마다 갱신)
-var _mediaCache = { soundpacks: null, bgm: null, commonSounds: null };
+var _mediaCache = { soundpacks: null, bgm: null, commonSounds: null, levelPacks: null };
 function refreshMediaCache() {
   var baseDir = path.join(__dirname, "public", "media", "kkutu");
   fs.readdir(baseDir, function (err, files) {
@@ -266,6 +266,13 @@ function refreshMediaCache() {
   fs.readdir(commonDir, function (err, files) {
     _mediaCache.commonSounds = err ? [] : files;
   });
+  var lvDir = path.join(__dirname, "public", "img", "kkutu", "lv");
+  fs.readdir(lvDir, function (err, files) {
+    if (err) { _mediaCache.levelPacks = []; return; }
+    _mediaCache.levelPacks = files
+      .filter(function (f) { return f.toLowerCase().endsWith('.png') && f !== 'newlv.png'; })
+      .map(function (f) { return f.replace(/\.png$/i, ''); });
+  });
 }
 refreshMediaCache();
 setInterval(refreshMediaCache, 300000);
@@ -280,6 +287,10 @@ Server.get("/bgm", function (req, res) {
 
 Server.get("/common-sounds", function (req, res) {
   res.send(_mediaCache.commonSounds || []);
+});
+
+Server.get("/levelpacks", function (req, res) {
+  res.send(_mediaCache.levelPacks || []);
 });
 
 Server.get("/", function (req, res) {

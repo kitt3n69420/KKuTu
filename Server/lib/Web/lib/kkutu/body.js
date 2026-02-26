@@ -195,9 +195,9 @@ function applyOptions(opt) {
 
 function loadVolumeSettings() {
 	try {
-		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null };
+		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null };
 	} catch (e) {
-		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null };
+		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null };
 	}
 }
 
@@ -494,6 +494,7 @@ function onMessage(data) {
 			} else if (data.robot && data.profile) {
 				// 봇 퇴장 알림
 				notice((data.profile.title || data.profile.name) + L['hasLeft']);
+				delete $data.robots[data.id];
 			}
 			break;
 		case 'yell':
@@ -1060,10 +1061,24 @@ function processRoom(data) {
 			for (i in data.room.readies) {
 				if (!$data.users[i]) continue;
 				$data.users[i].game.ready = data.room.readies[i].r;
+				$data.users[i].game.form = data.room.readies[i].f;
 				$data.users[i].game.team = data.room.readies[i].t;
 			}
 		} else {
 			$data.setRoom(data.room.id, null);
+		}
+	}
+	// 봇 데이터 실시간 동기화: room.players에서 봇 정보를 $data.robots에 반영
+	if (data.myRoom && data.room.players) {
+		for (i in data.room.players) {
+			o = data.room.players[i];
+			if (o && o.robot && o.id) {
+				$data.robots[o.id] = o;
+			}
+		}
+		// 프로필 다이얼로그가 봇을 표시 중이면 갱신
+		if ($data._profiled && $data.robots[$data._profiled] && $stage.dialog.profile.is(':visible')) {
+			requestProfile($data._profiled);
 		}
 	}
 }
@@ -2281,16 +2296,15 @@ function requestProfile(id) {
 			.append($("<div>").addClass("profile-field-score").html(prefCharText))
 		);
 
-		// 봇 옵션 표시 (대화 끄기, 중퇴 가능)
-		var optTexts = [];
-		if (o.mute) optTexts.push(L['aiMute']);
-		if (o.canRageQuit) optTexts.push(L['aiRageQuit']);
-		if (o.fastMode) optTexts.push(L['aiFastMode']);
-		if (optTexts.length > 0) {
-			$rec.append($("<div>").addClass("profile-record-field")
-				.append($("<div>").css({ width: '100%', textAlign: 'center', fontSize: '11px', color: '#888' }).html(optTexts.join(' / ')))
-			);
-		}
+		// 봇 옵션 표시 (한 줄 3열)
+		var fastText = o.fastMode ? L['aiFastMode_on'] : L['aiFastMode_off'];
+		var muteText = o.mute ? L['aiMute_off'] : L['aiMute_on'];
+		var rqText = o.canRageQuit ? L['aiRageQuit_on'] : L['aiRageQuit_off'];
+		$rec.append($("<div>").addClass("profile-record-field")
+			.append($("<div>").addClass("profile-field-name").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(fastText))
+			.append($("<div>").addClass("profile-field-record").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(muteText))
+			.append($("<div>").addClass("profile-field-score").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(rqText))
+		);
 	} else {
 		$stage.dialog.profileLevel.hide();
 		$("#profile-place").html(o.place ? (o.place + L['roomNumber']) : L['lobby']);
@@ -3591,7 +3605,7 @@ function getLevelImage(score) {
 	// return getImage("/img/kkutu/lv/lv" + zeroPadding(lv+1, 4) + ".png");
 	return $("<div>").css({
 		'float': "left",
-		'background-image': "url('/img/kkutu/lv/newlv.png')",
+		'background-image': "url('" + ($data.levelPackUrl || '/img/kkutu/lv/newlv.png') + "')",
 		'background-position': lX + "% " + lY + "%",
 		'background-size': "2560%"
 	});

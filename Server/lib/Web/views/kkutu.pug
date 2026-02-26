@@ -113,31 +113,36 @@ block Middle
 		div.dialog-bar
 			h4= L('ingames')
 			+SettingOption('auto-ready', L('autoReady'))
+			+SettingOption('ai-auto-apply', L('aiAutoApply'))
+			
 		div.dialog-bar
-			h4= L('etc')
-			+SettingOption('sort-user', L('sortUser'), "width: 200px;")
-			h4
-			+SettingOption('only-waiting', L('onlyWaiting'), "width: 200px;")
-			h4
-			+SettingOption('only-unlock', L('onlyUnlock'), "width: 200px;")
+			h4= L('visual')
+			+SettingOption('simple-room-view', L('simpleRoomView'), "width: 200px;")
 			h4
 			+SettingOption('show-rule-category', L('showRuleCategory'), "width: 200px;")
 			h4
-			+SettingOption('simple-room-view', L('simpleRoomView'), "width: 200px;")
-			h4
-			+SettingOption('no-filter', L('noFilter'), "width: 200px;")
-			h4
 			+SettingOption('no-shake', L('noShake'), "width: 200px;")
 			h4
+			+SettingOption('no-filter', L('noFilter'), "width: 200px;")
+		div.dialog-bar
+			h4= L('etc')
+			//- +SettingOption('sort-user', L('sortUser'), "width: 200px;")
+			//- h4
+			//- +SettingOption('only-waiting', L('onlyWaiting'), "width: 200px;")
+			//- h4
+			//- +SettingOption('only-unlock', L('onlyUnlock'), "width: 200px;")
+			//- h4
 			+SettingOption('no-easter-egg', L('noEasterEgg'), "width: 200px;")
-			h4
-			+SettingOption('ai-auto-apply', L('aiAutoApply'), "width: 200px;")
 		div.dialog-bar
 			h4= L('language')
 			select#language-setting(style="width: 150px;")
 				option(value="ko_KR") 한국어	
 				option(value="en_US") English
 				option(value="nya") ???
+		div.dialog-bar
+			h4= L('levelPack')
+			select#level-pack(style="width: 150px;")
+				option(value="")= L('default')
 		div.dialog-bar
 			h4= L('soundPack')
 			select#sound-pack(style="width: 150px;")
@@ -296,7 +301,7 @@ block Middle
 		div.dialog-bar#room-word-settings-wrapper(style='height: auto; overflow: hidden; display: none;')
 			h4= L('wordScope')
 			div(style='float: left; width: 300px;')
-				- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng'];
+				- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ret', 'obo'];
 				- for(var i in locals.OPTIONS)
 					- if(scopeOpts.indexOf(i) === -1) continue;
 					+GameOption(i, 'room')
@@ -326,7 +331,7 @@ block Middle
 			div(style='float: left; width: 300px;')
 				- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg'];
 				- for(var i in locals.OPTIONS)
-					- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'].indexOf(i) !== -1) continue;
+					- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo'].indexOf(i) !== -1) continue;
 					- if(bonusOpts.indexOf(i) !== -1) continue;
 					+GameOption(i, 'room')
 				div.dialog-opt#room-injpick-panel(style='width: auto;')
@@ -345,7 +350,7 @@ block Middle
 		div.dialog-bar#room-simple-rules-panel(style='height: auto; display: none;')
 			h4(style='height: 30px;')= L('misc')
 			div(style='float: left; width: 300px;')
-				- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'spt', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo'];
+				- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp'];
 				- for(var i in locals.OPTIONS)
 					- if(keyRules.indexOf(i) === -1) continue;
 					+GameOption(i, 'room-simple')
@@ -406,7 +411,7 @@ block Middle
 			div.dialog-bar#view-all-word-settings-wrapper(style='height: auto; overflow: hidden; display: none;')
 				h4= L('wordScope')
 				div(style='float: left; width: 300px;')
-					- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng'];
+					- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ret', 'obo'];
 					- for(var i in locals.OPTIONS)
 						- if(scopeOpts.indexOf(i) === -1) continue;
 						+GameOption(i, 'view-all')
@@ -436,7 +441,7 @@ block Middle
 				div(style='float: left; width: 300px;')
 					- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg'];
 					- for(var i in locals.OPTIONS)
-						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7'].indexOf(i) !== -1) continue;
+						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo'].indexOf(i) !== -1) continue;
 						- if(bonusOpts.indexOf(i) !== -1) continue;
 						+GameOption(i, 'view-all')
 					div.dialog-opt#view-all-injpick-panel
@@ -454,7 +459,7 @@ block Middle
 						button#view-all-flat-quiz-pick(style='font-size: 11px;')= L('pickQuizTopic')
 		div.dialog-bar.tail-button
 			button#view-all-ok= L('OK')
-	+Dialog('PracticeDiag', 300, 310)
+	+Dialog('PracticeDiag', 300, 225)
 		div.dialog-bar
 			h4= L('selectLevel')
 			select#practice-level
@@ -471,7 +476,7 @@ block Middle
 				option(value=2) B
 				option(value=3) C
 				option(value=4) D
-		div.dialog-bar.ai-setting-only
+		div.dialog-bar.ai-setting-only(style='margin-bottom: 10px;')
 			h4= L('aiPersonality')
 			div(style='float: left; width: 187px;')
 				div(style='display: flex; justify-content: space-between; margin-bottom: 5px;')
@@ -480,17 +485,19 @@ block Middle
 					label(style='font-size: 11px; color: #555;')= L('aiPersonality_aggressive')
 				input#ai-personality(type='range', min='-1', max='1', step='0.2', value='0', style='width: 100%; padding: 0; border: none;')
 		div.dialog-bar.ai-setting-only
-			h4= L('aiPreferredChar')
-			input#ai-preferred-char(type='text', maxlength='1', style='width: 50px; text-align: center;')
+			div(style='float: left; width: 50%;')
+				h4(style='width: 80px;')= L('aiPreferredChar')
+				input#ai-preferred-char(type='text', maxlength='1', style='width: 40px; text-align: center;')
+			div(style='float: left; width: 50%;')
+				h4(style='width: 80px;')= L('aiFastMode')
+				input#ai-fast-mode(type='checkbox', style='width: auto; margin-top: 5px;')
 		div.dialog-bar.ai-setting-only
-			h4= L('aiMute')
-			input#ai-mute(type='checkbox')
-		div.dialog-bar.ai-setting-only
-			h4= L('aiRageQuit')
-			input#ai-rage-quit(type='checkbox')
-		div.dialog-bar.ai-setting-only
-			h4= L('aiFastMode')
-			input#ai-fast-mode(type='checkbox')
+			div(style='float: left; width: 50%;')
+				h4(style='width: 80px;')= L('aiMute')
+				input#ai-mute(type='checkbox', style='width: auto; margin-top: 5px;')
+			div(style='float: left; width: 50%;')
+				h4(style='width: 80px;')= L('aiRageQuit')
+				input#ai-rage-quit(type='checkbox', style='width: auto; margin-top: 5px;')
 		div.dialog-bar.tail-button
 			button#practice-ok= L('OK')
 	+Dialog('ResultDiag', 400, 545, L('gameResult'), true)
