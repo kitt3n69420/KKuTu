@@ -828,11 +828,23 @@ $(document).ready(function () {
 		showDialog($stage.dialog.community);
 	});
 	$stage.dialog.commFriendAdd.on('click', function (e) {
-		showPrompt(L['friendAddNotice'], "", function (id) {
-			if (!id) return;
-			if (!$data.users[id]) return fail(450);
+		showPrompt(L['friendAddNotice'], "", function (input) {
+			if (!input) return;
+			var targetId = null;
+			if ($data.users[input]) {
+				targetId = input;
+			} else {
+				for (var uid in $data.users) {
+					var u = $data.users[uid];
+					if ((u.profile.title || u.profile.name) == input) {
+						targetId = uid;
+						break;
+					}
+				}
+			}
+			if (!targetId) return fail(450);
 
-			send('friendAdd', { target: id }, true);
+			send('friendAdd', { target: targetId }, true);
 		});
 	});
 	$stage.menu.newRoom.on('click', function (e) {
@@ -6020,7 +6032,9 @@ function runCommand(cmd) {
 		'/ㄷㄷ': L['cmd_ee'],
 		'/무시': L['cmd_wb'],
 		'/차단': L['cmd_shut'],
-		'/id': L['cmd_id']
+		'/id': L['cmd_id'],
+		'/친추': L['cmd_fa'],
+		'/사전': L['cmd_dict']
 	};
 
 	switch (cmd[0].toLowerCase()) {
@@ -6074,6 +6088,61 @@ function runCommand(cmd) {
 				if (!c) notice(L['error_405']);
 			} else {
 				notice(L['myId'] + $data.id);
+			}
+			break;
+		case "/친추":
+		case "/ㅊㅊ":
+		case "/cc":
+			if (cmd[1]) {
+				var targetName = cmd.slice(1).join(' ');
+				var targetId = null;
+				for (i in $data.users) {
+					var u = $data.users[i];
+					if (i == targetName || (u.profile.title || u.profile.name) == targetName) {
+						targetId = i;
+						break;
+					}
+				}
+				if (targetId) {
+					if (targetId == $data.id) {
+						notice(L['error_449']);
+					} else {
+						send('friendAdd', { target: targetId }, true);
+						notice(L['cmd_fa_sent'] + targetName);
+					}
+				} else {
+					notice(L['error_405']);
+				}
+			} else {
+				notice(L['cmd_fa']);
+			}
+			break;
+		case "/사전":
+		case "/ㅅㅈ":
+		case "/dict":
+			if (cmd[1]) {
+				var word = cmd.slice(1).join(' ');
+				tryDict(word, function (res) {
+					if (res.error) {
+						notice(L['cmd_dict_not_found']);
+					} else {
+						var themes = [];
+						if (res.theme) {
+							res.theme.split(',').forEach(function (t) {
+								if (t && t !== '0') {
+									var name = L['theme_' + t];
+									if (name && themes.indexOf(name) === -1) themes.push(name);
+								}
+							});
+						}
+						var prefix = themes.length > 0 ? '주제: ' + themes.join(', ') + ' / 뜻: ' : '';
+						var mean = (res.mean || "").replace(/＂[0-9]+＂/g, " ").replace(/［[0-9]+］/g, " ").replace(/（[0-9]+）/g, " ").trim();
+						if ((prefix + mean).length > 200) mean = mean.substr(0, 200 - prefix.length) + "...";
+						notice(prefix + mean, res.word);
+					}
+				});
+			} else {
+				notice(L['cmd_dict']);
 			}
 			break;
 		default:
@@ -6137,6 +6206,7 @@ function processRoom(data) {
 			$stage.menu.spectate.removeClass("toggled");
 			$stage.menu.ready.removeClass("toggled");
 			$data.room = null;
+			$data.robots = {};
 			clearTimeout($data._jamsu);
 			delete $data._jamsu;
 			$data.resulting = false;
@@ -6668,9 +6738,14 @@ function updateRoom(gaming) {
 				// 서버에서 보낸 새 봇 데이터를 우선 사용하여 점수 동기화
 				var serverData = $data.room.game.seq[i];
 				if (serverData && serverData.robot) {
-					// 캐시된 봇이 있으면 서버 데이터로 game 객체 업데이트
+					// 캐시된 봇이 있으면 서버 데이터로 전체 속성 동기화
 					if ($data.robots[serverData.id]) {
-						$data.robots[serverData.id].game = serverData.game;
+						var cached = $data.robots[serverData.id];
+						cached.game = serverData.game;
+						if (serverData.profile) cached.profile = serverData.profile;
+						if (serverData.equip) cached.equip = serverData.equip;
+						if (serverData.data) cached.data = serverData.data;
+						if (serverData.level !== undefined) cached.level = serverData.level;
 					}
 					o = $data.robots[serverData.id] || serverData;
 				} else {
@@ -7399,7 +7474,7 @@ function requestRoomInfo(id) {
 		if (isRobot) {
 			p = o.players[i];
 		} else {
-			p = $data.users[p] || NULL_USER;
+			p = $data.users[p] || (rd.profile ? { id: p, profile: rd.profile, equip: rd.equip || {}, data: { score: rd.score || 0 } } : NULL_USER);
 			rd.t = rd.t || 0;
 		}
 

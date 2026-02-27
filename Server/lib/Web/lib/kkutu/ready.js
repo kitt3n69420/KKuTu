@@ -717,11 +717,23 @@ $(document).ready(function () {
 		showDialog($stage.dialog.community);
 	});
 	$stage.dialog.commFriendAdd.on('click', function (e) {
-		showPrompt(L['friendAddNotice'], "", function (id) {
-			if (!id) return;
-			if (!$data.users[id]) return fail(450);
+		showPrompt(L['friendAddNotice'], "", function (input) {
+			if (!input) return;
+			var targetId = null;
+			if ($data.users[input]) {
+				targetId = input;
+			} else {
+				for (var uid in $data.users) {
+					var u = $data.users[uid];
+					if ((u.profile.title || u.profile.name) == input) {
+						targetId = uid;
+						break;
+					}
+				}
+			}
+			if (!targetId) return fail(450);
 
-			send('friendAdd', { target: id }, true);
+			send('friendAdd', { target: targetId }, true);
 		});
 	});
 	$stage.menu.newRoom.on('click', function (e) {

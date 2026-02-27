@@ -42,6 +42,7 @@ var T_ROOM = {};
 var T_USER = {};
 
 var SID;
+var CHAN_DIC = {};
 var WDIC = {};
 
 const DEVELOP = (exports.DEVELOP = global.test || false);
@@ -117,6 +118,22 @@ function processAdmin(id, value) {
         if(DIC[id]) DIC[id].send('yell', { value: "DUMP OK" });
         JLog.success("Dumping success.");
       });*/
+      return null;
+    case "roommsg":
+      temp = value.match(/^(\d+)\s+(.+)$/);
+      if (temp && ROOM[Number(temp[1])]) {
+        var rid = Number(temp[1]);
+        var message = temp[2];
+        var r = JSON.stringify({ type: "chat", value: message, notice: true, profile: { title: "관리자" } });
+        for (var k in DIC) {
+          if (DIC[k].place == rid && DIC[k].socket && DIC[k].socket.readyState == 1) {
+            DIC[k].socket.send(r);
+          }
+        }
+        JLog.info(`[Admin] roommsg to room ${rid}: ${message}`);
+      } else {
+        if (DIC[id]) DIC[id].send("notice", { value: "방을 찾을 수 없습니다." });
+      }
       return null;
     /* Enhanced User Block System [S] */
     case "ban":
@@ -280,7 +297,7 @@ Cluster.on("message", function (worker, msg) {
         ROOM[msg.room.id] = new KKuTu.Room(msg.room, msg.room.channel);
         JLog.info(`[IPC] room-new: Room ${msg.room.id} created on master (channel: ${msg.room.channel})`);
         // Discord notification
-        DiscordBot.notifyRoomCreate(msg.room.id, msg.room);
+        DiscordBot.notifyRoomCreate(msg.room.id, msg.room, msg.realPassword);
       }
       break;
     case "room-come":
@@ -309,6 +326,10 @@ Cluster.on("message", function (worker, msg) {
         // 나가기 말고 연결 자체가 끊겼을 때 생기는 듯 하다.
         JLog.warn(`Wrong room-go id=${msg.id}&target=${msg.target}`);
         if (DIC[msg.target]) DIC[msg.target].place = 0;
+        // FIX: slave에도 room-go를 전달하여 disconnRoom 알림이 발행되도록 함
+        if (ROOM[msg.id] && ROOM[msg.id].channel && CHAN_DIC[ROOM[msg.id].channel]) {
+          CHAN_DIC[ROOM[msg.id].channel].send({ type: "room-go", id: msg.id, target: msg.target, removed: msg.removed });
+        }
         if (ROOM[msg.id] && ROOM[msg.id].players) {
           // 이 때 수동으로 지워준다.
           var x = ROOM[msg.id].players.indexOf(msg.target);
@@ -501,13 +522,16 @@ exports.cleanupDeadWorkerUsers = function (deadChannel) {
 
 exports.init = function (_SID, CHAN) {
   SID = _SID;
+  CHAN_DIC = CHAN;
   MainDB = require("../Web/db");
   MainDB.ready = function () {
     JLog.success("Master DB is ready.");
 
     // Initialize Discord Bot (can be disabled for test servers via BOT_ENABLED)
     DiscordBot.init(GLOBAL.DISCORD_TOKEN, MainDB, DIC, {
-      enabled: GLOBAL.BOT_ENABLED !== false
+      enabled: GLOBAL.BOT_ENABLED !== false,
+      ROOM: ROOM,
+      ADMIN: GLOBAL.ADMIN
     });
 
     MainDB.users.update(["server", SID]).set(["server", ""]).on();

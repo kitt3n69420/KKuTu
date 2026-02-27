@@ -22,6 +22,8 @@ let client = null;
 let channel = null;
 let DB = null;
 let DIC = null;
+let ROOM = null;
+let ADMIN = [];
 let isReady = false;
 let isEnabled = true;  // Can be disabled for test servers
 
@@ -152,6 +154,8 @@ exports.init = async function (token, db, dic, options = {}) {
 
     DB = db;
     DIC = dic;
+    ROOM = options.ROOM || null;
+    ADMIN = options.ADMIN || [];
 
     try {
         client = new Client({
@@ -412,6 +416,33 @@ async function registerCommands(token) {
                         .setRequired(false)
                         .setMinValue(1)
                         .setMaxValue(MAX_RANDOM_COUNT)
+                ),
+
+            new SlashCommandBuilder()
+                .setName('roommsg')
+                .setNameLocalizations({ ko: '방메시지' })
+                .setDescription('Send a notice message to a room (admin only)')
+                .setDescriptionLocalizations({
+                    ko: '방에 관리자 메시지를 보내요. (관리자 전용)'
+                })
+                .addIntegerOption(opt =>
+                    opt.setName('room')
+                        .setNameLocalizations({ ko: '방번호' })
+                        .setDescription('Room number')
+                        .setDescriptionLocalizations({
+                            ko: '방 번호'
+                        })
+                        .setRequired(true)
+                )
+                .addStringOption(opt =>
+                    opt.setName('message')
+                        .setNameLocalizations({ ko: '메시지' })
+                        .setDescription('Message to send')
+                        .setDescriptionLocalizations({
+                            ko: '보낼 메시지'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(500)
                 )
         ];
 
@@ -481,6 +512,9 @@ async function handleCommand(interaction) {
                 break;
             case 'random':
                 await handleRandom(interaction);
+                break;
+            case 'roommsg':
+                await handleRoomMsg(interaction);
                 break;
             default:
                 await interaction.reply({ content: '알 수 없는 명령어입니다. 어떻게 하신 거죠?', ephemeral: true });
@@ -574,6 +608,11 @@ async function handleHelp(interaction) {
             {
                 name: '🎲 /random (랜덤) `[개수]`',
                 value: '랜덤 단어 뽑기 (최대 50개)\n예: `/random`, `/random 10`',
+                inline: false
+            },
+            {
+                name: '📢 /roommsg (방메시지) `<방번호>` `<메시지>`',
+                value: '방에 관리자 공지 메시지 전송 (관리자 전용)\n예: `/roommsg 102 안녕하세요`',
                 inline: false
             }
         )
@@ -1191,6 +1230,37 @@ async function handleRandom(interaction) {
     }
 }
 
+/**
+ * /roommsg command - Send admin notice to a room (admin only)
+ */
+async function handleRoomMsg(interaction) {
+    var discordId = 'discord-' + interaction.user.id;
+    if (ADMIN.indexOf(discordId) === -1) {
+        await interaction.reply({ content: '❌ 관리자만 사용할 수 있는 명령어입니다.', ephemeral: true });
+        return;
+    }
+
+    var rid = interaction.options.getInteger('room');
+    var message = interaction.options.getString('message');
+
+    if (!ROOM || !ROOM[rid]) {
+        await interaction.reply({ content: `❌ ${rid}번 방을 찾을 수 없습니다.`, ephemeral: true });
+        return;
+    }
+
+    var r = JSON.stringify({ type: "chat", value: message, notice: true, profile: { title: "관리자" } });
+    var sent = 0;
+    for (var k in DIC) {
+        if (DIC[k].place == rid && DIC[k].socket && DIC[k].socket.readyState == 1) {
+            DIC[k].socket.send(r);
+            sent++;
+        }
+    }
+
+    JLog.info(`[Discord Bot] roommsg to room ${rid} by ${discordId}: ${message}`);
+    await interaction.reply({ content: `✅ ${rid}번 방에 메시지를 보냈습니다. (${sent}명에게 전달)`, ephemeral: true });
+}
+
 // Chat merge state: buffer messages per location, flush after 2s idle with debounce
 const _chatMerge = {};
 const CHAT_MERGE_DELAY = 2000; // 2초 동안 새 메시지 없으면 전송
@@ -1316,7 +1386,7 @@ exports.notifyUserLeave = function (profile, userCount) {
  * @param {number} roomId - Room ID
  * @param {object} room - Room data (title, password, limit, mode, opts, etc.)
  */
-exports.notifyRoomCreate = function (roomId, room) {
+exports.notifyRoomCreate = function (roomId, room, realPassword) {
 
     if (!isEnabled || !isReady || !channel) return;
 
@@ -1327,7 +1397,7 @@ exports.notifyRoomCreate = function (roomId, room) {
 
         if (room) {
             const modeName = getModeName(room.mode);
-            const passwordDisplay = room.password ? `||${room.password}||` : '없음';
+            const passwordDisplay = realPassword ? `||${realPassword}||` : '없음';
 
             // Build active special rules list
             const rule = Const.getRule(room.mode);
@@ -1347,6 +1417,7 @@ exports.notifyRoomCreate = function (roomId, room) {
                 { name: '비밀번호', value: passwordDisplay, inline: true },
                 { name: '인원', value: `${room.limit}명`, inline: true },
                 { name: '게임 모드', value: modeName, inline: true },
+                { name: '라운드 / 시간', value: `${room.round}라운드 / ${room.time}초`, inline: true },
                 { name: '특수 규칙', value: activeOpts.length > 0 ? activeOpts.join(', ') : '없음', inline: false }
             );
 
@@ -1541,6 +1612,7 @@ exports.notifyRoomSettings = function (roomId, room) {
                 { name: '비밀번호', value: passwordDisplay, inline: true },
                 { name: '인원', value: `${room.limit}명`, inline: true },
                 { name: '게임 모드', value: modeName, inline: true },
+                { name: '라운드 / 시간', value: `${room.round}라운드 / ${room.time}초`, inline: true },
                 { name: '특수 규칙', value: activeOpts.length > 0 ? activeOpts.join(', ') : '없음', inline: false }
             );
 

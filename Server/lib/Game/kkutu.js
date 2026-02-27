@@ -700,10 +700,6 @@ exports.Client = function (socket, profile, sid) {
 	my.updateProfile = function (profile) {
 		if (profile.nickname) {
 			my.profile.nickname = my.profile.title = my.profile.name = profile.nickname;
-			my.send('chat', {
-				notice: true,
-				value: "별명을 " + profile.nickname + "(으)로 변경하였습니다."
-			});
 		}
 		if (profile.exordial) my.profile.exordial = profile.exordial;
 		my.publish('updateUser', {
@@ -891,7 +887,7 @@ exports.Client = function (socket, profile, sid) {
 				}
 				$room = new exports.Room(room, getFreeChannel());
 
-				process.send({ type: "room-new", target: my.id, room: $room.getData() });
+				process.send({ type: "room-new", target: my.id, room: $room.getData(), realPassword: $room.password || "" });
 				ROOM[$room.id] = $room;
 				spec = false;
 			}
@@ -1071,6 +1067,8 @@ exports.Client = function (socket, profile, sid) {
 						password: $room.password,
 						limit: $room.limit,
 						mode: $room.mode,
+						round: $room.round,
+						time: $room.time,
 						opts: $room.opts
 					};
 					if (Cluster.isMaster && DiscordBot) {
@@ -1348,16 +1346,20 @@ exports.Room = function (room, channel) {
 				}
 
 				// Phantom Player Cleanup
-				var i, p;
+				var i, p, humanCount = 0;
 				for (i = my.players.length - 1; i >= 0; i--) {
 					p = my.players[i];
 					if (typeof p !== 'object') {
 						if (!DIC[p] || DIC[p].place != my.id) {
 							my.players.splice(i, 1);
+						} else {
+							humanCount++;
 						}
 					}
 				}
-				if (my.players.length == 0) {
+				// 실제 유저가 0명이면 봇도 제거 후 방 삭제
+				if (humanCount == 0) {
+					while (my.removeAI(false, true));
 					if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 					if (my._jst) { clearTimeout(my._jst); delete my._jst; }
 					if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
@@ -1427,16 +1429,20 @@ exports.Room = function (room, channel) {
 				}
 
 				// Phantom Player Cleanup
-				var i, p;
+				var i, p, humanCount = 0;
 				for (i = my.players.length - 1; i >= 0; i--) {
 					p = my.players[i];
 					if (typeof p !== 'object') {
 						if (!DIC[p] || DIC[p].place != my.id) {
 							my.players.splice(i, 1);
+						} else {
+							humanCount++;
 						}
 					}
 				}
-				if (my.players.length == 0) {
+				// 실제 유저가 0명이면 봇도 제거 후 방 삭제
+				if (humanCount == 0) {
+					while (my.removeAI(false, true));
 					if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 					if (my._jst) { clearTimeout(my._jst); delete my._jst; }
 					if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
@@ -1729,7 +1735,10 @@ exports.Room = function (room, channel) {
 				readies[my.players[i]] = {
 					r: o.ready || o.game.ready,
 					f: o.form || o.game.form,
-					t: o.team || o.game.team
+					t: o.team || o.game.team,
+					profile: o.profile,
+					equip: o.equip,
+					score: o.data ? o.data.score : 0
 				};
 			}
 			pls.push(filterRobot(my.players[i]));
