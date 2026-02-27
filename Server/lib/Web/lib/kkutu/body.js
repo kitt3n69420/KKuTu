@@ -3740,9 +3740,12 @@ function setRoomHead($obj, room) {
 		.append($("<h5>").addClass("room-head-time").html((Math.round(room.time * 10) / 10) + L['SECOND']));
 
 	var pickTopics = getPickTopicExpl(rule, room.opts);
-	var isOverflow = $rm[0].scrollWidth > $rm[0].clientWidth;
-	if (isOverflow || pickTopics.length) {
-		var tooltipWidth = mobile ? 250 : 300;
+	var tooltipWidth = mobile ? 250 : 300;
+
+	setTimeout(function () {
+		var isOverflow = $rm[0].scrollWidth > $rm[0].clientWidth;
+		if (!isOverflow && !pickTopics.length) return;
+
 		var tooltipHtml = "";
 		if (isOverflow) {
 			tooltipHtml += opts.join(" / ");
@@ -3755,7 +3758,7 @@ function setRoomHead($obj, room) {
 			.html(tooltipHtml)
 		);
 		if (mobile) {
-			$rm.on('touchstart', function (e) {
+			$rm.off('touchstart.roomhead').on('touchstart.roomhead', function (e) {
 				var $e = $(this).children(".expl");
 				if ($e.hasClass("expl-active")) {
 					$e.removeClass("expl-active");
@@ -3769,7 +3772,8 @@ function setRoomHead($obj, room) {
 				e.stopPropagation();
 			});
 		}
-	}
+		global.expl($obj);
+	}, 0);
 
 	global.expl($obj);
 }
