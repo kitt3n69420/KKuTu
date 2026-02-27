@@ -635,6 +635,10 @@ function onMessage(data) {
 			break;
 		case 'roundEnd':
 			for (i in data.users) {
+				if (data.users[i] && data.users[i].robot) {
+					$data.robots[i] = data.users[i];
+					continue;
+				}
 				$data.setUser(i, data.users[i]);
 			}
 			/*if($data.guest){
@@ -1132,6 +1136,8 @@ function processRoom(data) {
 			o = data.room.players[i];
 			if (o && o.robot && o.id) {
 				$data.robots[o.id] = o;
+				// roundEnd에서 $data.users에 저장된 stale 봇 데이터 제거
+				delete $data.users[o.id];
 			}
 		}
 		// 프로필 다이얼로그가 봇을 표시 중이면 갱신
