@@ -700,8 +700,9 @@ exports.Client = function (socket, profile, sid) {
 	my.updateProfile = function (profile) {
 		if (profile.nickname) {
 			my.profile.nickname = my.profile.title = my.profile.name = profile.nickname;
-			my.publish('chat', {
-				value: "님께서 별명을 " + profile.nickname + "(으)로 변경하셨습니다."
+			my.send('chat', {
+				notice: true,
+				value: "별명을 " + profile.nickname + "(으)로 변경하였습니다."
 			});
 		}
 		if (profile.exordial) my.profile.exordial = profile.exordial;

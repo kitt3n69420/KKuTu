@@ -2316,11 +2316,15 @@ $(document).ready(function () {
 			var vaIds = lengthNames.map(function (n) { return "view-all-" + n; });
 			var vaFlatIds = lengthNames.map(function (n) { return "view-all-flat-" + n; });
 
-			// Uncheck other options in same group (Category View)
-			$("#" + ids.join(", #")).not(this).prop('checked', false);
-
 			// Get current key
 			var currentKey = currentId.replace(/^(room-|view-all-flat-|view-all-)/, '');
+
+			// Uncheck other options in same group (Category View)
+			for (var i = 0; i < ids.length; i++) {
+				if (ids[i] !== "room-" + currentKey) {
+					$("#" + ids[i]).prop('checked', false);
+				}
+			}
 
 			// Uncheck others in Flat View
 			for (var i = 0; i < flatIds.length; i++) {
