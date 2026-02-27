@@ -191,8 +191,18 @@ exports.publish = function (type, data, _room) {
 			}
 		}
 	} else if (Cluster.isWorker) {
-		if (type == "room") process.send({ type: "room-publish", data: data, password: _room });
-		else {
+		if (type == "room") {
+			process.send({ type: "room-publish", data: data, password: _room });
+			// 방 안의 클라이언트(slave DIC)에게도 직접 전송 — room 이벤트가 방 내 유저에게 전달되지 않던 버그 수정
+			var r = Object.assign({ type: type }, data);
+			var msg = JSON.stringify(r);
+			var roomId = data && data.room && data.room.id;
+			for (i in DIC) {
+				if (DIC[i].place == roomId && DIC[i].socket && DIC[i].socket.readyState == 1) {
+					DIC[i].socket.send(msg);
+				}
+			}
+		} else {
 			var r = Object.assign({ type: type }, data);
 			var msg = JSON.stringify(r);
 			for (i in DIC) {
