@@ -93,7 +93,7 @@ function refillAiNameCache() {
 					var sj = Math.floor(Math.random() * (si + 1));
 					var st = shuffled[si]; shuffled[si] = shuffled[sj]; shuffled[sj] = st;
 				}
-				shuffled.forEach(function (row) { aiNameCacheSingle.push(row._id); });
+				aiNameCacheSingle = shuffled.map(function (row) { return row._id; });
 				JLog.info(`[AI_NAME_CACHE] Single cache refilled: ${aiNameCacheSingle.length} words`);
 			}
 			pending--;
@@ -107,7 +107,7 @@ function refillAiNameCache() {
 		var q2 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 OFFSET floor(random() * (SELECT GREATEST(1, reltuples::bigint - ${AI_NAME_CACHE_SIZE}) FROM pg_class WHERE relname = 'kkutu_ko')) LIMIT ${AI_NAME_CACHE_SIZE}`;
 		DB.kkutu['ko'].direct(q2, function (err, res) {
 			if (!err && res && res.rows) {
-				res.rows.forEach(function (row) { aiNameCacheFirst.push(row._id); });
+				aiNameCacheFirst = res.rows.map(function (row) { return row._id; });
 				JLog.info(`[AI_NAME_CACHE] First cache refilled: ${aiNameCacheFirst.length} words`);
 			}
 			pending--;
@@ -121,7 +121,7 @@ function refillAiNameCache() {
 		var q3 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 OFFSET floor(random() * (SELECT GREATEST(1, reltuples::bigint - ${AI_NAME_CACHE_SIZE}) FROM pg_class WHERE relname = 'kkutu_ko')) LIMIT ${AI_NAME_CACHE_SIZE}`;
 		DB.kkutu['ko'].direct(q3, function (err, res) {
 			if (!err && res && res.rows) {
-				res.rows.forEach(function (row) { aiNameCacheSecond.push(row._id); });
+				aiNameCacheSecond = res.rows.map(function (row) { return row._id; });
 				JLog.info(`[AI_NAME_CACHE] Second cache refilled: ${aiNameCacheSecond.length} words`);
 			}
 			pending--;
@@ -177,7 +177,9 @@ exports.publish = function (type, data, _room) {
 		var r = Object.assign({ type: type }, data);
 		var msg = JSON.stringify(r);
 
-		if (type == "conn" || type == "disconn") {
+		if (type == "conn" || type == "disconn" || type == "room") {
+			// conn/disconn: 로비 유저에게만 전달 (방 안 유저는 connRoom/disconnRoom 사용)
+			// room: 로비 유저에게만 전달 (방 안 유저는 slave에서 직접 전송)
 			for (i in DIC) {
 				if (DIC[i].place == 0 && DIC[i].socket && DIC[i].socket.readyState == 1) {
 					DIC[i].socket.send(msg);
@@ -1638,6 +1640,8 @@ exports.Room = function (room, channel) {
 									}
 									if (my.players.length == 0) {
 										if (my._adt) { clearTimeout(my._adt); delete my._adt; }
+										if (my._jst) { clearTimeout(my._jst); delete my._jst; }
+										if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
 										delete ROOM[my.id];
 										if (Cluster.isWorker) process.send({ type: "room-invalid", room: { id: my.id } });
 										return;
@@ -2024,6 +2028,7 @@ exports.Room = function (room, channel) {
 			// 방에 플레이어가 아무도 없으면 방 삭제
 			if (my.players.length < 1) {
 				JLog.info(`Room ${my.id} has no players, deleting room`);
+				if (my.gaming) my.interrupt();
 				if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 				if (my._jst) { clearTimeout(my._jst); delete my._jst; }
 				if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }

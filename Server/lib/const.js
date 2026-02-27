@@ -129,7 +129,7 @@ exports.ROBOT_DEFEAT_MESSAGES = [ // 봇이 한방단어를 받았을 때 보내
 ];
 exports.ROBOT_ANGRY_MESSAGES = [ //봇이 빡치면 보내는 메시지
 	"이건 불공평해", "억까 제발좀", "아오!!!!!!", "짜증나",
-	"ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", 
+	"ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ",
 	"야!!!", "치트 쓰지마", "사기치지마", "끄글 꺼라",
 	"억까겜", "작작 해라?", "적당히 하자?", "뿌에에에에엥"
 ]
@@ -545,25 +545,26 @@ exports.MISSION_ko = ["가", "나", "다", "라", "마", "바", "사", "아", "�
 exports.MISSION_en = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
 exports.KO_INJEONG = [
-	"IMS", "VOC", "KRR", "KTV",
-	"KOT", "DOT", "DGM", "RAG", "LVL",
-	"LOL", "MMM", "MAP", "MKK", "MNG",
-	"MAM", "CKR", "BRS", "BTC", "BLA",
-	"SAO", "WEB", "COL", "JAT", "INC", "HAR",
-	"MOB", "HRH", "STA", "OIJ",
-	"KGR", "ESB", "ELW", "OVW", "NEX", /*"WOW",*/ //얘는 왜 주석임?
-	"KPO", "JLN", "JAN", "ZEL", "POK", "HAI",
-	"HSS", "KMV", "HDC", "HOS", "FRC", "TPW", "MCJ" //,"WMV" // 아 까먹었다
+	"KRR", "KTV", "KBS", "KHJ", "TPW",
+	"BTC", "KOT", "DOT", "DGM", "RAG",
+	"JLN", "LVL", "LOL", "MAM", "MMM",
+	"MCJ", "JAN", "MAP", "MKK", "MNG",
+	"MOB", "BRS", "BLA", "NEX", "INC",
+	"COL", "SAO", "HRH", "STA", "OIJ",
+	"KGR", "ESB", "ELW", "KMV", "OVW",
+	"WEB", "KPO", "VOC", "JAT", "ZEL",
+	"CKR", "POK", "FRC", "HSS", "HAI",
+	"HDC", "HAR", "HOS", "IMS"
 ];
 exports.EN_INJEONG = [
 	"LOL", "MCJ"
 ];
 exports.KO_THEME = [
 	"30", "40", "60", "80", "90",
-	"140", "150", "160", "170", "190",
-	"220", "230", "240", "270", "310",
-	"320", "350", "360", "420", "430",
-	"440", "450", "490", "530", "1001"
+	"140", "190", "150", "160",
+	"170", "220", "230", "240", "270",
+	"310", "320", "350", "360", "420",
+	"430", "440", "450", "490", "530", "1001"
 ];
 exports.EN_THEME = [
 	"e05", "e08", "e12", "e13", "e15",
@@ -578,7 +579,7 @@ exports.QUIZ_TOPIC = [
 exports.QUIZ_TOPIC_EN = [
 	"MATH", "CAPI", "CHEM", "UNIT", "NUMG", "ASTR", "ARTS" /*, "CNTR" */
 ];
-exports.KO_IJP = exports.KO_INJEONG.concat(exports.KO_THEME).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });
+exports.KO_IJP = exports.KO_THEME.concat(exports.KO_INJEONG).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });
 exports.EN_IJP = exports.EN_INJEONG.concat(exports.EN_THEME).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });
 exports.REGION = {
 	'en': "en",

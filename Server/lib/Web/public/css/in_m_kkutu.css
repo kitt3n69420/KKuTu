@@ -635,15 +635,21 @@ body {
 .RoomBox {
 	width: calc(100% - 10px);
 	height: 400px;
-	/* Increased to use more vertical space */
+	display: flex;
+	flex-direction: column;
 }
 
 .RoomBox .product-title {
 	height: auto;
+	flex-shrink: 0;
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	overflow: hidden;
 }
 
 .RoomBox .product-title h5 {
-	float: left;
+	flex-shrink: 0;
 }
 
 .room-head-modified {
@@ -661,8 +667,12 @@ body {
 
 .room-head-mode {
 	margin-right: 5px;
-	width: calc(100% - 170px);
+	flex: 1;
+	min-width: 0;
 	text-align: right;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .room-head-limit {
@@ -795,13 +805,10 @@ body {
 	font-weight: bold;
 }
 
-/* Room Users Container - Scrollable area for player list */
+/* Room Users Container - player list */
 .room-users {
 	float: left;
 	width: 100%;
-	max-height: 320px;
-	overflow-y: auto;
-	overflow-x: hidden;
 	padding-bottom: 10px;
 	box-sizing: border-box;
 }
@@ -838,10 +845,14 @@ body {
 
 .GameBox .product-title {
 	height: auto;
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	overflow: hidden;
 }
 
 .GameBox .product-title h5 {
-	float: left;
+	flex-shrink: 0;
 }
 
 .GameBox div {
@@ -1266,8 +1277,8 @@ body {
 /* Waiting Room Scrolling */
 /* Waiting Room Scrolling */
 .RoomBox .product-body {
-	height: 370px;
-	/* Filled to new RoomBox height */
+	flex: 1;
+	min-height: 0;
 	overflow-y: auto;
 	overflow-x: hidden;
 }

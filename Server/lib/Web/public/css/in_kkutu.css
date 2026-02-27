@@ -842,8 +842,9 @@ iframe {
 	height: auto;
 	min-height: 12px;
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	align-items: center;
+	overflow: hidden;
 }
 
 .RoomBox .product-title h5 {
@@ -871,8 +872,9 @@ iframe {
 	flex: 1;
 	min-width: 0;
 	text-align: right;
-	word-break: keep-all;
-	line-height: 1.4;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .room-head-limit {
@@ -1039,8 +1041,9 @@ iframe {
 	height: auto;
 	min-height: 12px;
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	align-items: center;
+	overflow: hidden;
 }
 
 .GameBox .product-title h5 {

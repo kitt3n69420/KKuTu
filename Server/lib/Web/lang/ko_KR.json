@@ -91,12 +91,12 @@
 		"GROUP_Mfront": "모레미 전경"
 	},
 	"error": {
-		"title": "오류!",
 		"400": "[#400] 잘못된 요청",
-		"400_e": "유효하지 않은 입력이 감지되어 이 오류가 발생했습니다. 필요한 입력값을 제대로 입력했는지 확인해 주세요.",
 		"429": "[#429] 과다한 요청",
-		"429_e": "서버로 많은 요청이 들어오고 있어 이 오류가 발생했습니다. 잠시 후 다시 시도해 보세요.",
 		"500": "[#500] 내부 서버 오류",
+		"title": "오류!",
+		"400_e": "유효하지 않은 입력이 감지되어 이 오류가 발생했습니다. 필요한 입력값을 제대로 입력했는지 확인해 주세요.",
+		"429_e": "서버로 많은 요청이 들어오고 있어 이 오류가 발생했습니다. 잠시 후 다시 시도해 보세요.",
 		"500_e": "예기치 못한 원인으로 내부 서버가 작동을 중지했습니다."
 	},
 	"login": {
@@ -497,9 +497,9 @@
 		"optFreeDueum_abbr": "프두음",
 		"optNoDueum_abbr": "두음X",
 		"optSpeed_abbr": "스피드",
-		"optSpeedToss": "스피드토스",
+		"optSpeedToss": "토스",
 		"explSpeedToss": "이어지는 글자가 앞 단어의 시작 글자와 같으면 점수 보너스를 얻습니다.",
-		"optSpeedToss_abbr": "스토",
+		"optSpeedToss_abbr": "토스",
 		"optFirst": "첫말잇기",
 		"explFirst": "단어의 첫 글자(앞말잇기에서는 끝 글자)로 잇습니다.",
 		"optFirst_abbr": "첫말",
@@ -781,7 +781,7 @@
 		"moneyOrigin": "기본 제공 핑",
 		"bonusFrom_q": "아이템 장착 효과",
 		"bonusFrom_k": "오끄감 버프 효과",
-		"bonusFrom_speedToss": "스피드토스 보너스",
+		"bonusFrom_speedToss": "토스 보너스",
 		"bonusFrom_straightBonus": "스트레이트 보너스",
 		"bonusFrom_fullHouseBonus": "풀하우스 보너스",
 		"lvUp": "레벨 업!",
@@ -905,6 +905,7 @@
 		"noEasterEgg": "이스터에그 끄기",
 		"aiAutoApply": "봇 설정 복원",
 		"viewAllRules": "규칙 모두 보기",
+		"uncheckAllRules": "모두 해제",
 		"prevPage": "이전",
 		"myRank": "내 순위",
 		"nextPage": "다음",
@@ -1035,7 +1036,9 @@
 		"security_bot_check_fail": "자동화 봇 방지를 위한 캡챠 인증에 실패했습니다. 메인 화면에서 다시 시도해 주세요.",
 		"birthdate_invalid_game_block": "생년월일이 올바르게 입력되지 않아 게임 이용이 제한되었습니다. 잠시 후 다시 시도해 주세요.",
 		"captured_nyan": "냥냥",
-		"robot_rank_output": "{0}위. {1} ({2})"
+		"robot_rank_output": "{0}위. {1} ({2})",
+		"theme_KHJ": "국내 행정구역",
+		"theme_KBS": "국내 버스정류장"
 	},
 	"game/fates": {
 		"title": "카드 뽑기",

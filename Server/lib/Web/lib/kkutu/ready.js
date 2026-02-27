@@ -1282,6 +1282,18 @@ $(document).ready(function () {
 	$stage.dialog.viewAllRulesOK.on('click', function () {
 		$stage.dialog.viewAllRules.hide();
 	});
+	// View All Rules 모두 해제 버튼
+	$("#view-all-uncheck-all").on('click', function () {
+		for (var k in OPTIONS) {
+			var name = OPTIONS[k].name.toLowerCase();
+			if (window.RULE_CHECKBOXES[name]) {
+				var $primary = $("#room-" + name);
+				if ($primary.length && $primary.is(':checked')) {
+					$primary.prop('checked', false).trigger('change');
+				}
+			}
+		}
+	});
 	// View All Injeong Pick 버튼 (category mode)
 	$("#view-all-injeong-pick").on('click', function () {
 		showDialog($stage.dialog.injPick);

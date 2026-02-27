@@ -1393,6 +1393,18 @@ $(document).ready(function () {
 	$stage.dialog.viewAllRulesOK.on('click', function () {
 		$stage.dialog.viewAllRules.hide();
 	});
+	// View All Rules 모두 해제 버튼
+	$("#view-all-uncheck-all").on('click', function () {
+		for (var k in OPTIONS) {
+			var name = OPTIONS[k].name.toLowerCase();
+			if (window.RULE_CHECKBOXES[name]) {
+				var $primary = $("#room-" + name);
+				if ($primary.length && $primary.is(':checked')) {
+					$primary.prop('checked', false).trigger('change');
+				}
+			}
+		}
+	});
 	// View All Injeong Pick 버튼 (category mode)
 	$("#view-all-injeong-pick").on('click', function () {
 		showDialog($stage.dialog.injPick);
@@ -5811,6 +5823,10 @@ function onMessage(data) {
 			break;
 		case 'roundEnd':
 			for (i in data.users) {
+				if (data.users[i] && data.users[i].robot) {
+					$data.robots[i] = data.users[i];
+					continue;
+				}
 				$data.setUser(i, data.users[i]);
 			}
 			/*if($data.guest){
@@ -6308,6 +6324,8 @@ function processRoom(data) {
 			o = data.room.players[i];
 			if (o && o.robot && o.id) {
 				$data.robots[o.id] = o;
+				// roundEnd에서 $data.users에 저장된 stale 봇 데이터 제거
+				delete $data.users[o.id];
 			}
 		}
 		// 프로필 다이얼로그가 봇을 표시 중이면 갱신
@@ -8895,7 +8913,7 @@ function getPickTopicExpl(rule, opts) {
 	return topics;
 }
 function setRoomHead($obj, room) {
-	var opts = getOptions(room.mode, room.opts, false, mobile);
+	var opts = getOptions(room.mode, room.opts, false, false);
 	var rule = RULE[MODE[room.mode]];
 	var $rm;
 	var isSurvival = room.opts && room.opts.survival;
@@ -8910,10 +8928,19 @@ function setRoomHead($obj, room) {
 		.append($("<h5>").addClass("room-head-time").html((Math.round(room.time * 10) / 10) + L['SECOND']));
 
 	var pickTopics = getPickTopicExpl(rule, room.opts);
-	if (pickTopics.length) {
+	var isOverflow = $rm[0].scrollWidth > $rm[0].clientWidth;
+	if (isOverflow || pickTopics.length) {
 		var tooltipWidth = mobile ? 250 : 300;
+		var tooltipHtml = "";
+		if (isOverflow) {
+			tooltipHtml += opts.join(" / ");
+		}
+		if (pickTopics.length) {
+			if (isOverflow) tooltipHtml += "<br>";
+			tooltipHtml += "<h5 style='color: #BBBBBB;'>" + L['pickTopicTitle'] + "</h5>" + pickTopics.join(", ");
+		}
 		$rm.append($("<div>").addClass("expl pick-topic-expl").css({ 'width': tooltipWidth, 'white-space': "normal", 'text-align': "left" })
-			.html("<h5 style='color: #BBBBBB;'>" + L['pickTopicTitle'] + "</h5>" + pickTopics.join(", "))
+			.html(tooltipHtml)
 		);
 		if (mobile) {
 			$rm.on('touchstart', function (e) {

@@ -52,13 +52,14 @@ if (Cluster.isMaster) {
 		}
 		JLog.error(`Worker @${chan} ${w.process.pid} died`);
 
-		// FIX: 죽은 Worker의 방과 유저를 Master에서 정리
+		// FIX: 죽은 Worker의 유저와 방을 Master에서 정리
+		// 주의: 유저 정리를 먼저 해야 ROOM 참조로 채널 판별 가능
 		var Master = require("./master.js");
-		if (Master.cleanupDeadWorkerRooms) {
-			Master.cleanupDeadWorkerRooms(chan);
-		}
 		if (Master.cleanupDeadWorkerUsers) {
 			Master.cleanupDeadWorkerUsers(chan);
+		}
+		if (Master.cleanupDeadWorkerRooms) {
+			Master.cleanupDeadWorkerRooms(chan);
 		}
 
 		channels[chan] = Cluster.fork({ SERVER_NO_FORK: true, KKUTU_PORT: Const.ROOM_PORTS[SID] + (chan - 1), CHANNEL: chan });

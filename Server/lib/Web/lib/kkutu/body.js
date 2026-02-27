@@ -3725,7 +3725,7 @@ function getPickTopicExpl(rule, opts) {
 	return topics;
 }
 function setRoomHead($obj, room) {
-	var opts = getOptions(room.mode, room.opts, false, mobile);
+	var opts = getOptions(room.mode, room.opts, false, false);
 	var rule = RULE[MODE[room.mode]];
 	var $rm;
 	var isSurvival = room.opts && room.opts.survival;
@@ -3740,10 +3740,19 @@ function setRoomHead($obj, room) {
 		.append($("<h5>").addClass("room-head-time").html((Math.round(room.time * 10) / 10) + L['SECOND']));
 
 	var pickTopics = getPickTopicExpl(rule, room.opts);
-	if (pickTopics.length) {
+	var isOverflow = $rm[0].scrollWidth > $rm[0].clientWidth;
+	if (isOverflow || pickTopics.length) {
 		var tooltipWidth = mobile ? 250 : 300;
+		var tooltipHtml = "";
+		if (isOverflow) {
+			tooltipHtml += opts.join(" / ");
+		}
+		if (pickTopics.length) {
+			if (isOverflow) tooltipHtml += "<br>";
+			tooltipHtml += "<h5 style='color: #BBBBBB;'>" + L['pickTopicTitle'] + "</h5>" + pickTopics.join(", ");
+		}
 		$rm.append($("<div>").addClass("expl pick-topic-expl").css({ 'width': tooltipWidth, 'white-space': "normal", 'text-align': "left" })
-			.html("<h5 style='color: #BBBBBB;'>" + L['pickTopicTitle'] + "</h5>" + pickTopics.join(", "))
+			.html(tooltipHtml)
 		);
 		if (mobile) {
 			$rm.on('touchstart', function (e) {

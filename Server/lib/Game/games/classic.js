@@ -51,6 +51,8 @@ const VOWEL_INV_MAP = {
 	12: 17, 17: 12
 };
 var AttackCache = {};
+var AttackCacheSize = 0;
+var ATTACK_CACHE_MAX_BYTES = 1024 * 1024; // 1MB
 var StatsCache = {};
 var StatsCacheSize = 0;
 var STATS_CACHE_TTL = 300000; // 5분
@@ -139,8 +141,12 @@ function getAttackChars(my) {
 		key += "_" + useCol + "_M" + getMannerCacheKey(my.opts);
 
 		// Cache Validity: 1 hour (or until restart)
-		if (AttackCache[key] && AttackCache[key].time > Date.now() - 3600000) {
-			return resolve(AttackCache[key].data);
+		if (AttackCache[key]) {
+			if (AttackCache[key].time > Date.now() - 3600000) {
+				return resolve(AttackCache[key].data);
+			}
+			AttackCacheSize -= AttackCache[key]._size || 0;
+			delete AttackCache[key];
 		}
 
 		// Parallel Fetch:
@@ -252,10 +258,29 @@ function getAttackChars(my) {
 				tier2: tier2
 			};
 
-			AttackCache[key] = {
-				time: Date.now(),
-				data: data
-			};
+			var entry = { time: Date.now(), data: data };
+			var entrySize = (data.tier1.length + data.tier2.length) * 20; // rough byte estimate
+			// 기존 키 덮어쓰기 시 이전 크기 차감
+			if (AttackCache[key]) {
+				AttackCacheSize -= AttackCache[key]._size || 0;
+			}
+			if (AttackCacheSize + entrySize > ATTACK_CACHE_MAX_BYTES) {
+				// 캐시 초과 시 만료된 항목 먼저 제거, 그래도 넘으면 전체 초기화
+				var now = Date.now();
+				for (var ck in AttackCache) {
+					if (now - AttackCache[ck].time > 3600000) {
+						AttackCacheSize -= AttackCache[ck]._size || 0;
+						delete AttackCache[ck];
+					}
+				}
+				if (AttackCacheSize + entrySize > ATTACK_CACHE_MAX_BYTES) {
+					AttackCache = {};
+					AttackCacheSize = 0;
+				}
+			}
+			entry._size = entrySize;
+			AttackCacheSize += entrySize;
+			AttackCache[key] = entry;
 			resolve(data);
 		});
 	});

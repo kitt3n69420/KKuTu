@@ -91,12 +91,12 @@
 		"GROUP_Mfront": "Moremi Foreground"
 	},
 	"error": {
-		"title": "Error!",
 		"400": "[#400] Bad Request",
-		"400_e": "Invalid input detected. Please check your input.",
 		"429": "[#429] Too Many Requests",
-		"429_e": "The server is receiving too many requests. Please try again later.",
 		"500": "[#500] Internal Server Error",
+		"title": "Error!",
+		"400_e": "Invalid input detected. Please check your input.",
+		"429_e": "The server is receiving too many requests. Please try again later.",
 		"500_e": "The server stopped working due to an unexpected error."
 	},
 	"login": {
@@ -496,7 +496,7 @@
 		"optTriple_abbr": "3x",
 		"optFreeDueum_abbr": "F.Ini",
 		"optSpeed_abbr": "Spd",
-		"optSpeedToss": "SpeedToss",
+		"optSpeedToss": "Toss",
 		"explSpeedToss": "Get bonus points if the next character matches the first character of the previous word. I dont know why it has speed in its name.",
 		"optSpeedToss_abbr": "Toss",
 		"optFirst": "Head",
@@ -669,7 +669,7 @@
 		"quiz_NUMG": "Number Guessing",
 		"quiz_ASTR": "Astronomy",
 		"quiz_ARTS": "Arts",
-		"class_-1":"Special",
+		"class_-1": "Special",
 		"class_1": "Noun",
 		"class_2": "Pronoun",
 		"class_3": "Numeral",
@@ -783,7 +783,7 @@
 		"moneyOrigin": "Base Ping",
 		"bonusFrom_q": "Item Effect",
 		"bonusFrom_k": "Buff Effect",
-		"bonusFrom_speedToss": "SpeedToss Bonus",
+		"bonusFrom_speedToss": "Toss Bonus",
 		"bonusFrom_straightBonus": "Straight Bonus",
 		"bonusFrom_fullHouseBonus": "Full House Bonus",
 		"lvUp": "Level Up!",
@@ -907,6 +907,7 @@
 		"noEasterEgg": "Disable Easter Eggs",
 		"aiAutoApply": "Auto-fill AI Settings",
 		"viewAllRules": "View All Rules",
+		"uncheckAllRules": "Uncheck All",
 		"prevPage": "Prev",
 		"myRank": "My Rank",
 		"nextPage": "Next",
@@ -1035,7 +1036,9 @@
 		"wordScope_std": "Standard",
 		"wordScope_ext": "Flexible",
 		"wordScope_str": "Strict",
-		"wordScope_unk": "Unknown"
+		"wordScope_unk": "Unknown",
+		"theme_KHJ": "Korean Administrative Districts",
+		"theme_KBS": "Korean Bus Stops"
 	},
 	"game/fates": {
 		"title": "Card Match",

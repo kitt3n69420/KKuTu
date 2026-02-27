@@ -512,15 +512,20 @@ exports.cleanupDeadWorkerUsers = function (deadChannel) {
   }
   deadUsers.forEach(function (id) {
     var $c = DIC[id];
+    if (!$c) return;
     JLog.warn(`Cleaning up user ${id} from dead worker @${deadChannel}`);
     $c.place = 0;
-    // 유저에게 방이 사라졌음을 알림
+    // 소켓을 닫아 onClientClosed 정리 경로를 통해 DIC에서도 제거
     if ($c.socket && $c.socket.readyState === 1) {
       $c.send('roomStuck');
+      $c.socket.close();
+    } else {
+      // 소켓이 이미 닫혔으면 직접 DIC에서 제거
+      KKuTu.onClientClosed($c, 1000);
     }
   });
   if (deadUsers.length > 0) {
-    JLog.warn(`Reset ${deadUsers.length} users from dead worker @${deadChannel}`);
+    JLog.warn(`Cleaned up ${deadUsers.length} users from dead worker @${deadChannel}`);
   }
 };
 
