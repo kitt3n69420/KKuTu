@@ -73,6 +73,15 @@ process.on("uncaughtException", function (err) {
 });
 process.on("message", function (msg) {
   switch (msg.type) {
+    case "broadcast":
+      // master에서 요청한 전체 broadcast — conn/disconn/user 등을 방 안 유저에게 전달
+      var _bmsg = JSON.stringify(Object.assign({ type: msg.event }, msg.data));
+      for (var _bi in DIC) {
+        if (DIC[_bi].socket && DIC[_bi].socket.readyState == 1) {
+          DIC[_bi].socket.send(_bmsg);
+        }
+      }
+      break;
     case "invite-error":
       if (!DIC[msg.target]) break;
       DIC[msg.target].sendError(msg.code);

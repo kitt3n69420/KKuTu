@@ -396,6 +396,10 @@ Cluster.on("message", function (worker, msg) {
           temp[i] = msg.data[i];
         }
       }
+      // 로비 유저들에게도 user 이벤트 전달 — master DIC 동기화 후 broadcast
+      KKuTu.publish("user", msg.data);
+      // 방 안 유저(slave)에게도 전달
+      for (var _ch in CHAN_DIC) CHAN_DIC[_ch].send({ type: "broadcast", event: "user", data: msg.data });
       break;
     case "room-publish":
       if ((temp = ROOM[msg.data.room.id])) {
@@ -735,6 +739,8 @@ function joinNewUser($c) {
   });
   narrateFriends($c.id, $c.friends, "on");
   KKuTu.publish("conn", { user: $c.getData() });
+  // 방 안 유저(slave)에게도 전달
+  for (var _ch in CHAN_DIC) CHAN_DIC[_ch].send({ type: "broadcast", event: "conn", data: { user: $c.getData() } });
 
   // Discord notification
   DiscordBot.notifyUserJoin($c.profile, Object.keys(DIC).length);
@@ -974,6 +980,8 @@ KKuTu.onClientClosed = function ($c, code) {
   if ($c.profile) delete DNAME[$c.profile.title || $c.profile.name];
   if ($c.friends) narrateFriends($c.id, $c.friends, "off");
   KKuTu.publish("disconn", { id: $c.id });
+  // 방 안 유저(slave)에게도 전달
+  for (var _ch in CHAN_DIC) CHAN_DIC[_ch].send({ type: "broadcast", event: "disconn", data: { id: $c.id } });
 
   JLog.alert("Exit #" + $c.id);
 };
