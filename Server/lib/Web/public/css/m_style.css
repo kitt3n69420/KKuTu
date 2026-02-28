@@ -48,7 +48,7 @@ textarea {
 	display: block;
 	font-family: inherit;
 	padding: 5px;
-	border: 1px solid #AAAAAA;
+	border: 1px solid #90CAF9;
 	border-radius: 10px;
 	resize: none;
 }
@@ -58,15 +58,15 @@ button {
 	box-sizing: inherit;
 	font-family: inherit;
 	padding: 5px;
-	border: 1px solid #AAAAAA;
+	border: 1px solid #90CAF9;
 	border-radius: 10px;
-	background-color: #EEEEEE;
+	background-color: #FFFFFF;
 	transition: all 200ms ease;
 }
 
 button:active {
-	color: #EEEEEE;
-	background-color: #444444;
+	color: #FFFFFF;
+	background-color: #1976D2;
 }
 
 input:focus,

@@ -20,7 +20,8 @@ block Subject
 	title= L('title')
 
 block CSS
-	link(rel='stylesheet', href='/css/in_game_kkutu.css')
+	- var v = locals.appVersion || '1.0.0'
+	link(rel='stylesheet', href='/css/in_game_kkutu.css?v=' + v)
 
 block Middle
 	+separator(5)

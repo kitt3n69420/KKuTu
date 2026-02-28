@@ -2272,7 +2272,7 @@ exports.Room = function (room, channel) {
 					name: (client.profile && (client.profile.title || client.profile.name)) || client.id,
 					isRobot: false
 				});
-				client.socket.close();
+				if (client.socket.readyState <= 1) client.socket.close();
 				process.send({ type: "room-go", target: client.id, id: my.id, removed: !ROOM.hasOwnProperty(my.id) });
 			}
 			my.export(client.id, kickVote);

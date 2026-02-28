@@ -236,13 +236,13 @@ body {
 
 .dialog-head {
 	padding: 3px;
-	border-bottom: 1px solid #CCCCCC;
+	border-bottom: 1px solid #BBDEFB;
 	border-radius: 5px;
 	margin-bottom: 5px;
 	height: 12px;
-	color: #222222;
+	color: #1565C0;
 	font-size: 11px;
-	background-color: #BBDEFB;
+	background-color: #E3F2FD;
 }
 
 .dialog-head .dialog-title {
@@ -276,7 +276,7 @@ body {
 
 .ranking-me {
 	font-weight: bold;
-	background-color: #BBDEFB;
+	background-color: #E3F2FD;
 }
 
 .ranking-image {
@@ -296,15 +296,15 @@ body {
 .Product {
 	border-radius: 0px;
 	color: #111111;
-	box-shadow: 0px 2px 1px #BBDEFB;
+	box-shadow: 0px 2px 1px #B0BEC5;
 	background-color: #FFFFFF;
 }
 
 .product-title {
-	border-bottom-color: #CCCCCC;
+	border-bottom-color: #BBDEFB;
 	border-radius: 5px;
-	color: #222222;
-	background-color: #BBDEFB;
+	color: #1565C0;
+	background-color: #E3F2FD;
 	overflow: hidden;
 }
 
@@ -456,7 +456,7 @@ body {
 
 .users-item:hover {
 	cursor: pointer;
-	background-color: #F4F4F4;
+	background-color: #E3F2FD;
 }
 
 .invite-item {
@@ -491,9 +491,9 @@ body {
 	margin: 1px;
 	width: calc(100% - 8px);
 	height: 64px;
-	box-shadow: 0px 1px 1px #777777;
+	box-shadow: 0px 1px 1px #B0BEC5;
 	cursor: pointer;
-	background-color: #E3F2FD;
+	background-color: #FFFFFF;
 	transition: all 300ms ease;
 }
 
@@ -542,7 +542,7 @@ body {
 }
 
 .rooms-item:hover {
-	background-color: #F4F4F4;
+	background-color: #E3F2FD;
 }
 
 .rooms-gaming:hover {
@@ -751,7 +751,7 @@ body {
 	margin: 3px;
 	width: calc(100% - 10px);
 	height: 24px;
-	box-shadow: 0px 1px 1px #777777;
+	box-shadow: 0px 1px 1px #B0BEC5;
 	background-color: #E3F2FD;
 }
 
@@ -1675,7 +1675,7 @@ body {
 	width: 100%;
 	height: 30px;
 	overflow: hidden;
-	background-color: #20568E;
+	background-color: #333333;
 }
 
 .my-gauge .graph-bar {
@@ -2014,7 +2014,7 @@ body {
 }
 
 .chat-notice {
-	background-color: #CCCCCC;
+	background-color: #E3F2FD;
 }
 
 .chat-notice .chat-head {
