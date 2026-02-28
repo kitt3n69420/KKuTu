@@ -543,21 +543,21 @@ exports.Client = function (socket, profile, sid) {
 	}
 	// Cloudflare 환경 대응: 앱 레벨 heartbeat
 	// Cloudflare 프록시가 WebSocket ping/pong 프레임을 인터셉트하므로
-	// 앱 레벨 JSON 메시지로 양방향 heartbeat를 수행하여 idle timeout(100s) 방지
+	// 앱 레벨 JSON 메시지로 양방향 heartbeat를 수행하여 idle timeout 방지
 	my._lastHeartbeat = Date.now();
 	my._heartbeat = setInterval(function () {
 		if (socket.readyState === 1) {
 			// 서버→클라이언트 앱 레벨 heartbeat (Cloudflare를 통과하는 일반 메시지)
 			my.send('heartbeat', {});
 
-			// heartbeat 타임아웃 체크: 클라이언트로부터 90초간 응답이 없으면 유령으로 판단하여 종료
+			// heartbeat 타임아웃 체크: 클라이언트로부터 45초간 응답이 없으면 유령으로 판단하여 종료
 			var elapsed = Date.now() - my._lastHeartbeat;
-			if (elapsed > 90000) {
+			if (elapsed > 45000) {
 				JLog.warn(`Heartbeat timeout #${my.id} (${Math.round(elapsed / 1000)}s), closing ghost connection`);
 				socket.close();
 			}
 		}
-	}, 25000);
+	}, 15000);
 
 	socket.on('close', function (code) {
 		var elapsed = Math.round((Date.now() - my._lastHeartbeat) / 1000);
