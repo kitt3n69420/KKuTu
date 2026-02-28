@@ -5673,7 +5673,7 @@ function onMessage(data) {
 			updateUserList();
 			break;
 		case 'disconnRoom':
-			$target = $data.usersR[data.id];
+			$target = $data.usersR[data.id] || $data.users[data.id];
 
 			if ($target) {
 				delete $data.usersR[data.id];

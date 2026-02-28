@@ -204,38 +204,47 @@ function saveStatsKo(stats) {
                     return;
                 }
 
-                var promises = keys.map(function (key) {
-                    return new Promise(function (resolve, reject) {
-                        var d = stats[key];
-                        var data = { _id: key };
+                function processBatch(startIndex) {
+                    if (startIndex >= total) {
+                        console.log("\nKO Stats Saved.");
+                        resolveMain();
+                        return;
+                    }
+                    var batchEnd = Math.min(startIndex + 15, total);
+                    var batchPromises = [];
+                    for (let index = startIndex; index < batchEnd; index++) {
+                        batchPromises.push(new Promise(function (resolve, reject) {
+                            var key = keys[index];
+                            var d = stats[key];
+                            var data = { _id: key };
 
-                        for (let i = 0; i < 16; i++) {
-                            data[`start2_${i}`] = d.start2[i];
-                            data[`start3_${i}`] = d.start3[i];
-                            data[`start4_${i}`] = d.start4[i];
-                            data[`startshort_${i}`] = d.startshort[i];
-                            data[`startall_${i}`] = d.startall[i];
-                            data[`end2_${i}`] = d.end2[i];
-                            data[`end3_${i}`] = d.end3[i];
-                            data[`end4_${i}`] = d.end4[i];
-                            data[`endshort_${i}`] = d.endshort[i];
-                            data[`endall_${i}`] = d.endall[i];
-                        }
+                            for (let i = 0; i < 16; i++) {
+                                data[`start2_${i}`] = d.start2[i];
+                                data[`start3_${i}`] = d.start3[i];
+                                data[`start4_${i}`] = d.start4[i];
+                                data[`startshort_${i}`] = d.startshort[i];
+                                data[`startall_${i}`] = d.startall[i];
+                                data[`end2_${i}`] = d.end2[i];
+                                data[`end3_${i}`] = d.end3[i];
+                                data[`end4_${i}`] = d.end4[i];
+                                data[`endshort_${i}`] = d.endshort[i];
+                                data[`endall_${i}`] = d.endall[i];
+                            }
 
-                        DB.kkutu_stats_ko.upsert(['_id', key]).set(data).on(function (res) {
-                            process.stdout.write(`\r[KO] Progress: ${++current}/${total}`);
-                            resolve();
-                        }, null, function (err) {
-                            console.error(`Error saving ${key}:`, err);
-                            resolve();
-                        });
+                            DB.kkutu_stats_ko.upsert(['_id', key]).set(data).on(function (res) {
+                                process.stdout.write(`\r[KO] Progress: ${++current}/${total}`);
+                                resolve();
+                            }, null, function (err) {
+                                console.error(`\nError saving ${key}:`, err);
+                                resolve();
+                            });
+                        }));
+                    }
+                    Promise.all(batchPromises).then(function () {
+                        processBatch(batchEnd);
                     });
-                });
-
-                Promise.all(promises).then(function () {
-                    console.log("\nKO Stats Saved.");
-                    resolveMain();
-                });
+                }
+                processBatch(0);
             });
         });
     });
@@ -271,29 +280,38 @@ function saveStatsEn(stats) {
                 return;
             }
 
-            var promises = keys.map(function (key) {
-                return new Promise(function (resolve, reject) {
-                    var d = stats[key];
-                    var data = { _id: key };
+            function processBatch(startIndex) {
+                if (startIndex >= total) {
+                    console.log("\nEN Stats Saved.");
+                    resolveMain();
+                    return;
+                }
+                var batchEnd = Math.min(startIndex + 15, total);
+                var batchPromises = [];
+                for (let index = startIndex; index < batchEnd; index++) {
+                    batchPromises.push(new Promise(function (resolve, reject) {
+                        var key = keys[index];
+                        var d = stats[key];
+                        var data = { _id: key };
 
-                    for (let i = 0; i < 16; i++) {
-                        data[`count_${i}`] = d.count[i];
-                    }
+                        for (let i = 0; i < 16; i++) {
+                            data[`count_${i}`] = d.count[i];
+                        }
 
-                    DB.kkutu_stats_en.upsert(['_id', key]).set(data).on(function (res) {
-                        process.stdout.write(`\r[EN] Progress: ${++current}/${total}`);
-                        resolve();
-                    }, null, function (err) {
-                        console.error(`Error saving ${key}:`, err);
-                        resolve();
-                    });
+                        DB.kkutu_stats_en.upsert(['_id', key]).set(data).on(function (res) {
+                            process.stdout.write(`\r[EN] Progress: ${++current}/${total}`);
+                            resolve();
+                        }, null, function (err) {
+                            console.error(`\nError saving ${key}:`, err);
+                            resolve();
+                        });
+                    }));
+                }
+                Promise.all(batchPromises).then(function () {
+                    processBatch(batchEnd);
                 });
-            });
-
-            Promise.all(promises).then(function () {
-                console.log("\nEN Stats Saved.");
-                resolveMain();
-            });
+            }
+            processBatch(0);
         });
     });
 }
