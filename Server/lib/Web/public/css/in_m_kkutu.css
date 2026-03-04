@@ -93,7 +93,7 @@ body {
 
 /* ... existing rules ... */
 
-.kkutu-menu button {
+.kkutu-menu button:not(.ItemButton) {
 	float: left;
 	border: none;
 	border-bottom-left-radius: 0px;
@@ -130,7 +130,7 @@ body {
 	/* Border removed */
 }
 
-.kkutu-menu button:hover {
+.kkutu-menu button:not(.ItemButton):hover {
 	margin-top: -5px;
 	height: 25px;
 }
@@ -2329,4 +2329,90 @@ body {
 
 #room-simple-rules-panel .dialog-opt label:not(.abbr) {
 	display: inline;
+}
+
+/* Item Mode */
+.ItemBar {
+	float: right;
+}
+
+.kkutu-menu .ItemButton {
+	float: left;
+	border: 1px solid #CCCCCC;
+	border-radius: 4px;
+	width: auto;
+	min-width: fit-content;
+	white-space: nowrap;
+	height: 25px;
+	padding: 0px 4px;
+	margin: 0px 2px;
+	cursor: pointer;
+	background-color: #FFFFFF;
+	color: #888888;
+	transition: all 0.2s ease;
+}
+
+.kkutu-menu .ItemButton:disabled {
+	cursor: default;
+	background-color: #C0C0C0;
+	color: #888888;
+}
+
+.kkutu-menu .ItemButton.item-available {
+	background-color: #FFFFFF;
+	color: #333333;
+}
+
+.kkutu-menu .ItemButton.item-queued {
+	background-color: #BBDEFB;
+	color: #1565C0;
+}
+
+.ItemIcon {
+	margin-right: 2px;
+}
+
+.ItemName {
+	display: none;
+}
+
+.ItemCount {
+	font-weight: bold;
+	font-size: 12px;
+}
+
+/* Mobile player card item overlay */
+.game-user {
+	position: relative;
+}
+
+.MobileItemOverlay {
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	width: auto;
+	white-space: nowrap;
+	text-align: center;
+	background: #FFFFFF;
+	color: #000000;
+	border: 1px solid #555555;
+	border-radius: 8px;
+	padding: 3px 8px;
+	font-size: 11px;
+	transform-origin: center center;
+	transform: translateX(-50%) scale(0);
+	visibility: hidden;
+	transition: transform 0.15s ease;
+	pointer-events: none;
+	z-index: 5;
+}
+
+.MobileItemOverlay.visible {
+	visibility: visible;
+	transform: translateX(-50%) scale(1);
+}
+
+.MobileItemOverlay.hiding {
+	visibility: visible;
+	transform: translateX(-50%) scale(0);
 }

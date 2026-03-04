@@ -682,6 +682,7 @@ exports.turnStart = function (force) {
 			wordLength: my.game.wordLength,
 			sumiChar: my.game.sumiChar,
 			isHanbang: isHanbang,
+			linkOverride: my.game.linkOverride || undefined,
 			seq: force ? my.game.seq : undefined
 		}, true);
 
@@ -740,6 +741,7 @@ exports.turnStart = function (force) {
 				wordLength: my.game.wordLength,
 				sumiChar: my.game.sumiChar,
 				isHanbang: isHanbang,
+				linkOverride: my.game.linkOverride || undefined,
 				seq: force ? my.game.seq : undefined
 			}, true);
 
@@ -808,6 +810,14 @@ exports.turnEnd = function () {
 	}
 	clearTimeout(my.game.turnTimer);
 	my.game.late = true;
+	// 아이템전: 타임아웃 시 linkOverride 해제 및 대기 아이템 큐 삭제
+	if (my.game.linkOverride) my.game.linkOverride = null;
+	if (my.opts.item && my.game.pendingItems && target && target.id) {
+		if (my.game.pendingItems[target.id]) {
+			delete my.game.pendingItems[target.id];
+			my.byMaster('item-dequeued', { playerId: target.id }, true);
+		}
+	}
 
 	// ========== 서바이벌 모드: 타임아웃 = 즉시 KO ==========
 	if (my.opts.survival && target && target.game && target.game.alive) {
@@ -1092,6 +1102,10 @@ exports.submit = function (client, text) {
 				t = tv - my.game.turnAt;
 				var isReturn = my.opts.return && my.game.chain.includes(text);
 
+				// 아이템전: 미션 글자 수를 getScore 이전에 계산 (getScore 내부에서 mission이 true로 바뀜)
+				var itemMissionCount = (my.opts.item && my.game.mission && my.game.mission !== true && text.match(new RegExp(my.game.mission, 'g')))
+					? text.match(new RegExp(my.game.mission, 'g')).length : 0;
+
 				// 기본 점수 계산 (미션 보너스 포함)
 				var baseScore = my.getScore(text, t, isReturn);
 				// 미션 보너스 제외한 순수 기본 점수
@@ -1198,10 +1212,37 @@ exports.submit = function (client, text) {
 						preChar = getChar.call(my, text);
 						preSubChar = getSubChar.call(my, preChar);
 					}
+					// 아이템전: linkOverride 적용
+					var linkOverrideActive = false;
+					var savedMiddle, savedFirst, savedSecond;
+					if (my.game.linkOverride) {
+						linkOverrideActive = true;
+						savedMiddle = my.opts.middle;
+						savedFirst = my.opts.first;
+						savedSecond = my.opts.second;
+						if (my.game.linkOverride === 'middle') {
+							my.opts.middle = true;
+							my.opts.first = false;
+							my.opts.second = false;
+						} else if (my.game.linkOverride === 'end') {
+							my.opts.middle = false;
+							my.opts.first = false;
+							my.opts.second = false;
+						}
+						preChar = getChar.call(my, text);
+						preSubChar = getSubChar.call(my, preChar);
+					}
 					my.game.char = preChar;
 					my.game.subChar = preSubChar;
 					// 서버에서 linkIndex 계산하여 클라이언트에 전달 (하이라이팅 위치 일원화)
-					finishTurn(getLinkIndex.call(my, text));
+					var linkIdx = getLinkIndex.call(my, text);
+					if (linkOverrideActive) {
+						my.opts.middle = savedMiddle;
+						my.opts.first = savedFirst;
+						my.opts.second = savedSecond;
+						my.game.linkOverride = null;
+					}
+					finishTurn(linkIdx);
 				}
 
 				function finishTurn(linkIdx) {
@@ -1352,6 +1393,12 @@ exports.submit = function (client, text) {
 								my.game.mission = getMission(my.rule.lang, my.opts);
 							}
 
+							// 아이템전: 아이템 지급 판정 (서바이벌)
+							if (my.opts.item) {
+								var bp = Const.calcItemBonusPoints(itemMissionCount, speedTossBonus > 0, client.game.straightStreak, false);
+								my.checkItemGrant(client.id, bp, true);
+							}
+
 							// 다음 턴으로 진행
 							clearTimeout(my.game.turnTimer);
 							clearTimeout(my.game.robotTimer);
@@ -1434,6 +1481,12 @@ exports.submit = function (client, text) {
 							// 랜덤미션: 달성하지 않아도 매 턴마다 미션 변경
 							my.game.mission = getMission(my.rule.lang, my.opts);
 						}
+						// 아이템전: 아이템 지급 판정 (일반)
+						if (my.opts.item) {
+							var bp = Const.calcItemBonusPoints(itemMissionCount, speedTossBonus > 0, client.game.straightStreak, fullHouseBonus > 0);
+							my.checkItemGrant(client.id, bp, true);
+						}
+
 						setTimeout(my.turnNext, my.game.turnTime / 6);
 
 						if (!client.robot) {
@@ -2124,6 +2177,7 @@ exports.readyRobot = function (robot) {
 	function executeKKUBot() {
 		var FETCH_SIZE = 50;
 		var fetched = [];
+		var fetchAttempt = 1;
 
 		function fetchWords(offset) {
 			getAuto.call(my, my.game.char, my.game.subChar, 2, 1).then(function (list) {
@@ -2173,20 +2227,22 @@ exports.readyRobot = function (robot) {
 		function checkNextWord(list, index) {
 			if (index >= list.length) {
 				// 모든 단어가 매너 체크 실패 → 더 가져오기
-				getAuto.call(my, my.game.char, my.game.subChar, 2, 2).then(function (moreList) {
+				fetchAttempt++;
+				getAuto.call(my, my.game.char, my.game.subChar, 2, fetchAttempt).then(function (moreList) {
 					if (!moreList || moreList.length === 0) {
 						return denied();
 					}
 					moreList = moreList.filter(function (w) {
 						return w._id.length >= 4 && !robot._done.includes(w._id) &&
 							(!my.game.chain || !my.game.chain.includes(w._id)) &&
-							!list.some(function (existing) { return existing._id === w._id; });
+							!fetched.some(function (existing) { return existing._id === w._id; });
 					});
 
 					if (moreList.length === 0) {
 						return denied();
 					}
 
+					fetched = fetched.concat(moreList);
 					moreList = shuffle(moreList);
 					checkNextWord(moreList, 0);
 				});

@@ -1150,6 +1150,7 @@ $(document).ready(function () {
 		// 게임 모드 변경 시 서바이벌 UI 업데이트
 		var survivalChecked = $("#room-survival").is(':checked') || $("#room-flat-survival").is(':checked');
 		updateSurvivalUI(survivalChecked);
+		if (window.updateViewAllRulesBtn) setTimeout(window.updateViewAllRulesBtn, 10);
 	});
 	// 나락-무적 상호배타: 나락 체크시 무적 해제
 	window.RULE_CHECKBOXES['narak'].on('change', function () {
@@ -1184,6 +1185,14 @@ $(document).ready(function () {
 				});
 			}
 		});
+	});
+
+	// 아이템전-랜덤턴 상호배타
+	window.RULE_CHECKBOXES['item'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['randomturn'].prop('checked', false);
+	});
+	window.RULE_CHECKBOXES['randomturn'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['item'].prop('checked', false);
 	});
 
 	// View All Rules Dialog 버튼 핸들러
@@ -2460,6 +2469,54 @@ $(document).ready(function () {
 
 	$("#room-survival, #room-flat-survival, #room-simple-survival").on('change', function () {
 		updateSurvivalUI($(this).is(':checked'));
+	});
+
+	// 아이템 버튼 클릭
+	$(document).on('click', '.ItemButton:not(:disabled)', function () {
+		var slot = $(this).data('slot');
+		var itemType = getItemTypeBySlot(slot);
+		console.log('[ITEM] click slot:', slot, 'itemType:', itemType, 'myItems:', JSON.stringify($data.myItems), 'pendingItem:', $data.pendingItem);
+		if (!itemType) return;
+
+		if ($data.pendingItem === itemType) {
+			$data.pendingItem = null;
+			console.log('[ITEM] sending item-dequeue');
+			send('item-dequeue', {});
+		} else {
+			$data.pendingItem = itemType;
+			console.log('[ITEM] sending item-queue:', itemType);
+			send('item-queue', { itemType: itemType });
+		}
+		updateItemUI();
+	});
+
+	// 아이템 키보드 단축키 (1~5)
+	$(document).on('keydown', function (e) {
+		if (e.originalEvent && e.originalEvent.repeat) return;
+		if (!$data.room || !$data.room.opts || !$data.room.opts.item) return;
+		if (!$data.room.gaming) return;
+		if ($data.room.mode === undefined) return;
+
+		// 캘크 중에는 무시 (숫자 필수 입력) - MODE 배열에서 CAL 또는 Relay-Calc 확인
+		var currentModeStr = window.MODE ? window.MODE[$data.room.mode] : "";
+		if (currentModeStr && currentModeStr.toLowerCase().indexOf('calc') !== -1) return;
+		if (currentModeStr && currentModeStr.toUpperCase() === 'CRL') return;
+
+		// 입력창 밸류 체크 (Talk 또는 hereText)
+		var val = ($stage.game.hereText.is(':visible') ? $stage.game.hereText.val() : $stage.talk.val()) || '';
+		if (val.length > 0) return; // 단어 입력 중이면 아이템 큐 동작 차단
+
+		var slot = e.which - 48; // 1(49) ~ 5(53)
+		var numpadSlot = e.which - 96; // NumPad 1(97) ~ 5(101)
+
+		var finalSlot = -1;
+		if (slot >= 1 && slot <= 5) finalSlot = slot;
+		else if (numpadSlot >= 1 && numpadSlot <= 5) finalSlot = numpadSlot;
+
+		if (finalSlot !== -1) {
+			e.preventDefault();
+			useItemSlot(finalSlot);
+		}
 	});
 
 	// 웹소켓 연결

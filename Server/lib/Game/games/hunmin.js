@@ -347,6 +347,12 @@ exports.submit = function (client, text, data) {
 							}
 							clearTimeout(my.game.turnTimer);
 							clearTimeout(my.game.robotTimer);
+							// 아이템전: 아이템 지급 판정
+							if (my.opts.item) {
+								var mCount = (my.game.mission && my.game.mission !== true && text.match(new RegExp(my.game.mission, 'g'))) ? text.match(new RegExp(my.game.mission, 'g')).length : 0;
+								var bp = Const.calcItemBonusPoints(mCount, false, 0, false);
+								my.checkItemGrant(client.id, bp, true);
+							}
 							my.game._rrt = setTimeout(function () {
 								my.turnNext();
 							}, my.game.turnTime / 6);
@@ -375,6 +381,12 @@ exports.submit = function (client, text, data) {
 					} else if (my.opts.rndmission) {
 						// 랜덤미션: 달성하지 않아도 매 턴마다 미션 변경
 						my.game.mission = getMission(my.game.theme, my.opts);
+					}
+					// 아이템전: 아이템 지급 판정
+					if (my.opts.item) {
+						var mCount = (my.game.mission && my.game.mission !== true && text.match(new RegExp(my.game.mission, 'g'))) ? text.match(new RegExp(my.game.mission, 'g')).length : 0;
+						var bp = Const.calcItemBonusPoints(mCount, false, 0, false);
+						my.checkItemGrant(client.id, bp, true);
 					}
 					setTimeout(my.turnNext, my.game.turnTime / 6);
 					if (!client.robot) {
