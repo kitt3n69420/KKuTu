@@ -546,18 +546,20 @@ exports.Client = function (socket, profile, sid) {
 	// 앱 레벨 JSON 메시지로 양방향 heartbeat를 수행하여 idle timeout 방지
 	my._lastHeartbeat = Date.now();
 	my._heartbeat = setInterval(function () {
+		// readyState 검사 이전에 타임아웃 여부를 먼저 확인하여, CLOSING 상태 (2)에 머물며
+		// 영원히 죽지 않는 유령 소켓을 강제로 제거 (terminate) 합니다.
+		var elapsed = Date.now() - my._lastHeartbeat;
+		if (elapsed > 100000) { // 100초 타임아웃
+			JLog.warn(`Heartbeat timeout #${my.id} (${Math.round(elapsed / 1000)}s), closing ghost connection`);
+			socket.terminate(); // 즉시 강제 종료 (close()는 CLOSING으로만 변할 수 있음)
+			return;
+		}
+
 		if (socket.readyState === 1) {
 			// 서버→클라이언트 앱 레벨 heartbeat (Cloudflare를 통과하는 일반 메시지)
 			my.send('heartbeat', {});
-
-			// heartbeat 타임아웃 체크: 클라이언트로부터 45초간 응답이 없으면 유령으로 판단하여 종료
-			var elapsed = Date.now() - my._lastHeartbeat;
-			if (elapsed > 45000) {
-				JLog.warn(`Heartbeat timeout #${my.id} (${Math.round(elapsed / 1000)}s), closing ghost connection`);
-				socket.close();
-			}
 		}
-	}, 15000);
+	}, 20000);
 
 	socket.on('close', function (code) {
 		var elapsed = Math.round((Date.now() - my._lastHeartbeat) / 1000);
@@ -573,7 +575,7 @@ exports.Client = function (socket, profile, sid) {
 		if (!msg) return;
 
 		try { data = JSON.parse(msg); } catch (e) { data = { error: 400 }; }
-		const TAIL_TYPES = ["enter","setRoom","leave","start","kick","kickVote","handover","setAI","form","team"];
+		const TAIL_TYPES = ["enter", "setRoom", "leave", "start", "kick", "kickVote", "handover", "setAI", "form", "team"];
 		if (Cluster.isWorker && !data.error && TAIL_TYPES.indexOf(data.type) !== -1) {
 			process.send({ type: "tail-report", id: my.id, chan: channel, place: my.place, msg: data });
 		}

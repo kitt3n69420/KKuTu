@@ -2588,7 +2588,7 @@ $(document).ready(function () {
 				if (rws && rws.readyState === _WebSocket.OPEN) {
 					rws.send(JSON.stringify({ type: 'heartbeat' }));
 				}
-			}, 15000);
+			}, 20000);
 			loading();
 			/*if($data.PUBLIC && mobile) $("#ad").append($("<ins>").addClass("daum_ddn_area")
 				.css({ 'display': "none", 'margin-top': "10px", 'width': "100%" })
