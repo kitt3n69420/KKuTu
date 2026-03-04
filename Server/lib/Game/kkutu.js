@@ -2122,6 +2122,12 @@ exports.Room = function (room, channel) {
 					my.route("onLeave", client.id);
 				}
 
+				// 아이템전: 퇴장 시 대기 아이템 정리
+				if (my.opts.item && my.game.pendingItems && my.game.pendingItems[client.id]) {
+					delete my.game.pendingItems[client.id];
+					my.byMaster('item-dequeued', { playerId: client.id }, true);
+				}
+
 				var seqIndex = my.game.seq.indexOf(client.id);
 				if (seqIndex != -1) {
 					// 서바이벌 모드: 중도 퇴장 시 KO 처리 (seq에서 제거하지 않음)
@@ -2526,6 +2532,21 @@ exports.Room = function (room, channel) {
 		}
 		my.game.mission = null;
 
+		// 아이템전 ↔ 랜덤 턴 상호 배제
+		if (my.opts.item && my.opts.randomturn) {
+			my.opts.randomturn = false;
+		}
+
+		// 아이템전 초기화
+		if (my.opts.item) {
+			my.game.items = {};
+			my.game.itemTurnCount = {};
+			my.game.bonusScore = {};
+			my.game.pendingItems = {};
+			my.game.reversed = false;
+			my.game.linkOverride = null;
+		}
+
 		// 랜덤 턴 옵션 활성화 시 턴 순서 배열 초기화
 		if (my.opts.randomturn) {
 			my.game.randomTurnOrder = [];
@@ -2561,6 +2582,16 @@ exports.Room = function (room, channel) {
 			delete o.game.lastWord;
 			delete o.game.lastWordLen;
 			o.game.straightStreak = 0;
+			// 아이템전: 플레이어별 아이템 초기화
+			if (my.opts.item) {
+				var itemObj = { skip: 0, pass: 0, random: 0 };
+				if (my.game.seq.length > 2) itemObj.reverse = 0;
+				if (my.rule.rule === 'Classic') itemObj.linkChange = 0;
+				my.game.items[o.id] = itemObj;
+				my.game.itemTurnCount[o.id] = 0;
+				my.game.bonusScore[o.id] = 0;
+				if (my.game.pendingItems[o.id]) delete my.game.pendingItems[o.id];
+			}
 		}
 		// 서바이벌 모드는 1라운드만 진행
 		if (my.opts.survival) {
@@ -2580,6 +2611,31 @@ exports.Room = function (room, channel) {
 	my.roundReady = function () {
 		clearTimeout(my.game._rrt);
 		if (!my.gaming) return;
+
+		// 아이템전: 라운드 시작 시 아이템 리셋
+		if (my.opts.item && my.game.seq) {
+			for (var ii in my.game.seq) {
+				var io = DIC[my.game.seq[ii]] || my.game.seq[ii];
+				if (io && io.id) {
+					var itemObj = { skip: 0, pass: 0, random: 0 };
+					if (my.game.seq.length > 2) itemObj.reverse = 0;
+					if (my.rule.rule === 'Classic') itemObj.linkChange = 0;
+					// 아이템 방일 때, 신규 접속자 초기화
+					my.game.items[io.id] = itemObj;
+					my.game.itemTurnCount[io.id] = 0;
+					my.game.bonusScore[io.id] = 0;
+				}
+			}
+			// 라운드 시작 시 남아있는 큐를 클라이언트에 해제 브로드캐스트
+			if (my.game.pendingItems) {
+				for (var rpi in my.game.pendingItems) {
+					my.byMaster('item-dequeued', { playerId: rpi }, true);
+				}
+			}
+			my.game.pendingItems = {};
+			my.game.reversed = false;
+			my.game.linkOverride = null;
+		}
 
 		return my.route("roundReady");
 	};
@@ -2887,6 +2943,18 @@ exports.Room = function (room, channel) {
 		delete my.game.prisoners;
 		delete my.game.boards;
 		delete my.game.means;
+		// 아이템전 상태 정리
+		if (my.game.pendingItems) {
+			for (var pid in my.game.pendingItems) {
+				my.byMaster('item-dequeued', { playerId: pid }, true);
+			}
+		}
+		delete my.game.items;
+		delete my.game.itemTurnCount;
+		delete my.game.bonusScore;
+		delete my.game.pendingItems;
+		delete my.game.reversed;
+		delete my.game.linkOverride;
 		my.setAutoDelete();
 	};
 	my.byMaster = function (type, data, nob) {
@@ -2918,6 +2986,9 @@ exports.Room = function (room, channel) {
 					obj.spec[o.id] = o.game ? o.game.score : 0;
 				}
 			}
+			if (my.opts.item && my.game.pendingItems) {
+				obj.pendingItems = my.game.pendingItems;
+			}
 		}
 		if (my.practice) {
 			if (DIC[my.master || target]) DIC[my.master || target].send('room', obj);
@@ -2930,6 +3001,164 @@ exports.Room = function (room, channel) {
 
 		return my.route("turnStart", force);
 	};
+	// ========== 아이템전 큐/발동/지급 ==========
+	my.queueItem = function (player, itemType) {
+		console.log('[ITEM-SRV] queueItem called:', player.id, itemType, 'opts.item:', my.opts.item, 'game.items:', JSON.stringify(my.game.items));
+		if (!my.gaming || !my.opts.item || !my.game.items) { console.log('[ITEM-SRV] queueItem rejected: no opts.item or no game.items'); return; }
+		var items = my.game.items[player.id];
+		if (!items || (items[itemType] || 0) <= 0) { console.log('[ITEM-SRV] queueItem rejected: no items or count <= 0, items:', JSON.stringify(items)); return; }
+
+		my.dequeueItem(player);
+		my.game.pendingItems[player.id] = { itemType: itemType };
+		console.log('[ITEM-SRV] item queued successfully:', player.id, itemType);
+		my.byMaster('item-queued', { playerId: player.id, itemType: itemType }, true);
+	};
+	my.dequeueItem = function (player) {
+		if (!my.game.pendingItems || !my.game.pendingItems[player.id]) return;
+		delete my.game.pendingItems[player.id];
+		my.byMaster('item-dequeued', { playerId: player.id }, true);
+	};
+	my.consumeItem = function (playerId, itemType) {
+		var items = my.game.items[playerId];
+		if (!items || (items[itemType] || 0) <= 0) return false;
+		items[itemType]--;
+		delete my.game.pendingItems[playerId];
+		my.byMaster('item-used', { playerId: playerId, itemType: itemType }, true);
+		return true;
+	};
+	my.getAvailableItems = function () {
+		var items = ['skip', 'pass', 'random'];
+		if (my.game.seq.length > 2) items.push('reverse');
+		if (my.rule.rule === 'Classic') items.push('linkChange');
+		return items;
+	};
+	my.giveRandomItem = function (playerId) {
+		var availableItems = my.getAvailableItems();
+		if (!my.game.items[playerId]) {
+			var itemObj = { skip: 0, pass: 0, random: 0 };
+			if (my.game.seq && my.game.seq.length > 2) itemObj.reverse = 0;
+			if (my.rule && my.rule.rule === 'Classic') itemObj.linkChange = 0;
+			my.game.items[playerId] = itemObj;
+		}
+		var items = my.game.items[playerId];
+		var candidates = availableItems.filter(function (t) { return (items[t] || 0) < Const.ITEM_MAX_COUNT; });
+		if (candidates.length === 0) { console.log('[ITEM-SRV] giveRandomItem: no candidates for', playerId); return; }
+		var itemType = candidates[Math.floor(Math.random() * candidates.length)];
+		items[itemType] = (items[itemType] || 0) + 1;
+		console.log('[ITEM-SRV] giveRandomItem:', playerId, itemType, 'count:', items[itemType]);
+		var player = DIC[playerId];
+		if (player && player.send) player.send('item-given', { itemType: itemType, count: items[itemType] });
+		else console.log('[ITEM-SRV] giveRandomItem: player not found or no send:', playerId);
+	};
+	my.checkItemGrant = function (playerId, bonusPoints, success) {
+		if (!my.opts.item || !success) return;
+
+		my.game.itemTurnCount[playerId] = (my.game.itemTurnCount[playerId] || 0) + 1;
+		console.log('[ITEM-SRV] checkItemGrant:', playerId, 'turnCount:', my.game.itemTurnCount[playerId], 'bonus:', bonusPoints);
+		if (my.game.itemTurnCount[playerId] % Const.ITEM_GRANT_INTERVAL === 0) {
+			my.giveRandomItem(playerId);
+		}
+
+		if (bonusPoints > 0) {
+			my.game.bonusScore[playerId] = (my.game.bonusScore[playerId] || 0) + bonusPoints;
+			if (my.game.bonusScore[playerId] >= Const.ITEM_BONUS_THRESHOLD) {
+				my.giveRandomItem(playerId);
+				my.game.bonusScore[playerId] = 0;
+			}
+		}
+	};
+	my._defaultNextTurn = function () {
+		var next = (my.game.turn + 1) % my.game.seq.length;
+		if (my.opts.survival) {
+			var attempts = 0;
+			while (attempts < my.game.seq.length) {
+				var p = DIC[my.game.seq[next]] || my.game.seq[next];
+				if (p && p.game && p.game.alive) break;
+				next = (next + 1) % my.game.seq.length;
+				attempts++;
+			}
+		}
+		return next;
+	};
+	my.calculateNextTurn = function (peek) {
+		if (!my.opts.item) return my._defaultNextTurn();
+
+		var seq = my.game.seq;
+		var n = seq.length;
+		var cur = my.game.turn;
+		var currentId = seq[cur];
+		var pending = my.game.pendingItems;
+		var curPending = pending[currentId];
+		var randomJump = false;
+		var isReversed = my.game.reversed;
+
+		// 1. 현재 플레이어의 afterTurn 아이템 처리 (skip, random)
+		if (curPending) {
+			if (curPending.itemType === 'random') {
+				if (!peek) my.consumeItem(currentId, 'random');
+				var candidates = seq.filter(function (id) {
+					if (my.opts.survival) { var p = DIC[id] || id; return p && p.game && p.game.alive; }
+					return true;
+				});
+				if (candidates.length > 0) {
+					var chosen = candidates[Math.floor(Math.random() * candidates.length)];
+					var chosenIdx = seq.indexOf(chosen);
+					var chosenPending = pending[chosen];
+					if (chosenPending && chosenPending.itemType === 'pass') {
+						if (!peek) my.consumeItem(chosen, 'pass');
+						cur = chosenIdx;
+						randomJump = true;
+					} else {
+						return chosenIdx;
+					}
+				}
+			}
+		}
+
+		var skipLeft = 0;
+		if (!randomJump && curPending && curPending.itemType === 'skip') {
+			skipLeft = 1;
+			if (!peek) my.consumeItem(currentId, 'skip');
+		}
+
+		// 2. beforeNext 아이템: 현재 턴인 플레이어 제외
+		for (var id in pending) {
+			if (id === currentId || !pending[id]) continue;
+			if (pending[id].itemType === 'reverse') {
+				isReversed = !isReversed;
+				if (!peek) {
+					my.game.reversed = isReversed;
+					my.consumeItem(id, 'reverse');
+				}
+			}
+		}
+
+		// 3. 반복 계산 루프
+		var dir = isReversed ? -1 : 1;
+		var next = cur;
+		var visited = 0;
+
+		while (visited <= n) {
+			visited++;
+			next = ((next + dir) % n + n) % n;
+			if (my.opts.survival) {
+				var p = DIC[seq[next]] || seq[next];
+				if (!p || !p.game || !p.game.alive) continue;
+			}
+			if (skipLeft > 0) { skipLeft--; continue; }
+			var nextPending = pending[seq[next]];
+			if (nextPending && nextPending.itemType === 'pass') {
+				if (!peek) my.consumeItem(seq[next], 'pass');
+				continue;
+			}
+			break;
+		}
+
+		if (visited > n) return (cur + 1) % n;
+		return next;
+	};
+	// ========== 아이템전 끝 ==========
+
 	my.readyRobot = function (robot) {
 		if (!my.gaming) return;
 
@@ -2975,8 +3204,15 @@ exports.Room = function (room, channel) {
 			}
 		}
 
-		// 랜덤 턴 옵션 체크
-		if (my.opts.randomturn) {
+		// 아이템전: calculateNextTurn()으로 통합 처리
+		if (my.opts.item) {
+			// 타임아웃된 플레이어의 대기 아이템 해제
+			var timedOutId = my.game.seq[my.game.turn];
+			if (force && my.game.pendingItems && my.game.pendingItems[timedOutId]) {
+				my.dequeueItem(DIC[timedOutId] || { id: timedOutId });
+			}
+			my.game.turn = my.calculateNextTurn();
+		} else if (my.opts.randomturn) {
 			// 랜덤 턴 배열 인덱스 증가
 			my.game.randomTurnIndex++;
 
@@ -3025,20 +3261,16 @@ exports.Room = function (room, channel) {
 			}
 		} else {
 			// 기존 로직: 순차 진행
-			my.game.turn = (my.game.turn + 1) % my.game.seq.length;
+			my.game.turn = my.calculateNextTurn();
+		}
 
-			// 서바이벌 모드: KO된 플레이어 건너뛰기
-			if (my.opts.survival) {
-				var attempts = 0;
-				var maxAttempts = my.game.seq.length;
-				while (attempts < maxAttempts) {
-					var nextPlayer = DIC[my.game.seq[my.game.turn]] || my.game.seq[my.game.turn];
-					if (nextPlayer && nextPlayer.game && nextPlayer.game.alive) {
-						break;
-					}
-					my.game.turn = (my.game.turn + 1) % my.game.seq.length;
-					attempts++;
-				}
+		// 버그 7: 가온/끝말잇기 아이템 적용 (내 턴이 시작될 때 발동)
+		if (my.opts.item && my.game.pendingItems) {
+			var currentId = my.game.seq[my.game.turn];
+			var curPending = my.game.pendingItems[currentId];
+			if (curPending && curPending.itemType === 'linkChange') {
+				my.game.linkOverride = Const.getLinkOverrideType(my.opts);
+				my.consumeItem(currentId, 'linkChange');
 			}
 		}
 

@@ -255,7 +255,7 @@ exports.submit = function (client, text) {
 			giveup: true
 		}, true);
 	} else {
-		if (my.game.primary > 0) {
+		if (my.game.winner.indexOf(client.id) !== -1) {
 			client.chat(maskText(text, my.game.answer));
 		} else {
 			client.chat(text);

@@ -1784,3 +1784,87 @@ iframe {
 		opacity: 0;
 	}
 }
+
+/* Item Mode */
+.ItemBar {
+	float: right;
+}
+
+.kkutu-menu .ItemButton {
+	float: left;
+	border: none;
+	border-bottom-left-radius: 0px;
+	border-bottom-right-radius: 0px;
+	width: auto;
+	height: 20px;
+	padding: 0px 8px;
+	min-width: 38px;
+	cursor: pointer;
+	background-color: #C0C0C0;
+	color: #888888;
+	transition: all 0.2s ease;
+}
+
+.kkutu-menu .ItemButton:disabled {
+	cursor: default;
+	background-color: #C0C0C0;
+	color: #888888;
+}
+
+.kkutu-menu .ItemButton.item-available {
+	background-color: #FFFFFF;
+	color: #333333;
+}
+
+.kkutu-menu .ItemButton.item-queued {
+	background-color: #BBDEFB;
+	color: #1565C0;
+}
+
+.ItemIcon {
+	margin-right: 2px;
+}
+
+.ItemName {
+	display: none;
+}
+
+.ItemCount {
+	font-weight: bold;
+	font-size: 11px;
+}
+
+/* Mobile player card item overlay */
+.game-user {
+	position: relative;
+}
+
+.MobileItemOverlay {
+	position: absolute;
+	bottom: 100%;
+	left: 0;
+	width: 90%;
+	min-width: 50%;
+	text-align: center;
+	background: #BBDEFB;
+	color: #000000;
+	border-radius: 8px;
+	padding: 3px 8px;
+	font-size: 11px;
+	transform-origin: left center;
+	transform: scaleX(0);
+	visibility: hidden;
+	transition: transform 0.15s ease;
+	pointer-events: none;
+	z-index: 5;
+}
+
+.MobileItemOverlay.visible {
+	visibility: visible;
+	transform: scaleX(1);
+}
+
+.MobileItemOverlay.hiding {
+	visibility: visible;
+	transform: scaleX(0);
+}

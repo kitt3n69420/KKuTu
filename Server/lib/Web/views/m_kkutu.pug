@@ -105,6 +105,12 @@ block Middle
 		//- button#ReplayBtn.for-lobby(style='display: none; background-color: #D9FF82;'): +FA('video-camera')
 		button#LeaderboardBtn.for-lobby(style='display: none; background-color: #FFADD3;'): +FA('trophy')
 		button#UserListBtn.for-lobby(style='display: none; background-color: #B0D2F3;'): +FA('users')
+		div.ItemBar.for-gaming(style='display: none;')
+			each slot in [1, 2, 3, 4, 5]
+				button.ItemButton(data-slot=slot, disabled)
+					i.fa.ItemIcon
+					span.ItemName
+					span.ItemCount 0
 	+Dialog('SettingDiag', 300, 450, L('settingsText'))
 		div.dialog-bar
 			div.dialog-opt(style="width: 100%; margin-bottom: 5px;")
@@ -350,7 +356,7 @@ block Middle
 			div.dialog-bar#room-simple-rules-panel(style='height: auto; overflow: hidden; display: none;')
 				h4(style='height: 30px;')= L('misc')
 				div(style='float: left; width: calc(100% - 90px);')
-					- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp'];
+					- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp'];
 					- for(var i in locals.OPTIONS)
 						- if(keyRules.indexOf(i) === -1) continue;
 						+GameOptionFull(i, 'room-simple')

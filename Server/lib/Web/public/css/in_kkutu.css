@@ -157,7 +157,7 @@ iframe {
 	height: 30px;
 }
 
-.kkutu-menu button {
+.kkutu-menu button:not(.ItemButton) {
 	float: left;
 	border: none;
 	border-bottom-left-radius: 0px;
@@ -197,7 +197,7 @@ iframe {
 	/* Border removed as requested */
 }
 
-.kkutu-menu button:hover {
+.kkutu-menu button:not(.ItemButton):hover {
 	margin-top: -5px;
 	height: 25px;
 }
@@ -2615,4 +2615,92 @@ iframe {
 
 #view-all-rules-content {
 	overflow-x: hidden;
+}
+
+/* Item Mode */
+.ItemBar {
+	float: right;
+}
+
+.kkutu-menu .ItemButton {
+	float: left;
+	border: none;
+	border-bottom-left-radius: 0px;
+	border-bottom-right-radius: 0px;
+	width: auto;
+	min-width: 38px;
+	height: 20px;
+	padding: 0px 8px;
+	cursor: pointer;
+	background-color: #C0C0C0;
+	color: #888888;
+	transition: all 0.2s ease;
+}
+
+.kkutu-menu .ItemButton:hover:not(:disabled) {
+	margin-top: -5px;
+	height: 30px;
+}
+
+.kkutu-menu .ItemButton:disabled {
+	cursor: default;
+	background-color: #C0C0C0;
+	color: #888888;
+}
+
+.kkutu-menu .ItemButton.item-available {
+	background-color: #FFFFFF;
+	color: #333333;
+}
+
+.kkutu-menu .ItemButton.item-queued {
+	background-color: #BBDEFB;
+	color: #1565C0;
+}
+
+.ItemIcon {
+	margin-right: 3px;
+}
+
+.ItemName {
+	margin-right: 3px;
+	display: inline-block;
+}
+
+.ItemCount {
+	font-weight: bold;
+	font-size: 11px;
+}
+
+/* Player card item overlay */
+.game-user {
+	position: relative;
+}
+
+.ItemOverlay {
+	position: absolute;
+	bottom: 20%;
+	left: 50%;
+	transform: translateX(-50%) scale(0);
+	background: #FFFFFF;
+	color: #000000;
+	border: 2px solid #555555;
+	border-radius: 8px;
+	padding: 6px 20px;
+	font-size: 22px;
+	white-space: nowrap;
+	visibility: hidden;
+	transition: transform 0.15s ease;
+	pointer-events: none;
+	z-index: 5;
+}
+
+.ItemOverlay.visible {
+	visibility: visible;
+	transform: translateX(-50%) scale(1);
+}
+
+.ItemOverlay.hiding {
+	visibility: visible;
+	transform: translateX(-50%) scale(0);
 }

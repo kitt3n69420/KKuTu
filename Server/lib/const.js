@@ -98,8 +98,32 @@ exports.OPTIONS = {
 	'nol': { name: "NoLong" },     // 장문 금지: 9글자 이상 금지
 	'nos': { name: "NoShort" },    // 단문 금지: 8글자 이하 금지
 	'obo': { name: "OnlyOnce" },   // 한번만: 전체 게임에서 한 번 쓴 단어는 재사용 불가
-	'alp': { name: "Allpos" }     // 모든 품사: 품사 제한 없이 모든 단어 사용 가능
+	'alp': { name: "Allpos" },     // 모든 품사: 품사 제한 없이 모든 단어 사용 가능
+	'itm': { name: "Item" }        // 아이템전: 아이템을 사용할 수 있는 모드
 
+};
+
+// ========== 아이템전 상수 ==========
+
+exports.ITEM_TYPES = ['skip', 'reverse', 'pass', 'random', 'linkChange'];
+exports.ITEM_MAX_COUNT = 5;       // 종류별 최대 보유 개수
+exports.ITEM_GRANT_INTERVAL = 2;  // N턴마다 자동 지급
+exports.ITEM_BONUS_THRESHOLD = 3; // 보너스 수치 N 이상이면 지급
+
+// 보너스 수치 계산 (각 게임 모드의 submit 처리 후 호출)
+exports.calcItemBonusPoints = function (missionCount, toss, straightStreak, fullhouse) {
+	var points = 0;
+	points += missionCount;
+	if (toss) points += 1;
+	if (straightStreak >= 1) points += Math.min(straightStreak, 3);
+	if (fullhouse) points += 3;
+	return points;
+};
+
+// 가온잇기/끝말잇기 아이템 종류 결정 (방 옵션 기준)
+exports.getLinkOverrideType = function (opts) {
+	if (opts.middle || opts.random) return 'end';
+	return 'middle';
 };
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
 	"저런", "ㅋㅋㅋㅋ", "안타깝네요", "아이고...", "바부", "컷~",
@@ -177,7 +201,7 @@ exports.RULE = {
 	'EKT': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "fho", "alp"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "fho", "alp", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -186,7 +210,7 @@ exports.RULE = {
 	'ESH': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -195,7 +219,7 @@ exports.RULE = {
 	'KKT': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -204,7 +228,7 @@ exports.RULE = {
 	'KSH': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -249,7 +273,7 @@ exports.RULE = {
 	'KAP': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -259,7 +283,7 @@ exports.RULE = {
 	'EAP': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -270,7 +294,7 @@ exports.RULE = {
 	'HUN': {
 		lang: "ko",
 		rule: "Hunmin",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god", "rnt", "sur", "obo", "fho"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god", "rnt", "sur", "obo", "fho", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -279,7 +303,7 @@ exports.RULE = {
 	'KDA': {
 		lang: "ko",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho"],
+		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm"],
 		time: 1,
 		ai: true,
 		ewq: false
@@ -287,7 +311,7 @@ exports.RULE = {
 	'EDA': {
 		lang: "en",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho"],
+		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -332,7 +356,7 @@ exports.RULE = {
 	'KFR': {
 		lang: "ko",
 		rule: "Free",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -341,7 +365,7 @@ exports.RULE = {
 	'EFR': {
 		lang: "en",
 		rule: "Free",
-		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo"],
+		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -350,7 +374,7 @@ exports.RULE = {
 	'EKK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "rnt", "sur", "obo", "alp"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "rnt", "sur", "obo", "alp", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -368,7 +392,7 @@ exports.RULE = {
 	'KAK': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -378,7 +402,7 @@ exports.RULE = {
 	'EAK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "sur", "obo", "alp"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "sur", "obo", "alp", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -388,7 +412,7 @@ exports.RULE = {
 	'KKU': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "mid", "sch", "spd", "drg", "stt", "fir", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "fho", "alp"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "mid", "sch", "spd", "drg", "stt", "fir", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "fho", "alp", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -397,7 +421,7 @@ exports.RULE = {
 	'CRL': {
 		lang: "etc",
 		rule: "Calcrelay",
-		opts: ["spd", "one", "drg", "nar", "god", "rnt", "sur"],
+		opts: ["spd", "one", "drg", "nar", "god", "rnt", "sur", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -729,36 +753,53 @@ exports.checkSurvivalStatus = function (my, DIC) {
 exports.applySurvivalDamage = function (my, DIC, damage, currentTurn) {
 	if (damage <= 0) return null;
 
-	var nextTurn = currentTurn;
-	var attempts = 0;
-
-	while (attempts < my.game.seq.length) {
-		nextTurn = (nextTurn + 1) % my.game.seq.length;
-		if (nextTurn === currentTurn) {
-			attempts++;
-			continue;
-		}
-
-		var nextPlayer = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
-		if (nextPlayer && nextPlayer.game && nextPlayer.game.alive) {
-			// 데미지 적용
-			nextPlayer.game.score -= damage;
-			var newHP = nextPlayer.game.score;
-			var ko = newHP <= 0;
-
-			if (ko) {
-				nextPlayer.game.alive = false;
-				nextPlayer.game.score = 0;
+	var nextTurn;
+	if (my.opts.item) {
+		// Use calculateNextTurn directly to process items, random jumps, and reversal safely
+		// Note: since this consumes items, we must ensure it isn't called twice.
+		nextTurn = my.calculateNextTurn(true); // pass true or similar flag to peek? Wait.
+	} else if (my.opts.randomturn) {
+		// random turn next index
+		var nextIdx = (my.game.randomTurnIndex + 1) % my.game.randomTurnOrder.length;
+		nextTurn = my.game.randomTurnOrder[nextIdx];
+	} else {
+		// Default sequential approach
+		nextTurn = currentTurn;
+		var attempts = 0;
+		while (attempts < my.game.seq.length) {
+			nextTurn = (nextTurn + 1) % my.game.seq.length;
+			if (nextTurn === currentTurn) {
+				attempts++;
+				continue;
 			}
-
-			return {
-				targetId: nextPlayer.id,
-				damage: damage,
-				newHP: ko ? 0 : newHP,
-				ko: ko
-			};
+			var nextPlayer = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
+			if (nextPlayer && nextPlayer.game && nextPlayer.game.alive) {
+				break;
+			}
+			attempts++;
 		}
-		attempts++;
+	}
+
+	var targetPlayer = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
+	if (targetPlayer && targetPlayer.game && targetPlayer.game.alive) {
+		// Apply damage
+		targetPlayer.game.score -= damage;
+		var newHP = targetPlayer.game.score;
+		var ko = newHP <= 0;
+
+		if (ko) {
+			targetPlayer.game.alive = false;
+			targetPlayer.game.score = 0;
+		}
+
+		// return the target Id and damage info
+		return {
+			targetId: targetPlayer.id,
+			targetIndex: nextTurn,  // Pass the target index so turnNext can jump there directly
+			damage: damage,
+			newHP: ko ? 0 : newHP,
+			ko: ko
+		};
 	}
 
 	return null;
