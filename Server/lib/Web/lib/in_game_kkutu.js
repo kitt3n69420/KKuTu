@@ -1261,6 +1261,7 @@ $(document).ready(function () {
 		// 게임 모드 변경 시 서바이벌 UI 업데이트
 		var survivalChecked = $("#room-survival").is(':checked') || $("#room-flat-survival").is(':checked');
 		updateSurvivalUI(survivalChecked);
+		if (window.updateViewAllRulesBtn) setTimeout(window.updateViewAllRulesBtn, 10);
 	});
 	// 나락-무적 상호배타: 나락 체크시 무적 해제
 	window.RULE_CHECKBOXES['narak'].on('change', function () {
@@ -1295,6 +1296,14 @@ $(document).ready(function () {
 				});
 			}
 		});
+	});
+
+	// 아이템전-랜덤턴 상호배타
+	window.RULE_CHECKBOXES['item'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['randomturn'].prop('checked', false);
+	});
+	window.RULE_CHECKBOXES['randomturn'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['item'].prop('checked', false);
 	});
 
 	// View All Rules Dialog 버튼 핸들러
@@ -2573,6 +2582,54 @@ $(document).ready(function () {
 		updateSurvivalUI($(this).is(':checked'));
 	});
 
+	// 아이템 버튼 클릭
+	$(document).on('click', '.ItemButton:not(:disabled)', function () {
+		var slot = $(this).data('slot');
+		var itemType = getItemTypeBySlot(slot);
+		console.log('[ITEM] click slot:', slot, 'itemType:', itemType, 'myItems:', JSON.stringify($data.myItems), 'pendingItem:', $data.pendingItem);
+		if (!itemType) return;
+
+		if ($data.pendingItem === itemType) {
+			$data.pendingItem = null;
+			console.log('[ITEM] sending item-dequeue');
+			send('item-dequeue', {});
+		} else {
+			$data.pendingItem = itemType;
+			console.log('[ITEM] sending item-queue:', itemType);
+			send('item-queue', { itemType: itemType });
+		}
+		updateItemUI();
+	});
+
+	// 아이템 키보드 단축키 (1~5)
+	$(document).on('keydown', function (e) {
+		if (e.originalEvent && e.originalEvent.repeat) return;
+		if (!$data.room || !$data.room.opts || !$data.room.opts.item) return;
+		if (!$data.room.gaming) return;
+		if ($data.room.mode === undefined) return;
+
+		// 캘크 중에는 무시 (숫자 필수 입력) - MODE 배열에서 CAL 또는 Relay-Calc 확인
+		var currentModeStr = window.MODE ? window.MODE[$data.room.mode] : "";
+		if (currentModeStr && currentModeStr.toLowerCase().indexOf('calc') !== -1) return;
+		if (currentModeStr && currentModeStr.toUpperCase() === 'CRL') return;
+
+		// 입력창 밸류 체크 (Talk 또는 hereText)
+		var val = ($stage.game.hereText.is(':visible') ? $stage.game.hereText.val() : $stage.talk.val()) || '';
+		if (val.length > 0) return; // 단어 입력 중이면 아이템 큐 동작 차단
+
+		var slot = e.which - 48; // 1(49) ~ 5(53)
+		var numpadSlot = e.which - 96; // NumPad 1(97) ~ 5(101)
+
+		var finalSlot = -1;
+		if (slot >= 1 && slot <= 5) finalSlot = slot;
+		else if (numpadSlot >= 1 && numpadSlot <= 5) finalSlot = numpadSlot;
+
+		if (finalSlot !== -1) {
+			e.preventDefault();
+			useItemSlot(finalSlot);
+		}
+	});
+
 	// 웹소켓 연결
 	function connect() {
 		var heartbeatInterval;
@@ -2677,7 +2734,8 @@ $lib.Classic.turnStart = function (data) {
 	if ($data._tid.robot) $data._tid = $data._tid.id;
 	data.id = $data._tid;
 
-	$stage.game.display.html($data._char = getCharText(data.char, data.subChar, data.wordLength, data.sumiChar));
+	var charHtml = getCharText(data.char, data.subChar, data.wordLength, data.sumiChar);
+	$stage.game.display.html($data._char = charHtml);
 	var $u = $("#game-user-" + data.id).addClass("game-user-current");
 	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
 	if (!$data._replay) {
@@ -5777,6 +5835,10 @@ function onMessage(data) {
 			loading(L['gameLoading']);
 			break;
 		case 'roundReady':
+			$('.game-user-ko').removeClass('game-user-ko');
+			$('.survival-ko').removeClass('survival-ko');
+			$('.survival-ko-score').removeClass('survival-ko-score');
+			initItemUI();
 			route("roundReady", data);
 			break;
 		case 'turnStart':
@@ -6011,6 +6073,28 @@ function onMessage(data) {
 			}
 			showAlert("[#" + data.code + "] " + L['error_' + data.code] + i);
 			break;
+		case 'item-given':
+			console.log('[ITEM] item-given:', data.itemType, 'count:', data.count);
+			$data.myItems[data.itemType] = data.count;
+			updateItemUI();
+			break;
+		case 'item-queued':
+			console.log('[ITEM] item-queued:', data.playerId, data.itemType);
+			showPlayerPendingItem(data.playerId, data.itemType);
+			break;
+		case 'item-dequeued':
+			console.log('[ITEM] item-dequeued:', data.playerId);
+			hidePlayerPendingItem(data.playerId);
+			break;
+		case 'item-used':
+			console.log('[ITEM] item-used:', data.playerId, data.itemType);
+			hidePlayerPendingItem(data.playerId);
+			if (data.playerId === $data.id) {
+				$data.myItems[data.itemType] = Math.max(0, ($data.myItems[data.itemType] || 1) - 1);
+				$data.pendingItem = null;
+				updateItemUI();
+			}
+			break;
 		default:
 			break;
 	}
@@ -6029,6 +6113,123 @@ function welcome() {
 	}, 2000);
 
 	if ($data.admin) console.log("관리자 모드");
+}
+/* Item Mode */
+var ITEM_SLOTS = {
+	skip: { slot: 1, name: '건너뛰기', icon: 'fa-forward' },
+	reverse: { slot: 2, name: '뒤로가기', icon: 'fa-exchange' },
+	pass: { slot: 3, name: '통과', icon: 'fa-hand-stop-o' },
+	random: { slot: 4, name: '랜덤', icon: 'fa-random' },
+	linkChange: { slot: 5, name: null, icon: null }
+};
+function getItemTypeBySlot(slot) {
+	for (var type in ITEM_SLOTS) {
+		if (ITEM_SLOTS[type].slot === slot) return type;
+	}
+	return null;
+}
+function getItemName(itemType) {
+	if (itemType === 'linkChange') {
+		return $data.linkChangeItemName || '잇기변경';
+	}
+	return ITEM_SLOTS[itemType] ? ITEM_SLOTS[itemType].name : '';
+}
+function getPlayerCard(playerId) {
+	return $('#game-user-' + playerId);
+}
+function initItemUI() {
+	$data.myItems = {};
+	$data.pendingItem = null;
+	$('.ItemButton').removeClass('item-queued');
+	$('.ItemOverlay, .MobileItemOverlay').hide();
+	if (!$data.room || !$data.room.opts || !$data.room.opts.item) {
+		$('.ItemBar').hide();
+		return;
+	}
+	var r = RULE[MODE[$data.room.mode]];
+	// linkChange 아이콘/이름 설정 (classic 전용)
+	if (r && r.rule === 'Classic') {
+		var opts = $data.room.opts;
+		if (opts.middle || opts.random) {
+			$data.linkChangeItemName = '끝말잇기';
+			ITEM_SLOTS.linkChange.name = '끝말잇기';
+			ITEM_SLOTS.linkChange.icon = 'fa-long-arrow-right';
+		} else {
+			$data.linkChangeItemName = '가온잇기';
+			ITEM_SLOTS.linkChange.name = '가온잇기';
+			ITEM_SLOTS.linkChange.icon = 'fa-compress';
+		}
+	}
+	$('.ItemButton').each(function () {
+		var slot = $(this).data('slot');
+		var itemType = getItemTypeBySlot(slot);
+		if (!itemType) { $(this).hide(); return; }
+		var info = ITEM_SLOTS[itemType];
+		// 2인이면 뒤로가기 비활성화 (숨기지 않음)
+		if (itemType === 'reverse' && $data.room.game && $data.room.game.seq && $data.room.game.seq.length <= 2) {
+			$(this).prop('disabled', true);
+			$(this).show();
+			$(this).find('.ItemIcon').attr('class', 'fa ItemIcon ' + info.icon);
+			$(this).find('.ItemName').text(info.name || '');
+			$(this).find('.ItemCount').text('0');
+			return;
+		}
+		// classic 아닌 모드에서 linkChange 숨김
+		if (itemType === 'linkChange' && (!r || r.rule !== 'Classic')) {
+			$(this).hide();
+			return;
+		}
+		$(this).show();
+		$(this).find('.ItemIcon').attr('class', 'fa ItemIcon ' + info.icon);
+		$(this).find('.ItemName').text(info.name || '');
+		$(this).find('.ItemCount').text('0');
+		$(this).prop('disabled', true).removeClass('item-available item-queued');
+		$data.myItems[itemType] = 0;
+	});
+	$('.ItemBar').show();
+}
+function updateItemUI() {
+	if (!$data.room || !$data.room.opts || !$data.room.opts.item) return;
+	$('.ItemButton').each(function () {
+		var slot = $(this).data('slot');
+		var itemType = getItemTypeBySlot(slot);
+		if (!itemType) return;
+		var count = $data.myItems[itemType] || 0;
+		$(this).find('.ItemCount').text(count);
+		$(this).removeClass('item-available item-queued');
+		if ($data.pendingItem === itemType) {
+			$(this).addClass('item-queued').prop('disabled', false);
+		} else if (count > 0) {
+			$(this).addClass('item-available').prop('disabled', false);
+		} else {
+			$(this).prop('disabled', true);
+		}
+	});
+}
+
+function useItemSlot(slot) {
+	var $btn = $('.ItemButton[data-slot=' + slot + ']');
+	if (!$btn.length || $btn.prop('disabled')) return;
+	$btn.trigger('click');
+}
+function showPlayerPendingItem(playerId, itemType) {
+	var $card = getPlayerCard(playerId);
+	var $overlay = $card.find('.ItemOverlay, .MobileItemOverlay');
+	if (!$overlay.length) {
+		// 오버레이가 없으면 동적 생성
+		var cls = mobile ? 'MobileItemOverlay' : 'ItemOverlay';
+		$overlay = $('<div>').addClass(cls);
+		$card.append($overlay);
+	}
+	$overlay.text(getItemName(itemType));
+	$overlay.removeClass('hiding');
+	requestAnimationFrame(function () { $overlay.addClass('visible'); });
+}
+function hidePlayerPendingItem(playerId) {
+	var $card = getPlayerCard(playerId);
+	var $overlay = $card.find('.ItemOverlay, .MobileItemOverlay');
+	$overlay.addClass('hiding').removeClass('visible');
+	setTimeout(function () { $overlay.removeClass('hiding'); }, 150);
 }
 function getKickText(profile, vote) {
 	var vv = L['agree'] + " " + vote.Y + ", " + L['disagree'] + " " + vote.N + L['kickCon'];
@@ -6161,6 +6362,15 @@ function runCommand(cmd) {
 				notice(L['cmd_dict']);
 			}
 			break;
+		case "/1":
+		case "/2":
+		case "/3":
+		case "/4":
+		case "/5":
+			if ($data.room && $data.room.gaming && $data.room.opts && $data.room.opts.item) {
+				useItemSlot(parseInt(cmd[0].charAt(1)));
+			}
+			break;
 		default:
 			for (i in CMD) notice(CMD[i], i);
 			break;
@@ -6276,6 +6486,12 @@ function processRoom(data) {
 					clearBoard();
 					drawRound();
 				}
+				// 아이템전: 관전자 입장 시 기존 대기 상태 복원
+				if (data.pendingItems) {
+					for (var pid in data.pendingItems) {
+						showPlayerPendingItem(pid, data.pendingItems[pid].itemType);
+					}
+				}
 				if (data.boards) {
 					// 십자말풀이 처리
 					$data.selectedRound = 1;
@@ -6354,7 +6570,7 @@ function updateUI(myRoom, refresh) {
 	if (only == "for-gaming" && !myRoom) return;
 	if ($data.practicing) only = "for-gaming";
 
-	$(".kkutu-menu button").hide();
+	$(".kkutu-menu button").not(".ItemButton").hide();
 	for (i in $stage.box) $stage.box[i].hide();
 	if (!mobile) $stage.box.me.show();
 	$stage.box.chat.show().width(790).height(190);
@@ -6412,6 +6628,12 @@ function updateUI(myRoom, refresh) {
 		$(".ChatBox").width(1000).height(140);
 		$stage.chat.height(70);
 		updateRoom(true);
+		initItemUI();
+	}
+	if (only !== 'for-gaming') {
+		$('.ItemBar').hide();
+	} else if (!$data.room || !$data.room.opts || !$data.room.opts.item) {
+		$('.ItemBar').hide(); // Even if for-gaming, hide if no item mode
 	}
 	$data._only = only;
 	setLocation($data.place);
@@ -6964,6 +7186,9 @@ function onMasterSubJamsu() {
 }
 function updateScore(id, score) {
 	var i, o, t;
+	var $userCard = $("#game-user-" + id);
+
+	if ($userCard.hasClass("game-user-ko")) return $userCard;
 
 	if (o = $data["_s" + id]) {
 		clearTimeout(o.timer);

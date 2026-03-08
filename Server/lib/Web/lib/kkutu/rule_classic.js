@@ -41,7 +41,8 @@ $lib.Classic.turnStart = function (data) {
 	if ($data._tid.robot) $data._tid = $data._tid.id;
 	data.id = $data._tid;
 
-	$stage.game.display.html($data._char = getCharText(data.char, data.subChar, data.wordLength, data.sumiChar));
+	var charHtml = getCharText(data.char, data.subChar, data.wordLength, data.sumiChar);
+	$stage.game.display.html($data._char = charHtml);
 	var $u = $("#game-user-" + data.id).addClass("game-user-current");
 	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
 	if (!$data._replay) {

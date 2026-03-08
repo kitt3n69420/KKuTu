@@ -338,6 +338,10 @@ exports.submit = function (client, text, data) {
 			} else {
 				clearTimeout(my.game.turnTimer);
 				clearTimeout(my.game.robotTimer);
+				// 아이템전: 아이템 지급 판정
+				if (my.opts.item) {
+					my.checkItemGrant(client.id, 0, true);
+				}
 				my.game._rrt = setTimeout(function () {
 					my.turnNext();
 				}, my.game.turnTime / 6);
@@ -356,6 +360,10 @@ exports.submit = function (client, text, data) {
 			nextQuestion: my.game.question
 		}, true);
 
+		// 아이템전: 아이템 지급 판정
+		if (my.opts.item) {
+			my.checkItemGrant(client.id, 0, true);
+		}
 		setTimeout(my.turnNext, my.game.turnTime / 6);
 	} else {
 		// 오답 처리

@@ -471,6 +471,22 @@ KKuTu.onClientMessage = function ($c, msg) {
 
       $c.setTeam(Math.round(temp));
       break;
+    case "item-queue":
+      if (!validateInput(msg.itemType, "string", { maxLength: 20 })) return;
+      if ($c.subPlace) temp = $c.pracRoom;
+      else if (!(temp = ROOM[$c.place])) return;
+      if (!temp.gaming) return;
+      if (!temp.opts.item) return;
+      if (Const.ITEM_TYPES.indexOf(msg.itemType) === -1) return;
+      temp.queueItem($c, msg.itemType);
+      break;
+    case "item-dequeue":
+      if ($c.subPlace) temp = $c.pracRoom;
+      else if (!(temp = ROOM[$c.place])) return;
+      if (!temp.gaming) return;
+      if (!temp.opts.item) return;
+      temp.dequeueItem($c);
+      break;
     case "kick":
       if (!validateInput(msg.target, "string", { maxLength: 50 })) return;
       if (msg.robot !== undefined && !validateInput(msg.robot, "boolean")) return;
@@ -563,24 +579,27 @@ KKuTu.onClientMessage = function ($c, msg) {
       break;
     case "draw":
       // Picture Quiz drawing message handler
-      if (!ROOM[$c.place]) return;
-      if (!ROOM[$c.place].gaming) return;
-      if (!ROOM[$c.place].handleDraw) return;
-      ROOM[$c.place].handleDraw($c, msg);
+      if ($c.subPlace) temp = $c.pracRoom;
+      else if (!(temp = ROOM[$c.place])) return;
+      if (!temp.gaming) return;
+      if (!temp.handleDraw) return;
+      temp.handleDraw($c, msg);
       break;
     case "clear":
       // Picture Quiz clear handler
-      if (!ROOM[$c.place]) return;
-      if (!ROOM[$c.place].gaming) return;
-      if (!ROOM[$c.place].handleClear) return;
-      ROOM[$c.place].handleClear($c, msg);
+      if ($c.subPlace) temp = $c.pracRoom;
+      else if (!(temp = ROOM[$c.place])) return;
+      if (!temp.gaming) return;
+      if (!temp.handleClear) return;
+      temp.handleClear($c, msg);
       break;
     case "pass":
       // Picture Quiz pass button handler
-      if (!ROOM[$c.place]) return;
-      if (!ROOM[$c.place].gaming) return;
-      if (!ROOM[$c.place].handlePass) return;
-      ROOM[$c.place].handlePass($c);
+      if ($c.subPlace) temp = $c.pracRoom;
+      else if (!(temp = ROOM[$c.place])) return;
+      if (!temp.gaming) return;
+      if (!temp.handlePass) return;
+      temp.handlePass($c);
       break;
     default:
       break;

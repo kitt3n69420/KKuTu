@@ -220,7 +220,7 @@ exports.submit = function (client, text) {
 	} else {
 
 		// Start of Masking Logic
-		if (my.game.primary > 0) {
+		if (my.game.winner.indexOf(client.id) !== -1) {
 			client.chat(maskText(text, my.game.answer ? my.game.answer._id : ""));
 		} else {
 			client.chat(text);
