@@ -85,15 +85,10 @@ function refillAiNameCache() {
 	// 단일 단어 캐시 리필 (2~7글자)
 	if (aiNameCacheSingle.length < AI_NAME_CACHE_THRESHOLD) {
 		pending++;
-		var q1 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 7 OFFSET floor(random() * (SELECT GREATEST(1, reltuples::bigint - ${AI_NAME_CACHE_SIZE}) FROM pg_class WHERE relname = 'kkutu_ko')) LIMIT ${AI_NAME_CACHE_SIZE}`;
+		var q1 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 7 ORDER BY random() LIMIT ${AI_NAME_CACHE_SIZE}`;
 		DB.kkutu['ko'].direct(q1, function (err, res) {
 			if (!err && res && res.rows) {
-				var shuffled = res.rows.slice();
-				for (var si = shuffled.length - 1; si > 0; si--) {
-					var sj = Math.floor(Math.random() * (si + 1));
-					var st = shuffled[si]; shuffled[si] = shuffled[sj]; shuffled[sj] = st;
-				}
-				aiNameCacheSingle = shuffled.map(function (row) { return row._id; });
+				aiNameCacheSingle = res.rows.map(function (row) { return row._id; });
 				JLog.info(`[AI_NAME_CACHE] Single cache refilled: ${aiNameCacheSingle.length} words`);
 			}
 			pending--;
@@ -104,7 +99,7 @@ function refillAiNameCache() {
 	// 첫 번째 단어 캐시 리필 (2~5글자)
 	if (aiNameCacheFirst.length < AI_NAME_CACHE_THRESHOLD) {
 		pending++;
-		var q2 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 OFFSET floor(random() * (SELECT GREATEST(1, reltuples::bigint - ${AI_NAME_CACHE_SIZE}) FROM pg_class WHERE relname = 'kkutu_ko')) LIMIT ${AI_NAME_CACHE_SIZE}`;
+		var q2 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 ORDER BY random() LIMIT ${AI_NAME_CACHE_SIZE}`;
 		DB.kkutu['ko'].direct(q2, function (err, res) {
 			if (!err && res && res.rows) {
 				aiNameCacheFirst = res.rows.map(function (row) { return row._id; });
@@ -118,7 +113,7 @@ function refillAiNameCache() {
 	// 두 번째 단어 캐시 리필 (2~5글자)
 	if (aiNameCacheSecond.length < AI_NAME_CACHE_THRESHOLD) {
 		pending++;
-		var q3 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 OFFSET floor(random() * (SELECT GREATEST(1, reltuples::bigint - ${AI_NAME_CACHE_SIZE}) FROM pg_class WHERE relname = 'kkutu_ko')) LIMIT ${AI_NAME_CACHE_SIZE}`;
+		var q3 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 ORDER BY random() LIMIT ${AI_NAME_CACHE_SIZE}`;
 		DB.kkutu['ko'].direct(q3, function (err, res) {
 			if (!err && res && res.rows) {
 				aiNameCacheSecond = res.rows.map(function (row) { return row._id; });
@@ -147,7 +142,7 @@ exports.processAjae = function(){
 	}
 };
 */
-exports.getUserList = function () {
+exports.getUserList = function (selfId) {
 	var i, res = {};
 
 	for (i in DIC) {
@@ -566,7 +561,12 @@ exports.Client = function (socket, profile, sid) {
 		JLog.warn(`Socket closed #${my.id} code=${code} lastHeartbeat=${elapsed}s ago`);
 		clearInterval(my._heartbeat);
 		if (ROOM[my.place]) ROOM[my.place].go(my);
-		if (my.subPlace) my.pracRoom.go(my);
+		if (my.subPlace && my.pracRoom) {
+			if (my.pracRoom.gaming) my.pracRoom.interrupt();
+			my.pracRoom.go(my);
+			my.pracRoom = null;
+			my.subPlace = 0;
+		}
 		exports.onClientClosed(my, code);
 	});
 	socket.on('message', function (msg) {
@@ -595,7 +595,7 @@ exports.Client = function (socket, profile, sid) {
 		}
 	};
 	*/
-	my.getData = function (gaming) {
+	my.getData = function (gaming, slim) {
 		var o = {
 			id: my.id,
 			guest: my.guest,
@@ -612,7 +612,11 @@ exports.Client = function (socket, profile, sid) {
 		if (!gaming) {
 			o.profile = my.profile;
 			o.place = my.place;
-			o.data = my.data;
+			if (slim) {
+				o.data = { score: my.data.score || 0 };
+			} else {
+				o.data = my.data;
+			}
 			o.money = my.money;
 			o.equip = my.equip;
 			o.exordial = my.exordial;
@@ -916,9 +920,14 @@ exports.Client = function (socket, profile, sid) {
 		var $room = ROOM[my.place];
 
 		if (my.subPlace) {
-			my.pracRoom.go(my);
+			if (my.pracRoom) {
+				if (my.pracRoom.gaming) my.pracRoom.interrupt();
+				my.pracRoom.go(my);
+				my.pracRoom = null;
+			}
+			my.subPlace = 0;
 			if ($room) my.send('room', { target: my.id, room: $room.getData() });
-			my.publish('user', my.getData());
+			my.publish('user', my.getData(false, true));
 			// 버그 수정: 연습 종료 전에 먼저 타이머 정리, 그 후 isPracticing=false
 			if ($room) {
 				// 타이머 먼저 정리 (isPracticing=true 상태에서)
@@ -945,11 +954,11 @@ exports.Client = function (socket, profile, sid) {
 
 		my.form = mode;
 		my.ready = false;
-		my.publish('user', my.getData());
+		my.publish('user', my.getData(false, true));
 	};
 	my.setTeam = function (team) {
 		my.team = team;
-		my.publish('user', my.getData());
+		my.publish('user', my.getData(false, true));
 	};
 	my.kick = function (target, kickVote) {
 		var $room = ROOM[my.place];
@@ -1008,7 +1017,7 @@ exports.Client = function (socket, profile, sid) {
 		if (my.form != "J") return;
 
 		my.ready = !my.ready;
-		my.publish('user', my.getData());
+		my.publish('user', my.getData(false, true));
 		$room.checkJamsu();
 	};
 	my.start = function () {
@@ -1042,7 +1051,7 @@ exports.Client = function (socket, profile, sid) {
 
 		my.team = 0;
 		my.ready = false;
-		ud = my.getData();
+		ud = my.getData(false, true);
 		// 연습방 데이터 생성 시 practice=true를 미리 설정
 		var pracRoomData = $room.getData();
 		pracRoomData.practice = true;  // Room 생성자에서 setAutoDelete() 호출 방지
@@ -1814,7 +1823,7 @@ exports.Room = function (room, channel) {
 					}
 				} else {
 					// 캐시 비어있음 - DB에서 조회
-					var q = "SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 7 OFFSET floor(random() * 1200000) LIMIT 1";
+					var q = "SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 7 ORDER BY random() LIMIT 1";
 					DB.kkutu['ko'].direct(q, function (err, res) {
 						if (my.players.length >= my.limit) return;
 						var dbName;
@@ -1850,7 +1859,7 @@ exports.Room = function (room, channel) {
 					}
 				} else {
 					// 캐시 비어있음 - DB에서 조회
-					var q1 = "SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 OFFSET floor(random() * 1200000) LIMIT 1";
+					var q1 = "SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND 5 ORDER BY random() LIMIT 1";
 					DB.kkutu['ko'].direct(q1, function (err, res) {
 						if (my.players.length >= my.limit) return;
 
@@ -1863,7 +1872,7 @@ exports.Room = function (room, channel) {
 						var dbW1 = res.rows[0]._id;
 						var dbRem = 7 - dbW1.length;
 
-						var q2 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND ${dbRem} OFFSET floor(random() * 1200000) LIMIT 1`;
+						var q2 = `SELECT _id FROM kkutu_ko WHERE LENGTH(_id) BETWEEN 2 AND ${dbRem} ORDER BY random() LIMIT 1`;
 						DB.kkutu['ko'].direct(q2, function (err2, res2) {
 							if (my.players.length >= my.limit) return;
 
@@ -2267,7 +2276,7 @@ exports.Room = function (room, channel) {
 		}
 		// ========== 수정 구간 종료 ==========
 		if (my.practice) {
-			clearTimeout(my.game.turnTimer);
+			if (my.gaming) my.interrupt();
 			client.subPlace = 0;
 		} else client.place = 0;
 
@@ -2540,7 +2549,7 @@ exports.Room = function (room, channel) {
 		// 아이템전 초기화
 		if (my.opts.item) {
 			my.game.items = {};
-			my.game.itemTurnCount = {};
+			my.game.itemGlobalTurnCount = 0;
 			my.game.bonusScore = {};
 			my.game.pendingItems = {};
 			my.game.reversed = false;
@@ -2588,7 +2597,6 @@ exports.Room = function (room, channel) {
 				if (my.game.seq.length > 2) itemObj.reverse = 0;
 				if (my.rule.rule === 'Classic') itemObj.linkChange = 0;
 				my.game.items[o.id] = itemObj;
-				my.game.itemTurnCount[o.id] = 0;
 				my.game.bonusScore[o.id] = 0;
 				if (my.game.pendingItems[o.id]) delete my.game.pendingItems[o.id];
 			}
@@ -2622,7 +2630,6 @@ exports.Room = function (room, channel) {
 					if (my.rule.rule === 'Classic') itemObj.linkChange = 0;
 					// 아이템 방일 때, 신규 접속자 초기화
 					my.game.items[io.id] = itemObj;
-					my.game.itemTurnCount[io.id] = 0;
 					my.game.bonusScore[io.id] = 0;
 				}
 			}
@@ -2950,7 +2957,7 @@ exports.Room = function (room, channel) {
 			}
 		}
 		delete my.game.items;
-		delete my.game.itemTurnCount;
+		delete my.game.itemGlobalTurnCount;
 		delete my.game.bonusScore;
 		delete my.game.pendingItems;
 		delete my.game.reversed;
@@ -3004,7 +3011,7 @@ exports.Room = function (room, channel) {
 	// ========== 아이템전 큐/발동/지급 ==========
 	my.queueItem = function (player, itemType) {
 		console.log('[ITEM-SRV] queueItem called:', player.id, itemType, 'opts.item:', my.opts.item, 'game.items:', JSON.stringify(my.game.items));
-		if (!my.gaming || !my.opts.item || !my.game.items) { console.log('[ITEM-SRV] queueItem rejected: no opts.item or no game.items'); return; }
+		if (!my.gaming || my._roundEnding || !my.opts.item || !my.game.items) { console.log('[ITEM-SRV] queueItem rejected: no opts.item or no game.items'); return; }
 		var items = my.game.items[player.id];
 		if (!items || (items[itemType] || 0) <= 0) { console.log('[ITEM-SRV] queueItem rejected: no items or count <= 0, items:', JSON.stringify(items)); return; }
 
@@ -3053,10 +3060,17 @@ exports.Room = function (room, channel) {
 	my.checkItemGrant = function (playerId, bonusPoints, success) {
 		if (!my.opts.item || !success) return;
 
-		my.game.itemTurnCount[playerId] = (my.game.itemTurnCount[playerId] || 0) + 1;
-		console.log('[ITEM-SRV] checkItemGrant:', playerId, 'turnCount:', my.game.itemTurnCount[playerId], 'bonus:', bonusPoints);
-		if (my.game.itemTurnCount[playerId] % Const.ITEM_GRANT_INTERVAL === 0) {
-			my.giveRandomItem(playerId);
+		my.game.itemGlobalTurnCount = (my.game.itemGlobalTurnCount || 0) + 1;
+		console.log('[ITEM-SRV] checkItemGrant:', playerId, 'globalTurn:', my.game.itemGlobalTurnCount, 'bonus:', bonusPoints);
+		if (my.game.itemGlobalTurnCount % Const.ITEM_GRANT_INTERVAL === 0) {
+			for (var i = 0; i < my.game.seq.length; i++) {
+				var pid = my.game.seq[i];
+				if (my.opts.survival) {
+					var p = DIC[pid] || pid;
+					if (!p || !p.game || !p.game.alive) continue;
+				}
+				my.giveRandomItem(pid);
+			}
 		}
 
 		if (bonusPoints > 0) {
@@ -3121,19 +3135,7 @@ exports.Room = function (room, channel) {
 			if (!peek) my.consumeItem(currentId, 'skip');
 		}
 
-		// 2. beforeNext 아이템: 현재 턴인 플레이어 제외
-		for (var id in pending) {
-			if (id === currentId || !pending[id]) continue;
-			if (pending[id].itemType === 'reverse') {
-				isReversed = !isReversed;
-				if (!peek) {
-					my.game.reversed = isReversed;
-					my.consumeItem(id, 'reverse');
-				}
-			}
-		}
-
-		// 3. 반복 계산 루프
+		// 2~3. 반복 계산 루프 (reverse, linkChange, pass를 도달 시 처리)
 		var dir = isReversed ? -1 : 1;
 		var next = cur;
 		var visited = 0;
@@ -3143,11 +3145,33 @@ exports.Room = function (room, channel) {
 			next = ((next + dir) % n + n) % n;
 			if (my.opts.survival) {
 				var p = DIC[seq[next]] || seq[next];
-				if (!p || !p.game || !p.game.alive) continue;
+				if (!p || !p.game || !p.game.alive) { visited--; continue; }
 			}
 			if (skipLeft > 0) { skipLeft--; continue; }
 			var nextPending = pending[seq[next]];
-			if (nextPending && nextPending.itemType === 'pass') {
+			if (!nextPending) break;
+
+			// reverse: 해당 플레이어 도달 시 방향 반전, cur 위치로 리셋
+			if (nextPending.itemType === 'reverse') {
+				isReversed = !isReversed;
+				dir = isReversed ? -1 : 1;
+				if (!peek) {
+					my.game.reversed = isReversed;
+					my.consumeItem(seq[next], 'reverse');
+				}
+				next = cur;
+				continue;
+			}
+			// linkChange: 해당 플레이어 도달 시 linkOverride 설정, 해당 플레이어 턴 시작
+			if (nextPending.itemType === 'linkChange') {
+				if (!peek) {
+					my.game.linkOverride = Const.getLinkOverrideType(my.opts);
+					my.consumeItem(seq[next], 'linkChange');
+				}
+				break;
+			}
+			// pass: 통과
+			if (nextPending.itemType === 'pass') {
 				if (!peek) my.consumeItem(seq[next], 'pass');
 				continue;
 			}
@@ -3262,16 +3286,6 @@ exports.Room = function (room, channel) {
 		} else {
 			// 기존 로직: 순차 진행
 			my.game.turn = my.calculateNextTurn();
-		}
-
-		// 버그 7: 가온/끝말잇기 아이템 적용 (내 턴이 시작될 때 발동)
-		if (my.opts.item && my.game.pendingItems) {
-			var currentId = my.game.seq[my.game.turn];
-			var curPending = my.game.pendingItems[currentId];
-			if (curPending && curPending.itemType === 'linkChange') {
-				my.game.linkOverride = Const.getLinkOverrideType(my.opts);
-				my.consumeItem(currentId, 'linkChange');
-			}
 		}
 
 		my.turnStart(force);

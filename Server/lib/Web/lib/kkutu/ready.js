@@ -381,6 +381,10 @@ $(document).ready(function () {
 				if (only == "for-master") $stage.dialog.inviteList.append($obj);
 				else $stage.lobby.userList.append($obj);
 			}
+			var prev = $data.users[id];
+			if (prev && prev.data && prev.data.record && data.data && !data.data.record) {
+				data.data = $.extend({}, prev.data, data.data);
+			}
 			$data.users[id] = data;
 			if (needed) {
 				if ($obj) $("#" + $obj.attr('id')).replaceWith($obj);
@@ -1373,15 +1377,9 @@ $(document).ready(function () {
 			$("#PracticeDiag .dialog-title").html(L['practice']);
 			$("#ai-team").val(0).prop('disabled', true);
 			var saved = loadVolumeSettings();
-			if (saved.aiAutoApply === true) {
-				$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
-				$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
-				$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
-			} else {
-				$("#ai-mute").prop('checked', false);
-				$("#ai-rage-quit").prop('checked', false);
-				$("#ai-fast-mode").prop('checked', false);
-			}
+			$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
+			$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
+			$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
 			showDialog($stage.dialog.practice);
 		} else {
 			send('practice', { level: -1 });
@@ -1624,14 +1622,10 @@ $(document).ready(function () {
 			$("#ai-mute").prop('checked', !bot.mute);
 			$("#ai-rage-quit").prop('checked', bot.canRageQuit || false);
 			$("#ai-fast-mode").prop('checked', bot.fastMode || false);
-		} else if (saved.aiAutoApply === true) {
+		} else {
 			$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
 			$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
 			$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
-		} else {
-			$("#ai-mute").prop('checked', false);
-			$("#ai-rage-quit").prop('checked', false);
-			$("#ai-fast-mode").prop('checked', false);
 		}
 		showDialog($stage.dialog.practice);
 	});

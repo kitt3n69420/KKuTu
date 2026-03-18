@@ -72,8 +72,25 @@ function setStatsCache(key, value) {
 	if (!StatsCache[key]) StatsCacheSize++;
 	StatsCache[key] = { value: value, time: Date.now() };
 	if (StatsCacheSize > STATS_CACHE_MAX) {
-		StatsCache = {};
-		StatsCacheSize = 0;
+		// GC 스파이크 방지: 전체 초기화 대신 만료된 항목만 점진적 제거
+		var now = Date.now();
+		var keys = Object.keys(StatsCache);
+		for (var i = 0; i < keys.length; i++) {
+			if (now - StatsCache[keys[i]].time >= STATS_CACHE_TTL) {
+				delete StatsCache[keys[i]];
+			}
+		}
+		// 만료 항목 제거 후에도 초과하면 가장 오래된 절반 제거
+		StatsCacheSize = Object.keys(StatsCache).length;
+		if (StatsCacheSize > STATS_CACHE_MAX) {
+			keys = Object.keys(StatsCache);
+			keys.sort(function (a, b) { return StatsCache[a].time - StatsCache[b].time; });
+			var toRemove = Math.floor(keys.length / 2);
+			for (var i = 0; i < toRemove; i++) {
+				delete StatsCache[keys[i]];
+			}
+			StatsCacheSize -= toRemove;
+		}
 	}
 }
 
@@ -1074,6 +1091,19 @@ exports.submit = function (client, text) {
 		var preSubChar = getSubChar.call(my, preChar);
 		var firstMove = my.game.roundChainCount < 1;
 
+		// linkOverride 적용: 매너 체크를 변경된 이을 글자 기준으로 수행
+		var _loSaved;
+		if (my.game.linkOverride) {
+			_loSaved = { middle: my.opts.middle, first: my.opts.first, second: my.opts.second };
+			if (my.game.linkOverride === 'middle') {
+				my.opts.middle = true; my.opts.first = false; my.opts.second = false;
+			} else if (my.game.linkOverride === 'end') {
+				my.opts.middle = false; my.opts.first = false; my.opts.second = false;
+			}
+			preChar = getChar.call(my, text);
+			preSubChar = getSubChar.call(my, preChar);
+		}
+
 		// EKT: 3글자 이상 단어 입력 시, trigram 모드가 활성화될 것을 미리 예상하여 3-gram으로 매너 체크
 		var gameType = Const.GAME_TYPE[my.mode];
 		if (gameType === 'EKT' && text.length >= 3 && !my.game.ektTrigramMode) {
@@ -1085,6 +1115,13 @@ exports.submit = function (client, text) {
 		if (gameType === 'KKU' && text.length >= 3 && !my.game.kkuTrigramMode && !my.opts.first && !my.opts.middle) {
 			preChar = text.slice(-3); // 강제로 마지막 3글자 사용
 			preSubChar = preChar.slice(1); // 2-gram subChar
+		}
+
+		// linkOverride opts 복구
+		if (_loSaved) {
+			my.opts.middle = _loSaved.middle;
+			my.opts.first = _loSaved.first;
+			my.opts.second = _loSaved.second;
 		}
 
 

@@ -393,6 +393,11 @@ Cluster.on("message", function (worker, msg) {
             JLog.warn(`[SECURITY] Blocked non-whitelisted key in user-publish: ${i}`);
             continue;
           }
+          // slim 모드: data에 record가 없으면 score만 업데이트하고 기존 data 유지
+          if (i === 'data' && temp.data && msg.data.data && !msg.data.data.record) {
+            temp.data.score = msg.data.data.score || 0;
+            continue;
+          }
           temp[i] = msg.data[i];
         }
       }
@@ -735,7 +740,7 @@ function joinNewUser($c) {
     box: $c.box,
     playTime: $c.data.playTime,
     okg: $c.okgCount,
-    users: KKuTu.getUserList(),
+    users: KKuTu.getUserList($c.id),
     rooms: KKuTu.getRoomList(),
     friends: $c.friends,
     admin: $c.admin,

@@ -107,7 +107,7 @@ exports.OPTIONS = {
 
 exports.ITEM_TYPES = ['skip', 'reverse', 'pass', 'random', 'linkChange'];
 exports.ITEM_MAX_COUNT = 5;       // 종류별 최대 보유 개수
-exports.ITEM_GRANT_INTERVAL = 2;  // N턴마다 자동 지급
+exports.ITEM_GRANT_INTERVAL = 8;  // 글로벌 N턴마다 전체 자동 지급
 exports.ITEM_BONUS_THRESHOLD = 3; // 보너스 수치 N 이상이면 지급
 
 // 보너스 수치 계산 (각 게임 모드의 submit 처리 후 호출)
@@ -149,18 +149,19 @@ exports.ROBOT_DEFEAT_MESSAGES = [ // 봇이 한방단어를 받았을 때 보내
 	"ㅁㄴㅇㄹ", "님아 제발", "아오 진짜", "아놔...", "ㅠㅠ", "너무해",
 	"선넘네", "이렇게 가는구나...", "당했다!", "에라이", "하...", "엣?",
 	"아니 님아", "아 제발", "뿌에엥", "뾄!", "악", "안돼", "ㅠㅠ", "저기요?",
-	"이럴수가", "너 봇이지?", "으아악", "어...?", "???", "무...무슨?", "뭐...뭐야?"
+	"이럴수가", "너 봇이지?", "으아악", "어...?", "???", "무...무슨?", "뭐...뭐야?",
+	"한방 단어는 너무 하잖아... ㅠㅠ"
 ];
 exports.ROBOT_ANGRY_MESSAGES = [ //봇이 빡치면 보내는 메시지
-	"이건 불공평해", "억까 제발좀", "아오!!!!!!", "짜증나",
-	"ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ",
+	"이건 불공평해", "억까 제발좀", "아오!!!!!!", "개짜증나",
+	"ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", "재밌냐?",
 	"야!!!", "치트 쓰지마", "사기치지마", "끄글 꺼라",
 	"억까겜", "작작 해라?", "적당히 하자?", "뿌에에에에엥"
 ]
 exports.ROBOT_FINAL_MESSAGES = [ //봇이 중퇴하기 전에 보내는 메시지
 	"나 안해", "망겜", "개노잼", "니들끼리나 잘 해라", "안할거임 ㅅㄱ",
 	"내가 너랑 다시 하나 봐라", "안해", "게임 뭣같이하네", "억까겜",
-	"탈주함 ㅂㅂ", "이타치가 왜 짱센지 알아? 탈주닌자라서", "개짜증나"
+	"탈주함 ㅂㅂ", "이타치가 왜 짱센지 알아? 탈주닌자라서", "ㅇ"
 ]
 exports.MOREMI_PART = ["back", "shoes", "clothes", "head", "eye", "mouth", "lhand", "rhand"];
 exports.CATEGORIES = ["all", "spec", "skin", "badge", "head", "eye", "mouth", "clothes", "hs", "back"];
@@ -569,7 +570,7 @@ exports.MISSION_ko = ["가", "나", "다", "라", "마", "바", "사", "아", "�
 exports.MISSION_en = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
 exports.KO_INJEONG = [
-	"KRR", "KTV", "KBS", "KHJ", "TPW",
+	"KRR", "KDI", "KTV", "KBS", "KHJ", "KSC", "TPW",
 	"BTC", "KOT", "DOT", "DGM", "RAG",
 	"JLN", "LVL", "LOL", "MAM", "MMM",
 	"MCJ", "JAN", "MAP", "MKK", "MNG",
