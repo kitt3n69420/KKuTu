@@ -470,12 +470,11 @@ function noticeAdmin(req, ...args) {
   JLog.info(`[ADMIN] ${req.originalUrl} ${req.ip} | ${args.join(" | ")}`);
 }
 function checkAdmin(req, res) {
-  if (req.session.profile) {
-    if (GLOBAL.ADMIN.indexOf(req.session.profile.id) == -1) {
-      req.session.admin = false;
-      return (res.send({ error: 400 }), false);
-    }
-  } else {
+  if (!req.session.profile) {
+    req.session.admin = false;
+    return (res.send({ error: 400 }), false);
+  }
+  if (GLOBAL.ADMIN.indexOf(req.session.profile.id) == -1) {
     req.session.admin = false;
     return (res.send({ error: 400 }), false);
   }
