@@ -329,6 +329,10 @@ exports.submit = function (client, text) {
                 t = tv - my.game.turnAt;
                 var isReturn = my.opts.return && my.game.chain.includes(text);
 
+                // 아이템전: 미션 글자 수를 getScore 이전에 계산 (getScore 내부에서 mission이 true로 바뀜)
+                var itemMissionCount = (my.opts.item && my.game.mission && my.game.mission !== true && text.match(new RegExp(my.game.mission, 'g')))
+                    ? text.match(new RegExp(my.game.mission, 'g')).length : 0;
+
                 // 기본 점수 계산 (미션 보너스 포함)
                 var baseScore = my.getScore(text, t, isReturn);
                 // 미션 보너스 제외한 순수 기본 점수
@@ -451,8 +455,7 @@ exports.submit = function (client, text) {
                         clearTimeout(my.game.robotTimer);
                         // 아이템전: 아이템 지급 판정
                         if (my.opts.item) {
-                            var mCount = (my.game.mission && my.game.mission !== true && text.match(new RegExp(my.game.mission, 'g'))) ? text.match(new RegExp(my.game.mission, 'g')).length : 0;
-                            var bp = Const.calcItemBonusPoints(mCount, false, client.game.straightStreak, fullHouseBonus > 0);
+                            var bp = Const.calcItemBonusPoints(itemMissionCount, false, client.game.straightStreak, fullHouseBonus > 0);
                             my.checkItemGrant(client.id, bp, true);
                         }
                         my.game._rrt = setTimeout(function () {
@@ -491,8 +494,7 @@ exports.submit = function (client, text) {
                 }
                 // 아이템전: 아이템 지급 판정
                 if (my.opts.item) {
-                    var mCount = (my.game.mission && my.game.mission !== true && text.match(new RegExp(my.game.mission, 'g'))) ? text.match(new RegExp(my.game.mission, 'g')).length : 0;
-                    var bp = Const.calcItemBonusPoints(mCount, false, client.game.straightStreak, fullHouseBonus > 0);
+                    var bp = Const.calcItemBonusPoints(itemMissionCount, false, client.game.straightStreak, fullHouseBonus > 0);
                     my.checkItemGrant(client.id, bp, true);
                 }
                 setTimeout(my.turnNext, my.game.turnTime / 6);

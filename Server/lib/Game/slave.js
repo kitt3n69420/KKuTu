@@ -302,7 +302,8 @@ KKuTu.onClientMessage = function ($c, msg) {
         if (temp.game.late) {
           $c.chat(msg.value);
         } else if (!temp.game.loading) {
-          temp.submit($c, msg.value, msg.data);
+          var safeData = (Array.isArray(msg.data)) ? msg.data : undefined;
+          temp.submit($c, msg.value, safeData);
         }
       } else {
         if ($c.admin) {
@@ -332,6 +333,13 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (!validateInput(msg.round, "number")) stable = false;
       if (!validateInput(msg.time, "number")) stable = false;
       if (!validateInput(msg.opts, "object")) stable = false;
+
+      // opts 내부 특수 속성 타입 검증
+      if (stable && msg.opts) {
+        if (msg.opts.surHP !== undefined && typeof msg.opts.surHP !== 'number') delete msg.opts.surHP;
+        if (msg.opts.injpick !== undefined && !Array.isArray(msg.opts.injpick)) delete msg.opts.injpick;
+        if (msg.opts.quizpick !== undefined && !Array.isArray(msg.opts.quizpick)) delete msg.opts.quizpick;
+      }
 
       // 서버에서는 욕설 필터링을 적용하지 않음 (클라이언트에서 표시 시 처리)
 
@@ -583,7 +591,7 @@ KKuTu.onClientMessage = function ($c, msg) {
       else if (!(temp = ROOM[$c.place])) return;
       if (!temp.gaming) return;
       if (!temp.handleDraw) return;
-      temp.handleDraw($c, msg);
+      temp.handleDraw($c, { x: msg.x, y: msg.y, color: msg.color, size: msg.size });
       break;
     case "clear":
       // Picture Quiz clear handler

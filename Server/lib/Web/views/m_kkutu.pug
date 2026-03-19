@@ -107,7 +107,7 @@ block Middle
 		button#UserListBtn.for-lobby(style='display: none; background-color: #B0D2F3;'): +FA('users')
 		div.ItemBar.for-gaming(style='display: none;')
 			each slot in [1, 2, 3, 4, 5]
-				button.ItemButton(data-slot=slot, disabled)
+				button.ItemButton.item-disabled(data-slot=slot)
 					i.fa.ItemIcon
 					span.ItemName
 					span.ItemCount 0

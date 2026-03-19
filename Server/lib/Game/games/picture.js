@@ -357,6 +357,7 @@ exports.handleDraw = function (client, msg) {
     if (typeof msg.x !== 'number' || typeof msg.y !== 'number') return;
     if (msg.x < 0 || msg.x >= CANVAS_WIDTH) return;
     if (msg.y < 0 || msg.y >= CANVAS_HEIGHT) return;
+    if (typeof msg.color !== 'string' || msg.color.length > 20) return;
 
     // Update canvas state
     var key = msg.x + ',' + msg.y;

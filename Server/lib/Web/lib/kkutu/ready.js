@@ -2466,7 +2466,8 @@ $(document).ready(function () {
 	});
 
 	// 아이템 버튼 클릭
-	$(document).on('click', '.ItemButton:not(:disabled)', function () {
+	$(document).on('click', '.ItemButton', function () {
+		if ($(this).hasClass('item-disabled')) return;
 		var slot = $(this).data('slot');
 		var itemType = getItemTypeBySlot(slot);
 		console.log('[ITEM] click slot:', slot, 'itemType:', itemType, 'myItems:', JSON.stringify($data.myItems), 'pendingItem:', $data.pendingItem);
@@ -2483,6 +2484,23 @@ $(document).ready(function () {
 		}
 		updateItemUI();
 	});
+
+	// 모바일: 롱프레스로 아이템 툴팁 표시
+	(function () {
+		var longPressTimer = null;
+		$(document).on('touchstart', '.ItemButton[data-tooltip]', function (e) {
+			var $btn = $(this);
+			longPressTimer = setTimeout(function () {
+				longPressTimer = null;
+				$('.item-tooltip-popup').remove();
+				var $tip = $('<div>').addClass('item-tooltip-popup').text($btn.attr('data-tooltip'));
+				$btn.append($tip);
+				setTimeout(function () { $tip.remove(); }, 2000);
+			}, 100);
+		}).on('touchend touchcancel touchmove', '.ItemButton', function () {
+			if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+		});
+	})();
 
 	// 아이템 키보드 단축키 (1~5)
 	$(document).on('keydown', function (e) {

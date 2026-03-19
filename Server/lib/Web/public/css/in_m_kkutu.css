@@ -2337,6 +2337,7 @@ body {
 }
 
 .kkutu-menu .ItemButton {
+	position: relative;
 	float: left;
 	border: none;
 	border-bottom-left-radius: 0px;
@@ -2353,10 +2354,28 @@ body {
 	overflow: visible;
 }
 
-.kkutu-menu .ItemButton:disabled {
+
+.kkutu-menu .ItemButton.item-disabled {
 	cursor: default;
 	background-color: #C0C0C0;
 	color: #888888;
+}
+
+.item-tooltip-popup {
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	background: rgba(0, 0, 0, 0.85);
+	color: #eee;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	font-weight: normal;
+	white-space: nowrap;
+	z-index: 100;
+	pointer-events: none;
+	margin-top: 4px;
 }
 
 .kkutu-menu .ItemButton.item-available {

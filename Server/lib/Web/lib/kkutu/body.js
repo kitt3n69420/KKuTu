@@ -676,7 +676,7 @@ function onMessage(data) {
 				}
 			}
 			// 라운드 종료 시 아이템 큐 방지
-			$('.ItemButton').prop('disabled', true).removeClass('item-available item-queued');
+			$('.ItemButton').addClass('item-disabled').css({'filter': 'grayscale(100%)', 'opacity': '0.5', 'cursor': 'not-allowed'}).removeClass('item-available item-queued');
 			$data.pendingItem = null;
 			$data._resultRank = data.ranks;
 			roundEnd(data.result, data.data);
@@ -932,7 +932,11 @@ function initItemUI() {
 		$(this).find('.ItemIcon').attr('class', 'fa ItemIcon ' + info.icon);
 		$(this).find('.ItemName').text(info.nameKey ? L[info.nameKey] : '');
 		$(this).find('.ItemCount').text('0');
-		$(this).prop('disabled', true).removeClass('item-available item-queued');
+
+		var descKey = (itemType === 'linkChange') ? (ITEM_SLOTS.linkChange.nameKey + 'Desc') : (info.nameKey + 'Desc');
+		$(this).attr('data-tooltip', L[descKey] || '');
+
+		$(this).removeAttr('disabled').addClass('item-disabled').css({'filter': 'grayscale(100%)', 'opacity': '0.5', 'cursor': 'not-allowed'}).removeClass('item-available item-queued');
 		$data.myItems[itemType] = 0;
 	});
 	$('.ItemBar').show();
@@ -945,20 +949,20 @@ function updateItemUI() {
 		if (!itemType) return;
 		var count = $data.myItems[itemType] || 0;
 		$(this).find('.ItemCount').text(count);
-		$(this).removeClass('item-available item-queued');
+		$(this).removeClass('item-available item-queued item-disabled').css({'filter': '', 'opacity': '', 'cursor': ''});
 		if ($data.pendingItem === itemType) {
-			$(this).addClass('item-queued').prop('disabled', false);
+			$(this).addClass('item-queued');
 		} else if (count > 0) {
-			$(this).addClass('item-available').prop('disabled', false);
+			$(this).addClass('item-available');
 		} else {
-			$(this).prop('disabled', true);
+			$(this).addClass('item-disabled').css({'filter': 'grayscale(100%)', 'opacity': '0.5', 'cursor': 'not-allowed'});
 		}
 	});
 }
 
 function useItemSlot(slot) {
 	var $btn = $('.ItemButton[data-slot=' + slot + ']');
-	if (!$btn.length || $btn.prop('disabled')) return;
+	if (!$btn.length || $btn.hasClass('item-disabled')) return;
 	$btn.trigger('click');
 }
 function showPlayerPendingItem(playerId, itemType) {

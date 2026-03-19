@@ -2623,6 +2623,7 @@ iframe {
 }
 
 .kkutu-menu .ItemButton {
+	position: relative;
 	float: left;
 	border: none;
 	border-bottom-left-radius: 0px;
@@ -2638,12 +2639,30 @@ iframe {
 	overflow: visible;
 }
 
-.kkutu-menu .ItemButton:hover:not(:disabled) {
+.kkutu-menu .ItemButton[data-tooltip]:hover::after {
+	content: attr(data-tooltip);
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	background: rgba(0, 0, 0, 0.85);
+	color: #eee;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	font-weight: normal;
+	white-space: nowrap;
+	z-index: 100;
+	pointer-events: none;
+	margin-top: 4px;
+}
+
+.kkutu-menu .ItemButton:hover:not(.item-disabled) {
 	margin-top: -5px;
 	height: 25px;
 }
 
-.kkutu-menu .ItemButton:disabled {
+.kkutu-menu .ItemButton.item-disabled {
 	cursor: default;
 	background-color: #C0C0C0;
 	color: #888888;

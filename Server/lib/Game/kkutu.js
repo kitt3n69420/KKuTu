@@ -2319,14 +2319,19 @@ exports.Room = function (room, channel) {
 			}
 			if (ijc = my.rule.opts.includes("ijp")) {
 				ij = Const[`${my.rule.lang.toUpperCase()}_IJP`];
-				my.opts.injpick = (room.opts.injpick || []).filter(function (item) { return ij.includes(item); });
+				var rawInjpick = Array.isArray(room.opts.injpick) ? room.opts.injpick : [];
+				my.opts.injpick = rawInjpick.filter(function (item) { return typeof item === 'string' && ij.includes(item); });
 			} else my.opts.injpick = [];
 			if (my.rule.opts.includes("qij")) {
-				my.opts.quizpick = room.opts.quizpick || [];
+				var rawQuizpick = Array.isArray(room.opts.quizpick) ? room.opts.quizpick : [];
+				my.opts.quizpick = rawQuizpick.filter(function (item) { return typeof item === 'string'; });
 			} else my.opts.quizpick = [];
-			// 서바이벌 HP 옵션 처리
-			if (room.opts.surHP) {
+			// 서바이벌 HP 옵션 처리 (허용 값만 사용)
+			var ALLOWED_SUR_HP = [200, 500, 1000, 2000];
+			if (ALLOWED_SUR_HP.indexOf(room.opts.surHP) !== -1) {
 				my.opts.surHP = room.opts.surHP;
+			} else {
+				my.opts.surHP = 500;
 			}
 		}
 		// APL (Bad Apple) 옵션 체크: opts 복사 후에 수행

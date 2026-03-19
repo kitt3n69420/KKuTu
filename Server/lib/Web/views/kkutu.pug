@@ -97,7 +97,7 @@ block Middle
 		div#facebook-menu.fb-like.for-lobby.for-master.for-normal.for-gaming(data-href='https://kkutu-n.xyz', data-width='300', data-layout='button_count', data-action='like', data-show-faces='true', data-share='true')
 		div.ItemBar.for-gaming(style='display: none;')
 			each slot in [1, 2, 3, 4, 5]
-				button.ItemButton(data-slot=slot, disabled)
+				button.ItemButton.item-disabled(data-slot=slot)
 					i.fa.ItemIcon
 					span.ItemName
 					span.ItemCount 0
