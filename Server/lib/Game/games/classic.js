@@ -687,6 +687,7 @@ exports.turnStart = function (force) {
 
 function getNextTurnLength() {
 	var my = this;
+	if (!my.game || !my.game.seq) return my.game ? (my.game.wordLength || 0) : 0;
 	if (my.opts.sami) {
 		var n = my.game.seq.length;
 		if (n % 2 !== 0) {
@@ -1886,7 +1887,7 @@ exports.getScore = function (text, delay, ignoreMission) {
 	score = Const.getPreScore(text, my.game.chain, tr);
 
 	if (my.game.dic[text]) score *= 15 / (my.game.dic[text] + 15);
-	if (!ignoreMission) {
+	if (!ignoreMission && my.game.mission && typeof my.game.mission === "string") {
 		// 쉬운 미션 (easymission) 규칙: 초성과 중성만 일치하면 미션 달성
 		if (my.opts.easymission && my.rule.lang === "ko") {
 			var missionChar = my.game.mission;
