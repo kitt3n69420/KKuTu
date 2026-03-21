@@ -310,7 +310,7 @@ block Middle
 		div.dialog-bar#room-word-settings-wrapper(style='height: auto; overflow: hidden; display: none;')
 			h4= L('wordScope')
 			div(style='float: left; width: 300px;')
-				- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ret', 'obo'];
+				- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ret', 'obo', 'alp'];
 				- for(var i in locals.OPTIONS)
 					- if(scopeOpts.indexOf(i) === -1) continue;
 					+GameOption(i, 'room')
@@ -340,7 +340,7 @@ block Middle
 			div(style='float: left; width: 300px;')
 				- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg'];
 				- for(var i in locals.OPTIONS)
-					- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo'].indexOf(i) !== -1) continue;
+					- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp'].indexOf(i) !== -1) continue;
 					- if(bonusOpts.indexOf(i) !== -1) continue;
 					+GameOption(i, 'room')
 				div.dialog-opt#room-injpick-panel(style='width: auto;')
@@ -420,7 +420,7 @@ block Middle
 			div.dialog-bar#view-all-word-settings-wrapper(style='height: auto; overflow: hidden; display: none;')
 				h4= L('wordScope')
 				div(style='float: left; width: 300px;')
-					- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ret', 'obo'];
+					- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ret', 'obo', 'alp'];
 					- for(var i in locals.OPTIONS)
 						- if(scopeOpts.indexOf(i) === -1) continue;
 						+GameOption(i, 'view-all')
@@ -450,7 +450,7 @@ block Middle
 				div(style='float: left; width: 300px;')
 					- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg'];
 					- for(var i in locals.OPTIONS)
-						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo'].indexOf(i) !== -1) continue;
+						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp'].indexOf(i) !== -1) continue;
 						- if(bonusOpts.indexOf(i) !== -1) continue;
 						+GameOption(i, 'view-all')
 					div.dialog-opt#view-all-injpick-panel

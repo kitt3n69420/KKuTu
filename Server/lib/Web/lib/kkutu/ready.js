@@ -971,7 +971,7 @@ $(document).ready(function () {
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
-		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 
 		if (showCategory) {
@@ -1199,6 +1199,20 @@ $(document).ready(function () {
 		if ($(this).is(':checked')) window.RULE_CHECKBOXES['item'].prop('checked', false);
 	});
 
+	// 도돌이 금지 - 첫말잇기/랜덤잇기 상호배타
+	window.RULE_CHECKBOXES['nododoli'].on('change', function () {
+		if ($(this).is(':checked')) {
+			window.RULE_CHECKBOXES['first'].prop('checked', false);
+			window.RULE_CHECKBOXES['random'].prop('checked', false);
+		}
+	});
+	window.RULE_CHECKBOXES['first'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['nododoli'].prop('checked', false);
+	});
+	window.RULE_CHECKBOXES['random'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['nododoli'].prop('checked', false);
+	});
+
 	// View All Rules Dialog 버튼 핸들러
 	$("#view-all-rules-btn").on('click', function () {
 		var v = $("#room-mode").val();
@@ -1215,7 +1229,7 @@ $(document).ready(function () {
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
-		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 
 		if (showCategory) {

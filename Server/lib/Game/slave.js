@@ -300,7 +300,7 @@ KKuTu.onClientMessage = function ($c, msg) {
         else if (!(temp = ROOM[$c.place])) return;
         if (!temp.gaming) return;
         if (temp.game.late) {
-          var lateVal = KKuTu.checkSwearWords(msg.value).length > 0 ? KKuTu.censorSwearWords(msg.value) : msg.value;
+          var lateVal = (temp.opts.noswear && KKuTu.checkSwearWords(msg.value).length > 0) ? KKuTu.censorSwearWords(msg.value) : msg.value;
           $c.chat(lateVal);
         } else if (!temp.game.loading) {
           var safeData = (Array.isArray(msg.data)) ? msg.data : undefined;
@@ -313,7 +313,9 @@ KKuTu.onClientMessage = function ($c, msg) {
             break;
           }
         }
-        var chatVal = KKuTu.checkSwearWords(msg.value).length > 0 ? KKuTu.censorSwearWords(msg.value) : msg.value;
+        // 일반 채팅: 방에 있고 noswear 규칙이 켜져 있을 때만 검열
+        var chatRoom = ROOM[$c.place];
+        var chatVal = (chatRoom && chatRoom.opts.noswear && KKuTu.checkSwearWords(msg.value).length > 0) ? KKuTu.censorSwearWords(msg.value) : msg.value;
         if (msg.whisper) {
           process.send({ type: "tail-report", id: $c.id, chan: CHAN, place: $c.place, msg: msg });
           msg.whisper.split(",").forEach((v) => {

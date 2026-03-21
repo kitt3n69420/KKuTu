@@ -20,6 +20,7 @@ var Const = require('../../const');
 var Lizard = require('../../sub/lizard');
 var DB;
 var DIC;
+var checkSwearWords;
 
 const ROBOT_START_DELAY = [1200, 800, 400, 200, 0];
 const ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0];
@@ -53,45 +54,12 @@ const VOWEL_INV_MAP = {
 var AttackCache = {};
 var AttackCacheSize = 0;
 var ATTACK_CACHE_MAX_BYTES = 1024 * 1024; // 1MB
-var StatsCache = {};
-var StatsCacheSize = 0;
-var STATS_CACHE_TTL = 300000; // 5분
-var STATS_CACHE_MAX = 5000;
-
-function getStatsCache(key) {
-	var entry = StatsCache[key];
-	if (!entry) return undefined;
-	if (Date.now() - entry.time >= STATS_CACHE_TTL) {
-		delete StatsCache[key];
-		StatsCacheSize--;
-		return undefined;
-	}
-	return entry.value;
+// stats 테이블 인메모리 조회 헬퍼
+function getStatsDoc(lang, id) {
+	return (DB.statsData && DB.statsData[lang] && DB.statsData[lang][id]) || null;
 }
-function setStatsCache(key, value) {
-	if (!StatsCache[key]) StatsCacheSize++;
-	StatsCache[key] = { value: value, time: Date.now() };
-	if (StatsCacheSize > STATS_CACHE_MAX) {
-		// GC 스파이크 방지: 전체 초기화 대신 만료된 항목만 점진적 제거
-		var now = Date.now();
-		var keys = Object.keys(StatsCache);
-		for (var i = 0; i < keys.length; i++) {
-			if (now - StatsCache[keys[i]].time >= STATS_CACHE_TTL) {
-				delete StatsCache[keys[i]];
-			}
-		}
-		// 만료 항목 제거 후에도 초과하면 가장 오래된 절반 제거
-		StatsCacheSize = Object.keys(StatsCache).length;
-		if (StatsCacheSize > STATS_CACHE_MAX) {
-			keys = Object.keys(StatsCache);
-			keys.sort(function (a, b) { return StatsCache[a].time - StatsCache[b].time; });
-			var toRemove = Math.floor(keys.length / 2);
-			for (var i = 0; i < toRemove; i++) {
-				delete StatsCache[keys[i]];
-			}
-			StatsCacheSize -= toRemove;
-		}
-	}
+function getAllStatsDocs(lang) {
+	return (DB.statsData && DB.statsData[lang]) ? Object.values(DB.statsData[lang]) : [];
 }
 
 // Helper function to get player ID (supports both robot objects and player ID strings)
@@ -145,7 +113,6 @@ function getAttackChars(my) {
 		var key = my.rule.lang + "_" + col;
 
 		var isKo = my.rule.lang === 'ko';
-		var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
 		var useCol = col;
 		if (isKo) {
 			var reqLen = getNextTurnLength.call(my);
@@ -184,129 +151,91 @@ function getAttackChars(my) {
 			}
 		}
 
-		var p1 = new Promise(function (res1) {
-			// Tier 1: One-shot killers (count 0-2)
-			// Logic: If Manner mode, exclude 0. Count 1-2 allowed.
-			// If Normal mode, include 0-2.
+		// 인메모리 stats에서 직접 필터링
+		var lang = isKo ? 'ko' : 'en';
+		var allDocs = getAllStatsDocs(lang);
+		var allPriority = priorityList.concat(priorityMannerList);
 
-			var cond = {};
+		// Tier 1: One-shot killers (count 0-2)
+		var hardKillers, softKillerIds, priorityDocs;
+		if (isMannerLike(my.opts)) {
+			hardKillers = allDocs.filter(function (d) { var v = d[useCol] || 0; return v >= 1 && v <= 2; });
+		} else {
+			hardKillers = allDocs.filter(function (d) { var v = d[useCol] || 0; return v <= 2; });
+		}
+		hardKillers.sort(function (a, b) { return (a[useCol] || 0) - (b[useCol] || 0); });
+		hardKillers = hardKillers.slice(0, 100);
+
+		// Tier 2: Soft killers (count 3-5)
+		var softDocs = allDocs.filter(function (d) { var v = d[useCol] || 0; return v >= 3 && v <= 5; });
+		softDocs.sort(function (a, b) { return (a[useCol] || 0) - (b[useCol] || 0); });
+		softKillerIds = softDocs.slice(0, 200).map(function (d) { return d._id; });
+
+		// Priority chars from manual list
+		priorityDocs = allPriority.map(function (id) { return getStatsDoc(lang, id); }).filter(Boolean);
+
+		// Build Tier 1: Hard killers + Priority chars that are hard
+		var tier1Set = new Set();
+		var tier2Set = new Set(softKillerIds);
+
+		hardKillers.forEach(function (doc) {
+			tier1Set.add(doc._id);
+		});
+
+		// Process Priority Chars (Heuristics) - Add to Tier 1 or Tier 2
+		priorityDocs.forEach(function (doc) {
+			var count = doc[useCol];
+			if (!count && count !== 0) count = 0;
+
 			if (isMannerLike(my.opts)) {
-				cond = { $gte: 1, $lte: 2 };
-			} else {
-				cond = { $lte: 2 };
+				if (count === 0) return;
 			}
 
-			table.find([useCol, cond]).sort({
-				[useCol]: 1
-			}).limit(100).on(function (docs) {
-				res1(docs || []);
-			}, null, () => res1([]));
-		});
-
-		var p2 = new Promise(function (res2) {
-			// Tier 2: Soft killers (count 3-5)
-			table.find([useCol, {
-				$gte: 3
-			}], [useCol, {
-				$lte: 5
-			}]).sort({
-				[useCol]: 1
-			}).limit(200).on(function (docs) {
-				res2(docs ? docs.map(d => d._id) : []);
-			}, null, () => res2([]));
-		});
-
-		var p3 = new Promise(function (res3) {
-			// Priority chars from manual list
-			var allPriority = priorityList.concat(priorityMannerList);
-			var isKo = my.rule.lang === 'ko';
-			var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
-			// Note: This promise just fetches documents by ID. Doesn't use columns yet.
-			// But for consistency we should use the new table.
-			table.find(['_id', {
-				$in: allPriority
-			}]).on(function (docs) {
-				res3(docs || []);
-			}, null, () => res3([]));
-		});
-
-		Promise.all([p1, p2, p3]).then(function (results) {
-			var hardKillers = results[0]; // Tier 1 base
-			var softKillers = results[1]; // Tier 2 base
-			var priorityDocs = results[2]; // Full docs
-
-			// Build Tier 1: Hard killers + Priority chars that are hard
-			var tier1Set = new Set();
-			var tier2Set = new Set(softKillers);
-
-			// Process DB Hard Killers
-			hardKillers.forEach(function (doc) {
-				// DB query already filtered based on Manner (0 or 1-2).
-				// So just add them.
+			if (count <= 2) {
 				tier1Set.add(doc._id);
-			});
+			} else {
+				tier2Set.add(doc._id);
+			}
+		});
 
-			// Process Priority Chars (Heuristics) - Add to Tier 1 or Tier 2
-			priorityDocs.forEach(function (doc) {
-				var count = doc[useCol];
-				if (!count && count !== 0) count = 0; // Normalize undefined to 0
+		var tier1 = Array.from(tier1Set);
+		var tier2 = Array.from(tier2Set);
 
-				if (isMannerLike(my.opts)) {
-					// Manner Mode: Exclude ONLY if count is 0
-					if (count === 0) return;
+		var data = {
+			tier1: tier1,
+			tier2: tier2
+		};
+
+		var entry = { time: Date.now(), data: data };
+		var entrySize = (data.tier1.length + data.tier2.length) * 20;
+		if (AttackCache[key]) {
+			AttackCacheSize -= AttackCache[key]._size || 0;
+		}
+		if (AttackCacheSize + entrySize > ATTACK_CACHE_MAX_BYTES) {
+			var now = Date.now();
+			for (var ck in AttackCache) {
+				if (now - AttackCache[ck].time > 3600000) {
+					AttackCacheSize -= AttackCache[ck]._size || 0;
+					delete AttackCache[ck];
 				}
-
-				if (count <= 2) {
-					// Hard Killer (Heuristic) -> Tier 1
-					tier1Set.add(doc._id);
-				} else {
-					// Soft Killer (Heuristic) -> Tier 2
-					tier2Set.add(doc._id);
-				}
-			});
-
-
-
-			var tier1 = Array.from(tier1Set);
-			var tier2 = Array.from(tier2Set);
-
-			var data = {
-				tier1: tier1,
-				tier2: tier2
-			};
-
-			var entry = { time: Date.now(), data: data };
-			var entrySize = (data.tier1.length + data.tier2.length) * 20; // rough byte estimate
-			// 기존 키 덮어쓰기 시 이전 크기 차감
-			if (AttackCache[key]) {
-				AttackCacheSize -= AttackCache[key]._size || 0;
 			}
 			if (AttackCacheSize + entrySize > ATTACK_CACHE_MAX_BYTES) {
-				// 캐시 초과 시 만료된 항목 먼저 제거, 그래도 넘으면 전체 초기화
-				var now = Date.now();
-				for (var ck in AttackCache) {
-					if (now - AttackCache[ck].time > 3600000) {
-						AttackCacheSize -= AttackCache[ck]._size || 0;
-						delete AttackCache[ck];
-					}
-				}
-				if (AttackCacheSize + entrySize > ATTACK_CACHE_MAX_BYTES) {
-					AttackCache = {};
-					AttackCacheSize = 0;
-				}
+				AttackCache = {};
+				AttackCacheSize = 0;
 			}
-			entry._size = entrySize;
-			AttackCacheSize += entrySize;
-			AttackCache[key] = entry;
-			resolve(data);
-		});
+		}
+		entry._size = entrySize;
+		AttackCacheSize += entrySize;
+		AttackCache[key] = entry;
+		resolve(data);
 	});
 }
 
 
-exports.init = function (_DB, _DIC) {
+exports.init = function (_DB, _DIC, _checkSwear) {
 	DB = _DB;
 	DIC = _DIC;
+	checkSwearWords = _checkSwear;
 };
 exports.getTitle = function () {
 	var R = new Lizard.Tail();
@@ -465,20 +394,16 @@ exports.getTitle = function () {
 			});
 		}
 
-		var pending = chars.length;
 		var totalCount = 0;
 		var totalShort = 0;
+		var isKo = my.rule.lang === 'ko';
+		var lang = isKo ? 'ko' : 'en';
 
 		chars.forEach(function (c) {
-			var isKo = my.rule.lang === 'ko';
-			var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
 			var colName = col;
 			var shortColName = null;
 
 			if (isKo) {
-				// noLong 모드: startshort/endshort 컬럼 사용 (2~8글자 단어 수)
-				// noShort 모드: 전체(start_all) - startshort = 9글자 이상 단어 수
-				// no2 모드: 전체(start_all) - start2 = 3글자 이상 단어 수
 				if (my.opts.nolong) {
 					colName = isRev ? `endshort_${state}` : `startshort_${state}`;
 				} else if (my.opts.noshort) {
@@ -488,17 +413,11 @@ exports.getTitle = function () {
 					colName = isRev ? `endall_${state}` : `startall_${state}`;
 					shortColName = isRev ? `end2_${state}` : `start2_${state}`;
 				} else {
-					// Title check: usually standard "start_all" or specific?
-					// The game hasn't started, so wordLength might be default.
-					// For KKT, wordLength is 3.
 					var reqLen = my.game.wordLength || 0;
 					var lenSuffix = (reqLen === 2) ? "2" : (reqLen === 3) ? "3" : (reqLen === 4) ? "4" : "all";
 					colName = isRev ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
 				}
 			} else {
-				// 영어: noLong 모드일 때 countshort 컬럼 사용 (2~8글자)
-				// noShort 모드일 때 전체 - countshort = 9글자 이상
-				// no2 모드일 때 전체 - count2 = 3글자 이상
 				if (my.opts.nolong) {
 					colName = `countshort_${state}`;
 				} else if (my.opts.noshort) {
@@ -512,25 +431,12 @@ exports.getTitle = function () {
 				}
 			}
 
-			table.findOne(['_id', c]).on(function (doc) {
-				if (doc && doc[colName]) {
-					totalCount += doc[colName];
-				}
-				if (shortColName && doc && doc[shortColName]) {
-					totalShort += doc[shortColName];
-				}
-				if (--pending === 0) {
-					// noshort 모드: 전체 - short = 9글자 이상 단어 수
-					var finalCount = shortColName ? (totalCount - totalShort) : totalCount;
-					R.go(finalCount);
-				}
-			}, null, function () {
-				if (--pending === 0) {
-					var finalCount = shortColName ? (totalCount - totalShort) : totalCount;
-					R.go(finalCount);
-				}
-			});
+			var doc = getStatsDoc(lang, c);
+			if (doc && doc[colName]) totalCount += doc[colName];
+			if (shortColName && doc && doc[shortColName]) totalShort += doc[shortColName];
 		});
+		var finalCount = totalShort ? (totalCount - totalShort) : totalCount;
+		R.go(finalCount);
 
 		return R;
 	}
@@ -1867,13 +1773,15 @@ exports.submit = function (client, text) {
 						baby: 0,
 						flag: 0
 					};
-					preApproved();
+					if (my.opts.nododoli && isDodoli.call(my, text)) denied(412);
+					else preApproved();
 				}
 			}
 		} else if ($doc) {
 			if (!my.opts.injeong && ($doc.flag & Const.KOR_FLAG.INJEONG)) denied();
 			else if (!my.opts.allpos && my.opts.strict && (!$doc.type.match(Const.KOR_STRICT) || $doc.flag >= 4)) denied(406);
 			else if (my.opts.loanword && ($doc.flag & Const.KOR_FLAG.LOANWORD)) denied(405);
+			else if (my.opts.nododoli && isDodoli.call(my, text)) denied(412);
 			else preApproved();
 		} else {
 			denied();
@@ -2047,7 +1955,6 @@ exports.readyRobot = function (robot) {
 			var state = getMannerState(my.opts);
 
 			var isKo = my.rule.lang === 'ko';
-			var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
 
 			// Determine Column
 			var col;
@@ -2098,40 +2005,19 @@ exports.readyRobot = function (robot) {
 				});
 			}
 
-			var pending = chars.length;
 			var total = 0;
 			var totalShort = 0;
+			var lang = isKo ? 'ko' : 'en';
 
-			chars.forEach(c => {
-				var cacheKey = c + ":" + col + (shortCol ? ":" + shortCol : "");
-				var cached = getStatsCache(cacheKey);
-				if (cached !== undefined) {
-					total += cached.count;
-					totalShort += cached.short;
-					if (--pending === 0) {
-						var finalTotal = shortCol ? (total - totalShort) : total;
-						resolve(finalTotal);
-					}
-					return;
-				}
-				table.findOne(['_id', c]).on(function (doc) {
-					var charCount = (doc && doc[col]) ? doc[col] : 0;
-					var shortCount = (shortCol && doc && doc[shortCol]) ? doc[shortCol] : 0;
-					setStatsCache(cacheKey, { count: charCount, short: shortCount });
-					total += charCount;
-					totalShort += shortCount;
-					if (--pending === 0) {
-						var finalTotal = shortCol ? (total - totalShort) : total;
-						resolve(finalTotal);
-					}
-				}, null, function () {
-					setStatsCache(cacheKey, { count: 0, short: 0 });
-					if (--pending === 0) {
-						var finalTotal = shortCol ? (total - totalShort) : total;
-						resolve(finalTotal);
-					}
-				});
+			chars.forEach(function (c) {
+				var doc = getStatsDoc(lang, c);
+				var charCount = (doc && doc[col]) ? doc[col] : 0;
+				var shortCount = (shortCol && doc && doc[shortCol]) ? doc[shortCol] : 0;
+				total += charCount;
+				totalShort += shortCount;
 			});
+			var finalTotal = shortCol ? (total - totalShort) : total;
+			resolve(finalTotal);
 		});
 	}
 
@@ -2141,76 +2027,45 @@ exports.readyRobot = function (robot) {
 			if (!list || list.length === 0) return resolve([]);
 
 			var state = getMannerState(my.opts);
-
-			var table = DB.kkutu_stats_en;
 			var col = `count_${state}`;
-
 			var results = [];
-			var pending = list.length;
 
 			list.forEach(function (w) {
 				var word = w._id;
 				if (word.length < 4) {
 					results.push(w);
-					if (--pending === 0) resolve(results);
 					return;
 				}
 
 				var trigram = getChar.call(my, word);
 				var bigram = null;
-				// KKU/EKT First Rule: 2-char connection. Trigram is actually 2 chars.
-				// Skip Bigram check as it would be 1 char.
 				if (!(my.opts.first && (Const.GAME_TYPE[my.mode] === 'KKU' || Const.GAME_TYPE[my.mode] === 'EKT'))) {
 					bigram = trigram.slice(1);
 				}
 
-				var trigramCount = 0;
+				var triDoc = getStatsDoc('en', trigram);
+				var trigramCount = (triDoc && triDoc[col]) ? triDoc[col] : 0;
 				var bigramCount = 0;
-				var checks = bigram ? 2 : 1;
-
-				table.findOne(['_id', trigram]).on(function (doc) {
-					trigramCount = (doc && doc[col]) ? doc[col] : 0;
-					if (--checks === 0) checkResult();
-				}, null, function () {
-					if (--checks === 0) checkResult();
-				});
-
 				if (bigram) {
-					table.findOne(['_id', bigram]).on(function (doc) {
-						bigramCount = (doc && doc[col]) ? doc[col] : 0;
-						if (--checks === 0) checkResult();
-					}, null, function () {
-						if (--checks === 0) checkResult();
+					var biDoc = getStatsDoc('en', bigram);
+					bigramCount = (biDoc && biDoc[col]) ? biDoc[col] : 0;
+				}
+
+				var trigramUsed = 0;
+				var bigramUsed = 0;
+				if (my.game.chain) {
+					var checkChain = my.game.chain;
+					if (my.opts.return) checkChain = my.game.chain.slice(-5);
+					checkChain.forEach(function (doneWord) {
+						if (doneWord.indexOf(trigram) === 0) trigramUsed++;
+						if (bigram && doneWord.indexOf(bigram) === 0) bigramUsed++;
 					});
 				}
 
-				function checkResult() {
-					var totalCount = trigramCount + bigramCount;
-					var trigramUsed = 0;
-					var bigramUsed = 0;
-
-					if (my.game.chain) {
-						var checkChain = my.game.chain;
-						if (my.opts.return) checkChain = my.game.chain.slice(-5);
-
-						checkChain.forEach(function (doneWord) {
-							if (doneWord.indexOf(trigram) === 0) trigramUsed++;
-							if (doneWord.indexOf(bigram) === 0) bigramUsed++;
-						});
-					}
-
-					var trigramRemaining = trigramCount - trigramUsed;
-					var bigramRemaining = bigramCount - bigramUsed;
-					var remaining = trigramRemaining + bigramRemaining;
-
-
-					if (remaining >= 1) {
-						results.push(w);
-					}
-
-					if (--pending === 0) resolve(results);
-				}
+				var remaining = (trigramCount - trigramUsed) + (bigramCount - bigramUsed);
+				if (remaining >= 1) results.push(w);
 			});
+			resolve(results);
 		});
 	}
 
@@ -2232,8 +2087,13 @@ exports.readyRobot = function (robot) {
 
 				// 4글자 이상, 사용되지 않은 단어만 필터
 				list = list.filter(function (w) {
-					return w._id.length >= 4 && !robot._done.includes(w._id) &&
-						(!my.game.chain || !my.game.chain.includes(w._id));
+					if (w._id.length < 4) return false;
+					if (robot._done.includes(w._id)) return false;
+					if (my.game.chain && my.game.chain.includes(w._id)) return false;
+					// 도돌이 금지: 봇도 도돌이 단어 제외
+					if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
+					if (my.opts.noswear && checkSwearWords && checkSwearWords(w._id).length > 0) return false;
+					return true;
 				});
 
 				if (list.length === 0) {
@@ -2274,9 +2134,13 @@ exports.readyRobot = function (robot) {
 						return denied();
 					}
 					moreList = moreList.filter(function (w) {
-						return w._id.length >= 4 && !robot._done.includes(w._id) &&
-							(!my.game.chain || !my.game.chain.includes(w._id)) &&
-							!fetched.some(function (existing) { return existing._id === w._id; });
+						if (w._id.length < 4) return false;
+						if (robot._done.includes(w._id)) return false;
+						if (my.game.chain && my.game.chain.includes(w._id)) return false;
+						if (fetched.some(function (existing) { return existing._id === w._id; })) return false;
+						if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
+						if (my.opts.noswear && checkSwearWords && checkSwearWords(w._id).length > 0) return false;
+						return true;
 					});
 
 					if (moreList.length === 0) {
@@ -2784,7 +2648,11 @@ exports.readyRobot = function (robot) {
 				}
 				list = list.filter(function (w) {
 					if (my.game.wordLength > 0 && w._id.length !== my.game.wordLength) return false;
-					return w._id.length >= minLen && w._id.length <= maxLen && !robot._done.includes(w._id);
+					if (w._id.length < minLen || w._id.length > maxLen) return false;
+					if (robot._done.includes(w._id)) return false;
+					if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
+					if (my.opts.noswear && checkSwearWords && checkSwearWords(w._id).length > 0) return false;
+					return true;
 				});
 
 				if (list.length === 0) {
@@ -2913,7 +2781,11 @@ exports.readyRobot = function (robot) {
 										minLen = Math.max(minLen, 3);
 									}
 									if (my.game.wordLength > 0 && w._id.length !== my.game.wordLength) return false;
-									return w._id.length >= minLen && w._id.length <= maxLen && !robot._done.includes(w._id);
+									if (w._id.length < minLen || w._id.length > maxLen) return false;
+									if (robot._done.includes(w._id)) return false;
+									if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
+									if (my.opts.noswear && checkSwearWords && checkSwearWords(w._id).length > 0) return false;
+									return true;
 								});
 
 								if (list.length > 0) {
@@ -3347,104 +3219,41 @@ exports.readyRobot = function (robot) {
 			// Start/End stats cols usually cover standard rules.
 
 			var isKo = my.rule.lang === 'ko';
-			var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
+			var lang = isKo ? 'ko' : 'en';
 			var isRev = !!my.rule._back;
-
-			// Determine column based on next turn length logic
-			// Standard Manner Check: check if there is AT LEAST ONE word connecting.
-			// Stats tables have count_state or start/end_state.
 
 			var col;
 			if (isKo) {
 				var nextLen = getNextTurnLength.call(my);
 				var lenSuffix = (nextLen === 2) ? "2" : (nextLen === 3) ? "3" : (nextLen === 4) ? "4" : "all";
-
-				// If current is Normal game, next player needs word STARTING with LinkChar.
-				// stats 'start_all' counts words starting with char.
-				// If current is Reverse game, next player needs word ENDING with LinkChar.
-				// stats 'end_all' counts words ending with char.
-
-				// HOWEVER:
-				// getAttackChars logic uses:
-				// isRev ? end_state : start_state
-				// This is correct because:
-				// Normal Game (KKT): My word ends with 'A'. Next player needs 'A...'.
-				// So we check if 'A' has 'start_all' count > 0.
-
 				col = isRev ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
 			} else {
-				// English: count_state implies 'starts with' usually.
 				col = `count_${state}`;
 			}
 
 			var results = [];
-			var pending = list.length;
-			// Limit checks to top 50 to avoid performance hit
 			var checkList = list.slice(0, 50);
 			var restList = list.slice(50);
 			if (checkList.length === 0) return resolve([]);
 
-			pending = checkList.length;
-
 			checkList.forEach(function (w) {
-				var word = w._id;
-				var linkChar = "";
-
-				// Calculate Link Char based on rules
-				// We can reuse getChar logic or similar.
-				// Note: getChar returns the character *to be matched* by the next player?
-				// No, getChar returns the specific character(s) of the *current* word that are relevant.
-				// In KKT: getChar returns the char to link.
-
-				// Let's verify getChar behavior.
-				// Classic.js Line 2890: getChar(text)
-				// KKT: text.slice(-1) (Normal)
-				// KAP: text.charAt(0) (Reverse)
-				// So getChar returns the Link Character.
-
-				linkChar = getChar.call(my, word);
+				var linkChar = getChar.call(my, w._id);
 				var subChar = getSubChar.call(my, linkChar);
-
-				// We need to check if any word starts (or ends if Rev) with linkChar or subChar.
 				var charsToCheck = [linkChar];
 				if (subChar) {
-					subChar.split('|').forEach(sc => {
+					subChar.split('|').forEach(function (sc) {
 						if (sc && !charsToCheck.includes(sc)) charsToCheck.push(sc);
 					});
 				}
 
 				var valid = false;
-				var pSub = charsToCheck.length;
-
-				charsToCheck.forEach(c => {
-					var cacheKey = c + ":" + col;
-					var cached = getStatsCache(cacheKey);
-					if (cached !== undefined) {
-						if (cached.count > 0) valid = true;
-						if (--pSub === 0) {
-							if (valid) results.push(w);
-							if (--pending === 0) resolve(results.concat(restList));
-						}
-						return;
-					}
-					table.findOne(['_id', c]).on(function (doc) {
-						var charCount = (doc && doc[col]) ? doc[col] : 0;
-						setStatsCache(cacheKey, { count: charCount, short: 0 });
-						if (charCount > 0) valid = true;
-
-						if (--pSub === 0) {
-							if (valid) results.push(w);
-							if (--pending === 0) resolve(results.concat(restList));
-						}
-					}, null, function () {
-						setStatsCache(cacheKey, { count: 0, short: 0 });
-						if (--pSub === 0) {
-							if (valid) results.push(w);
-							if (--pending === 0) resolve(results.concat(restList));
-						}
-					});
+				charsToCheck.forEach(function (c) {
+					var doc = getStatsDoc(lang, c);
+					if (doc && doc[col] > 0) valid = true;
 				});
+				if (valid) results.push(w);
 			});
+			resolve(results.concat(restList));
 		});
 	}
 
@@ -3696,13 +3505,10 @@ function getAuto(char, subc, type, limit, sort) {
 		var state = getMannerState(my.opts);
 
 		var isKo = my.rule.lang === 'ko';
-		var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
+		var lang = isKo ? 'ko' : 'en';
 		var col;
 
 		if (isKo) {
-			// noLong 모드: startshort/endshort 컬럼 사용 (2~8글자 단어 수)
-			// noShort 모드: 전체(start_all) - startshort = 9글자 이상 단어 수
-			// no2 모드: 전체(start_all) - start2 = 3글자 이상 단어 수
 			if (my.opts.nolong) {
 				col = isKAP ? `endshort_${state}` : `startshort_${state}`;
 			} else if (my.opts.noshort) {
@@ -3757,46 +3563,18 @@ function getAuto(char, subc, type, limit, sort) {
 			}
 		}
 
-		// 다중 findOne 병렬 호출 (캐시 적용)
-		var pending = charsToCheck.length;
 		var totalCount = 0;
 		var totalShort = 0;
-		var debugCounts = [];
 
 		charsToCheck.forEach(function (c) {
-			var cacheKey = c + ":" + col + (shortCol ? ":" + shortCol : "");
-			var cached = getStatsCache(cacheKey);
-			if (cached !== undefined) {
-				totalCount += cached.count;
-				totalShort += cached.short;
-				debugCounts.push(`${c}:${cached.count}(cached)`);
-				if (--pending === 0) {
-					var finalCount = (my.opts.noshort || my.opts.no2) ? (totalCount - totalShort) : totalCount;
-					R.go(finalCount);
-				}
-				return;
-			}
-			table.findOne(['_id', c]).on(function ($st) {
-				var charCount = ($st && $st[col]) ? $st[col] : 0;
-				var shortCount = (shortCol && $st && $st[shortCol]) ? $st[shortCol] : 0;
-				setStatsCache(cacheKey, { count: charCount, short: shortCount });
-				totalCount += charCount;
-				totalShort += shortCount;
-				debugCounts.push(`${c}:${charCount}` + (shortCol ? `-${shortCount}` : ''));
-
-				if (--pending === 0) {
-					var finalCount = (my.opts.noshort || my.opts.no2) ? (totalCount - totalShort) : totalCount;
-					R.go(finalCount);
-				}
-			}, null, function () {
-				setStatsCache(cacheKey, { count: 0, short: 0 });
-				debugCounts.push(`${c}:0(missing)`);
-				if (--pending === 0) {
-					var finalCount = (my.opts.noshort || my.opts.no2) ? (totalCount - totalShort) : totalCount;
-					R.go(finalCount);
-				}
-			});
+			var doc = getStatsDoc(lang, c);
+			var charCount = (doc && doc[col]) ? doc[col] : 0;
+			var shortCount = (shortCol && doc && doc[shortCol]) ? doc[shortCol] : 0;
+			totalCount += charCount;
+			totalShort += shortCount;
 		});
+		var finalCount = (my.opts.noshort || my.opts.no2) ? (totalCount - totalShort) : totalCount;
+		R.go(finalCount);
 	} else {
 		// type=0 or type=2: Real DB Query needed
 		produce();
@@ -4234,6 +4012,38 @@ function getSubChar(char) {
 			break;
 	}
 	return r;
+}
+
+function isDodoli(text) {
+	var my = this;
+	var type = Const.GAME_TYPE[my.mode];
+	var isRev = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK');
+
+	// 인덱스 비교: 이을 글자 인덱스 == 이어지는 글자 인덱스면 항상 같은 글자 → skip
+	var entryIndex = isRev ? text.length - 1 : 0;
+	var linkIndex = getLinkIndex.call(my, text);
+	if (entryIndex === linkIndex) return false;
+
+	// 이어지는 글자
+	var exitChar = getChar.call(my, text);
+	if (exitChar.length > 1) return false; // 다글자 링킹(EKT/KKU trigram) skip
+
+	// 이을 글자
+	var entryChar = text.charAt(entryIndex);
+
+	// 정확 일치
+	if (entryChar === exitChar) return true;
+
+	// getSubChar로 두음법칙 체크 (nodueum/freedueum/vowelinv/KAP 반전 자동 처리)
+	var subChars = getSubChar.call(my, entryChar);
+	if (subChars) {
+		var subs = subChars.split('|');
+		for (var i = 0; i < subs.length; i++) {
+			if (subs[i] === exitChar) return true;
+		}
+	}
+
+	return false;
 }
 
 function getReverseDueumChars(char) {

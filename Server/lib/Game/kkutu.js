@@ -169,11 +169,25 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 			SHOP[item._id] = item;
 		});
 	});
+	// stats 테이블 전체 메모리 로드 (서버 실행 중 변하지 않는 정적 데이터)
+	DB.statsData = { ko: {}, en: {} };
+	DB.kkutu_stats_ko.find().on(function ($rows) {
+		if ($rows) {
+			$rows.forEach(function (row) { DB.statsData.ko[row._id] = row; });
+		}
+		JLog.info("[STATS] kkutu_stats_ko loaded: " + Object.keys(DB.statsData.ko).length + " rows");
+	});
+	DB.kkutu_stats_en.find().on(function ($rows) {
+		if ($rows) {
+			$rows.forEach(function (row) { DB.statsData.en[row._id] = row; });
+		}
+		JLog.info("[STATS] kkutu_stats_en loaded: " + Object.keys(DB.statsData.en).length + " rows");
+	});
 	Rule = {};
 	for (i in Const.RULE) {
 		k = Const.RULE[i].rule;
 		Rule[k] = require(`./games/${k.toLowerCase()}`);
-		Rule[k].init(DB, DIC);
+		Rule[k].init(DB, DIC, checkSwearWords);
 	}
 
 	// AI 이름 캐시 초기화
@@ -3408,20 +3422,36 @@ exports.Room = function (room, channel) {
 		return my.route("turnEnd");
 	};
 	my.submit = function (client, text, data) {
-		// 욕설 필터: 다른 조건보다 먼저 검사. 걸리면 검열 후 채팅으로 전환
-		if (text && checkSwearWords(text).length > 0) {
+		// 욕설 필터: 규칙 활성화 시 다른 조건보다 먼저 검사
+		if (my.opts.noswear && text && checkSwearWords(text).length > 0) {
 			if (client.robot) {
-				// 봇: 다음 후보 단어 중 욕설 아닌 것을 찾아 제출
+				// 봇: 후보 리스트에서 욕설을 일괄 제거 후 첫 번째 깨끗한 후보 제출
 				if (client.data && client.data.candidates) {
-					while (client.data.candidateIndex < client.data.candidates.length - 1) {
-						client.data.candidateIndex++;
-						var next = client.data.candidates[client.data.candidateIndex];
-						if (next && checkSwearWords(next._id).length === 0) {
-							return my.route("submit", client, next._id, data);
-						}
+					client.data.candidates = client.data.candidates.filter(function (w) {
+						return w && checkSwearWords(w._id).length === 0;
+					});
+					client.data.candidateIndex = 0;
+					if (client.data.candidates.length > 0) {
+						return my.route("submit", client, client.data.candidates[0]._id, data);
 					}
 				}
-				return; // 후보 소진, 턴 스킵
+				// 깨끗한 후보 없음: denied 동작 (charMsg + defeatMsg)
+				if (!client.mute && !my.game.late) {
+					if (my.game.char) {
+						var char = my.game.char;
+						var charMsgs = [char + char + char, char + "..", char + "??", char + "... T.T"];
+						setTimeout(function () {
+							client.chat(charMsgs[Math.floor(Math.random() * charMsgs.length)]);
+						}, 300);
+					}
+					var defeatMsg = (client.anger >= 6)
+						? Const.ROBOT_ANGRY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_ANGRY_MESSAGES.length)]
+						: Const.ROBOT_DEFEAT_MESSAGES[Math.floor(Math.random() * Const.ROBOT_DEFEAT_MESSAGES.length)];
+					setTimeout(function () {
+						client.chat(defeatMsg);
+					}, 800);
+				}
+				return; // 턴 타이머가 턴 종료 처리
 			}
 			client.chat(censorSwearWords(text));
 			return;
