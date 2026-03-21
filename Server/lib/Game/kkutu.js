@@ -666,6 +666,7 @@ exports.Client = function (socket, profile, sid) {
 		var elapsed = Date.now() - my._lastHeartbeat;
 		if (elapsed > 100000) { // 100초 타임아웃
 			JLog.warn(`Heartbeat timeout #${my.id} (${Math.round(elapsed / 1000)}s), closing ghost connection`);
+			clearInterval(my._heartbeat); // close 이벤트가 발생하지 않을 수 있으므로 여기서도 정리
 			socket.terminate(); // 즉시 강제 종료 (close()는 CLOSING으로만 변할 수 있음)
 			return;
 		}
