@@ -116,7 +116,14 @@ exports.turnStart = function () {
 
 	if (!my.game.answer) return;
 
-	my.game.conso = getConsonants(my.game.answer._id, 1, my.opts.vowel, Const.GAME_TYPE[my.mode]);
+	var gType = Const.GAME_TYPE[my.mode];
+	if (gType == "ESQ") {
+		// ESQ: ceil(len/2)개 표시, floor(len/2)개 "?" (고정 개수, 랜덤 위치, 최소 1개 마스킹)
+		var ansLen = my.game.answer._id.length;
+		my.game.conso = getConsonants(my.game.answer._id, Math.min(Math.ceil(ansLen / 2), ansLen - 1), false, gType);
+	} else {
+		my.game.conso = getConsonants(my.game.answer._id, 1, my.opts.vowel, gType);
+	}
 	my.game.roundAt = (new Date()).getTime();
 	my.game.meaned = 0;
 	my.game.primary = 0;
@@ -281,7 +288,25 @@ function getConsonants(word, lucky, isVowel, mode) {
 	var rv = [];
 
 	lucky = lucky || 0;
-	if (mode == "KSC") {
+	if (mode == "ESQ") {
+		// ESQ: 첫 글자는 항상 표시, 나머지 중 lucky개를 랜덤 표시
+		rv.push(0);
+		lucky--;
+		while (lucky > 0) {
+			c = Math.floor(Math.random() * (len - 1)) + 1;
+			if (rv.includes(c)) continue;
+			rv.push(c);
+			lucky--;
+		}
+		for (i = 0; i < len; i++) {
+			if (rv.includes(i)) {
+				R += word.charAt(i);
+			} else {
+				R += "?";
+			}
+		}
+		return R;
+	} else if (mode == "KSC") {
 		if (lucky == 1) {
 			var arr = word.split('');
 			for (var j = arr.length - 1; j > 0; j--) {
@@ -339,8 +364,13 @@ function processAnswer($ans) {
 
 	my.game.late = false;
 	my.game.answer = $ans;
-	// 뜻이 길면 마스킹된 뜻을 사용하고, 짧으면 초성을 사용
-	$ans.mean = ($ans.mean.length > 20) ? maskText($ans.mean, $ans._id) : getConsonants($ans._id, Math.round($ans._id.length / 2), my.opts.vowel, gType);
+	if (gType == "ESQ") {
+		// ESQ: 뜻이 길면 마스킹, 짧으면 67% 글자 표시 (최소 1개 마스킹)
+		$ans.mean = ($ans.mean.length > 20) ? maskText($ans.mean, $ans._id) : getConsonants($ans._id, Math.min(Math.ceil($ans._id.length * 0.67), $ans._id.length - 1), false, gType);
+	} else {
+		// 뜻이 길면 마스킹된 뜻을 사용하고, 짧으면 초성을 사용
+		$ans.mean = ($ans.mean.length > 20) ? maskText($ans.mean, $ans._id) : getConsonants($ans._id, Math.round($ans._id.length / 2), my.opts.vowel, gType);
+	}
 	my.game.hint = getHint($ans, my.opts.vowel, gType);
 	my.byMaster('roundReady', {
 		round: my.game.round,
@@ -351,6 +381,14 @@ function processAnswer($ans) {
 function getHint($ans, isVowel, mode) {
 	var R = [];
 	var h1;
+	if (mode == "ESQ") {
+		var len = $ans._id.length;
+		// 힌트1: 67% 글자 표시 (33% "?", 위치 랜덤, 최소 1개 마스킹)
+		R.push(getConsonants($ans._id, Math.min(Math.ceil(len * 0.67), len - 1), false, mode));
+		// 힌트2: 83% 글자 표시 (17% "?", 위치 랜덤, 최소 1개 마스킹)
+		R.push(getConsonants($ans._id, Math.min(Math.ceil(len * 0.83), len - 1), false, mode));
+		return R;
+	}
 	if (mode == "KSC") {
 		var len = $ans._id.length;
 		// Hint 1
@@ -376,11 +414,17 @@ function getAnswer(theme, nomean, ignoreDone) {
 	var my = this;
 	var R = new Lizard.Tail();
 	var args = ignoreDone ? [] : [['_id', { $nin: my.game.done }]];
+	var lang = my.rule.lang;
+	var gType = Const.GAME_TYPE[my.mode];
 
 	args.push(['theme', new RegExp("(,|^)(" + theme + ")(,|$)")]);
-	args.push(['type', Const.KOR_GROUP]);
+	if (lang === 'ko') {
+		args.push(['type', Const.KOR_GROUP]);
+	} else {
+		args.push(['_id', Const.ENG_ID]);
+	}
 	args.push(['flag', { $lte: 7 }]);
-	DB.kkutu['ko'].find.apply(my, args).on(function ($res) {
+	DB.kkutu[lang].find.apply(my, args).on(function ($res) {
 		if (!$res) return R.go(null);
 		var pick;
 		var len = $res.length;
@@ -393,10 +437,13 @@ function getAnswer(theme, nomean, ignoreDone) {
 			var wlen = word._id.length;
 			if (wlen < 2) isValid = false;
 			else if (word.type != "INJEONG" && word.mean.length < 0) isValid = false;
-			if (Const.GAME_TYPE[my.mode] == "KSC" && wlen < 4) isValid = false;
+			if (gType == "KSC" && wlen < 4) isValid = false;
 			if (!my.opts.unlimited) {
-				var minLen = (Const.GAME_TYPE[my.mode] == "KSC") ? 4 : 3;
-				if (wlen < minLen || wlen > 7) isValid = false;
+				var minLen, maxLen;
+				if (gType == "KSC") { minLen = 4; maxLen = 7; }
+				else if (gType == "ESQ") { minLen = 3; maxLen = 10; }
+				else { minLen = 3; maxLen = 7; }
+				if (wlen < minLen || wlen > maxLen) isValid = false;
 			}
 			if (isValid) {
 				return R.go(word);

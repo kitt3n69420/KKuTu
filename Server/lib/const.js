@@ -27,13 +27,13 @@ exports.SPAM_LIMIT = 7;
 exports.BLOCKED_LENGTH = 10000;
 exports.KICK_BY_SPAM = 9;
 exports.MAX_OBSERVER = 8;
-exports.JAMSU_WARN_TIME = 300000; // 이제 10만보다 커도 된다!!
+exports.JAMSU_WARN_TIME = 300000; // 모두 잠수
 exports.JAMSU_WARN2_TIME = 240000;
 exports.JAMSU_BOOM_TIME = 60000;
 exports.TESTER = GLOBAL.ADMIN.concat([
 	"Input tester id here"
 ]);
-exports.JAMSU_DELAY_WARN = 10000;
+exports.JAMSU_DELAY_WARN = 50000; //방장 잠수
 exports.JAMSU_DELAY_ACTION = 10000;
 exports.IS_SECURED = GLOBAL.IS_SECURED;
 exports.SSL_OPTIONS = GLOBAL.SSL_OPTIONS;
@@ -473,6 +473,15 @@ exports.RULE = {
 		ai: true,
 		big: false,
 		ewq: false
+	},
+	'ESQ': {
+		lang: "en",
+		rule: "Jaqwi",
+		opts: ["ijp", "unl", "drg"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: false
 	}
 
 };
@@ -483,7 +492,7 @@ exports.GAME_CATEGORIES = {
 	},
 	'quiz': {
 		name: 'GameCategoryQuiz',
-		modes: ['CSQ', 'KCW', 'KSS', 'ESS', 'KPQ', 'EPQ', 'KSC', 'CRL', 'KQZ', 'EQZ']
+		modes: ['CSQ', 'KCW', 'KSS', 'ESS', 'KPQ', 'EPQ', 'KSC', 'CRL', 'KQZ', 'EQZ', 'ESQ']
 	},
 	'other': {
 		name: 'GameCategoryOther',

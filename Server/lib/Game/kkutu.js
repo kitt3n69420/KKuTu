@@ -1061,6 +1061,7 @@ exports.Client = function (socket, profile, sid) {
 		my.form = mode;
 		my.ready = false;
 		my.publish('user', my.getData(false, true));
+		$room.checkJamsu();
 	};
 	my.setTeam = function (team) {
 		my.team = team;
