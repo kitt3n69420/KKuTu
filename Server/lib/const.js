@@ -753,34 +753,33 @@ exports.checkSurvivalStatus = function (my, DIC) {
  */
 exports.applySurvivalDamage = function (my, DIC, damage, currentTurn) {
 	if (damage <= 0) return null;
+	if (!my.game.seq || my.game.seq.length === 0) return null;
 
 	var nextTurn;
+	var found = false;
 	if (my.opts.item) {
-		// Use calculateNextTurn directly to process items, random jumps, and reversal safely
-		// Note: since this consumes items, we must ensure it isn't called twice.
-		nextTurn = my.calculateNextTurn(true); // pass true or similar flag to peek? Wait.
+		nextTurn = my.calculateNextTurn(true);
+		var p = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
+		found = p && p.game && p.game.alive;
 	} else if (my.opts.randomturn) {
-		// random turn next index
 		var nextIdx = (my.game.randomTurnIndex + 1) % my.game.randomTurnOrder.length;
 		nextTurn = my.game.randomTurnOrder[nextIdx];
+		var p = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
+		found = p && p.game && p.game.alive;
 	} else {
-		// Default sequential approach
 		nextTurn = currentTurn;
-		var attempts = 0;
-		while (attempts < my.game.seq.length) {
+		for (var attempts = 0; attempts < my.game.seq.length; attempts++) {
 			nextTurn = (nextTurn + 1) % my.game.seq.length;
-			if (nextTurn === currentTurn) {
-				attempts++;
-				continue;
-			}
+			if (nextTurn === currentTurn) continue;
 			var nextPlayer = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
 			if (nextPlayer && nextPlayer.game && nextPlayer.game.alive) {
+				found = true;
 				break;
 			}
-			attempts++;
 		}
 	}
 
+	if (!found) return null;
 	var targetPlayer = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
 	if (targetPlayer && targetPlayer.game && targetPlayer.game.alive) {
 		// Apply damage

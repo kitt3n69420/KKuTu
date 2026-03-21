@@ -332,11 +332,14 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (!validateInput(msg.limit, "number")) stable = false;
       if (!validateInput(msg.round, "number")) stable = false;
       if (!validateInput(msg.time, "number")) stable = false;
-      if (!validateInput(msg.opts, "object")) stable = false;
+      if (!validateInput(msg.opts, "object") || Array.isArray(msg.opts)) stable = false;
 
       // opts 내부 특수 속성 타입 검증
       if (stable && msg.opts) {
-        if (msg.opts.surHP !== undefined && typeof msg.opts.surHP !== 'number') delete msg.opts.surHP;
+        if (msg.opts.surHP !== undefined) {
+          msg.opts.surHP = parseInt(msg.opts.surHP, 10);
+          if (isNaN(msg.opts.surHP)) delete msg.opts.surHP;
+        }
         if (msg.opts.injpick !== undefined && !Array.isArray(msg.opts.injpick)) delete msg.opts.injpick;
         if (msg.opts.quizpick !== undefined && !Array.isArray(msg.opts.quizpick)) delete msg.opts.quizpick;
       }

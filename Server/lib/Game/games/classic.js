@@ -879,6 +879,7 @@ exports.turnEnd = function () {
 
 		if (status.gameOver) {
 			clearTimeout(my.game.robotTimer);
+			if (my.game._rrt) clearTimeout(my.game._rrt);
 			my.game._rrt = setTimeout(function () {
 				my.roundEnd();
 			}, 2000);
@@ -893,7 +894,8 @@ exports.turnEnd = function () {
 		}
 
 		clearTimeout(my.game.robotTimer);
-		my.game._rrt = setTimeout(function () {
+			if (my.game._rrt) clearTimeout(my.game._rrt);
+			my.game._rrt = setTimeout(function () {
 			my.turnNext();
 		}, 2000);
 		return;
@@ -1417,7 +1419,8 @@ exports.submit = function (client, text) {
 							if (status.gameOver) {
 								clearTimeout(my.game.turnTimer);
 								clearTimeout(my.game.robotTimer);
-								my.game._rrt = setTimeout(function () {
+			if (my.game._rrt) clearTimeout(my.game._rrt);
+			my.game._rrt = setTimeout(function () {
 									my.roundEnd();
 								}, 2000);
 								return;
@@ -1439,7 +1442,8 @@ exports.submit = function (client, text) {
 							// 다음 턴으로 진행
 							clearTimeout(my.game.turnTimer);
 							clearTimeout(my.game.robotTimer);
-							my.game._rrt = setTimeout(function () {
+			if (my.game._rrt) clearTimeout(my.game._rrt);
+			my.game._rrt = setTimeout(function () {
 								my.turnNext();
 							}, my.game.turnTime / 6);
 

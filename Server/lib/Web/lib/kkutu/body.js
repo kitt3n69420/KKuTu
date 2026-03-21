@@ -71,7 +71,7 @@ function loading(text) {
 }
 function escapeContent(text) {
 	if (typeof text !== 'string') return text;
-	return text.replace(/</g, "〈").replace(/>/g, "〉");
+	return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&#39;").replace(/"/g, "&quot;");
 }
 function showDialog($d, noToggle) {
 	var size = [$(window).width(), $(window).height()];
@@ -621,13 +621,7 @@ function onMessage(data) {
 		case 'survivalKO':
 			// 서바이벌 모드: 중도 퇴장으로 인한 KO 처리
 			var koTarget = data.target;
-			var $koUser = $("#game-user-" + koTarget);
-
-			if ($koUser.length) {
-				$koUser.find(".game-user-image").addClass("survival-ko");
-				$koUser.find(".game-user-score").text("KO").addClass("survival-ko-score");
-				$koUser.addClass("game-user-ko");
-			}
+			applySurvivalKODisplay(koTarget);
 
 			var koUser = $data.users[koTarget] || $data.robots[koTarget];
 			if (koUser && koUser.game) {
@@ -652,26 +646,13 @@ function onMessage(data) {
 			// 서바이벌 모드: roundEnd 후 KO 상태 복원
 			if ($data.room && $data.room.opts && $data.room.opts.survival) {
 				for (i in data.users) {
-					var userData = data.users[i];
-					if (userData && userData.game && userData.game.alive === false) {
-						var $koUser = $("#game-user-" + i);
-						if ($koUser.length) {
-							$koUser.find(".game-user-image").addClass("survival-ko");
-							$koUser.find(".game-user-score").text("KO").addClass("survival-ko-score");
-							$koUser.addClass("game-user-ko");
-						}
+					if (data.users[i] && data.users[i].game && data.users[i].game.alive === false) {
+						applySurvivalKODisplay(i);
 					}
 				}
-				// 봇 KO 상태 복원
 				for (i in $data.robots) {
-					var robotData = $data.robots[i];
-					if (robotData && robotData.game && robotData.game.alive === false) {
-						var $koBot = $("#game-user-" + i);
-						if ($koBot.length) {
-							$koBot.find(".game-user-image").addClass("survival-ko");
-							$koBot.find(".game-user-score").text("KO").addClass("survival-ko-score");
-							$koBot.addClass("game-user-ko");
-						}
+					if ($data.robots[i] && $data.robots[i].game && $data.robots[i].game.alive === false) {
+						applySurvivalKODisplay(i);
 					}
 				}
 			}
@@ -1605,12 +1586,12 @@ function roomListBar(o) {
 
 	$R = $("<div>").attr('id', "room-" + o.id).addClass("rooms-item")
 		.append($ch = $("<div>").addClass("rooms-channel channel-" + o.channel).on('click', function (e) { requestRoomInfo(o.id); }))
-		.append($("<div>").addClass("rooms-number").html(o.id))
+		.append($("<div>").addClass("rooms-number").text(o.id))
 		.append($("<div>").addClass("rooms-title ellipse").text(badWords(o.title)))
-		.append($("<div>").addClass("rooms-limit").html(o.players.length + " / " + o.limit))
+		.append($("<div>").addClass("rooms-limit").text(o.players.length + " / " + o.limit))
 		.append($("<div>").width(270)
 			.append($rm = $("<div>").addClass("rooms-mode").html(opts.join(" / ").toString()))
-			.append($("<div>").addClass("rooms-round").html(roundOrHP))
+			.append($("<div>").addClass("rooms-round").text(roundOrHP))
 			.append($("<div>").addClass("rooms-time").html(o.time + L['SECOND']))
 		)
 		.append($("<div>").addClass("rooms-lock").html(o.password ? "<i class='fa fa-lock'></i>" : "<i class='fa fa-unlock'></i>"))
@@ -3008,13 +2989,7 @@ function handleSurvivalKO(id, data, $sc, $uc) {
 	if (!data.survival || !data.ko) return false;
 
 	var koTarget = data.target || id;
-	var $koUser = $("#game-user-" + koTarget);
-
-	if ($koUser.length) {
-		$koUser.find(".game-user-image").addClass("survival-ko");
-		$koUser.find(".game-user-score").text("KO").addClass("survival-ko-score");
-		$koUser.addClass("game-user-ko");
-	}
+	applySurvivalKODisplay(koTarget);
 
 	var koUser = $data.users[koTarget] || $data.robots[koTarget];
 	if (koUser && koUser.game) {
@@ -3040,7 +3015,7 @@ function handleSurvivalDamage(data) {
 	if (!data.survival || !data.survivalDamage) return;
 
 	var dmgInfo = data.survivalDamage;
-	var $dmgTarget = $("#game-user-" + dmgInfo.targetId);
+	var $dmgTarget = $(document.getElementById("game-user-" + dmgInfo.targetId));
 
 	var dmgUser = $data.users[dmgInfo.targetId] || $data.robots[dmgInfo.targetId];
 	if (dmgUser && dmgUser.game) {
@@ -3056,7 +3031,7 @@ function handleSurvivalDamage(data) {
 		var $dmgSc = $("<div>")
 			.addClass("deltaScore damage")
 			.css('color', '#FF6666')
-			.html("-" + dmgInfo.damage);
+			.text("-" + dmgInfo.damage);
 		drawObtainedScore($dmgTarget, $dmgSc);
 
 		if (dmgInfo.ko) {
@@ -3066,9 +3041,7 @@ function handleSurvivalDamage(data) {
 				clearTimeout(existingAnim.timer);
 				delete $data["_s" + dmgInfo.targetId];
 			}
-			$dmgTarget.find(".game-user-image").addClass("survival-ko");
-			$dmgTarget.find(".game-user-score").text("KO").addClass("survival-ko-score");
-			$dmgTarget.addClass("game-user-ko");
+			applySurvivalKODisplay(dmgInfo.targetId);
 
 			if (dmgUser && dmgUser.game) {
 				dmgUser.game.alive = false;
@@ -3079,6 +3052,18 @@ function handleSurvivalDamage(data) {
 			updateScore(dmgInfo.targetId, dmgInfo.newHP);
 		}
 	}
+}
+/**
+ * 서바이벌 KO 상태를 DOM에 반영하는 공통 함수
+ * @param {string} targetId - KO된 플레이어/봇 ID
+ */
+function applySurvivalKODisplay(targetId) {
+	var el = document.getElementById("game-user-" + targetId);
+	if (!el) return;
+	var $el = $(el);
+	$el.find(".game-user-image").addClass("survival-ko");
+	$el.find(".game-user-score").text("KO").addClass("survival-ko-score");
+	$el.addClass("game-user-ko");
 }
 // ========== 서바이벌 모드 공통 끝 ==========
 function turnEnd(id, data) {
@@ -3904,11 +3889,11 @@ function setRoomHead($obj, room) {
 	var roundOrHP = isSurvival ? ((room.opts.surHP || 500) + " HP") : (room.round + " " + L['rounds']);
 
 	$obj.empty()
-		.append($("<h5>").addClass("room-head-number").html("[" + (room.practice ? L['practice'] : room.id) + "]"))
+		.append($("<h5>").addClass("room-head-number").text("[" + (room.practice ? L['practice'] : room.id) + "]"))
 		.append($("<h5>").addClass("room-head-title").text(badWords(room.title)))
 		.append($rm = $("<h5>").addClass("room-head-mode").html(opts.join(" / ")))
-		.append($("<h5>").addClass("room-head-limit").html((mobile ? "" : (L['players'] + " ")) + room.players.length + " / " + room.limit))
-		.append($("<h5>").addClass("room-head-round").html(roundOrHP))
+		.append($("<h5>").addClass("room-head-limit").text((mobile ? "" : (L['players'] + " ")) + room.players.length + " / " + room.limit))
+		.append($("<h5>").addClass("room-head-round").text(roundOrHP))
 		.append($("<h5>").addClass("room-head-time").html((Math.round(room.time * 10) / 10) + L['SECOND']));
 
 	var pickTopics = getPickTopicExpl(rule, room.opts);
@@ -4228,7 +4213,8 @@ function chat(profile, msg, from, timestamp) {
 	if (link = msg.match(/https?:\/\/[\w\.\?\/&#%=-_\+]+/g)) {
 		msg = $msg.html();
 		link.forEach(function (item) {
-			msg = msg.replace(item, "<a href='#' style='color: #2222FF;' onclick='tryOpenLink(\"" + item + "\");'>" + item + "</a>");
+			var safeItem = item.replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+			msg = msg.replace(item, "<a href='#' style='color: #2222FF;' onclick='tryOpenLink(\"" + safeItem + "\");'>" + safeItem + "</a>");
 		});
 		$msg.html(msg);
 	}

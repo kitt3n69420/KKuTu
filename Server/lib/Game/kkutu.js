@@ -364,16 +364,17 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 						// 서바이벌 모드: KO 처리
 						my.game.alive = false;
 						my.game.score = 0;
-						room.byMaster('survivalKO', { target: my.id, reason: 'ragequit' }, true);
+						room.byMaster('survivalKO', { target: my.id }, true);
 						var isTurn = room.game.turn == seqIndex;
+						clearTimeout(room.game.turnTimer);
+						clearTimeout(room.game.robotTimer);
+						clearTimeout(room.game._rrt);
 						var status = Const.checkSurvivalStatus(room, DIC);
 						if (status.gameOver) {
-							clearTimeout(room.game._rrt);
-							room.game._rrt = setTimeout(function () { room.roundEnd(); }, 2000);
+							room.game._rrt = setTimeout(function () { if (room.gaming) room.roundEnd(); }, 2000);
 						} else if (isTurn) {
-							clearTimeout(room.game._rrt);
 							room.game.loading = false;
-							room.game._rrt = setTimeout(function () { room.turnNext(); }, 2000);
+							room.game._rrt = setTimeout(function () { if (room.gaming) room.turnNext(); }, 2000);
 						}
 					} else {
 						// 비서바이벌 모드
