@@ -300,7 +300,8 @@ KKuTu.onClientMessage = function ($c, msg) {
         else if (!(temp = ROOM[$c.place])) return;
         if (!temp.gaming) return;
         if (temp.game.late) {
-          $c.chat(msg.value);
+          var lateVal = KKuTu.checkSwearWords(msg.value).length > 0 ? KKuTu.censorSwearWords(msg.value) : msg.value;
+          $c.chat(lateVal);
         } else if (!temp.game.loading) {
           var safeData = (Array.isArray(msg.data)) ? msg.data : undefined;
           temp.submit($c, msg.value, safeData);
@@ -312,17 +313,18 @@ KKuTu.onClientMessage = function ($c, msg) {
             break;
           }
         }
+        var chatVal = KKuTu.checkSwearWords(msg.value).length > 0 ? KKuTu.censorSwearWords(msg.value) : msg.value;
         if (msg.whisper) {
           process.send({ type: "tail-report", id: $c.id, chan: CHAN, place: $c.place, msg: msg });
           msg.whisper.split(",").forEach((v) => {
             if ((temp = DIC[DNAME[v]])) {
-              temp.send("chat", { from: $c.profile.title || $c.profile.name, profile: $c.profile, value: msg.value });
+              temp.send("chat", { from: $c.profile.title || $c.profile.name, profile: $c.profile, value: chatVal });
             } else {
               $c.sendError(424, v);
             }
           });
         } else {
-          $c.chat(msg.value);
+          $c.chat(chatVal);
         }
       }
       break;

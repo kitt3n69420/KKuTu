@@ -99,7 +99,8 @@ exports.OPTIONS = {
 	'nos': { name: "NoShort" },    // 단문 금지: 8글자 이하 금지
 	'obo': { name: "OnlyOnce" },   // 한번만: 전체 게임에서 한 번 쓴 단어는 재사용 불가
 	'alp': { name: "Allpos" },     // 모든 품사: 품사 제한 없이 모든 단어 사용 가능
-	'itm': { name: "Item" }        // 아이템전: 아이템을 사용할 수 있는 모드
+	'itm': { name: "Item" },       // 아이템전: 아이템을 사용할 수 있는 모드
+	'nsw': { name: "Noswear" }     // 욕 금지: 욕이 포함된 단어 제출 시 채팅으로 처리
 
 };
 
@@ -220,7 +221,7 @@ exports.RULE = {
 	'KKT': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm","nsw"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -229,7 +230,7 @@ exports.RULE = {
 	'KSH': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm","nsw"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -274,7 +275,7 @@ exports.RULE = {
 	'KAP': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm","nsw"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -295,7 +296,7 @@ exports.RULE = {
 	'HUN': {
 		lang: "ko",
 		rule: "Hunmin",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god", "rnt", "sur", "obo", "fho", "itm"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god", "rnt", "sur", "obo", "fho", "itm","nsw"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -304,7 +305,7 @@ exports.RULE = {
 	'KDA': {
 		lang: "ko",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm"],
+		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm","nsw"],
 		time: 1,
 		ai: true,
 		ewq: false
@@ -321,7 +322,7 @@ exports.RULE = {
 	'KSS': {
 		lang: "ko",
 		rule: "Sock",
-		opts: ["no2", "big", "drg", "apl"],
+		opts: ["no2", "big", "drg", "apl","nsw"],
 		time: 1,
 		ai: false,
 		big: true,
@@ -357,7 +358,7 @@ exports.RULE = {
 	'KFR': {
 		lang: "ko",
 		rule: "Free",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm","nsw"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -393,7 +394,7 @@ exports.RULE = {
 	'KAK': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm","nsw"],
 		time: 1,
 		ai: true,
 		big: false,

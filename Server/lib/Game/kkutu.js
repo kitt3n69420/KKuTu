@@ -18,6 +18,8 @@
 
 var GUEST_PERMISSION;
 var Cluster = require("cluster");
+var fs = require("fs");
+var path = require("path");
 var Const = require('../const');
 var Lizard = require('../sub/lizard');
 var JLog = require('../sub/jjlog');
@@ -45,6 +47,109 @@ var aiNameCacheSecond = []; // 두 단어 조합용 두 번째 (2~5글자)
 var aiNameCacheRefilling = false; // 리필 중 플래그
 const AI_NAME_CACHE_SIZE = 100;  // 한 번에 가져올 단어 수
 const AI_NAME_CACHE_THRESHOLD = 20; // 리필 시작 임계값
+
+// ========== Aho-Corasick 욕설 필터 ==========
+var swearAutomaton = null;
+
+(function buildSwearFilter() {
+	var swearPath = path.join(__dirname, 'swearing.txt');
+	var lines;
+	try {
+		lines = fs.readFileSync(swearPath, 'utf8').split(/\r?\n/).filter(function (w) { return w.length > 0; });
+	} catch (e) {
+		JLog.warn("[NOSWEAR] swearing.txt not found: " + e.message);
+		return;
+	}
+	if (lines.length === 0) return;
+
+	// Trie node: children map, fail link, output list (pattern lengths)
+	var nodes = [{ children: {}, fail: 0, output: [] }];
+	function addNode() {
+		nodes.push({ children: {}, fail: 0, output: [] });
+		return nodes.length - 1;
+	}
+
+	// Build trie
+	var i, j, c, cur;
+	for (i = 0; i < lines.length; i++) {
+		cur = 0;
+		for (j = 0; j < lines[i].length; j++) {
+			c = lines[i][j];
+			if (nodes[cur].children[c] === undefined) {
+				nodes[cur].children[c] = addNode();
+			}
+			cur = nodes[cur].children[c];
+		}
+		nodes[cur].output.push(lines[i].length);
+	}
+
+	// Build failure links (BFS)
+	var queue = [];
+	for (c in nodes[0].children) {
+		var child = nodes[0].children[c];
+		nodes[child].fail = 0;
+		queue.push(child);
+	}
+	var head = 0;
+	while (head < queue.length) {
+		var u = queue[head++];
+		for (c in nodes[u].children) {
+			var v = nodes[u].children[c];
+			var f = nodes[u].fail;
+			while (f !== 0 && nodes[f].children[c] === undefined) {
+				f = nodes[f].fail;
+			}
+			if (nodes[f].children[c] !== undefined && nodes[f].children[c] !== v) {
+				nodes[v].fail = nodes[f].children[c];
+			} else {
+				nodes[v].fail = 0;
+			}
+			// Merge output from fail chain
+			nodes[v].output = nodes[v].output.concat(nodes[nodes[v].fail].output);
+			queue.push(v);
+		}
+	}
+
+	swearAutomaton = nodes;
+	JLog.info("[NOSWEAR] Loaded " + lines.length + " words, Aho-Corasick automaton built");
+})();
+
+// 텍스트에서 욕설 매칭 구간 반환: [{start, end}]
+function checkSwearWords(text) {
+	if (!swearAutomaton) return [];
+	var matches = [];
+	var cur = 0;
+	for (var i = 0; i < text.length; i++) {
+		var c = text[i];
+		while (cur !== 0 && swearAutomaton[cur].children[c] === undefined) {
+			cur = swearAutomaton[cur].fail;
+		}
+		if (swearAutomaton[cur].children[c] !== undefined) {
+			cur = swearAutomaton[cur].children[c];
+		}
+		var outputs = swearAutomaton[cur].output;
+		for (var k = 0; k < outputs.length; k++) {
+			matches.push({ start: i - outputs[k] + 1, end: i + 1 });
+		}
+	}
+	return matches;
+}
+
+// 매칭된 구간을 '*'로 치환
+function censorSwearWords(text) {
+	var matches = checkSwearWords(text);
+	if (matches.length === 0) return text;
+	var arr = text.split('');
+	for (var m = 0; m < matches.length; m++) {
+		for (var i = matches[m].start; i < matches[m].end; i++) {
+			arr[i] = '*';
+		}
+	}
+	return arr.join('');
+}
+
+exports.checkSwearWords = checkSwearWords;
+exports.censorSwearWords = censorSwearWords;
 
 exports.NIGHT = false;
 exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
@@ -3302,6 +3407,24 @@ exports.Room = function (room, channel) {
 		return my.route("turnEnd");
 	};
 	my.submit = function (client, text, data) {
+		// 욕설 필터: 다른 조건보다 먼저 검사. 걸리면 검열 후 채팅으로 전환
+		if (text && checkSwearWords(text).length > 0) {
+			if (client.robot) {
+				// 봇: 다음 후보 단어 중 욕설 아닌 것을 찾아 제출
+				if (client.data && client.data.candidates) {
+					while (client.data.candidateIndex < client.data.candidates.length - 1) {
+						client.data.candidateIndex++;
+						var next = client.data.candidates[client.data.candidateIndex];
+						if (next && checkSwearWords(next._id).length === 0) {
+							return my.route("submit", client, next._id, data);
+						}
+					}
+				}
+				return; // 후보 소진, 턴 스킵
+			}
+			client.chat(censorSwearWords(text));
+			return;
+		}
 		return my.route("submit", client, text, data);
 	};
 	my.handleDraw = function (client, msg) {
