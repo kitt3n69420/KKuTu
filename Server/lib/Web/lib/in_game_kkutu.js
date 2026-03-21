@@ -27,6 +27,36 @@ var BEAT = [null,
 	"11111110",
 	"11111111"
 ];
+var BEAT_Back = [null,
+	"10000000",
+	"10000010",
+	"10000011",
+	"10010011",
+	"10011011",
+	"11011011",
+	"11011111",
+	"11111111"
+];
+var BEAT_TK = [null,
+	"10000000",
+	"10000010",
+	"10000011",
+	"10011010",
+	"11011010",
+	"11011110",
+	"11011111",
+	"11111111"
+];
+var BEAT_Mid = [null,
+	"10000000",
+	"10001000",
+	"10010010",
+	"10011010",
+	"11011010",
+	"11011110",
+	"11011111",
+	"11111111"
+];
 var NULL_USER = {
 	profile: { title: L['null'] },
 	data: { score: 0 }
@@ -491,6 +521,10 @@ $(document).ready(function () {
 
 				if (only == "for-master") $stage.dialog.inviteList.append($obj);
 				else $stage.lobby.userList.append($obj);
+			}
+			var prev = $data.users[id];
+			if (prev && prev.data && prev.data.record && data.data && !data.data.record) {
+				data.data = $.extend({}, prev.data, data.data);
 			}
 			$data.users[id] = data;
 			if (needed) {
@@ -1078,7 +1112,7 @@ $(document).ready(function () {
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
-		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 
 		if (showCategory) {
@@ -1306,6 +1340,20 @@ $(document).ready(function () {
 		if ($(this).is(':checked')) window.RULE_CHECKBOXES['item'].prop('checked', false);
 	});
 
+	// 도돌이 금지 - 첫말잇기/랜덤잇기 상호배타
+	window.RULE_CHECKBOXES['nododoli'].on('change', function () {
+		if ($(this).is(':checked')) {
+			window.RULE_CHECKBOXES['first'].prop('checked', false);
+			window.RULE_CHECKBOXES['random'].prop('checked', false);
+		}
+	});
+	window.RULE_CHECKBOXES['first'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['nododoli'].prop('checked', false);
+	});
+	window.RULE_CHECKBOXES['random'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['nododoli'].prop('checked', false);
+	});
+
 	// View All Rules Dialog 버튼 핸들러
 	$("#view-all-rules-btn").on('click', function () {
 		var v = $("#room-mode").val();
@@ -1322,7 +1370,7 @@ $(document).ready(function () {
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
-		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 
 		if (showCategory) {
@@ -1484,15 +1532,9 @@ $(document).ready(function () {
 			$("#PracticeDiag .dialog-title").html(L['practice']);
 			$("#ai-team").val(0).prop('disabled', true);
 			var saved = loadVolumeSettings();
-			if (saved.aiAutoApply === true) {
-				$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
-				$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
-				$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
-			} else {
-				$("#ai-mute").prop('checked', false);
-				$("#ai-rage-quit").prop('checked', false);
-				$("#ai-fast-mode").prop('checked', false);
-			}
+			$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
+			$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
+			$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
 			showDialog($stage.dialog.practice);
 		} else {
 			send('practice', { level: -1 });
@@ -1735,14 +1777,10 @@ $(document).ready(function () {
 			$("#ai-mute").prop('checked', !bot.mute);
 			$("#ai-rage-quit").prop('checked', bot.canRageQuit || false);
 			$("#ai-fast-mode").prop('checked', bot.fastMode || false);
-		} else if (saved.aiAutoApply === true) {
+		} else {
 			$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
 			$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
 			$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
-		} else {
-			$("#ai-mute").prop('checked', false);
-			$("#ai-rage-quit").prop('checked', false);
-			$("#ai-fast-mode").prop('checked', false);
 		}
 		showDialog($stage.dialog.practice);
 	});
@@ -2583,7 +2621,8 @@ $(document).ready(function () {
 	});
 
 	// 아이템 버튼 클릭
-	$(document).on('click', '.ItemButton:not(:disabled)', function () {
+	$(document).on('click', '.ItemButton', function () {
+		if ($(this).hasClass('item-disabled')) return;
 		var slot = $(this).data('slot');
 		var itemType = getItemTypeBySlot(slot);
 		console.log('[ITEM] click slot:', slot, 'itemType:', itemType, 'myItems:', JSON.stringify($data.myItems), 'pendingItem:', $data.pendingItem);
@@ -2600,6 +2639,23 @@ $(document).ready(function () {
 		}
 		updateItemUI();
 	});
+
+	// 모바일: 롱프레스로 아이템 툴팁 표시
+	(function () {
+		var longPressTimer = null;
+		$(document).on('touchstart', '.ItemButton[data-tooltip]', function (e) {
+			var $btn = $(this);
+			longPressTimer = setTimeout(function () {
+				longPressTimer = null;
+				$('.item-tooltip-popup').remove();
+				var $tip = $('<div>').addClass('item-tooltip-popup').text($btn.attr('data-tooltip'));
+				$btn.append($tip);
+				setTimeout(function () { $tip.remove(); }, 2000);
+			}, 100);
+		}).on('touchend touchcancel touchmove', '.ItemButton', function () {
+			if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+		});
+	})();
 
 	// 아이템 키보드 단축키 (1~5)
 	$(document).on('keydown', function (e) {
@@ -5317,7 +5373,7 @@ function loading(text) {
 }
 function escapeContent(text) {
 	if (typeof text !== 'string') return text;
-	return text.replace(/</g, "〈").replace(/>/g, "〉");
+	return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&#39;").replace(/"/g, "&quot;");
 }
 function showDialog($d, noToggle) {
 	var size = [$(window).width(), $(window).height()];
@@ -5867,13 +5923,7 @@ function onMessage(data) {
 		case 'survivalKO':
 			// 서바이벌 모드: 중도 퇴장으로 인한 KO 처리
 			var koTarget = data.target;
-			var $koUser = $("#game-user-" + koTarget);
-
-			if ($koUser.length) {
-				$koUser.find(".game-user-image").addClass("survival-ko");
-				$koUser.find(".game-user-score").text("KO").addClass("survival-ko-score");
-				$koUser.addClass("game-user-ko");
-			}
+			applySurvivalKODisplay(koTarget);
 
 			var koUser = $data.users[koTarget] || $data.robots[koTarget];
 			if (koUser && koUser.game) {
@@ -5898,29 +5948,19 @@ function onMessage(data) {
 			// 서바이벌 모드: roundEnd 후 KO 상태 복원
 			if ($data.room && $data.room.opts && $data.room.opts.survival) {
 				for (i in data.users) {
-					var userData = data.users[i];
-					if (userData && userData.game && userData.game.alive === false) {
-						var $koUser = $("#game-user-" + i);
-						if ($koUser.length) {
-							$koUser.find(".game-user-image").addClass("survival-ko");
-							$koUser.find(".game-user-score").text("KO").addClass("survival-ko-score");
-							$koUser.addClass("game-user-ko");
-						}
+					if (data.users[i] && data.users[i].game && data.users[i].game.alive === false) {
+						applySurvivalKODisplay(i);
 					}
 				}
-				// 봇 KO 상태 복원
 				for (i in $data.robots) {
-					var robotData = $data.robots[i];
-					if (robotData && robotData.game && robotData.game.alive === false) {
-						var $koBot = $("#game-user-" + i);
-						if ($koBot.length) {
-							$koBot.find(".game-user-image").addClass("survival-ko");
-							$koBot.find(".game-user-score").text("KO").addClass("survival-ko-score");
-							$koBot.addClass("game-user-ko");
-						}
+					if ($data.robots[i] && $data.robots[i].game && $data.robots[i].game.alive === false) {
+						applySurvivalKODisplay(i);
 					}
 				}
 			}
+			// 라운드 종료 시 아이템 큐 방지
+			$('.ItemButton').addClass('item-disabled').css({'filter': 'grayscale(100%)', 'opacity': '0.5', 'cursor': 'not-allowed'}).removeClass('item-available item-queued');
+			$data.pendingItem = null;
 			$data._resultRank = data.ranks;
 			roundEnd(data.result, data.data);
 			break;
@@ -6116,11 +6156,11 @@ function welcome() {
 }
 /* Item Mode */
 var ITEM_SLOTS = {
-	skip: { slot: 1, name: '건너뛰기', icon: 'fa-forward' },
-	reverse: { slot: 2, name: '뒤로가기', icon: 'fa-exchange' },
-	pass: { slot: 3, name: '통과', icon: 'fa-hand-stop-o' },
-	random: { slot: 4, name: '랜덤', icon: 'fa-random' },
-	linkChange: { slot: 5, name: null, icon: null }
+	skip: { slot: 1, nameKey: 'itemSkip', icon: 'fa-forward' },
+	reverse: { slot: 2, nameKey: 'itemReverse', icon: 'fa-exchange' },
+	pass: { slot: 3, nameKey: 'itemPass', icon: 'fa-hand-stop-o' },
+	random: { slot: 4, nameKey: 'itemRandom', icon: 'fa-random' },
+	linkChange: { slot: 5, nameKey: null, icon: null }
 };
 function getItemTypeBySlot(slot) {
 	for (var type in ITEM_SLOTS) {
@@ -6130,9 +6170,10 @@ function getItemTypeBySlot(slot) {
 }
 function getItemName(itemType) {
 	if (itemType === 'linkChange') {
-		return $data.linkChangeItemName || '잇기변경';
+		return $data.linkChangeItemName || L['itemLinkChange'];
 	}
-	return ITEM_SLOTS[itemType] ? ITEM_SLOTS[itemType].name : '';
+	var info = ITEM_SLOTS[itemType];
+	return info && info.nameKey ? L[info.nameKey] : '';
 }
 function getPlayerCard(playerId) {
 	return $('#game-user-' + playerId);
@@ -6141,7 +6182,7 @@ function initItemUI() {
 	$data.myItems = {};
 	$data.pendingItem = null;
 	$('.ItemButton').removeClass('item-queued');
-	$('.ItemOverlay, .MobileItemOverlay').hide();
+	$('.ItemOverlay, .MobileItemOverlay').removeClass('visible hiding');
 	if (!$data.room || !$data.room.opts || !$data.room.opts.item) {
 		$('.ItemBar').hide();
 		return;
@@ -6151,12 +6192,12 @@ function initItemUI() {
 	if (r && r.rule === 'Classic') {
 		var opts = $data.room.opts;
 		if (opts.middle || opts.random) {
-			$data.linkChangeItemName = '끝말잇기';
-			ITEM_SLOTS.linkChange.name = '끝말잇기';
+			$data.linkChangeItemName = L['itemLinkEnd'];
+			ITEM_SLOTS.linkChange.nameKey = 'itemLinkEnd';
 			ITEM_SLOTS.linkChange.icon = 'fa-long-arrow-right';
 		} else {
-			$data.linkChangeItemName = '가온잇기';
-			ITEM_SLOTS.linkChange.name = '가온잇기';
+			$data.linkChangeItemName = L['itemLinkMiddle'];
+			ITEM_SLOTS.linkChange.nameKey = 'itemLinkMiddle';
 			ITEM_SLOTS.linkChange.icon = 'fa-compress';
 		}
 	}
@@ -6165,15 +6206,6 @@ function initItemUI() {
 		var itemType = getItemTypeBySlot(slot);
 		if (!itemType) { $(this).hide(); return; }
 		var info = ITEM_SLOTS[itemType];
-		// 2인이면 뒤로가기 비활성화 (숨기지 않음)
-		if (itemType === 'reverse' && $data.room.game && $data.room.game.seq && $data.room.game.seq.length <= 2) {
-			$(this).prop('disabled', true);
-			$(this).show();
-			$(this).find('.ItemIcon').attr('class', 'fa ItemIcon ' + info.icon);
-			$(this).find('.ItemName').text(info.name || '');
-			$(this).find('.ItemCount').text('0');
-			return;
-		}
 		// classic 아닌 모드에서 linkChange 숨김
 		if (itemType === 'linkChange' && (!r || r.rule !== 'Classic')) {
 			$(this).hide();
@@ -6181,9 +6213,13 @@ function initItemUI() {
 		}
 		$(this).show();
 		$(this).find('.ItemIcon').attr('class', 'fa ItemIcon ' + info.icon);
-		$(this).find('.ItemName').text(info.name || '');
+		$(this).find('.ItemName').text(info.nameKey ? L[info.nameKey] : '');
 		$(this).find('.ItemCount').text('0');
-		$(this).prop('disabled', true).removeClass('item-available item-queued');
+
+		var descKey = (itemType === 'linkChange') ? (ITEM_SLOTS.linkChange.nameKey + 'Desc') : (info.nameKey + 'Desc');
+		$(this).attr('data-tooltip', L[descKey] || '');
+
+		$(this).removeAttr('disabled').addClass('item-disabled').css({'filter': 'grayscale(100%)', 'opacity': '0.5', 'cursor': 'not-allowed'}).removeClass('item-available item-queued');
 		$data.myItems[itemType] = 0;
 	});
 	$('.ItemBar').show();
@@ -6196,20 +6232,20 @@ function updateItemUI() {
 		if (!itemType) return;
 		var count = $data.myItems[itemType] || 0;
 		$(this).find('.ItemCount').text(count);
-		$(this).removeClass('item-available item-queued');
+		$(this).removeClass('item-available item-queued item-disabled').css({'filter': '', 'opacity': '', 'cursor': ''});
 		if ($data.pendingItem === itemType) {
-			$(this).addClass('item-queued').prop('disabled', false);
+			$(this).addClass('item-queued');
 		} else if (count > 0) {
-			$(this).addClass('item-available').prop('disabled', false);
+			$(this).addClass('item-available');
 		} else {
-			$(this).prop('disabled', true);
+			$(this).addClass('item-disabled').css({'filter': 'grayscale(100%)', 'opacity': '0.5', 'cursor': 'not-allowed'});
 		}
 	});
 }
 
 function useItemSlot(slot) {
 	var $btn = $('.ItemButton[data-slot=' + slot + ']');
-	if (!$btn.length || $btn.prop('disabled')) return;
+	if (!$btn.length || $btn.hasClass('item-disabled')) return;
 	$btn.trigger('click');
 }
 function showPlayerPendingItem(playerId, itemType) {
@@ -6222,7 +6258,7 @@ function showPlayerPendingItem(playerId, itemType) {
 		$card.append($overlay);
 	}
 	$overlay.text(getItemName(itemType));
-	$overlay.removeClass('hiding');
+	$overlay.removeClass('hiding').show();
 	requestAnimationFrame(function () { $overlay.addClass('visible'); });
 }
 function hidePlayerPendingItem(playerId) {
@@ -6386,19 +6422,19 @@ function sendWhisper(target, text) {
 function toggleWhisperBlock(target) {
 	if ($data._wblock.hasOwnProperty(target)) {
 		delete $data._wblock[target];
-		notice(target + L['wnblocked']);
+		notice(L['wnblocked'].replace('{V1}', target));
 	} else {
 		$data._wblock[target] = true;
-		notice(target + L['wblocked']);
+		notice(L['wblocked'].replace('{V1}', target));
 	}
 }
 function toggleShutBlock(target) {
 	if ($data._shut.hasOwnProperty(target)) {
 		delete $data._shut[target];
-		notice(target + L['userNShut']);
+		notice(L['userNShut'].replace('{V1}', target));
 	} else {
 		$data._shut[target] = true;
-		notice(target + L['userShut']);
+		notice(L['userShut'].replace('{V1}', target));
 	}
 }
 function tryDict(text, callback) {
@@ -6637,7 +6673,7 @@ function updateUI(myRoom, refresh) {
 	}
 	$data._only = only;
 	setLocation($data.place);
-	$(".kkutu-menu ." + only).show();
+	$(".kkutu-menu ." + only).not(".ItemBar").show();
 	if (mobile) {
 		if (only == "for-lobby") {
 			$("body").css("overflow-y", "auto");
@@ -6852,12 +6888,12 @@ function roomListBar(o) {
 
 	$R = $("<div>").attr('id', "room-" + o.id).addClass("rooms-item")
 		.append($ch = $("<div>").addClass("rooms-channel channel-" + o.channel).on('click', function (e) { requestRoomInfo(o.id); }))
-		.append($("<div>").addClass("rooms-number").html(o.id))
+		.append($("<div>").addClass("rooms-number").text(o.id))
 		.append($("<div>").addClass("rooms-title ellipse").text(badWords(o.title)))
-		.append($("<div>").addClass("rooms-limit").html(o.players.length + " / " + o.limit))
+		.append($("<div>").addClass("rooms-limit").text(o.players.length + " / " + o.limit))
 		.append($("<div>").width(270)
 			.append($rm = $("<div>").addClass("rooms-mode").html(opts.join(" / ").toString()))
-			.append($("<div>").addClass("rooms-round").html(roundOrHP))
+			.append($("<div>").addClass("rooms-round").text(roundOrHP))
 			.append($("<div>").addClass("rooms-time").html(o.time + L['SECOND']))
 		)
 		.append($("<div>").addClass("rooms-lock").html(o.password ? "<i class='fa fa-lock'></i>" : "<i class='fa fa-unlock'></i>"))
@@ -8255,13 +8291,7 @@ function handleSurvivalKO(id, data, $sc, $uc) {
 	if (!data.survival || !data.ko) return false;
 
 	var koTarget = data.target || id;
-	var $koUser = $("#game-user-" + koTarget);
-
-	if ($koUser.length) {
-		$koUser.find(".game-user-image").addClass("survival-ko");
-		$koUser.find(".game-user-score").text("KO").addClass("survival-ko-score");
-		$koUser.addClass("game-user-ko");
-	}
+	applySurvivalKODisplay(koTarget);
 
 	var koUser = $data.users[koTarget] || $data.robots[koTarget];
 	if (koUser && koUser.game) {
@@ -8287,7 +8317,7 @@ function handleSurvivalDamage(data) {
 	if (!data.survival || !data.survivalDamage) return;
 
 	var dmgInfo = data.survivalDamage;
-	var $dmgTarget = $("#game-user-" + dmgInfo.targetId);
+	var $dmgTarget = $(document.getElementById("game-user-" + dmgInfo.targetId));
 
 	var dmgUser = $data.users[dmgInfo.targetId] || $data.robots[dmgInfo.targetId];
 	if (dmgUser && dmgUser.game) {
@@ -8303,13 +8333,17 @@ function handleSurvivalDamage(data) {
 		var $dmgSc = $("<div>")
 			.addClass("deltaScore damage")
 			.css('color', '#FF6666')
-			.html("-" + dmgInfo.damage);
+			.text("-" + dmgInfo.damage);
 		drawObtainedScore($dmgTarget, $dmgSc);
 
 		if (dmgInfo.ko) {
-			$dmgTarget.find(".game-user-image").addClass("survival-ko");
-			$dmgTarget.find(".game-user-score").text("KO").addClass("survival-ko-score");
-			$dmgTarget.addClass("game-user-ko");
+			// 기존 스코어 애니메이션 취소 (KO 텍스트 덮어쓰기 방지)
+			var existingAnim = $data["_s" + dmgInfo.targetId];
+			if (existingAnim) {
+				clearTimeout(existingAnim.timer);
+				delete $data["_s" + dmgInfo.targetId];
+			}
+			applySurvivalKODisplay(dmgInfo.targetId);
 
 			if (dmgUser && dmgUser.game) {
 				dmgUser.game.alive = false;
@@ -8320,6 +8354,18 @@ function handleSurvivalDamage(data) {
 			updateScore(dmgInfo.targetId, dmgInfo.newHP);
 		}
 	}
+}
+/**
+ * 서바이벌 KO 상태를 DOM에 반영하는 공통 함수
+ * @param {string} targetId - KO된 플레이어/봇 ID
+ */
+function applySurvivalKODisplay(targetId) {
+	var el = document.getElementById("game-user-" + targetId);
+	if (!el) return;
+	var $el = $(el);
+	$el.find(".game-user-image").addClass("survival-ko");
+	$el.find(".game-user-score").text("KO").addClass("survival-ko-score");
+	$el.addClass("game-user-ko");
 }
 // ========== 서바이벌 모드 공통 끝 ==========
 function turnEnd(id, data) {
@@ -9145,11 +9191,11 @@ function setRoomHead($obj, room) {
 	var roundOrHP = isSurvival ? ((room.opts.surHP || 500) + " HP") : (room.round + " " + L['rounds']);
 
 	$obj.empty()
-		.append($("<h5>").addClass("room-head-number").html("[" + (room.practice ? L['practice'] : room.id) + "]"))
+		.append($("<h5>").addClass("room-head-number").text("[" + (room.practice ? L['practice'] : room.id) + "]"))
 		.append($("<h5>").addClass("room-head-title").text(badWords(room.title)))
 		.append($rm = $("<h5>").addClass("room-head-mode").html(opts.join(" / ")))
-		.append($("<h5>").addClass("room-head-limit").html((mobile ? "" : (L['players'] + " ")) + room.players.length + " / " + room.limit))
-		.append($("<h5>").addClass("room-head-round").html(roundOrHP))
+		.append($("<h5>").addClass("room-head-limit").text((mobile ? "" : (L['players'] + " ")) + room.players.length + " / " + room.limit))
+		.append($("<h5>").addClass("room-head-round").text(roundOrHP))
 		.append($("<h5>").addClass("room-head-time").html((Math.round(room.time * 10) / 10) + L['SECOND']));
 
 	var pickTopics = getPickTopicExpl(rule, room.opts);
@@ -9469,7 +9515,8 @@ function chat(profile, msg, from, timestamp) {
 	if (link = msg.match(/https?:\/\/[\w\.\?\/&#%=-_\+]+/g)) {
 		msg = $msg.html();
 		link.forEach(function (item) {
-			msg = msg.replace(item, "<a href='#' style='color: #2222FF;' onclick='tryOpenLink(\"" + item + "\");'>" + item + "</a>");
+			var safeItem = item.replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+			msg = msg.replace(item, "<a href='#' style='color: #2222FF;' onclick='tryOpenLink(\"" + safeItem + "\");'>" + safeItem + "</a>");
 		});
 		$msg.html(msg);
 	}

@@ -2623,34 +2623,54 @@ iframe {
 }
 
 .kkutu-menu .ItemButton {
+	position: relative;
 	float: left;
 	border: none;
 	border-bottom-left-radius: 0px;
 	border-bottom-right-radius: 0px;
-	width: auto;
-	min-width: 38px;
+	width: 86px;
 	height: 20px;
-	padding: 0px 8px;
 	cursor: pointer;
+	font-weight: bold;
 	background-color: #C0C0C0;
 	color: #888888;
+	box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
 	transition: all 0.2s ease;
+	overflow: visible;
 }
 
-.kkutu-menu .ItemButton:hover:not(:disabled) {
+.kkutu-menu .ItemButton[data-tooltip]:hover::after {
+	content: attr(data-tooltip);
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	background: rgba(0, 0, 0, 0.85);
+	color: #eee;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	font-weight: normal;
+	white-space: nowrap;
+	z-index: 100;
+	pointer-events: none;
+	margin-top: 4px;
+}
+
+.kkutu-menu .ItemButton:hover:not(.item-disabled) {
 	margin-top: -5px;
-	height: 30px;
+	height: 25px;
 }
 
-.kkutu-menu .ItemButton:disabled {
+.kkutu-menu .ItemButton.item-disabled {
 	cursor: default;
 	background-color: #C0C0C0;
 	color: #888888;
 }
 
 .kkutu-menu .ItemButton.item-available {
-	background-color: #FFFFFF;
-	color: #333333;
+	background-color: rgba(255, 255, 255, 0.9);
+	color: #1976D2;
 }
 
 .kkutu-menu .ItemButton.item-queued {
@@ -2668,8 +2688,9 @@ iframe {
 }
 
 .ItemCount {
+	display: inline-block;
 	font-weight: bold;
-	font-size: 11px;
+	font-size: 12px;
 }
 
 /* Player card item overlay */

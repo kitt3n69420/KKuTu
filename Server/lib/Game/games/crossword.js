@@ -156,6 +156,9 @@ exports.submit = function (client, text, data) {
 	if (!my.game.answers) return;
 	if (!my.game.mdb) return;
 	if (data && play) {
+		if (!Array.isArray(data) || data.length < 4) return;
+		if (typeof data[0] !== 'number' || typeof data[1] !== 'number' || typeof data[2] !== 'number') return;
+		if (data[3] !== "0" && data[3] !== "1" && data[3] !== 0 && data[3] !== 1) return;
 		key = `${data[0]},${data[1]},${data[2]},${data[3]}`;
 		obj = my.game.answers[key];
 		mbjs = my.game.mdb[data[0]];

@@ -381,6 +381,10 @@ $(document).ready(function () {
 				if (only == "for-master") $stage.dialog.inviteList.append($obj);
 				else $stage.lobby.userList.append($obj);
 			}
+			var prev = $data.users[id];
+			if (prev && prev.data && prev.data.record && data.data && !data.data.record) {
+				data.data = $.extend({}, prev.data, data.data);
+			}
 			$data.users[id] = data;
 			if (needed) {
 				if ($obj) $("#" + $obj.attr('id')).replaceWith($obj);
@@ -967,7 +971,7 @@ $(document).ready(function () {
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
-		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 
 		if (showCategory) {
@@ -1195,6 +1199,20 @@ $(document).ready(function () {
 		if ($(this).is(':checked')) window.RULE_CHECKBOXES['item'].prop('checked', false);
 	});
 
+	// 도돌이 금지 - 첫말잇기/랜덤잇기 상호배타
+	window.RULE_CHECKBOXES['nododoli'].on('change', function () {
+		if ($(this).is(':checked')) {
+			window.RULE_CHECKBOXES['first'].prop('checked', false);
+			window.RULE_CHECKBOXES['random'].prop('checked', false);
+		}
+	});
+	window.RULE_CHECKBOXES['first'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['nododoli'].prop('checked', false);
+	});
+	window.RULE_CHECKBOXES['random'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['nododoli'].prop('checked', false);
+	});
+
 	// View All Rules Dialog 버튼 핸들러
 	$("#view-all-rules-btn").on('click', function () {
 		var v = $("#room-mode").val();
@@ -1211,7 +1229,7 @@ $(document).ready(function () {
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
-		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
 
 		if (showCategory) {
@@ -1373,15 +1391,9 @@ $(document).ready(function () {
 			$("#PracticeDiag .dialog-title").html(L['practice']);
 			$("#ai-team").val(0).prop('disabled', true);
 			var saved = loadVolumeSettings();
-			if (saved.aiAutoApply === true) {
-				$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
-				$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
-				$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
-			} else {
-				$("#ai-mute").prop('checked', false);
-				$("#ai-rage-quit").prop('checked', false);
-				$("#ai-fast-mode").prop('checked', false);
-			}
+			$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
+			$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
+			$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
 			showDialog($stage.dialog.practice);
 		} else {
 			send('practice', { level: -1 });
@@ -1624,14 +1636,10 @@ $(document).ready(function () {
 			$("#ai-mute").prop('checked', !bot.mute);
 			$("#ai-rage-quit").prop('checked', bot.canRageQuit || false);
 			$("#ai-fast-mode").prop('checked', bot.fastMode || false);
-		} else if (saved.aiAutoApply === true) {
+		} else {
 			$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
 			$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
 			$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
-		} else {
-			$("#ai-mute").prop('checked', false);
-			$("#ai-rage-quit").prop('checked', false);
-			$("#ai-fast-mode").prop('checked', false);
 		}
 		showDialog($stage.dialog.practice);
 	});
@@ -2472,7 +2480,8 @@ $(document).ready(function () {
 	});
 
 	// 아이템 버튼 클릭
-	$(document).on('click', '.ItemButton:not(:disabled)', function () {
+	$(document).on('click', '.ItemButton', function () {
+		if ($(this).hasClass('item-disabled')) return;
 		var slot = $(this).data('slot');
 		var itemType = getItemTypeBySlot(slot);
 		console.log('[ITEM] click slot:', slot, 'itemType:', itemType, 'myItems:', JSON.stringify($data.myItems), 'pendingItem:', $data.pendingItem);
@@ -2489,6 +2498,23 @@ $(document).ready(function () {
 		}
 		updateItemUI();
 	});
+
+	// 모바일: 롱프레스로 아이템 툴팁 표시
+	(function () {
+		var longPressTimer = null;
+		$(document).on('touchstart', '.ItemButton[data-tooltip]', function (e) {
+			var $btn = $(this);
+			longPressTimer = setTimeout(function () {
+				longPressTimer = null;
+				$('.item-tooltip-popup').remove();
+				var $tip = $('<div>').addClass('item-tooltip-popup').text($btn.attr('data-tooltip'));
+				$btn.append($tip);
+				setTimeout(function () { $tip.remove(); }, 2000);
+			}, 100);
+		}).on('touchend touchcancel touchmove', '.ItemButton', function () {
+			if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+		});
+	})();
 
 	// 아이템 키보드 단축키 (1~5)
 	$(document).on('keydown', function (e) {

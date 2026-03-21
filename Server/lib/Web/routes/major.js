@@ -303,13 +303,19 @@ exports.run = function (Server, page) {
 
     MainDB.users
       .findOne(["_id", uid])
-      .limit(["money", true], ["box", true])
+      .limit(["money", true], ["box", true], ["equip", true])
       .on(function ($user) {
         if (!$user) return res.json({ error: 400 });
         if (!$user.box) $user.box = {};
         var q = $user.box[gid];
 
         if (!q) return res.json({ error: 430 });
+        // 장착 중인 아이템은 환불 불가
+        if ($user.equip) {
+          for (var part in $user.equip) {
+            if ($user.equip[part] === gid) return res.json({ error: 426 });
+          }
+        }
         MainDB.kkutu_shop
           .findOne(["_id", isDyn ? gid.slice(0, 4) : gid])
           .limit(["cost", true])

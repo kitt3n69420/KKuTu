@@ -97,7 +97,7 @@ block Middle
 		div#facebook-menu.fb-like.for-lobby.for-master.for-normal.for-gaming(data-href='https://kkutu-n.xyz', data-width='300', data-layout='button_count', data-action='like', data-show-faces='true', data-share='true')
 		div.ItemBar.for-gaming(style='display: none;')
 			each slot in [1, 2, 3, 4, 5]
-				button.ItemButton(data-slot=slot, disabled)
+				button.ItemButton.item-disabled(data-slot=slot)
 					i.fa.ItemIcon
 					span.ItemName
 					span.ItemCount 0
@@ -211,6 +211,7 @@ block Middle
 						option(value=7)= L('modeETY')
 						option(value=26)= L('modeECB')
 						option(value=14)= L('modeESS')
+						option(value=30)= L('modeESQ')
 						option(value=20)= L('modeEPQ')
 						option(value=18)= L('modeEFR')
 						option(value=29)= L('modeEQZ')
@@ -226,7 +227,7 @@ block Middle
 		div(style='position: absolute; bottom: 10px; left: 10px; right: 10px;')
 			h4(style='float: left; font-size: 12px; padding-top: 5px;')#quick-status
 			button#quick-ok(style='float: right; width: 80px; height: 20px;')= L('OK')
-	+Dialog('RoomDiag', 415, 475)
+	+Dialog('RoomDiag', 415, 500)
 		div.dialog-bar
 			h4= L('roomTitle')
 			input#room-title(placeholder=(nick || L('guest'))+L('roomDefault'), maxlength=20, style="width: 283px;")
@@ -276,6 +277,7 @@ block Middle
 					option(value=20)= L('modeEPQ')
 					option(value=18)= L('modeEFR')
 					option(value=29)= L('modeEQZ')
+					option(value=30)= L('modeESQ')
 				optgroup(label=L('mcEtc'))
 					option(value=24)= L('modeCRL')
 					option(value=27)= L('modeCAL')
@@ -308,7 +310,7 @@ block Middle
 		div.dialog-bar#room-word-settings-wrapper(style='height: auto; overflow: hidden; display: none;')
 			h4= L('wordScope')
 			div(style='float: left; width: 300px;')
-				- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ret', 'obo'];
+				- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ret', 'obo', 'alp'];
 				- for(var i in locals.OPTIONS)
 					- if(scopeOpts.indexOf(i) === -1) continue;
 					+GameOption(i, 'room')
@@ -338,7 +340,7 @@ block Middle
 			div(style='float: left; width: 300px;')
 				- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg'];
 				- for(var i in locals.OPTIONS)
-					- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo'].indexOf(i) !== -1) continue;
+					- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp'].indexOf(i) !== -1) continue;
 					- if(bonusOpts.indexOf(i) !== -1) continue;
 					+GameOption(i, 'room')
 				div.dialog-opt#room-injpick-panel(style='width: auto;')
@@ -418,7 +420,7 @@ block Middle
 			div.dialog-bar#view-all-word-settings-wrapper(style='height: auto; overflow: hidden; display: none;')
 				h4= L('wordScope')
 				div(style='float: left; width: 300px;')
-					- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ret', 'obo'];
+					- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ret', 'obo', 'alp'];
 					- for(var i in locals.OPTIONS)
 						- if(scopeOpts.indexOf(i) === -1) continue;
 						+GameOption(i, 'view-all')
@@ -448,7 +450,7 @@ block Middle
 				div(style='float: left; width: 300px;')
 					- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg'];
 					- for(var i in locals.OPTIONS)
-						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo'].indexOf(i) !== -1) continue;
+						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp'].indexOf(i) !== -1) continue;
 						- if(bonusOpts.indexOf(i) !== -1) continue;
 						+GameOption(i, 'view-all')
 					div.dialog-opt#view-all-injpick-panel

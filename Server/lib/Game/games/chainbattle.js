@@ -150,25 +150,23 @@ function getAuto(char, subChar, mode) {
 	var isKo = lang === 'ko';
 
 	if (mode === 1) {
-		// 개수만 반환 (통계 테이블)
-		var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
+		// 개수만 반환 (인메모리 stats)
 		var state = 0;
 		if (!my.opts.injeong) state |= 1;
 		if (my.opts.strict) state |= 2;
 		if (my.opts.loanword) state |= 4;
 		var col = isKo ? `startall_${state}` : `count_${state}`;
+		var statsLang = isKo ? 'ko' : 'en';
 
 		var chars = [char];
 		if (subChar) chars.push(subChar);
 		var total = 0;
-		var pending = chars.length;
 
 		chars.forEach(function (c) {
-			table.findOne(['_id', c]).on(function (doc) {
-				if (doc && doc[col]) total += doc[col];
-				if (--pending === 0) R.go(total);
-			}, null, function () { if (--pending === 0) R.go(total); });
+			var doc = (DB.statsData && DB.statsData[statsLang] && DB.statsData[statsLang][c]) || null;
+			if (doc && doc[col]) total += doc[col];
 		});
+		R.go(total);
 	} else if (mode === 2) {
 		// 후보 리스트 반환
 		if (isKo) {
@@ -261,27 +259,19 @@ function checkManner(nextChar, nextSubChar, usedChain) {
 	if (nextSubChar) charsToCheck.push(nextSubChar);
 
 	var total = 0;
-	var pending = charsToCheck.length;
 
 	charsToCheck.forEach(function (c) {
-		DB.kkutu_stats_ko.findOne(['_id', c]).on(function (doc) {
-			if (doc && doc[col]) total += doc[col];
-
-			if (--pending === 0) {
-				// 이미 사용한 단어 수 계산
-				var used = 0;
-				usedChain.forEach(function (word) {
-					var wFirst = word.charAt(0);
-					if (wFirst === nextChar) used++;
-					else if (nextSubChar && wFirst === nextSubChar) used++;
-				});
-
-				R.go(total - used);
-			}
-		}, null, function () {
-			if (--pending === 0) R.go(0);
-		});
+		var doc = (DB.statsData && DB.statsData.ko && DB.statsData.ko[c]) || null;
+		if (doc && doc[col]) total += doc[col];
 	});
+	// 이미 사용한 단어 수 계산
+	var used = 0;
+	usedChain.forEach(function (word) {
+		var wFirst = word.charAt(0);
+		if (wFirst === nextChar) used++;
+		else if (nextSubChar && wFirst === nextSubChar) used++;
+	});
+	R.go(total - used);
 
 	return R;
 }
@@ -381,22 +371,17 @@ exports.getTitle = function () {
 		if (my.opts.loanword) state |= 4;
 
 		var col = isKo ? `startall_${state}` : `count_${state}`;
-		var table = isKo ? DB.kkutu_stats_ko : DB.kkutu_stats_en;
+		var statsLang = isKo ? 'ko' : 'en';
 
 		var chars = [char];
 		if (subChar) chars.push(subChar);
-
-		var pending = chars.length;
 		var total = 0;
 
 		chars.forEach(function (c) {
-			table.findOne(['_id', c]).on(function (doc) {
-				if (doc && doc[col]) total += doc[col];
-				if (--pending === 0) CR.go(total);
-			}, null, function () {
-				if (--pending === 0) CR.go(total);
-			});
+			var doc = (DB.statsData && DB.statsData[statsLang] && DB.statsData[statsLang][c]) || null;
+			if (doc && doc[col]) total += doc[col];
 		});
+		CR.go(total);
 
 		return CR;
 	}
