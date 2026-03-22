@@ -47,8 +47,9 @@ Pub.ready = function (isPub) {
 		database: GLOBAL.PG_DATABASE,
 		host: GLOBAL.PG_HOST,
 		max: 25,
-		idleTimeoutMillis: 30000,
-		connectionTimeoutMillis: 5000
+		idleTimeoutMillis: 60000,
+		connectionTimeoutMillis: 10000,
+		statement_timeout: 20000
 	});
 	Redis.on('connect', function () {
 		connectPg();
