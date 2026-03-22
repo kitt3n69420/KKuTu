@@ -120,6 +120,29 @@ function getThemeDisplay(themeStr) {
 }
 
 /**
+ * Format a word with Discord markdown based on flag and type
+ * - flag & 2 (INJEONG): bold only; otherwise bold + underline
+ * - type not matching KOR_GROUP: strikethrough
+ */
+function formatWord(word, flag, type) {
+    let text = word;
+    const isInjeong = (flag || 0) & 2;
+    const isValidType = type && Const.KOR_GROUP.test(String(type));
+
+    if (!isValidType) {
+        text = `~~${text}~~`;
+    }
+
+    if (isInjeong) {
+        text = `**${text}**`;
+    } else {
+        text = `__**${text}**__`;
+    }
+
+    return text;
+}
+
+/**
  * Detect language from query string
  */
 function detectLanguage(query) {
@@ -658,7 +681,7 @@ async function handleDict(interaction) {
         const embed = new EmbedBuilder()
             .setTitle(`🔍 "${query}" 검색 결과`)
             .setColor(0x3498DB)
-            .setDescription(results.map((w, i) => `${i + 1}. **${w._id}**`).join('\n'))
+            .setDescription(results.map((w, i) => `${i + 1}. ${formatWord(w._id, w.flag, w.type)}`).join('\n'))
             .setFooter({ text: `총 ${results.length}개 결과` })
             .setTimestamp();
 
@@ -1075,7 +1098,7 @@ async function handleMission(interaction) {
         }
 
         const whereClause = conditions.join(' AND ');
-        const sql = `SELECT _id FROM kkutu_ko WHERE ${whereClause} ORDER BY (LENGTH(_id) - LENGTH(REPLACE(_id, '${safeMissionChar}', ''))) DESC, LENGTH(_id) DESC LIMIT ${MAX_RESULTS}`;
+        const sql = `SELECT _id, flag, type FROM kkutu_ko WHERE ${whereClause} ORDER BY (LENGTH(_id) - LENGTH(REPLACE(_id, '${safeMissionChar}', ''))) DESC, LENGTH(_id) DESC LIMIT ${MAX_RESULTS}`;
 
         const results = await new Promise((resolve, reject) => {
             DB.kkutu['ko'].direct(sql, function (err, res) {
@@ -1096,7 +1119,7 @@ async function handleMission(interaction) {
         const missionRegex = new RegExp(escapedChar, 'g');
         const resultLines = results.map((w, i) => {
             const count = (w._id.match(missionRegex) || []).length;
-            return `${i + 1}. **${w._id}** (${w._id.length}자, 미션 ${count}개)`;
+            return `${i + 1}. ${formatWord(w._id, w.flag, w.type)} (${w._id.length}자, 미션 ${count}개)`;
         });
 
         const titleParts = [];

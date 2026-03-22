@@ -3137,14 +3137,12 @@ exports.Room = function (room, channel) {
 	};
 	// ========== 아이템전 큐/발동/지급 ==========
 	my.queueItem = function (player, itemType) {
-		console.log('[ITEM-SRV] queueItem called:', player.id, itemType, 'opts.item:', my.opts.item, 'game.items:', JSON.stringify(my.game.items));
-		if (!my.gaming || my._roundEnding || !my.opts.item || !my.game.items) { console.log('[ITEM-SRV] queueItem rejected: no opts.item or no game.items'); return; }
+		if (!my.gaming || my._roundEnding || !my.opts.item || !my.game.items) { return; }
 		var items = my.game.items[player.id];
-		if (!items || (items[itemType] || 0) <= 0) { console.log('[ITEM-SRV] queueItem rejected: no items or count <= 0, items:', JSON.stringify(items)); return; }
+		if (!items || (items[itemType] || 0) <= 0) { return; }
 
 		my.dequeueItem(player);
 		my.game.pendingItems[player.id] = { itemType: itemType };
-		console.log('[ITEM-SRV] item queued successfully:', player.id, itemType);
 		my.byMaster('item-queued', { playerId: player.id, itemType: itemType }, true);
 	};
 	my.dequeueItem = function (player) {
@@ -3176,19 +3174,16 @@ exports.Room = function (room, channel) {
 		}
 		var items = my.game.items[playerId];
 		var candidates = availableItems.filter(function (t) { return (items[t] || 0) < Const.ITEM_MAX_COUNT; });
-		if (candidates.length === 0) { console.log('[ITEM-SRV] giveRandomItem: no candidates for', playerId); return; }
+		if (candidates.length === 0) { return; }
 		var itemType = candidates[Math.floor(Math.random() * candidates.length)];
 		items[itemType] = (items[itemType] || 0) + 1;
-		console.log('[ITEM-SRV] giveRandomItem:', playerId, itemType, 'count:', items[itemType]);
 		var player = DIC[playerId];
 		if (player && player.send) player.send('item-given', { itemType: itemType, count: items[itemType] });
-		else console.log('[ITEM-SRV] giveRandomItem: player not found or no send:', playerId);
 	};
 	my.checkItemGrant = function (playerId, bonusPoints, success) {
 		if (!my.opts.item || !success) return;
 
 		my.game.itemGlobalTurnCount = (my.game.itemGlobalTurnCount || 0) + 1;
-		console.log('[ITEM-SRV] checkItemGrant:', playerId, 'globalTurn:', my.game.itemGlobalTurnCount, 'bonus:', bonusPoints);
 		if (my.game.itemGlobalTurnCount % Const.ITEM_GRANT_INTERVAL === 0) {
 			for (var i = 0; i < my.game.seq.length; i++) {
 				var pid = my.game.seq[i];

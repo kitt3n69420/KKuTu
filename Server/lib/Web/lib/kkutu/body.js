@@ -816,20 +816,16 @@ function onMessage(data) {
 			showAlert("[#" + data.code + "] " + L['error_' + data.code] + i);
 			break;
 		case 'item-given':
-			console.log('[ITEM] item-given:', data.itemType, 'count:', data.count);
 			$data.myItems[data.itemType] = data.count;
 			updateItemUI();
 			break;
 		case 'item-queued':
-			console.log('[ITEM] item-queued:', data.playerId, data.itemType);
 			showPlayerPendingItem(data.playerId, data.itemType);
 			break;
 		case 'item-dequeued':
-			console.log('[ITEM] item-dequeued:', data.playerId);
 			hidePlayerPendingItem(data.playerId);
 			break;
 		case 'item-used':
-			console.log('[ITEM] item-used:', data.playerId, data.itemType);
 			hidePlayerPendingItem(data.playerId);
 			if (data.playerId === $data.id) {
 				$data.myItems[data.itemType] = Math.max(0, ($data.myItems[data.itemType] || 1) - 1);
@@ -1696,14 +1692,15 @@ function updateRoom(gaming) {
 		$r = $(".GameBox .game-body").empty();
 		// Apply appropriate CSS class based on mode and player count
 		if (rule.big) {
-			// Big board modes: rely on .cw class from rule files, don't use small-mode
 			$r.removeClass("small-mode");
-		} else if ($data.room.game.seq.length >= 9) {
-			// Normal modes with 9+ players: use small-mode
-			$r.addClass("small-mode");
+			$(".jjoriping,.rounds,.game-body").addClass("cw");
 		} else {
-			// Normal modes with <9 players: use default layout
-			$r.removeClass("small-mode");
+			$(".jjoriping,.rounds,.game-body").removeClass("cw");
+			if ($data.room.game.seq.length >= 9) {
+				$r.addClass("small-mode");
+			} else {
+				$r.removeClass("small-mode");
+			}
 		}
 		// updateScore(true);
 		// 서바이벌 모드: 초기 HP 결정

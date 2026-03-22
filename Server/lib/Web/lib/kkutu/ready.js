@@ -2484,16 +2484,13 @@ $(document).ready(function () {
 		if ($(this).hasClass('item-disabled')) return;
 		var slot = $(this).data('slot');
 		var itemType = getItemTypeBySlot(slot);
-		console.log('[ITEM] click slot:', slot, 'itemType:', itemType, 'myItems:', JSON.stringify($data.myItems), 'pendingItem:', $data.pendingItem);
 		if (!itemType) return;
 
 		if ($data.pendingItem === itemType) {
 			$data.pendingItem = null;
-			console.log('[ITEM] sending item-dequeue');
 			send('item-dequeue', {});
 		} else {
 			$data.pendingItem = itemType;
-			console.log('[ITEM] sending item-queue:', itemType);
 			send('item-queue', { itemType: itemType });
 		}
 		updateItemUI();
