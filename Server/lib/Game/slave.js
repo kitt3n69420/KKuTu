@@ -642,9 +642,18 @@ KKuTu.onClientClosed = function ($c, code) {
     return;
   }
 
+  var _place = $c.place;
   delete DIC[$c.id];
   if ($c.profile) delete DNAME[$c.profile.title || $c.profile.name];
-  KKuTu.publish("disconnRoom", { id: $c.id });
+  // disconnRoom은 같은 방 유저에게만 전송 (place==0이면 이미 leave()로 퇴장 처리됨)
+  if (_place) {
+    var _msg = JSON.stringify({ type: "disconnRoom", id: $c.id });
+    for (var _i in DIC) {
+      if (DIC[_i].place == _place && DIC[_i].socket && DIC[_i].socket.readyState == 1) {
+        DIC[_i].socket.send(_msg);
+      }
+    }
+  }
 
   JLog.alert(`Chan @${CHAN} Exit #${$c.id}`);
 };

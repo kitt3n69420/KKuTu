@@ -462,6 +462,10 @@ function onMessage(data) {
 			if (data.caj) checkAge();
 			updateCommunity();
 			break;
+		case 'roomSync':
+			$data.rooms = data.rooms;
+			updateRoomList(true);
+			break;
 		case 'conn':
 			$data.setUser(data.user.id, data.user);
 			updateUserList();
@@ -556,7 +560,7 @@ function onMessage(data) {
 		case 'friend':
 			$data._friends[data.id] = { server: (data.stat == "on") ? data.s : false };
 			if ($data._friends[data.id] && $data.friends[data.id])
-				notice(((data.stat == "on") ? ("&lt;<b>" + L['server_' + $data._friends[data.id].server] + "</b>&gt; ") : "")
+				notice(((data.stat == "on") ? ("[" + L['server_' + $data._friends[data.id].server] + "] ") : "")
 					+ L['friend'] + " " + $data.friends[data.id] + L['fstat_' + data.stat]);
 			updateCommunity();
 			break;

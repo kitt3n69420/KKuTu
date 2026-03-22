@@ -376,6 +376,10 @@ Cluster.on("message", function (worker, msg) {
           KKuTu.publish("room", { room: { id: msg.id, players: [] } });
         }
       }
+      // 로비 복귀 유저에게 최신 방 목록 전송 (방에 있는 동안 놓친 업데이트 보상)
+      if (DIC[msg.target] && DIC[msg.target].place == 0) {
+        DIC[msg.target].send("roomSync", { rooms: KKuTu.getRoomList() });
+      }
       break;
     case "user-publish":
       if ((temp = DIC[msg.data.id])) {
@@ -428,8 +432,8 @@ Cluster.on("message", function (worker, msg) {
           temp[i] = msg.data.room[i];
         }
         temp.password = msg.password;
+        KKuTu.publish("room", msg.data);
       }
-      KKuTu.publish("room", msg.data);
       break;
     case "room-expired":
       if (msg.create && ROOM[msg.id]) {
