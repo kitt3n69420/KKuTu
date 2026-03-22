@@ -66,7 +66,7 @@ exports.roundReady = function () {
 	if (my.game.round <= effectiveRound) {
 		var sql = "SELECT _id FROM kkutu_" + my.rule.lang + " WHERE _id ~ '" + conf.reg.source + "' AND hit >= 1";
 		if (conf.add) sql += " AND " + conf.add[0] + " ~ '" + conf.add[1].source + "'";
-		sql += " OFFSET floor(random() * GREATEST(1, (SELECT reltuples::bigint FROM pg_class WHERE relname = 'kkutu_" + my.rule.lang + "') - 1500)) LIMIT 1500";
+		sql += " ORDER BY log(greatest(hit, 2)) + random() * 3 DESC LIMIT 1500";
 
 		DB.kkutu[my.rule.lang].direct(sql, function (err, res) {
 			if (err || !res) return;
