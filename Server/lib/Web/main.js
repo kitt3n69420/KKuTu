@@ -132,7 +132,7 @@ DB.ready = function () {
   }, 600000);
   setInterval(function () {
     gameServers.forEach(function (v) {
-      if (v.socket) v.socket.send(`{"type":"seek"}`);
+      if (v.socket && v.socket.readyState === 1) v.socket.send(`{"type":"seek"}`);
       else v.seek = null;
     });
   }, 4000);
@@ -231,7 +231,7 @@ function GameClient(id, url) {
   }
 
   my.send = function (type, data) {
-    if (!my.socket) return; // Don't send if not connected
+    if (!my.socket || my.socket.readyState !== 1) return; // Don't send if not connected
     if (!data) data = {};
     data.type = type;
 
