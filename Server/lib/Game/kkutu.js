@@ -2475,9 +2475,9 @@ exports.Room = function (room, channel) {
 				});
 				if (client.socket.readyState <= 1) client.socket.close();
 				process.send({ type: "room-go", target: client.id, id: my.id, removed: !ROOM.hasOwnProperty(my.id) });
+				// tail-report: 비정상 퇴장도 포함하여 전송 (연습방 제외)
+				process.send({ type: "tail-report", id: client.id, place: my.id, msg: { type: "leave", reason: reason || "abnormal" } });
 			}
-			// tail-report: 비정상 퇴장도 포함하여 항상 전송
-			process.send({ type: "tail-report", id: client.id, place: my.id, msg: { type: "leave", reason: reason || "abnormal" } });
 			my.export(client.id, kickVote);
 		} else if (Cluster.isMaster && !my.practice) {
 			// master에서 소켓이 끊겨 Room.go가 실행된 경우, slave에게도 퇴장 알림
