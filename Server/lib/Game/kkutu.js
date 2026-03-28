@@ -206,7 +206,7 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 				JLog.warn('Heartbeat timeout #' + c.id + ' (' + Math.round(elapsed / 1000) + 's)');
 				// terminate() 전에 직접 cleanup (close 이벤트가 안 올 수 있으므로)
 				try {
-					if (ROOM[c.place]) ROOM[c.place].go(c);
+					if (ROOM[c.place]) ROOM[c.place].go(c, null, "timeout");
 					if (c.subPlace && c.pracRoom) {
 						if (c.pracRoom.gaming) c.pracRoom.interrupt();
 						c.pracRoom.go(c);
@@ -243,7 +243,7 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 			if (c.socket.readyState >= 2 && (now - c._lastHeartbeat > 30000)) {
 				JLog.warn('Ghost user (stale socket state=' + c.socket.readyState + ') #' + id);
 				try {
-					if (ROOM[c.place]) ROOM[c.place].go(c);
+					if (ROOM[c.place]) ROOM[c.place].go(c, null, "ghost");
 				} catch (e) {
 					JLog.error('Ghost sweep cleanup error #' + id + ': ' + e.toString());
 				}
@@ -734,7 +734,7 @@ exports.Client = function (socket, profile, sid) {
 		// 글로벌 heartbeat에서 이미 cleanup 한 경우 중복 방지
 		if (my._ghostCleaned) return;
 		try {
-			if (ROOM[my.place]) ROOM[my.place].go(my);
+			if (ROOM[my.place]) ROOM[my.place].go(my, null, my._leaveReason || "disconnect");
 			if (my.subPlace && my.pracRoom) {
 				if (my.pracRoom.gaming) my.pracRoom.interrupt();
 				my.pracRoom.go(my);
@@ -829,6 +829,7 @@ exports.Client = function (socket, profile, sid) {
 					if (st < Const.BLOCKED_LENGTH) {
 						if (++my.numSpam >= Const.KICK_BY_SPAM) {
 							if (Cluster.isWorker) process.send({ type: "kick", target: my.id });
+							my._leaveReason = "spam";
 							return my.socket.close();
 						}
 						return my.send('blocked');
@@ -1120,7 +1121,7 @@ exports.Client = function (socket, profile, sid) {
 			if (!kickVote) return;
 		}
 		if ($room) {
-			$room.go(my, kickVote);
+			$room.go(my, kickVote, kickVote ? "kick" : "normal");
 			$room.checkJamsu();
 		}
 	};
@@ -2195,7 +2196,7 @@ exports.Room = function (room, channel) {
 			my.export(client.id, false, true);
 		}
 	};
-	my.go = function (client, kickVote) {
+	my.go = function (client, kickVote, reason) {
 		// Fix: 방이 이미 삭제되었는지 확인 (재귀 호출 방지)
 		// 주의: 연습방(practice)은 ROOM[]에 저장되지 않으므로 이 체크를 스킵
 		if (!my.practice && !ROOM[my.id]) {
@@ -2469,11 +2470,14 @@ exports.Room = function (room, channel) {
 					type: "room-leave",
 					roomId: my.id,
 					name: (client.profile && (client.profile.title || client.profile.name)) || client.id,
-					isRobot: false
+					isRobot: false,
+					reason: reason || "abnormal"
 				});
 				if (client.socket.readyState <= 1) client.socket.close();
 				process.send({ type: "room-go", target: client.id, id: my.id, removed: !ROOM.hasOwnProperty(my.id) });
 			}
+			// tail-report: 비정상 퇴장도 포함하여 항상 전송
+			process.send({ type: "tail-report", id: client.id, place: my.id, msg: { type: "leave", reason: reason || "abnormal" } });
 			my.export(client.id, kickVote);
 		} else if (Cluster.isMaster && !my.practice) {
 			// master에서 소켓이 끊겨 Room.go가 실행된 경우, slave에게도 퇴장 알림

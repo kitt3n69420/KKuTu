@@ -504,7 +504,7 @@ Cluster.on("message", function (worker, msg) {
       break;
     case "room-leave":
       // Player/bot left a room
-      DiscordBot.notifyRoomLeave(msg.roomId, msg.name, msg.isRobot);
+      DiscordBot.notifyRoomLeave(msg.roomId, msg.name, msg.isRobot, msg.reason);
       break;
     default:
       JLog.warn(`Unhandled IPC message type: ${msg.type}`);

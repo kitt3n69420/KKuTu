@@ -1309,7 +1309,14 @@ function flushNotifyQueue() {
             lines.push('\u{27A1}\u{FE0F} **' + e.name + '** \u{2192} ' + e.roomId + '번 방');
         });
         _notifyQueue.roomLeave.forEach(function (e) {
-            lines.push('\u{2B05}\u{FE0F} **' + e.name + '** \u{2190} ' + e.roomId + '번 방');
+            var prefix;
+            if (e.reason === 'kick') prefix = '\uD83D\uDEAB';       // 🚫 강퇴
+            else if (e.reason === 'disconnect') prefix = '\uD83D\uDD0C'; // 🔌 소켓 단절
+            else if (e.reason === 'timeout') prefix = '\u23F1\uFE0F';   // ⏱️ 타임아웃
+            else if (e.reason === 'ghost') prefix = '\uD83D\uDC7B';     // 👻 유령 유저
+            else if (e.reason === 'spam') prefix = '\uD83D\uDD07';      // 🔇 스팸 강퇴
+            else prefix = '\u2B05\uFE0F';                               // ⬅️ 정상 퇴장
+            lines.push(prefix + ' **' + e.name + '** \u2190 ' + e.roomId + '\uBC88 \uBC29');
         });
         safeExecute(async () => {
             var embed = new EmbedBuilder()
@@ -1731,10 +1738,11 @@ exports.notifyRoomJoin = function (roomId, name, isRobot) {
  * @param {number} roomId - Room ID
  * @param {string} name - Player display name
  * @param {boolean} isRobot - Whether the player is a bot
+ * @param {string} [reason] - Leave reason: "normal", "kick", "disconnect", "timeout", "ghost", or "spam"
  */
-exports.notifyRoomLeave = function (roomId, name, isRobot) {
+exports.notifyRoomLeave = function (roomId, name, isRobot, reason) {
     if (!isEnabled || !isReady || !channel) return;
-    _notifyQueue.roomLeave.push({ roomId: roomId, name: name + (isRobot ? ' \u{1F916}' : '') });
+    _notifyQueue.roomLeave.push({ roomId: roomId, name: name + (isRobot ? ' \u{1F916}' : ''), reason: reason || 'abnormal' });
     scheduleNotifyFlush();
 };
 
