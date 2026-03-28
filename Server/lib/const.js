@@ -101,16 +101,18 @@ exports.OPTIONS = {
 	'alp': { name: "Allpos" },     // 모든 품사: 품사 제한 없이 모든 단어 사용 가능
 	'itm': { name: "Item" },       // 아이템전: 아이템을 사용할 수 있는 모드
 	'nsw': { name: "Noswear" },    // 욕 금지: 욕이 포함된 단어 제출 시 채팅으로 처리
-	'dod': { name: "NoDodoli" }    // 도돌이 금지: 이어지는 글자와 이을 글자가 같은 단어 금지
+	'dod': { name: "NoDodoli" },   // 도돌이 금지: 이어지는 글자와 이을 글자가 같은 단어 금지
+	'nyh': { name: "Nyeohweok" },  // 녜힁: 어려운 한글 조합으로 랜덤 생성
+	'ctc': { name: "Catch" }       // 캐치: 그림퀴즈 전용 특수 데이터베이스 사용
 
 };
 
 // ========== 아이템전 상수 ==========
 
 exports.ITEM_TYPES = ['skip', 'reverse', 'pass', 'random', 'linkChange'];
-exports.ITEM_MAX_COUNT = 5;       // 종류별 최대 보유 개수
-exports.ITEM_GRANT_INTERVAL = 8;  // 글로벌 N턴마다 전체 자동 지급
-exports.ITEM_BONUS_THRESHOLD = 3; // 보너스 수치 N 이상이면 지급
+exports.ITEM_MAX_COUNT = 10;       // 종류별 최대 보유 개수
+exports.ITEM_GRANT_INTERVAL = 6;  // 글로벌 N턴마다 전체 자동 지급
+exports.ITEM_BONUS_THRESHOLD = 2; // 보너스 수치 N 이상이면 지급
 
 // 보너스 수치 계산 (각 게임 모드의 submit 처리 후 호출)
 exports.calcItemBonusPoints = function (missionCount, toss, straightStreak, fullhouse) {
@@ -157,8 +159,8 @@ exports.ROBOT_DEFEAT_MESSAGES = [ // 봇이 한방단어를 받았을 때 보내
 exports.ROBOT_ANGRY_MESSAGES = [ //봇이 빡치면 보내는 메시지
 	"이건 불공평해", "억까 제발좀", "아오!!!!!!", "개짜증나",
 	"ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", "재밌냐?",
-	"야!!!", "치트 쓰지마", "사기치지마", "끄글 꺼라",
-	"억까겜", "작작 해라?", "적당히 하자?", "뿌에에에에엥"
+	"야!!!", "치트 쓰지마", "사기치지마", "끄글 꺼라", "더러운짓 하지마",
+	"억까겜", "작작 해라?", "적당히 하자?", "뿌에에에에엥", "엿같네"
 ]
 exports.ROBOT_FINAL_MESSAGES = [ //봇이 중퇴하기 전에 보내는 메시지
 	"나 안해", "망겜", "개노잼", "니들끼리나 잘 해라", "안할거임 ㅅㄱ",
@@ -341,7 +343,7 @@ exports.RULE = {
 	'KPQ': {
 		lang: "ko",
 		rule: "Picture",
-		opts: ["ijp", "drg"],
+		opts: ["ijp", "ctc", "drg"],
 		time: 2,
 		ai: false,
 		big: true,
@@ -483,6 +485,15 @@ exports.RULE = {
 		ai: true,
 		big: false,
 		ewq: false
+	},
+	'KPF': {
+		lang: "ko",
+		rule: "Flip",
+		opts: ["nyh", "drg"],
+		time: 1,
+		ai: true,
+		big: true,
+		ewq: false
 	}
 
 };
@@ -497,7 +508,7 @@ exports.GAME_CATEGORIES = {
 	},
 	'other': {
 		name: 'GameCategoryOther',
-		modes: ['KDA', 'EDA', 'KTY', 'ETY', 'HUN', 'KFR', 'EFR', 'KCB', 'ECB', 'CAL']
+		modes: ['KDA', 'EDA', 'KTY', 'ETY', 'HUN', 'KFR', 'EFR', 'KCB', 'ECB', 'CAL', 'KPF']
 	},
 	'etc': { //이건뭐지
 		name: 'GameCategoryEtc',
@@ -610,10 +621,10 @@ exports.IJP_EXCEPT = [
 	"OIJ", "TPW"
 ];
 exports.QUIZ_TOPIC = [
-	"MATH", "CAPI", "CHEM", "UNIT", "NUMG", "ASTR", "ARTS" /*, "CNTR" */
+	"MATH", "CAPI", "CHEM", "UNIT", "NUMG", "ASTR", "ARTS", "ANML", "GAME", "LITR" /*, "CNTR" */
 ];
 exports.QUIZ_TOPIC_EN = [
-	"MATH", "CAPI", "CHEM", "UNIT", "NUMG", "ASTR", "ARTS" /*, "CNTR" */
+	"MATH", "CAPI", "CHEM", "UNIT", "NUMG", "ASTR", "ARTS", "ANML", "GAME", "LITR" /*, "CNTR" */
 ];
 exports.KO_IJP = exports.KO_THEME.concat(exports.KO_INJEONG).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });
 exports.EN_IJP = exports.EN_INJEONG.concat(exports.EN_THEME).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });

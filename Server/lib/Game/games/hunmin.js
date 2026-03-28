@@ -43,7 +43,7 @@ exports.getTitle = function () {
 	var R = new Lizard.Tail();
 	var my = this;
 
-	my.game.done = [];
+	my.game.done = new Set();
 	setTimeout(function () {
 		R.go("①②③④⑤⑥⑦⑧⑨⑩");
 	}, 500);
@@ -60,7 +60,7 @@ exports.roundReady = function () {
 		if (my.opts.length3) my.game.theme = getTheme3(my.game.done);
 		else my.game.theme = getTheme(2, my.game.done);
 		if (my.opts.mission) my.game.mission = getMission(my.game.theme, my.opts);
-		my.game.done.push(my.game.theme);
+		my.game.done.add(my.game.theme);
 		my.byMaster('roundReady', {
 			round: my.game.round,
 			theme: my.game.theme,
@@ -173,6 +173,9 @@ exports.turnEnd = function () {
 		return;
 	}
 	// ========== 서바이벌 모드 끝 ==========
+
+	// 서바이벌 모드: 이미 KO된 플레이어는 일반 turnEnd 처리하지 않음 (stale timer 방지)
+	if (my.opts.survival) return;
 
 	if (target) if (target.game) {
 		// 무적(god): 패널티 면제
@@ -618,7 +621,7 @@ function getTheme(len, ex) {
 
 	while (len > 0) {
 		c = String.fromCharCode(HUNMIN_LIST[Math.floor(Math.random() * HUNMIN_LIST.length)]);
-		if (ex.includes(d = res + c)) continue;
+		if (ex.has(d = res + c)) continue;
 		res = d;
 		len--;
 	}
@@ -629,7 +632,7 @@ function getTheme3(ex) {
 
 	do {
 		res = HUNMIN_LIST_3[Math.floor(Math.random() * HUNMIN_LIST_3.length)];
-	} while (ex.includes(res));
+	} while (ex.has(res));
 
 	return res;
 }

@@ -177,7 +177,7 @@ exports.run = function (Server, page) {
     nickname = ProfanityFilter.filterNickname(nickname);
 
     MainDB.users.findOne(["nickname", nickname]).on(function (data) {
-      if (data) return res.send({ error: 456 });
+      if (data && data._id !== req.session.profile.id) return res.send({ error: 456 });
       MainDB.users.findOne(["_id", req.session.profile.id]).on(function (requester) {
         const now = Number(new Date());
         if (GLOBAL.NICKNAME_LIMIT.TERM > 0) {

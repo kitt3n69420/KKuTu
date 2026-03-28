@@ -11,11 +11,14 @@ const Const = require('../const');
 
 // Constants
 const GUILD_ID = '1447976671805182086';
-const CHANNEL_ID = '1469632601089245408';
+const CHANNEL_ID = '1485462715395870800';
 const BOT_PERMISSIONS = '9193377795136';
 const MAX_RESULTS = 20;
-const MAX_REGEX_LENGTH = 100;
+const MAX_REGEX_LENGTH = 200;
 const MAX_RANDOM_COUNT = 50;
+const MAX_REGEX_GROUPS = 5;
+const MAX_REGEX_QUANTIFIERS = 5;
+const VALID_WORD_CHARS = /^[0-9a-zㄱ-ㅣ가-힣]+$/;
 
 // State
 let client = null;
@@ -646,12 +649,32 @@ async function handleHelp(interaction) {
 }
 
 /**
+ * Validate regex safety (safe-regex + additional checks for known bypasses)
+ */
+function isRegexSafe(pattern) {
+    if (!safeRegex(pattern)) return false;
+
+    // Count unescaped groups
+    const groups = pattern.replace(/\\./g, '').match(/\(/g);
+    if (groups && groups.length > MAX_REGEX_GROUPS) return false;
+
+    // Count unescaped quantifiers
+    const quantifiers = pattern.replace(/\\./g, '').match(/[*+]\??|\{\d+,?\d*\}/g);
+    if (quantifiers && quantifiers.length > MAX_REGEX_QUANTIFIERS) return false;
+
+    // Block nested quantifiers like (a+)+ or (a*){2,}
+    if (/(\([^)]*[*+][^)]*\))[*+{]/.test(pattern.replace(/\\./g, ''))) return false;
+
+    return true;
+}
+
+/**
  * /dict command - Word search with regex support
  */
 async function handleDict(interaction) {
     const query = interaction.options.getString('query');
 
-    if (!safeRegex(query)) {
+    if (!isRegexSafe(query)) {
         await interaction.reply({
             content: '❌ 위험한 정규표현식 패턴입니다. 더 간단한 패턴을 사용해주세요.',
             ephemeral: true
@@ -694,6 +717,7 @@ async function handleDict(interaction) {
 
 /**
  * Search words in database (with language detection)
+ * SQL 서버사이드 필터링: 기존 SELECT * 풀스캔 → WHERE ~ $1 로 PG에서 직접 정규식 매칭
  */
 function searchWords(query, regex, lang = 'ko') {
     return new Promise((resolve, reject) => {
@@ -703,58 +727,19 @@ function searchWords(query, regex, lang = 'ko') {
             return;
         }
 
-        DB.kkutu[dbLang].find().on(function (words) {
-            try {
-                if (!words || !Array.isArray(words)) {
-                    resolve([]);
-                    return;
-                }
+        // PostgreSQL ~ 연산자로 정규식 매칭, 정확 매치/접두사 우선 정렬
+        var sql = "SELECT _id, flag, type FROM kkutu_" + dbLang
+            + " WHERE _id ~ $1 AND _id NOT LIKE '% %'"
+            + " ORDER BY"
+            + " CASE WHEN _id = $2 THEN 0"
+            + "      WHEN _id LIKE $3 THEN 1"
+            + "      ELSE 2 END,"
+            + " LENGTH(_id) DESC"
+            + " LIMIT " + MAX_RESULTS;
 
-                const startTime = Date.now();
-                const timeoutMs = 5000;
-                const filtered = [];
-
-                for (const word of words) {
-                    if (Date.now() - startTime > timeoutMs) {
-                        JLog.warn('[Discord Bot] Word search timeout');
-                        break;
-                    }
-
-                    // Skip words with spaces
-                    if (word._id && word._id.includes(' ')) continue;
-
-                    if (word._id && regex.test(word._id)) {
-                        filtered.push(word);
-                    }
-                }
-
-                filtered.sort((a, b) => {
-                    const aId = a._id;
-                    const bId = b._id;
-
-                    const aExact = aId === query;
-                    const bExact = bId === query;
-                    if (aExact && !bExact) return -1;
-                    if (!aExact && bExact) return 1;
-
-                    const aStarts = aId.startsWith(query);
-                    const bStarts = bId.startsWith(query);
-                    if (aStarts && !bStarts) return -1;
-                    if (!aStarts && bStarts) return 1;
-
-                    if (aStarts && bStarts) {
-                        if (bId.length !== aId.length) return bId.length - aId.length;
-                        return aId.localeCompare(bId, 'ko');
-                    }
-
-                    if (bId.length !== aId.length) return bId.length - aId.length;
-                    return aId.localeCompare(bId, 'ko');
-                });
-
-                resolve(filtered.slice(0, MAX_RESULTS));
-            } catch (err) {
-                reject(err);
-            }
+        DB.kkutu[dbLang].direct(sql, [regex.source, query, query + '%'], function (err, res) {
+            if (err) return reject(err);
+            resolve(res && res.rows ? res.rows : []);
         });
     });
 }
@@ -766,8 +751,8 @@ async function handleChar(interaction) {
     const char = interaction.options.getString('char');
     const position = interaction.options.getString('position');
 
-    if (char.length !== 1) {
-        await interaction.reply({ content: '❌ 글자는 1자여야 합니다.', ephemeral: true });
+    if (char.length !== 1 || !VALID_WORD_CHARS.test(char)) {
+        await interaction.reply({ content: '❌ 올바른 글자 1자를 입력해주세요.', ephemeral: true });
         return;
     }
 
@@ -800,6 +785,7 @@ async function handleChar(interaction) {
 
 /**
  * Search words by starting/ending character (with language detection)
+ * SQL 서버사이드 필터링: 기존 SELECT * 풀스캔 → WHERE LIKE 로 PG에서 직접 필터링
  */
 function searchByChar(char, position, lang = 'ko') {
     return new Promise((resolve, reject) => {
@@ -809,33 +795,15 @@ function searchByChar(char, position, lang = 'ko') {
             return;
         }
 
-        DB.kkutu[dbLang].find().on(function (words) {
-            try {
-                if (!words || !Array.isArray(words)) {
-                    resolve([]);
-                    return;
-                }
+        var likePattern = position === 'start' ? (char + '%') : ('%' + char);
+        var sql = "SELECT _id, flag, type FROM kkutu_" + dbLang
+            + " WHERE _id LIKE $1 AND _id NOT LIKE '% %'"
+            + " ORDER BY LENGTH(_id) DESC"
+            + " LIMIT " + MAX_RESULTS;
 
-                const filtered = words.filter(word => {
-                    if (!word._id) return false;
-                    // Skip words with spaces
-                    if (word._id.includes(' ')) return false;
-                    if (position === 'start') {
-                        return word._id.charAt(0) === char;
-                    } else {
-                        return word._id.charAt(word._id.length - 1) === char;
-                    }
-                });
-
-                filtered.sort((a, b) => {
-                    if (b._id.length !== a._id.length) return b._id.length - a._id.length;
-                    return a._id.localeCompare(b._id, 'ko');
-                });
-
-                resolve(filtered.slice(0, MAX_RESULTS));
-            } catch (err) {
-                reject(err);
-            }
+        DB.kkutu[dbLang].direct(sql, [likePattern], function (err, res) {
+            if (err) return reject(err);
+            resolve(res && res.rows ? res.rows : []);
         });
     });
 }
@@ -845,6 +813,11 @@ function searchByChar(char, position, lang = 'ko') {
  */
 async function handleDefine(interaction) {
     const word = interaction.options.getString('word');
+
+    if (!VALID_WORD_CHARS.test(word)) {
+        await interaction.reply({ content: '❌ 올바른 단어를 입력해주세요.', ephemeral: true });
+        return;
+    }
 
     await interaction.deferReply();
 
@@ -1057,13 +1030,13 @@ async function handleMission(interaction) {
     const targetChar = interaction.options.getString('target_char');
     const position = interaction.options.getString('position') || 'start';
 
-    if (!missionChar || missionChar.length !== 1) {
-        await interaction.reply({ content: '❌ 미션 글자는 1자여야 합니다.', ephemeral: true });
+    if (!missionChar || missionChar.length !== 1 || !VALID_WORD_CHARS.test(missionChar)) {
+        await interaction.reply({ content: '❌ 올바른 미션 글자 1자를 입력해주세요.', ephemeral: true });
         return;
     }
 
-    if (targetChar && targetChar.length !== 1) {
-        await interaction.reply({ content: '❌ 타겟 글자는 1자여야 합니다.', ephemeral: true });
+    if (targetChar && (targetChar.length !== 1 || !VALID_WORD_CHARS.test(targetChar))) {
+        await interaction.reply({ content: '❌ 올바른 타겟 글자 1자를 입력해주세요.', ephemeral: true });
         return;
     }
 
@@ -1080,28 +1053,35 @@ async function handleMission(interaction) {
             return;
         }
 
-        const safeMissionChar = missionChar.replace(/'/g, "''");
         const conditions = ["_id NOT LIKE '% %'"];
+        const params = [];
+        let paramIndex = 1;
 
         if (targetChar) {
-            const safeTargetChar = targetChar.replace(/'/g, "''");
             if (position === 'end') {
-                conditions.push(`_id LIKE '%${safeTargetChar}'`);
+                conditions.push(`_id LIKE $${paramIndex}`);
+                params.push(`%${targetChar}`);
             } else {
-                conditions.push(`_id LIKE '${safeTargetChar}%'`);
+                conditions.push(`_id LIKE $${paramIndex}`);
+                params.push(`${targetChar}%`);
             }
+            paramIndex++;
         }
 
         if (topic) {
-            const safeTopic = topic.replace(/'/g, "''");
-            conditions.push(`theme ~ '(^|,)${safeTopic}($|,)'`);
+            conditions.push(`theme ~ $${paramIndex}`);
+            params.push(`(^|,)${topic}($|,)`);
+            paramIndex++;
         }
 
+        params.push(missionChar);
+        const missionParamIndex = paramIndex;
+
         const whereClause = conditions.join(' AND ');
-        const sql = `SELECT _id, flag, type FROM kkutu_ko WHERE ${whereClause} ORDER BY (LENGTH(_id) - LENGTH(REPLACE(_id, '${safeMissionChar}', ''))) DESC, LENGTH(_id) DESC LIMIT ${MAX_RESULTS}`;
+        const sql = `SELECT _id, flag, type FROM kkutu_ko WHERE ${whereClause} ORDER BY (LENGTH(_id) - LENGTH(REPLACE(_id, $${missionParamIndex}, ''))) DESC, LENGTH(_id) DESC LIMIT ${MAX_RESULTS}`;
 
         const results = await new Promise((resolve, reject) => {
-            DB.kkutu['ko'].direct(sql, function (err, res) {
+            DB.kkutu['ko'].direct(sql, params, function (err, res) {
                 if (err) return reject(err);
                 resolve(res && res.rows ? res.rows : []);
             });
@@ -1162,11 +1142,10 @@ async function handleTopic(interaction) {
             return;
         }
 
-        const safeTopic = topic.replace(/'/g, "''");
-        const sql = `SELECT _id FROM kkutu_ko WHERE theme ~ '(^|,)${safeTopic}($|,)' AND _id NOT LIKE '% %' ORDER BY LENGTH(_id) DESC LIMIT ${MAX_RESULTS}`;
+        const sql = `SELECT _id FROM kkutu_ko WHERE theme ~ $1 AND _id NOT LIKE '% %' ORDER BY LENGTH(_id) DESC LIMIT ${MAX_RESULTS}`;
 
         const results = await new Promise((resolve, reject) => {
-            DB.kkutu['ko'].direct(sql, function (err, res) {
+            DB.kkutu['ko'].direct(sql, [`(^|,)${topic}($|,)`], function (err, res) {
                 if (err) return reject(err);
                 resolve(res && res.rows ? res.rows : []);
             });
@@ -1212,20 +1191,14 @@ async function handleRandom(interaction) {
             return;
         }
 
-        const sql = `SELECT _id, mean FROM kkutu_ko WHERE _id NOT LIKE '% %' OFFSET floor(random() * GREATEST(1, (SELECT reltuples::bigint - ${safeCount * 3} FROM pg_class WHERE relname = 'kkutu_ko'))) LIMIT ${safeCount * 3}`;
+        const sql = `SELECT _id, mean FROM kkutu_ko WHERE _id NOT LIKE '% %' ORDER BY RANDOM() LIMIT ${safeCount}`;
 
-        let results = await new Promise((resolve, reject) => {
+        const results = await new Promise((resolve, reject) => {
             DB.kkutu['ko'].direct(sql, function (err, res) {
                 if (err) return reject(err);
                 resolve(res && res.rows ? res.rows : []);
             });
         });
-        // 셔플 후 요청 개수만큼 자르기
-        for (var i = results.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
-            var t = results[i]; results[i] = results[j]; results[j] = t;
-        }
-        results = results.slice(0, safeCount);
 
         if (results.length === 0) {
             await interaction.editReply({ content: '🔍 단어를 찾을 수 없습니다.' });
@@ -1282,6 +1255,72 @@ async function handleRoomMsg(interaction) {
 
     JLog.info(`[Discord Bot] roommsg to room ${rid} by ${discordId}: ${message}`);
     await interaction.reply({ content: `✅ ${rid}번 방에 메시지를 보냈습니다. (${sent}명에게 전달)`, ephemeral: true });
+}
+
+// === 고빈도 알림 배칭 시스템 ===
+// 유저 입퇴장, 방 입퇴장을 모아서 5초마다 한 번에 전송 (Discord API 부하 감소)
+const _notifyQueue = { join: [], leave: [], roomJoin: [], roomLeave: [] };
+const NOTIFY_FLUSH_DELAY = 5000;
+var _notifyTimer = null;
+
+function scheduleNotifyFlush() {
+    if (_notifyTimer) return;
+    _notifyTimer = setTimeout(flushNotifyQueue, NOTIFY_FLUSH_DELAY);
+}
+
+function flushNotifyQueue() {
+    _notifyTimer = null;
+    if (!isEnabled || !isReady || !channel) {
+        _notifyQueue.join = [];
+        _notifyQueue.leave = [];
+        _notifyQueue.roomJoin = [];
+        _notifyQueue.roomLeave = [];
+        return;
+    }
+
+    // 유저 입퇴장 배칭
+    if (_notifyQueue.join.length > 0 || _notifyQueue.leave.length > 0) {
+        var lines = [];
+        var lastCount = 0;
+        _notifyQueue.join.forEach(function (e) {
+            lines.push('\u{1F7E2} **' + e.name + '** 입장');
+            lastCount = e.count;
+        });
+        _notifyQueue.leave.forEach(function (e) {
+            lines.push('\u{1F534} **' + e.name + '** 퇴장');
+            lastCount = e.count;
+        });
+        var desc = lines.join('\n') + '\n현재 **' + lastCount + '**명';
+        safeExecute(async () => {
+            var embed = new EmbedBuilder()
+                .setColor(0x95A5A6)
+                .setDescription(desc)
+                .setTimestamp();
+            await channel.send({ embeds: [embed] });
+        }, 'notifyBatch-user');
+        _notifyQueue.join = [];
+        _notifyQueue.leave = [];
+    }
+
+    // 방 입퇴장 배칭
+    if (_notifyQueue.roomJoin.length > 0 || _notifyQueue.roomLeave.length > 0) {
+        var lines = [];
+        _notifyQueue.roomJoin.forEach(function (e) {
+            lines.push('\u{27A1}\u{FE0F} **' + e.name + '** \u{2192} ' + e.roomId + '번 방');
+        });
+        _notifyQueue.roomLeave.forEach(function (e) {
+            lines.push('\u{2B05}\u{FE0F} **' + e.name + '** \u{2190} ' + e.roomId + '번 방');
+        });
+        safeExecute(async () => {
+            var embed = new EmbedBuilder()
+                .setColor(0x7F8C8D)
+                .setDescription(lines.join('\n'))
+                .setTimestamp();
+            await channel.send({ embeds: [embed] });
+        }, 'notifyBatch-room');
+        _notifyQueue.roomJoin = [];
+        _notifyQueue.roomLeave = [];
+    }
 }
 
 // Chat merge state: buffer messages per location, flush after 2s idle with debounce
@@ -1373,17 +1412,8 @@ exports.logChat = function (profile, message, place, isRobot = false) {
  */
 exports.notifyUserJoin = function (profile, userCount) {
     if (!isEnabled || !isReady || !channel) return;
-
-    safeExecute(async () => {
-        const name = getDisplayName(profile);
-
-        const embed = new EmbedBuilder()
-            .setColor(0x2ECC71)
-            .setDescription(`**${name}**님이 서버에 들어왔어요\n현재 서버에는 **${userCount}**명이 있어요`)
-            .setTimestamp();
-
-        await channel.send({ embeds: [embed] });
-    }, 'notifyUserJoin');
+    _notifyQueue.join.push({ name: getDisplayName(profile), count: userCount });
+    scheduleNotifyFlush();
 };
 
 /**
@@ -1391,17 +1421,8 @@ exports.notifyUserJoin = function (profile, userCount) {
  */
 exports.notifyUserLeave = function (profile, userCount) {
     if (!isEnabled || !isReady || !channel) return;
-
-    safeExecute(async () => {
-        const name = getDisplayName(profile);
-
-        const embed = new EmbedBuilder()
-            .setColor(0xE74C3C)
-            .setDescription(`**${name}**님이 서버에서 나갔어요\n현재 서버에는 **${userCount}**명이 있어요`)
-            .setTimestamp();
-
-        await channel.send({ embeds: [embed] });
-    }, 'notifyUserLeave');
+    _notifyQueue.leave.push({ name: getDisplayName(profile), count: userCount });
+    scheduleNotifyFlush();
 };
 
 /**
@@ -1701,16 +1722,8 @@ exports.notifyBotSettings = function (roomId, botInfo) {
  */
 exports.notifyRoomJoin = function (roomId, name, isRobot) {
     if (!isEnabled || !isReady || !channel) return;
-
-    safeExecute(async () => {
-        const tag = isRobot ? ' 🤖' : '';
-        const embed = new EmbedBuilder()
-            .setColor(0x2ECC71)
-            .setDescription(`➡️ **${name}**${tag}님이 **${roomId}**번 방에 입장했어요`)
-            .setTimestamp();
-
-        await channel.send({ embeds: [embed] });
-    }, 'notifyRoomJoin');
+    _notifyQueue.roomJoin.push({ roomId: roomId, name: name + (isRobot ? ' \u{1F916}' : '') });
+    scheduleNotifyFlush();
 };
 
 /**
@@ -1721,16 +1734,8 @@ exports.notifyRoomJoin = function (roomId, name, isRobot) {
  */
 exports.notifyRoomLeave = function (roomId, name, isRobot) {
     if (!isEnabled || !isReady || !channel) return;
-
-    safeExecute(async () => {
-        const tag = isRobot ? ' 🤖' : '';
-        const embed = new EmbedBuilder()
-            .setColor(0xE74C3C)
-            .setDescription(`⬅️ **${name}**${tag}님이 **${roomId}**번 방에서 나갔어요`)
-            .setTimestamp();
-
-        await channel.send({ embeds: [embed] });
-    }, 'notifyRoomLeave');
+    _notifyQueue.roomLeave.push({ roomId: roomId, name: name + (isRobot ? ' \u{1F916}' : '') });
+    scheduleNotifyFlush();
 };
 
 /**
@@ -1739,4 +1744,34 @@ exports.notifyRoomLeave = function (roomId, name, isRobot) {
 exports.getInviteUrl = function () {
     if (!client || !client.user) return null;
     return `https://discord.com/api/oauth2/authorize?client_id=${client.user.id}&permissions=${BOT_PERMISSIONS}&scope=bot%20applications.commands`;
+};
+
+const SHUTDOWN_CHANNEL_ID = '1447978640913469521';
+
+/**
+ * Send shutdown notification and destroy client
+ * @param {Error|null} err - Error object if crashed, null if planned maintenance
+ * @returns {Promise<void>}
+ */
+exports.notifyShutdown = async function (err) {
+    if (!client || !isReady) return;
+
+    try {
+        const shutdownChannel = await client.channels.fetch(SHUTDOWN_CHANNEL_ID);
+        if (!shutdownChannel) return;
+
+        const reason = err
+            ? `서버에 예기치 않은 오류가 생겨서`
+            : `서버 점검으로 인해`;
+
+        let message = `<@&1463396681646215392> ${reason} 서버가 종료됩니다. 이용에 불편을 드려서 죄송합니다.`;
+
+        if (err) {
+            message += `\n\n**오류 사유:**\n\`\`\`\n${err.toString()}\n\`\`\``;
+        }
+
+        await shutdownChannel.send(message);
+    } catch (e) {
+        JLog.error(`[Discord Bot] Failed to send shutdown notification: ${e.message}`);
+    }
 };

@@ -106,7 +106,7 @@ exports.turnStart = function (force) {
         : Math.min(my.game.roundTime, my.game.turnTime + 100);
     my.game.turnTimer = setTimeout(my.turnEnd, timeout);
     if (si = my.game.seq[my.game.turn]) if (si.robot) {
-        si._done = [];
+        si._done = new Set();
         my.readyRobot(si);
     }
 };
@@ -163,6 +163,9 @@ exports.turnEnd = function () {
         return;
     }
     // ========== 서바이벌 모드 끝 ==========
+
+    // 서바이벌 모드: 이미 KO된 플레이어는 일반 turnEnd 처리하지 않음 (stale timer 방지)
+    if (my.opts.survival) return;
 
     if (target) if (target.game) {
         // 무적(god): 패널티 면제
@@ -750,7 +753,7 @@ exports.readyRobot = function (robot) {
         }
         if (list) do {
             if (!(w = list.shift())) break;
-        } while (w._id.length < minLen || w._id.length > maxLen || robot._done.includes(w._id));
+        } while (w._id.length < minLen || w._id.length > maxLen || robot._done.has(w._id));
         if (w) {
             robot.data.candidates = [w].concat(list);
             robot.data.candidateIndex = 0;
@@ -761,7 +764,7 @@ exports.readyRobot = function (robot) {
     }
     function after() {
         delay += text.length * ROBOT_TYPE_COEF[level];
-        robot._done.push(text);
+        robot._done.add(text);
         my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
     }
 };

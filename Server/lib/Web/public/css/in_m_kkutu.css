@@ -1020,7 +1020,13 @@ body {
 	position: relative;
 	padding: 5px;
 	width: calc(100% - 10px);
-	height: 298px;
+	height: auto;
+	min-height: 298px;
+}
+
+.pq-canvas {
+	max-width: 100%;
+	height: auto;
 }
 
 .display-text {
@@ -1110,6 +1116,26 @@ body {
 
 .cw .jjo-turn-time {
 	display: none;
+}
+
+.flip.cw.jjoriping {
+	float: none;
+	margin: -10px auto 0;
+}
+
+.flip-cell {
+	position: absolute;
+	border-radius: 8px;
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background-color 0.3s ease;
+	user-select: none;
+	cursor: default;
+	font-size: 12px;
+	font-weight: bold;
+	text-align: center;
 }
 
 .sock-char {

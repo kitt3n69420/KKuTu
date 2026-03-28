@@ -18,17 +18,30 @@
 
 /**
  * Picture Quiz (그림퀴즈) Game Mode
- * Drawer draws pixel art, other players guess the word
+ * Drawer draws on a canvas, other players guess the word
  */
 
 var Const = require('../../const');
 var Lizard = require('../../sub/lizard');
+var File = require('fs');
 var DB;
 var DIC;
 
-// Canvas size: 20x15 grid
-var CANVAS_WIDTH = 20;
-var CANVAS_HEIGHT = 15;
+var CATCH_WORDS = [];
+File.readFile(`${__dirname}/../../data/pquiz_catch.txt`, 'utf8', function (err, res) {
+    if (err) {
+        console.warn('[Picture] pquiz_catch.txt not found or unreadable:', err.message);
+        return;
+    }
+    CATCH_WORDS = res.split(/\r?\n/).map(function (w) { return w.trim(); }).filter(function (w) { return w.length > 0 && w[0] !== '#'; });
+    console.log('[Picture] Loaded', CATCH_WORDS.length, 'catch words.');
+});
+
+// Canvas size
+var PQ_CANVAS_W = 288;
+var PQ_CANVAS_H = 180;
+var MAX_STROKES = 500;
+var MAX_POINTS_PER_BATCH = 200;
 
 exports.init = function (_DB, _DIC) {
     DB = _DB;
@@ -39,7 +52,7 @@ exports.getTitle = function () {
     var R = new Lizard.Tail();
     var my = this;
 
-    my.game.done = [];
+    my.game.done = new Set();
     my.game.passCount = 0; // Reset pass count for new game
     my.game._lastPassRound = 0; // Reset last pass round tracker
     setTimeout(function () {
@@ -50,7 +63,7 @@ exports.getTitle = function () {
 
 exports.roundReady = function () {
     var my = this;
-    var ijl = my.opts.injpick.length;
+    var ijl = (my.opts.injpick && my.opts.injpick.length) ? my.opts.injpick.length : 0;
 
     clearTimeout(my.game.qTimer);
     clearTimeout(my.game._turnStartTimer);
@@ -96,25 +109,46 @@ exports.roundReady = function () {
         if (drawerId && drawerId.id) drawerId = drawerId.id;
 
         // Select theme and answer
-        my.game.theme = my.opts.injpick[Math.floor(Math.random() * ijl)];
-        getAnswer.call(my, my.game.theme).then(function ($ans) {
-            if (!my.game.done) return;
-
-            my.game.answer = $ans || {};
+        if (my.opts.catch) {
+            var catchWord = getCatchWord.call(my);
+            my.game.theme = "catch";
+            my.game.answer = catchWord ? { _id: catchWord } : { _id: "" };
             my.game.winner = [];
             my.game.giveup = [];
-            my.game.scores = {}; // Track scores for average calculation
-            my.game.canvas = {}; // Reset canvas
+            my.game.scores = {};
+            my.game.strokes = [];
+            my.game._currentStroke = null;
 
             my.byMaster('roundReady', {
                 round: my.game.round,
-                theme: my.game.theme,
+                theme: "catch",
                 drawer: drawerId,
-                answer: my.game.answer._id, // Only drawer should see this (handled client-side)
+                answer: my.game.answer._id,
                 passCount: my.game.passCount
             }, true);
             my.game._turnStartTimer = setTimeout(my.turnStart, 2400);
-        });
+        } else {
+            my.game.theme = my.opts.injpick[Math.floor(Math.random() * ijl)];
+            getAnswer.call(my, my.game.theme).then(function ($ans) {
+                if (!my.game.done) return;
+
+                my.game.answer = $ans || {};
+                my.game.winner = [];
+                my.game.giveup = [];
+                my.game.scores = {}; // Track scores for average calculation
+                my.game.strokes = []; // Reset canvas strokes
+                my.game._currentStroke = null;
+
+                my.byMaster('roundReady', {
+                    round: my.game.round,
+                    theme: my.game.theme,
+                    drawer: drawerId,
+                    answer: my.game.answer._id, // Only drawer should see this (handled client-side)
+                    passCount: my.game.passCount
+                }, true);
+                my.game._turnStartTimer = setTimeout(my.turnStart, 2400);
+            });
+        }
     } else {
         my.roundEnd();
     }
@@ -342,7 +376,7 @@ exports.getScore = function (text, delay) {
     return isNaN(result) ? 0 : result;
 };
 
-// Handle drawing from client
+// Handle stroke data from client
 exports.handleDraw = function (client, msg) {
     var my = this;
 
@@ -353,21 +387,46 @@ exports.handleDraw = function (client, msg) {
     // Only drawer can draw
     if (client.id !== drawerId) return;
 
-    // Validate draw data
-    if (typeof msg.x !== 'number' || typeof msg.y !== 'number') return;
-    if (msg.x < 0 || msg.x >= CANVAS_WIDTH) return;
-    if (msg.y < 0 || msg.y >= CANVAS_HEIGHT) return;
-    if (typeof msg.color !== 'string' || msg.color.length > 20) return;
+    // Validate stroke data
+    if (!Array.isArray(msg.pts) || msg.pts.length === 0) return;
+    if (msg.pts.length > MAX_POINTS_PER_BATCH) return;
+    if (typeof msg.c !== 'string' || msg.c.length > 20) return;
+    if (typeof msg.w !== 'number' || msg.w < 1 || msg.w > 50) return;
 
-    // Update canvas state
-    var key = msg.x + ',' + msg.y;
-    my.game.canvas[key] = msg.color;
+    // Validate all points
+    for (var i = 0; i < msg.pts.length; i++) {
+        var pt = msg.pts[i];
+        if (typeof pt.x !== 'number' || typeof pt.y !== 'number') return;
+        if (pt.x < 0 || pt.x > PQ_CANVAS_W || pt.y < 0 || pt.y > PQ_CANVAS_H) return;
+    }
 
-    // Broadcast to all players
+    // Accumulate into current stroke or start a new one
+    if (msg.end) {
+        if (my.game._currentStroke) {
+            my.game._currentStroke.pts = my.game._currentStroke.pts.concat(msg.pts);
+            my.game.strokes.push(my.game._currentStroke);
+            my.game._currentStroke = null;
+        } else {
+            my.game.strokes.push({ pts: msg.pts, c: msg.c, w: msg.w });
+        }
+    } else if (!my.game._currentStroke) {
+        my.game._currentStroke = { pts: msg.pts.slice(), c: msg.c, w: msg.w };
+    } else {
+        my.game._currentStroke.pts = my.game._currentStroke.pts.concat(msg.pts);
+    }
+
+    // Limit total strokes to prevent memory abuse
+    if (my.game.strokes.length > MAX_STROKES) {
+        my.game.strokes.shift();
+    }
+
+    // Relay to all clients
     my.byMaster('draw', {
-        x: msg.x,
-        y: msg.y,
-        color: msg.color
+        pts: msg.pts,
+        c: msg.c,
+        w: msg.w,
+        cont: msg.cont || false,
+        end: msg.end || false
     }, true);
 };
 
@@ -383,7 +442,8 @@ exports.handleClear = function (client) {
     if (client.id !== drawerId) return;
 
     // Reset canvas state
-    my.game.canvas = {};
+    my.game.strokes = [];
+    my.game._currentStroke = null;
 
     // Broadcast to all players
     my.byMaster('clear', {
@@ -394,7 +454,7 @@ exports.handleClear = function (client) {
 // Handle pass button from drawer
 exports.handlePass = function (client) {
     var my = this;
-    var ijl = my.opts.injpick.length;
+    var ijl = (my.opts.injpick && my.opts.injpick.length) ? my.opts.injpick.length : 0;
 
     console.log('[Picture] handlePass called by:', client.id);
 
@@ -457,32 +517,68 @@ exports.handlePass = function (client) {
     if (newDrawerId && newDrawerId.id) newDrawerId = newDrawerId.id;
 
     // Select new theme and answer
-    my.game.theme = my.opts.injpick[Math.floor(Math.random() * ijl)];
-    getAnswer.call(my, my.game.theme).then(function ($ans) {
-        if (!my.game.done) return;
-
-        my.game.answer = $ans || {};
+    if (my.opts.catch) {
+        var catchWord = getCatchWord.call(my);
+        my.game.theme = "catch";
+        my.game.answer = catchWord ? { _id: catchWord } : { _id: "" };
         my.game.winner = [];
         my.game.giveup = [];
         my.game.scores = {};
-        my.game.canvas = {}; // Reset canvas
+        my.game.strokes = [];
+        my.game._currentStroke = null;
 
         my.byMaster('roundReady', {
             round: my.game.round,
-            theme: my.game.theme,
+            theme: "catch",
             drawer: newDrawerId,
             answer: my.game.answer._id,
             passCount: my.game.passCount,
-            passed: true // Flag to indicate this is a pass
+            passed: true
         }, true);
         my.game._turnStartTimer = setTimeout(my.turnStart, 2400);
-    });
+    } else {
+        my.game.theme = my.opts.injpick[Math.floor(Math.random() * ijl)];
+        getAnswer.call(my, my.game.theme).then(function ($ans) {
+            if (!my.game.done) return;
+
+            my.game.answer = $ans || {};
+            my.game.winner = [];
+            my.game.giveup = [];
+            my.game.scores = {};
+            my.game.strokes = []; // Reset canvas strokes
+            my.game._currentStroke = null;
+
+            my.byMaster('roundReady', {
+                round: my.game.round,
+                theme: my.game.theme,
+                drawer: newDrawerId,
+                answer: my.game.answer._id,
+                passCount: my.game.passCount,
+                passed: true // Flag to indicate this is a pass
+            }, true);
+            my.game._turnStartTimer = setTimeout(my.turnStart, 2400);
+        });
+    }
 };
+
+function getCatchWord() {
+    var my = this;
+    if (!CATCH_WORDS.length) return null;
+
+    var available = CATCH_WORDS.filter(function (w) {
+        return !my.game.done.has(w);
+    });
+    if (!available.length) available = CATCH_WORDS.slice();
+
+    var word = available[Math.floor(Math.random() * available.length)];
+    my.game.done.add(word);
+    return word;
+}
 
 function getAnswer(theme) {
     var my = this;
     var R = new Lizard.Tail();
-    var args = [['_id', { $nin: my.game.done }]];
+    var args = [['_id', { $nin: Array.from(my.game.done) }]];
     var lang = my.rule.lang;
 
     args.push(['theme', new RegExp("(,|^)(" + theme + ")(,|$)")]);
@@ -506,7 +602,7 @@ function getAnswer(theme) {
             if (word.type !== "INJEONG" && word.mean && word.mean.length < 1) isValid = false;
 
             if (isValid) {
-                my.game.done.push(word._id);
+                my.game.done.add(word._id);
                 return R.go(word);
             }
             $res.splice(pick, 1);

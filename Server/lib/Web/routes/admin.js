@@ -23,6 +23,9 @@ var JLog = require("../../sub/jjlog");
 var Lizard = require("../../sub/lizard.js");
 var { validateInput } = require("../validators");
 
+// 임시 데이터 접근 차단 플래그 (false로 변경하면 차단 해제)
+var ADMIN_DATA_ACCESS_BLOCKED = true;
+
 exports.run = function (Server, page) {
   Server.get("/gwalli", function (req, res) {
     if (!checkAdmin(req, res)) return;
@@ -477,6 +480,10 @@ function checkAdmin(req, res) {
   if (GLOBAL.ADMIN.indexOf(req.session.profile.id) == -1) {
     req.session.admin = false;
     return (res.send({ error: 400 }), false);
+  }
+  // 임시 데이터 접근 차단 (관리자 페이지 렌더링 제외)
+  if (ADMIN_DATA_ACCESS_BLOCKED && req.path !== "/gwalli") {
+    return (res.send({ error: 503, message: "Data access is temporarily blocked" }), false);
   }
   return true;
 }

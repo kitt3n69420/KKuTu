@@ -616,7 +616,7 @@ exports.turnStart = function (force) {
 		my.game.turnTimer = setTimeout(my.turnEnd, timeout);
 		if (si = my.game.seq[my.game.turn])
 			if (si.robot) {
-				si._done = [];
+				si._done = new Set();
 				if (si.data) delete si.data.retryCount;
 				if (si._pendingAnger) { si.adjustAnger(si._pendingAnger); si._pendingAnger = 0; }
 				my.readyRobot(si);
@@ -675,7 +675,7 @@ exports.turnStart = function (force) {
 			my.game.turnTimer = setTimeout(my.turnEnd, timeout);
 			if (si = my.game.seq[my.game.turn])
 				if (si.robot) {
-					si._done = [];
+					si._done = new Set();
 					if (si.data) delete si.data.retryCount; // Reset Retry Count for new turn
 					if (si._pendingAnger) { si.adjustAnger(si._pendingAnger); si._pendingAnger = 0; }
 					my.readyRobot(si);
@@ -808,6 +808,9 @@ exports.turnEnd = function () {
 		return;
 	}
 	// ========== 서바이벌 모드 끝 ==========
+
+	// 서바이벌 모드: 이미 KO된 플레이어는 일반 turnEnd 처리하지 않음 (stale timer 방지)
+	if (my.opts.survival) return;
 
 	if (target)
 		if (target.game) {
@@ -2089,7 +2092,7 @@ exports.readyRobot = function (robot) {
 				// 4글자 이상, 사용되지 않은 단어만 필터
 				list = list.filter(function (w) {
 					if (w._id.length < 4) return false;
-					if (robot._done.includes(w._id)) return false;
+					if (robot._done.has(w._id)) return false;
 					if (my.game.chain && my.game.chain.includes(w._id)) return false;
 					// 도돌이 금지: 봇도 도돌이 단어 제외
 					if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
@@ -2136,7 +2139,7 @@ exports.readyRobot = function (robot) {
 					}
 					moreList = moreList.filter(function (w) {
 						if (w._id.length < 4) return false;
-						if (robot._done.includes(w._id)) return false;
+						if (robot._done.has(w._id)) return false;
 						if (my.game.chain && my.game.chain.includes(w._id)) return false;
 						if (fetched.some(function (existing) { return existing._id === w._id; })) return false;
 						if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
@@ -2208,7 +2211,7 @@ exports.readyRobot = function (robot) {
 			if (my.game.late) return;
 			text = w._id;
 			delay += 500 * ROBOT_THINK_COEF[level] * Math.random() / Math.log(1.1 + w.hit);
-			robot._done.push(text);
+			robot._done.add(text);
 			my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
 		}
 
@@ -2338,68 +2341,41 @@ exports.readyRobot = function (robot) {
 			var adc = my.game.char + (my.game.subChar ? ("|" + my.game.subChar) : "");
 			var regex;
 
-			// Dynamic Regex Construction for Gaon/Second Rules
-			if (my.opts.middle || my.opts.second) {
-				var patterns = [];
-				var minLen = 2;
-				var maxLen = ROBOT_LENGTH_LIMIT[level];
-				if (maxLen > 50) maxLen = 50; // Increased cap to 50 for better long word support
+			// Dynamic Regex Construction for Gaon/Second/First Rules
+			// getChar() 우선순위: middle > first > second > default
+			// 조합에 따라 연결 위치가 달라지므로 케이스별 분기
+			var needJSCheck = false; // true면 DB에서 느슨하게 가져온 뒤 JS에서 getChar() 검증
 
-				// Fixed Word Length (KKT/Sami)
-				if (my.game.wordLength > 0) {
-					minLen = my.game.wordLength;
-					maxLen = my.game.wordLength;
-				}
-
-				// Optimization for "Second Only" rule (No Loop needed)
-				if (my.opts.second && !my.opts.middle) {
-					if (isRev) {
-						// KAP + Second: Link is at Index 1.
-						// Pattern: Ends with 'adc', Char at 1 is 'preferredChar'.
-						regex = `^.${preferredChar}.*(${adc})$`;
-					} else {
-						// Standard + Second: Link is at Index (Len-2).
-						// Pattern: Starts with 'adc', Char at (Len-2) is 'preferredChar'.
-						// This means the word ends with "PreferredChar + AnyChar".
-						regex = `^(${adc}).*${preferredChar}.$`;
-					}
+			if (my.opts.middle) {
+				// 미들: 길이에 따라 위치가 변동 → 정규식 불가, JS 필터링
+				needJSCheck = true;
+				if (isRev) {
+					regex = `^.*${preferredChar}.*(${adc})$`;
 				} else {
-					// Middle Rule (requires loop)
-					for (var len = minLen; len <= maxLen; len++) {
-						var idx = -1;
-
-						// Replicate getChar index logic
-						if (my.opts.middle && my.opts.second) {
-							if (len % 2 !== 0) idx = Math.floor(len / 2);
-							else idx = isRev ? (len / 2) : (len / 2 - 1);
-						} else if (my.opts.middle) {
-							if (len % 2 !== 0) idx = Math.floor(len / 2);
-							else idx = isRev ? (len / 2 - 1) : (len / 2);
-						}
-						// Note: Second-only is handled above, so no else needed here.
-
-						if (idx >= 0 && idx < len) {
-							var pre = idx;
-							var post = len - 1 - idx;
-
-							if (pre < 0) continue;
-							patterns.push(`.{${pre}}${preferredChar}.{${post}}`);
-						}
-					}
-
-					if (patterns.length > 0) {
-						if (isRev) {
-							// KAP: Matches Tail (adc)
-							regex = `^(?=.*(${adc})$)(${patterns.join('|')})$`;
-						} else {
-							// Standard: Starts with adc.
-							regex = `^(?=(${adc}))(${patterns.join('|')})$`;
-						}
-					} else {
-						// Fallback if no patterns
-						if (isRev) regex = `^${preferredChar}.*(${adc})$`;
-						else regex = `^(${adc}).*${preferredChar}$`;
-					}
+					regex = `^(${adc}).*${preferredChar}.*$`;
+				}
+			} else if (my.opts.first && my.opts.second) {
+				// 첫말+세컨드: 위치 고정 (끝말:idx=1, 앞말:idx=len-2)
+				if (isRev) {
+					// KAP+first+second: preferredChar at len-2
+					regex = `^(${adc}).*${preferredChar}.$`;
+				} else {
+					// 끝말+first+second: preferredChar at idx=1
+					regex = `^.${preferredChar}.*(${adc})$`;
+				}
+			} else if (my.opts.first) {
+				// 첫말만: 위치 고정 (끝말:idx=0, 앞말:idx=len-1)
+				if (isRev) {
+					regex = `^(${adc}).*${preferredChar}$`;
+				} else {
+					regex = `^${preferredChar}.*(${adc})$`;
+				}
+			} else if (my.opts.second) {
+				// 세컨드만: 위치 고정 (끝말:idx=len-2, 앞말:idx=1)
+				if (isRev) {
+					regex = `^.${preferredChar}.*(${adc})$`;
+				} else {
+					regex = `^(${adc}).*${preferredChar}.$`;
 				}
 			} else {
 				if (isRev) {
@@ -2454,10 +2430,12 @@ exports.readyRobot = function (robot) {
 				query.push(['_id', Const.ENG_ID]);
 			}
 
+			// needJSCheck: DB에서 넉넉히 가져온 뒤 JS에서 getChar() 위치 필터링
+			var dbLimit = needJSCheck ? 200 : 20;
 			DB.kkutu[my.rule.lang].find(
 				...query
-			).limit(20).on(function (list) {
-				// Filter done words
+			).limit(dbLimit).on(function (list) {
+				// Filter done words + 미들 위치 검증
 				if (list && list.length) {
 					var minLen = 1;
 					var maxLen = ROBOT_LENGTH_LIMIT[level];
@@ -2478,7 +2456,14 @@ exports.readyRobot = function (robot) {
 					}
 					list = list.filter(function (w) {
 						if (my.game.wordLength > 0 && w._id.length !== my.game.wordLength) return false;
-						return w._id.length >= minLen && w._id.length <= maxLen && !robot._done.includes(w._id);
+						if (w._id.length < minLen || w._id.length > maxLen) return false;
+						if (robot._done.has(w._id)) return false;
+						// JS 위치 검증: getChar()로 실제 연결 글자를 구해서 preferredChar와 비교
+						if (needJSCheck) {
+							var linkChar = getChar.call(my, w._id);
+							if (linkChar !== preferredChar) return false;
+						}
+						return true;
 					});
 				}
 
@@ -2650,7 +2635,7 @@ exports.readyRobot = function (robot) {
 				list = list.filter(function (w) {
 					if (my.game.wordLength > 0 && w._id.length !== my.game.wordLength) return false;
 					if (w._id.length < minLen || w._id.length > maxLen) return false;
-					if (robot._done.includes(w._id)) return false;
+					if (robot._done.has(w._id)) return false;
 					if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
 					if (my.opts.noswear && checkSwearWords && checkSwearWords(w._id).length > 0) return false;
 					return true;
@@ -2783,7 +2768,7 @@ exports.readyRobot = function (robot) {
 									}
 									if (my.game.wordLength > 0 && w._id.length !== my.game.wordLength) return false;
 									if (w._id.length < minLen || w._id.length > maxLen) return false;
-									if (robot._done.includes(w._id)) return false;
+									if (robot._done.has(w._id)) return false;
 									if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
 									if (my.opts.noswear && checkSwearWords && checkSwearWords(w._id).length > 0) return false;
 									return true;
@@ -3333,7 +3318,7 @@ exports.readyRobot = function (robot) {
 	function after() {
 		if (my.game.late) return; // Prevent scheduling after round end
 		delay += text.length * ROBOT_TYPE_COEF[level];
-		robot._done.push(text);
+		robot._done.add(text);
 		my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
 	}
 

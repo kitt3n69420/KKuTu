@@ -60,7 +60,7 @@ exports.getTitle = function () {
 	var R = new Lizard.Tail();
 	var my = this;
 
-	my.game.done = [];
+	my.game.done = new Set();
 	my.game.themeQueue = buildThemeQueue(my.opts.injpick, my.round);
 	setTimeout(function () {
 		R.go("①②③④⑤⑥⑦⑧⑨⑩");
@@ -413,7 +413,7 @@ function getHint($ans, isVowel, mode) {
 function getAnswer(theme, nomean, ignoreDone) {
 	var my = this;
 	var R = new Lizard.Tail();
-	var args = ignoreDone ? [] : [['_id', { $nin: my.game.done }]];
+	var args = ignoreDone ? [] : [['_id', { $nin: Array.from(my.game.done) }]];
 	var lang = my.rule.lang;
 	var gType = Const.GAME_TYPE[my.mode];
 

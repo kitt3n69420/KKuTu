@@ -1835,7 +1835,7 @@ function updateRoom(gaming) {
 
 				$(".game-user").each(function () {
 					var $t = $(this);
-					$t.css("background-color", "hsl(" + (Math.random() * 360) + ", 70%, 80%)");
+					if (!$data._flipColorMap) $t.css("background-color", "hsl(" + (Math.random() * 360) + ", 70%, 80%)");
 
 					// Random Moremi Item Update
 					if (!mobile) {
@@ -2596,6 +2596,8 @@ function clearGame() {
 	if ($data._spaced) $lib.Typing.spaceOff();
 	clearInterval($data._tTime);
 	$data._relay = false;
+	delete $data._flipColorMap;
+	$(".game-user").css("background-color", "");
 
 	// apple 규칙으로 변경된 설정을 원래대로 복구
 	if ($data._originalSettings && $data.room) {
@@ -2612,6 +2614,8 @@ function clearGame() {
 	if ($data._aplMode) {
 		delete $data._aplMode;
 	}
+	delete $data._aplFrame;
+	delete $data._gameBoard;
 }
 function gameReady() {
 	var i, u;
@@ -2903,6 +2907,7 @@ function clearBoard() {
 	$stage.dialog.dress.hide();
 	$stage.dialog.charFactory.hide();
 	$(".jjoriping,.rounds,.game-body").removeClass("cw");
+	$(".jjoriping").removeClass("flip");
 	$(".jjoriping").css({ "float": "", "margin": "" });
 	// Small-mode class is managed by updateRoom() based on player count, don't remove it here
 	$stage.game.display.empty();

@@ -419,9 +419,17 @@ exports.Agent = function(type, origin){
 		my.createColumn = function(name, type){
 			return new pointer("createColumn", [ name, type ]);
 		};
-		my.direct = function(q, f){
+		my.direct = function(q, params, f){
+			if (typeof params === 'function') {
+				f = params;
+				params = undefined;
+			}
 			JLog.warn("Direct query: " + q);
-			origin.query(q, f);
+			if (params) {
+				origin.query(q, params, f);
+			} else {
+				origin.query(q, f);
+			}
 		};
 	};
 	this.Table = this[`${type}Table`];

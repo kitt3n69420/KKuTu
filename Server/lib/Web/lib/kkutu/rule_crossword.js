@@ -123,7 +123,7 @@ $lib.Crossword.onBar = function (e) {
 	var vert = data.dir == "1";
 
 	$stage.game.cwcmd.css('opacity', 1);
-	$data._sel = [$data.selectedRound - 1, pos[0], pos[1], pos[2]];
+	$data._sel = [$data.selectedRound - 1, Number(pos[0]), Number(pos[1]), pos[2]];
 	$(".cw-q-head").html(L[vert ? 'cwVert' : 'cwHorz'] + data.len + L['cwL']);
 	$("#cw-q-input").val("").focus();
 	$(".cw-q-body").html(processWord("★", data.mean, data.theme, data.type.split(',')));

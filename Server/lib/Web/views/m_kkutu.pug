@@ -240,6 +240,7 @@ block Middle
 						option(value=15)= L('modeKPQ')
 						option(value=17)= L('modeKFR')
 						option(value=28)= L('modeKQZ')
+						option(value=31)= L('modeKPF')
 					optgroup(label=L('mcEnglish'))
 						option(value=1)= L('modeESH')
 						option(value=19)= L('modeEKK')
@@ -357,7 +358,7 @@ block Middle
 			div.dialog-bar#room-simple-rules-panel(style='height: auto; overflow: hidden; display: none;')
 				h4(style='height: 30px;')= L('misc')
 				div(style='float: left; width: calc(100% - 90px);')
-					- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp'];
+					- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh'];
 					- for(var i in locals.OPTIONS)
 						- if(keyRules.indexOf(i) === -1) continue;
 						+GameOptionFull(i, 'room-simple')

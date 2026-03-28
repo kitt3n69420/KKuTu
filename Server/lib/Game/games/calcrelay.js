@@ -181,6 +181,9 @@ exports.turnEnd = function () {
 	}
 	// ========== 서바이벌 모드 끝 ==========
 
+	// 서바이벌 모드: 이미 KO된 플레이어는 일반 turnEnd 처리하지 않음 (stale timer 방지)
+	if (my.opts.survival) return;
+
 	if (target) if (target.game) {
 		// 무적(god): 패널티 면제
 		if (my.opts.invincible) {

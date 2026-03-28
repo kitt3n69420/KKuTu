@@ -73,7 +73,7 @@ exports.getTitle = function () {
 	var R = new Lizard.Tail();
 	var my = this;
 
-	my.game.done = [];
+	my.game.done = new Set();
 	var topics = my.opts.quizpick;
 	if (topics && Array.isArray(topics) && topics.length > 0) {
 		my.game.themeQueue = buildThemeQueue(topics, my.round);
@@ -365,7 +365,7 @@ function getQuestion(topic, difficulty, ignoreDone) {
 
 	// ignoreDone이 false일 때만 done 제외 조건 추가
 	if (!ignoreDone) {
-		args.push(['question', { $nin: my.game.done }]);
+		args.push(['question', { $nin: Array.from(my.game.done) }]);
 	}
 
 	DB.kkutu.quiz.find(...args).on(function ($res) {
@@ -395,7 +395,7 @@ function processQuestion($q) {
 	my.game.question = $q.question;
 	my.game.answer = $q.answer;
 	my.game.aliases = $q.aliases ? $q.aliases.split(',').map(function (s) { return s.trim(); }) : [];
-	my.game.done.push($q.question);
+	my.game.done.add($q.question);
 
 	// 힌트 생성: 1차 = N글자, 2차 = 첫 글자
 	my.game.hints = getHints($q.answer, lang);

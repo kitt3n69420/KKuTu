@@ -121,8 +121,6 @@ exports.submit = function (client, text, data) {
 	if (!my.game.words) return;
 	if (!text) return;
 
-	if (my.opts.apple) return client.chat(text);
-
 	if (!play) return client.chat(text);
 	if (text.length < (my.opts.no2 ? 3 : 2)) {
 		return client.chat(text);

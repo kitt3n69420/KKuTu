@@ -598,7 +598,7 @@ KKuTu.onClientMessage = function ($c, msg) {
       else if (!(temp = ROOM[$c.place])) return;
       if (!temp.gaming) return;
       if (!temp.handleDraw) return;
-      temp.handleDraw($c, { x: msg.x, y: msg.y, color: msg.color, size: msg.size });
+      temp.handleDraw($c, { pts: msg.pts, c: msg.c, w: msg.w, cont: msg.cont, end: msg.end });
       break;
     case "clear":
       // Picture Quiz clear handler

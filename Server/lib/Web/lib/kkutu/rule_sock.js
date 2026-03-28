@@ -25,6 +25,7 @@ $lib.Sock.roundReady = function (data, spec) {
 	$data._va = [];
 	$data._lang = RULE[MODE[$data.room.mode]].lang;
 	$data._board = data.board;
+	$data._gameBoard = data.board;
 	$data._maps = [];
 
 	// apple 규칙 활성화 시 원래 설정 백업
@@ -89,8 +90,7 @@ $lib.Sock.roundReady = function (data, spec) {
 							clearInterval($data._aplInterval);
 							return;
 						}
-						$data._board = window.badAppleFrames[frameIdx];
-						while ($data._board.length < 196) $data._board += ".";
+						$data._aplFrame = window.badAppleFrames[frameIdx];
 						$lib.Sock.drawDisplay();
 						frameIdx++;
 					}, 100);
@@ -110,7 +110,11 @@ $lib.Sock.turnEnd = function (id, data) {
 		l = key.length;
 		$data._maps.push(key);
 		for (i = 0; i < l; i++) {
-			$data._board = $data._board.replace(key.charAt(i), "　");
+			if ($data._aplMode && $data._gameBoard) {
+				$data._gameBoard = $data._gameBoard.replace(key.charAt(i), "　");
+			} else {
+				$data._board = $data._board.replace(key.charAt(i), "　");
+			}
 		}
 		if (id == $data.id) {
 			playSound('success');
@@ -157,8 +161,27 @@ $lib.Sock.drawMaps = function () {
 };
 $lib.Sock.drawDisplay = function () {
 	var $a = $("<div>").css('height', "100%"), $c;
-	var va = $data._board.split("");
-	var len = Math.sqrt($data._board.length);
+	var boardStr = $data._board;
+
+	// apple 모드: 배드 애플 프레임과 게임 보드 합성
+	// 프레임 데이터는 14x11(154자), 위 1줄/아래 2줄은 항상 흰색(글자 표시)
+	if ($data._aplMode && $data._aplFrame && $data._gameBoard) {
+		var merged = '';
+		for (var mi = 0; mi < 196; mi++) {
+			var fi = mi - 14;
+			var isBlack = (fi >= 0 && fi < $data._aplFrame.length && $data._aplFrame[fi] === '.');
+			if (isBlack) {
+				merged += '.';
+			} else {
+				var gc = mi < $data._gameBoard.length ? $data._gameBoard[mi] : '□';
+				merged += (gc && gc !== '　') ? gc : '□';
+			}
+		}
+		boardStr = merged;
+	}
+
+	var va = boardStr.split("");
+	var len = Math.sqrt(boardStr.length);
 	var size = (len >= 14) ? "7.1%" : "10%";
 	var fontSize = (len > 10) ? "15px" : "";
 

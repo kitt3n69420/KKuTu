@@ -71,6 +71,24 @@ process.on("uncaughtException", function (err) {
     JLog.error(`ERROR OCCURRED ON THE MASTER!`);
     console.log(text);
   });
+
+  DiscordBot.notifyShutdown(err).finally(function () {
+    process.exit(1);
+  });
+});
+
+process.on("SIGINT", function () {
+  JLog.info("Server shutting down (SIGINT)...");
+  DiscordBot.notifyShutdown(null).finally(function () {
+    process.exit(0);
+  });
+});
+
+process.on("SIGTERM", function () {
+  JLog.info("Server shutting down (SIGTERM)...");
+  DiscordBot.notifyShutdown(null).finally(function () {
+    process.exit(0);
+  });
 });
 function processAdmin(id, value) {
   var cmd, temp, i, j;

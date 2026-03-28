@@ -1149,6 +1149,11 @@ iframe {
 	width: 322px;
 }
 
+.flip.cw.jjoriping {
+	float: none;
+	margin: -10px auto 0;
+}
+
 .jjoObj {
 	position: relative;
 }
@@ -1309,6 +1314,31 @@ iframe {
 
 .cw .jjo-round-time {
 	width: 306px;
+}
+
+/* Picture Quiz (그림퀴즈) Styles */
+.pq-canvas {
+	display: block;
+	border: 3px solid #1565C0;
+	border-radius: 5px;
+	background: #FFFFFF;
+	cursor: default;
+	touch-action: none;
+}
+
+.flip-cell {
+	position: absolute;
+	border-radius: 8px;
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background-color 0.3s ease;
+	user-select: none;
+	cursor: default;
+	font-size: 16px;
+	font-weight: bold;
+	text-align: center;
 }
 
 .sock-char {

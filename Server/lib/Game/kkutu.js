@@ -52,7 +52,7 @@ const AI_NAME_CACHE_THRESHOLD = 20; // 리필 시작 임계값
 var swearAutomaton = null;
 
 (function buildSwearFilter() {
-	var swearPath = path.join(__dirname, 'swearing.txt');
+	var swearPath = path.join(__dirname, '../data/swearing.txt');
 	var lines;
 	try {
 		lines = fs.readFileSync(swearPath, 'utf8').split(/\r?\n/).filter(function (w) { return w.length > 0; });
@@ -192,6 +192,67 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 
 	// AI 이름 캐시 초기화
 	refillAiNameCache();
+
+	// === 글로벌 heartbeat 타이머 (per-client setInterval 대체) ===
+	// 모든 클라이언트를 20초마다 한 번에 순회하여 heartbeat 전송 + 타임아웃 감지
+	var _heartbeatMsg = JSON.stringify({ type: 'heartbeat' });
+	setInterval(function () {
+		var now = Date.now();
+		for (var id in DIC) {
+			var c = DIC[id];
+			if (!c || !c.socket) continue;
+			var elapsed = now - c._lastHeartbeat;
+			if (elapsed > 100000) {
+				JLog.warn('Heartbeat timeout #' + c.id + ' (' + Math.round(elapsed / 1000) + 's)');
+				// terminate() 전에 직접 cleanup (close 이벤트가 안 올 수 있으므로)
+				try {
+					if (ROOM[c.place]) ROOM[c.place].go(c);
+					if (c.subPlace && c.pracRoom) {
+						if (c.pracRoom.gaming) c.pracRoom.interrupt();
+						c.pracRoom.go(c);
+						c.pracRoom = null;
+						c.subPlace = 0;
+					}
+				} catch (e) {
+					JLog.error('Heartbeat cleanup error #' + c.id + ': ' + e.toString());
+				}
+				c._ghostCleaned = true;
+				exports.onClientClosed(c, 4000);
+				c.socket.terminate();
+				continue;
+			}
+			if (c.socket.readyState === 1) {
+				c.socket.send(_heartbeatMsg);
+			}
+		}
+	}, 20000);
+
+	// === 유령 유저 스위프 (60초마다) ===
+	// CLOSING/CLOSED 상태로 오래 머무는 소켓 정리
+	setInterval(function () {
+		var now = Date.now();
+		for (var id in DIC) {
+			var c = DIC[id];
+			if (!c) { delete DIC[id]; continue; }
+			if (!c.socket) {
+				JLog.warn('Ghost user (no socket) #' + id);
+				exports.onClientClosed(c, 4001);
+				continue;
+			}
+			// readyState 2(CLOSING) 또는 3(CLOSED)이 30초 이상 지속
+			if (c.socket.readyState >= 2 && (now - c._lastHeartbeat > 30000)) {
+				JLog.warn('Ghost user (stale socket state=' + c.socket.readyState + ') #' + id);
+				try {
+					if (ROOM[c.place]) ROOM[c.place].go(c);
+				} catch (e) {
+					JLog.error('Ghost sweep cleanup error #' + id + ': ' + e.toString());
+				}
+				c._ghostCleaned = true;
+				exports.onClientClosed(c, 4002);
+				c.socket.terminate();
+			}
+		}
+	}, 60000);
 };
 
 // AI 이름 캐시 리필 함수
@@ -656,37 +717,32 @@ exports.Client = function (socket, profile, sid) {
 			// process.send({ type: 'okg', id: my.id, time: time });
 		};
 	}
-	// Cloudflare 환경 대응: 앱 레벨 heartbeat
-	// Cloudflare 프록시가 WebSocket ping/pong 프레임을 인터셉트하므로
-	// 앱 레벨 JSON 메시지로 양방향 heartbeat를 수행하여 idle timeout 방지
+	// heartbeat 타임스탬프 (글로벌 heartbeat 타이머에서 사용)
 	my._lastHeartbeat = Date.now();
-	my._heartbeat = setInterval(function () {
-		// readyState 검사 이전에 타임아웃 여부를 먼저 확인하여, CLOSING 상태 (2)에 머물며
-		// 영원히 죽지 않는 유령 소켓을 강제로 제거 (terminate) 합니다.
-		var elapsed = Date.now() - my._lastHeartbeat;
-		if (elapsed > 100000) { // 100초 타임아웃
-			JLog.warn(`Heartbeat timeout #${my.id} (${Math.round(elapsed / 1000)}s), closing ghost connection`);
-			clearInterval(my._heartbeat); // close 이벤트가 발생하지 않을 수 있으므로 여기서도 정리
-			socket.terminate(); // 즉시 강제 종료 (close()는 CLOSING으로만 변할 수 있음)
-			return;
-		}
 
-		if (socket.readyState === 1) {
-			// 서버→클라이언트 앱 레벨 heartbeat (Cloudflare를 통과하는 일반 메시지)
-			my.send('heartbeat', {});
+	// 소켓 에러 핸들러 (미등록 시 에러로 소켓이 깨져도 DIC에 잔류 — 유령 유저 원인)
+	socket.on('error', function (err) {
+		JLog.warn('Socket error #' + my.id + ': ' + err.toString());
+		if (socket.readyState !== 3) {
+			socket.terminate();
 		}
-	}, 20000);
+	});
 
 	socket.on('close', function (code) {
 		var elapsed = Math.round((Date.now() - my._lastHeartbeat) / 1000);
-		JLog.warn(`Socket closed #${my.id} code=${code} lastHeartbeat=${elapsed}s ago`);
-		clearInterval(my._heartbeat);
-		if (ROOM[my.place]) ROOM[my.place].go(my);
-		if (my.subPlace && my.pracRoom) {
-			if (my.pracRoom.gaming) my.pracRoom.interrupt();
-			my.pracRoom.go(my);
-			my.pracRoom = null;
-			my.subPlace = 0;
+		JLog.warn('Socket closed #' + my.id + ' code=' + code + ' lastHeartbeat=' + elapsed + 's ago');
+		// 글로벌 heartbeat에서 이미 cleanup 한 경우 중복 방지
+		if (my._ghostCleaned) return;
+		try {
+			if (ROOM[my.place]) ROOM[my.place].go(my);
+			if (my.subPlace && my.pracRoom) {
+				if (my.pracRoom.gaming) my.pracRoom.interrupt();
+				my.pracRoom.go(my);
+				my.pracRoom = null;
+				my.subPlace = 0;
+			}
+		} catch (e) {
+			JLog.error('Socket close cleanup error #' + my.id + ': ' + e.toString());
 		}
 		exports.onClientClosed(my, code);
 	});
@@ -2307,12 +2363,16 @@ exports.Room = function (room, channel) {
 						var totalEntities = aliveTeams.size + individualCount;
 						var gameOver = totalEntities <= 1;
 						if (gameOver) {
+							clearTimeout(my.game.turnTimer);
+							clearTimeout(my.game.robotTimer);
 							clearTimeout(my.game._rrt);
 							my.game._rrt = setTimeout(function () {
 								my.roundEnd();
 							}, 2000);
 						} else if (isTurn) {
 							// 다음 턴으로 진행
+							clearTimeout(my.game.turnTimer);
+							clearTimeout(my.game.robotTimer);
 							clearTimeout(my.game._rrt);
 							my.game._rrt = setTimeout(function () {
 								my.turnNext();
@@ -2493,7 +2553,7 @@ exports.Room = function (room, channel) {
 		}
 		// 인정픽 검사
 		if (!my.rule) return 400;
-		if (my.rule.opts.includes("ijp")) {
+		if (my.rule.opts.includes("ijp") && !my.opts.catch) {
 			if (!my.opts.injpick) return 400;
 			if (!my.opts.injpick.length) return 413;
 			if (!my.opts.injpick.every(function (item) {
@@ -2781,12 +2841,13 @@ exports.Room = function (room, channel) {
 		clearTimeout(my.game.qTimer);
 		clearTimeout(my.game.robotTimer);
 
-		// 봇별 타이머 정리 (typingTimer, _timerCatch, _timer 등)
+		// 봇별 타이머 정리 (typingTimer, flipTimer, _timerCatch, _timer 등)
 		if (my.game.seq) {
 			for (var i in my.game.seq) {
 				var o = my.game.seq[i];
 				if (o && o.robot) {
 					if (o.game && o.game.typingTimer) clearTimeout(o.game.typingTimer);
+					if (o.game && o.game.flipTimer) { clearTimeout(o.game.flipTimer); o.game.flipTimer = null; }
 					if (o._timerCatch) clearTimeout(o._timerCatch);
 					if (o._timer) clearTimeout(o._timer);
 				}
@@ -2797,6 +2858,7 @@ exports.Room = function (room, channel) {
 			for (var j in my.game.robots) {
 				var r = my.game.robots[j];
 				if (r) {
+					if (r.game && r.game.flipTimer) { clearTimeout(r.game.flipTimer); r.game.flipTimer = null; }
 					if (r._timerCatch) clearTimeout(r._timerCatch);
 					if (r._timer) clearTimeout(r._timer);
 				}
@@ -2980,16 +3042,16 @@ exports.Room = function (room, channel) {
 			if (!o) continue; // Should not happen for non-robots
 			var myHumanRank = userRankMap[o.id];
 			// 서바이벌 모드: 한 번도 단어를 입력하지 않은 플레이어는 0점 처리 (경험치/보상 없음)
+			var noReward = false;
 			if (my.opts && my.opts.survival && !o.game.survivalSubmitted) {
 				rw = { score: 0, money: 0 };
-			} else if (my.opts && my.opts.apple) {
-				rw = { score: 0, money: 0 };
+				noReward = true;
 			} else {
 				rw = getRewards(my.mode, o.game.score / res[i].dim, o.game.bonus, myHumanRank, humanCount, sumScore);
 			}
 
 			rw.playTime = now - o.playAt;
-			o.applyEquipOptions(rw); // 착용 아이템 보너스 적용
+			if (!noReward) o.applyEquipOptions(rw); // 착용 아이템 보너스 적용 (무행동 시 미적용)
 			if (my.opts.unknown) {
 				if (rw.score > 100) rw.score = 100;
 				if (rw.money > 10) rw.money = 10;

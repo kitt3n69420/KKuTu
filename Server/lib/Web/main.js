@@ -61,6 +61,15 @@ JLog.info("<< KKuTu Web >>");
 Server.set("views", __dirname + "/views");
 Server.set("view engine", "pug");
 Server.use(Express.static(__dirname + "/public", { maxAge: "1d", etag: true }));
+// 요청 타임아웃: DB hang 시 연쇄 커넥션 고갈 방지
+Server.use(function (req, res, next) {
+  res.setTimeout(15000, function () {
+    if (!res.headersSent) {
+      res.status(503).json({ error: "Service Timeout" });
+    }
+  });
+  next();
+});
 Server.use(Parser.urlencoded({ extended: true }));
 Server.use(
   Exession({

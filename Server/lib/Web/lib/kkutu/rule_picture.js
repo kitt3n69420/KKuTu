@@ -1,29 +1,31 @@
 /**
  * Rule the words! KKuTu Online
  * Copyright (C) 2017 JJoriping(op@jjo.kr)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 /**
  * Picture Quiz (그림퀴즈) Client-side Rule
+ * Free-draw canvas version
  */
 
-// Canvas settings - smaller sizes
-var PQ_CANVAS_WIDTH = 20;
-var PQ_CANVAS_HEIGHT = 15;
-var PQ_CELL_SIZE = 13; // smaller cells
+// Canvas settings
+var PQ_CANVAS_W = 288;
+var PQ_CANVAS_H = 180;
+var PQ_BRUSH_SIZES = [3, 8, 16];
+var PQ_THROTTLE_MS = 50;
 var PQ_COLORS = [
     '#FFFFFF', '#C0C0C0', '#808080', '#000000',
     '#FF0000', '#FF8000', '#FFFF00', '#BFFF00',
@@ -33,6 +35,136 @@ var PQ_COLORS = [
 
 $lib.Picture = {};
 
+// --- Coordinate helper ---
+function getCanvasPos(e) {
+    var rect = $data._pqCanvasEl.getBoundingClientRect();
+    return {
+        x: Math.round((e.clientX - rect.left) * (PQ_CANVAS_W / rect.width)),
+        y: Math.round((e.clientY - rect.top) * (PQ_CANVAS_H / rect.height))
+    };
+}
+
+// --- Drawing stroke functions (drawer only) ---
+function startStroke(e) {
+    var pos = getCanvasPos(e);
+    var ctx = $data._pqCtx;
+    var color = $data._pqEraser ? '#FFFFFF' : $data._pqColor;
+
+    $data._pqDrawing = true;
+    $data._pqCurrentStroke = { c: color, w: $data._pqBrushSize, pts: [pos] };
+    $data._pqPendingPoints = [pos];
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = $data._pqBrushSize;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+
+    // Start throttled send
+    $data._pqSendTimer = setInterval(flushPendingPoints, PQ_THROTTLE_MS);
+}
+
+function continueStroke(e) {
+    if (!$data._pqDrawing) return;
+    var pos = getCanvasPos(e);
+    var ctx = $data._pqCtx;
+
+    $data._pqCurrentStroke.pts.push(pos);
+    $data._pqPendingPoints.push(pos);
+
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+}
+
+function endStroke() {
+    if (!$data._pqDrawing) return;
+    $data._pqDrawing = false;
+
+    // Clear throttle timer
+    if ($data._pqSendTimer) {
+        clearInterval($data._pqSendTimer);
+        $data._pqSendTimer = null;
+    }
+
+    // Flush remaining points with end flag
+    if ($data._pqPendingPoints.length > 0) {
+        send('draw', {
+            pts: $data._pqPendingPoints,
+            c: $data._pqCurrentStroke.c,
+            w: $data._pqCurrentStroke.w,
+            cont: $data._pqCurrentStroke.pts.length > $data._pqPendingPoints.length,
+            end: true
+        });
+    } else {
+        // No pending points but stroke exists - send end marker
+        send('draw', {
+            pts: $data._pqCurrentStroke.pts.slice(-1),
+            c: $data._pqCurrentStroke.c,
+            w: $data._pqCurrentStroke.w,
+            cont: true,
+            end: true
+        });
+    }
+
+    $data._pqPendingPoints = [];
+
+    // Store completed stroke locally
+    if ($data._pqCurrentStroke) {
+        $data._pqStrokes.push($data._pqCurrentStroke);
+        $data._pqCurrentStroke = null;
+    }
+}
+
+function flushPendingPoints() {
+    if (!$data._pqPendingPoints || $data._pqPendingPoints.length === 0) return;
+
+    var isFirst = $data._pqCurrentStroke.pts.length <= $data._pqPendingPoints.length;
+    send('draw', {
+        pts: $data._pqPendingPoints,
+        c: $data._pqCurrentStroke.c,
+        w: $data._pqCurrentStroke.w,
+        cont: !isFirst,
+        end: false
+    });
+    $data._pqPendingPoints = [];
+}
+
+// --- Drawing a stroke on canvas (used by receiver and replay) ---
+function drawStrokeSegment(ctx, pts, color, width, fromPt) {
+    if (!ctx || !pts || pts.length === 0) return;
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+
+    var startPt = fromPt || pts[0];
+    ctx.moveTo(startPt.x, startPt.y);
+
+    var startIdx = fromPt ? 0 : 1;
+    if (pts.length === 1 && !fromPt) {
+        // Single dot
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(pts[0].x, pts[0].y, width / 2, 0, Math.PI * 2);
+        ctx.fill();
+        return;
+    }
+
+    for (var i = startIdx; i < pts.length; i++) {
+        ctx.lineTo(pts[i].x, pts[i].y);
+    }
+    ctx.stroke();
+}
+
+// ============================
+// Main $lib.Picture functions
+// ============================
+
 $lib.Picture.roundReady = function (data, spec) {
     clearBoard();
     $data._relay = true;
@@ -41,16 +173,26 @@ $lib.Picture.roundReady = function (data, spec) {
     $data._pqDrawer = data.drawer;
     $data._pqTheme = data.theme;
     $data._pqAnswer = data.answer;
-    $data._pqCanvas = {};
-    $data._pqColor = '#808080';
+    $data._pqStrokes = [];
+    $data._pqColor = '#000000';
+    $data._pqBrushSize = PQ_BRUSH_SIZES[1]; // 8px default
+    $data._pqEraser = false;
     $data._pqIsDrawer = ($data.id === data.drawer);
     $data._pqPassCount = data.passCount || 0;
     $data._pqGameStarted = false;
+    $data._pqDrawing = false;
+    $data._pqCurrentStroke = null;
+    $data._pqPendingPoints = [];
+    $data._pqRemoteLastPt = null;
 
-    // Clear any existing pass button timer
+    // Clear any existing timers
     if ($data._pqPassBtnTimer) {
         clearTimeout($data._pqPassBtnTimer);
         $data._pqPassBtnTimer = null;
+    }
+    if ($data._pqSendTimer) {
+        clearInterval($data._pqSendTimer);
+        $data._pqSendTimer = null;
     }
 
     $(".jjoriping,.rounds,.game-body").addClass("cw");
@@ -59,8 +201,7 @@ $lib.Picture.roundReady = function (data, spec) {
         "margin": "0 auto"
     });
     $stage.game.items.hide();
-    $stage.game.bb.hide(); // Hide bb (used in Sock mode), not needed for Picture Quiz
-    // 그림퀴즈는 채팅창으로 입력하므로 게임 입력창 숨김
+    $stage.game.bb.hide();
     $stage.game.here.hide();
 
     $lib.Picture.drawDisplay();
@@ -73,7 +214,7 @@ $lib.Picture.roundReady = function (data, spec) {
     $(".game-user-bomb").removeClass("game-user-bomb");
     $stage.game.roundBar.css('background-color', '');
     $data._pqUrgent = false;
-    stopBGM(); // Ensure clean audio state
+    stopBGM();
 };
 
 $lib.Picture.drawDisplay = function () {
@@ -93,14 +234,12 @@ $lib.Picture.drawDisplay = function () {
         'display': 'flex',
         'justify-content': 'space-between',
         'width': '100%',
-        'padding': '0 20px',
+        'padding': '0 10px',
         'box-sizing': 'border-box',
-        'margin-bottom': '10px'
+        'margin-bottom': '4px'
     });
 
     var isDrawer = $data._pqIsDrawer;
-    var i, x, y;
-    var canvasWidth = PQ_CANVAS_WIDTH * (PQ_CELL_SIZE + 1);
 
     // Topic (Top Left)
     var themeText = L['theme_' + $data._pqTheme] || $data._pqTheme;
@@ -113,15 +252,14 @@ $lib.Picture.drawDisplay = function () {
 
     $header.append($topic);
 
-    // Answer (Top Right) - Drawer only, Word only
-    // Answer (Top Right) - Drawer only, Word only
+    // Answer (Top Right) - Drawer sees word, others see length
     if (isDrawer && $data._pqAnswer) {
         var $answer = $("<div>").css({
             'color': ($data.room.opts.drg ? getRandomColor() : '#FFFFFF'),
             'font-size': '14px',
             'font-weight': 'bold',
             'text-shadow': '1px 1px 1px #000'
-        }).html($data._pqAnswer); // Display only the word
+        }).html($data._pqAnswer);
         $header.append($answer);
     } else if ($data._pqAnswer) {
         var $answer = $("<div>").css({
@@ -135,126 +273,219 @@ $lib.Picture.drawDisplay = function () {
 
     $main.append($header);
 
-    // Palette (for drawer) - smaller, above canvas
+    // Palette + brush tools (for drawer only)
     if (isDrawer) {
-        var $palette = $("<div>").css({
+        var $toolRow = $("<div>").css({
             'display': 'flex',
-            'flex-wrap': 'wrap',
-            'justify-content': 'center',
-            'gap': '2px',
+            'align-items': 'center',
+            'gap': '4px',
             'padding': '3px',
             'background-color': 'rgba(0,0,0,0.4)',
             'border-radius': '3px',
             'margin-bottom': '4px',
-            'max-width': canvasWidth + 'px',
-            'margin': '0 auto'
+            'flex-wrap': 'wrap',
+            'justify-content': 'center',
+            'max-width': (PQ_CANVAS_W + 6) + 'px'
         });
 
-        for (i = 0; i < PQ_COLORS.length; i++) {
+        // Color palette
+        for (var i = 0; i < PQ_COLORS.length; i++) {
             (function (color) {
+                var isSelected = (!$data._pqEraser && color === $data._pqColor);
                 var $color = $("<div>")
                     .attr("data-color", color)
+                    .addClass("pq-color-btn")
                     .css({
-                        'width': '16px',
-                        'height': '16px',
+                        'width': '14px',
+                        'height': '14px',
                         'border-radius': '50%',
                         'background-color': color,
-                        'border': color === $data._pqColor ? '2px solid #FFD700' : '1px solid #555',
+                        'border': isSelected ? '2px solid #FFD700' : '1px solid #555',
                         'cursor': 'pointer',
-                        'box-sizing': 'border-box'
+                        'box-sizing': 'border-box',
+                        'flex-shrink': '0'
                     });
 
                 $color.on('click', function () {
-                    $palette.children().css('border', '1px solid #555');
-                    $(this).css('border', '2px solid #FFD700');
+                    $data._pqEraser = false;
                     $data._pqColor = color;
+                    $toolRow.find('.pq-color-btn').css('border', '1px solid #555');
+                    $(this).css('border', '2px solid #FFD700');
+                    $toolRow.find('.pq-eraser-btn').css('border', '1px solid #555');
+                    $toolRow.find('.pq-custom-btn').css('background', 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)');
                 });
-                $palette.append($color);
+                $toolRow.append($color);
             })(PQ_COLORS[i]);
         }
-        $main.append($palette);
 
-        $main.append($palette);
-    }
+        // Separator
+        $toolRow.append($("<div>").css({
+            'width': '1px', 'height': '14px',
+            'background-color': 'rgba(255,255,255,0.3)',
+            'margin': '0 2px', 'flex-shrink': '0'
+        }));
 
-    // Canvas - centered, smaller
-    var $canvas = $("<div>").css({
-        'display': 'grid',
-        'grid-template-columns': 'repeat(' + PQ_CANVAS_WIDTH + ', ' + PQ_CELL_SIZE + 'px)',
-        'grid-template-rows': 'repeat(' + PQ_CANVAS_HEIGHT + ', ' + PQ_CELL_SIZE + 'px)',
-        'gap': '1px',
-        'background-color': '#979797ff',
-        'border': '2px solid #1565C0',
-        'border-radius': '2px',
-        'margin': '0 auto',
-        'user-select': 'none', // Prevent selection
-        '-webkit-user-drag': 'none', // Webkit specific
-        '-webkit-user-select': 'none',
-        '-moz-user-select': 'none',
-        '-ms-user-select': 'none'
-    });
-
-    for (y = 0; y < PQ_CANVAS_HEIGHT; y++) {
-        for (x = 0; x < PQ_CANVAS_WIDTH; x++) {
-            (function (px, py) {
-                var key = px + ',' + py;
-                var color = $data._pqCanvas[key] || '#FFFFFF';
-                var $cell = $("<div>")
-                    .attr("data-x", px)
-                    .attr("data-y", py)
-                    .css({
-                        'width': PQ_CELL_SIZE + 'px',
-                        'height': PQ_CELL_SIZE + 'px',
-                        'background-color': color,
-                        'cursor': isDrawer ? 'crosshair' : 'default'
-                    });
-
-                if (isDrawer) {
-                    $cell.on('mousedown', function (e) {
-                        e.preventDefault(); // Prevent drag start
-                        $lib.Picture.onCellClick(px, py);
-                    });
-                    $cell.on('mouseenter', function (e) {
-                        if (e.buttons === 1) {
-                            $lib.Picture.onCellClick(px, py);
-                        }
-                    });
-                }
-                $canvas.append($cell);
-            })(x, y);
-        }
-    }
-    $main.append($canvas);
-
-    // Touch Support for Mobile Drawing
-    if (isDrawer) {
-        var lastTouchCell = null;
-        var handleTouch = function (e) {
-            e.preventDefault(); // Prevent scrolling
-            var touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
-            var rect = $canvas[0].getBoundingClientRect();
-            // Account for border (2px) and grid gap (1px)
-            // rect.left includes the border-box. The border is 2px. So content starts at rect.left + 2.
-            // Grid cells are PQ_CELL_SIZE + 1 (gap).
-            var x = Math.floor((touch.clientX - rect.left - 2) / (PQ_CELL_SIZE + 1));
-            var y = Math.floor((touch.clientY - rect.top - 2) / (PQ_CELL_SIZE + 1));
-
-            // Check bounds
-            if (x >= 0 && x < PQ_CANVAS_WIDTH && y >= 0 && y < PQ_CANVAS_HEIGHT) {
-                var cellKey = x + ',' + y;
-                if (lastTouchCell !== cellKey) {
-                    $lib.Picture.onCellClick(x, y);
-                    lastTouchCell = cellKey;
-                }
-            }
-        };
-
-        $canvas.on('touchstart', function (e) {
-            lastTouchCell = null; // Reset on new touch
-            handleTouch(e);
+        // Custom color picker
+        var $customWrap = $("<div>").css({
+            'position': 'relative',
+            'width': '14px',
+            'height': '14px',
+            'flex-shrink': '0'
         });
-        $canvas.on('touchmove', handleTouch);
+        var $customPreview = $("<div>")
+            .addClass("pq-color-btn pq-custom-btn")
+            .css({
+                'width': '14px',
+                'height': '14px',
+                'border-radius': '50%',
+                'background': 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)',
+                'border': '1px solid #555',
+                'cursor': 'pointer',
+                'box-sizing': 'border-box'
+            });
+        var customInput = document.createElement('input');
+        customInput.type = 'color';
+        customInput.value = $data._pqColor;
+        $(customInput).css({
+            'position': 'absolute',
+            'top': '0', 'left': '0',
+            'width': '14px', 'height': '14px',
+            'opacity': '0',
+            'cursor': 'pointer'
+        });
+        $(customInput).on('input', function () {
+            var color = this.value;
+            $data._pqEraser = false;
+            $data._pqColor = color;
+            $toolRow.find('.pq-color-btn').css('border', '1px solid #555');
+            $toolRow.find('.pq-eraser-btn').css('border', '1px solid #555');
+            $customPreview.css({
+                'background': color,
+                'border': '2px solid #FFD700'
+            });
+        });
+        $customWrap.append($customPreview).append(customInput);
+        $toolRow.append($customWrap);
+
+        // Eraser button
+        var $eraser = $("<div>")
+            .addClass("pq-eraser-btn")
+            .css({
+                'width': '14px',
+                'height': '14px',
+                'border-radius': '3px',
+                'background': '#FFFFFF',
+                'border': $data._pqEraser ? '2px solid #FFD700' : '1px solid #555',
+                'cursor': 'pointer',
+                'display': 'flex',
+                'align-items': 'center',
+                'justify-content': 'center',
+                'font-size': '9px',
+                'font-weight': 'bold',
+                'color': '#FF4444',
+                'flex-shrink': '0'
+            }).html("X");
+
+        $eraser.on('click', function () {
+            $data._pqEraser = true;
+            $toolRow.find('.pq-color-btn').css('border', '1px solid #555');
+            $(this).css('border', '2px solid #FFD700');
+        });
+        $toolRow.append($eraser);
+
+        // Separator
+        $toolRow.append($("<div>").css({
+            'width': '1px', 'height': '14px',
+            'background-color': 'rgba(255,255,255,0.3)',
+            'margin': '0 2px', 'flex-shrink': '0'
+        }));
+
+        // Brush size options
+        for (var b = 0; b < PQ_BRUSH_SIZES.length; b++) {
+            (function (size) {
+                var dotSize = Math.max(6, size);
+                var isSelected = (size === $data._pqBrushSize);
+                var $brush = $("<div>")
+                    .addClass("pq-brush-btn")
+                    .css({
+                        'width': '18px',
+                        'height': '18px',
+                        'display': 'flex',
+                        'align-items': 'center',
+                        'justify-content': 'center',
+                        'cursor': 'pointer',
+                        'border': isSelected ? '2px solid #FFD700' : '1px solid #555',
+                        'border-radius': '3px',
+                        'background-color': 'rgba(255,255,255,0.1)',
+                        'flex-shrink': '0'
+                    });
+
+                var $dot = $("<div>").css({
+                    'width': dotSize + 'px',
+                    'height': dotSize + 'px',
+                    'border-radius': '50%',
+                    'background-color': '#CCC'
+                });
+                $brush.append($dot);
+
+                $brush.on('click', function () {
+                    $data._pqBrushSize = size;
+                    $toolRow.find('.pq-brush-btn').css('border', '1px solid #555');
+                    $(this).css('border', '2px solid #FFD700');
+                });
+                $toolRow.append($brush);
+            })(PQ_BRUSH_SIZES[b], b);
+        }
+
+        $main.append($toolRow);
     }
+
+    // Canvas element
+    var canvas = document.createElement('canvas');
+    canvas.width = PQ_CANVAS_W;
+    canvas.height = PQ_CANVAS_H;
+    canvas.className = 'pq-canvas';
+    canvas.style.cursor = isDrawer ? 'crosshair' : 'default';
+
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, PQ_CANVAS_W, PQ_CANVAS_H);
+
+    $data._pqCanvasEl = canvas;
+    $data._pqCtx = ctx;
+
+    // Drawing event handlers (drawer only)
+    if (isDrawer) {
+        canvas.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            startStroke(e);
+        });
+        canvas.addEventListener('mousemove', function (e) {
+            if ($data._pqDrawing) continueStroke(e);
+        });
+        canvas.addEventListener('mouseup', function () {
+            endStroke();
+        });
+        canvas.addEventListener('mouseleave', function () {
+            if ($data._pqDrawing) endStroke();
+        });
+
+        // Touch support
+        canvas.addEventListener('touchstart', function (e) {
+            e.preventDefault();
+            startStroke(e.touches[0]);
+        });
+        canvas.addEventListener('touchmove', function (e) {
+            e.preventDefault();
+            if ($data._pqDrawing) continueStroke(e.touches[0]);
+        });
+        canvas.addEventListener('touchend', function (e) {
+            e.preventDefault();
+            endStroke();
+        });
+    }
+
+    $main.append(canvas);
 
     // Controls (Pass & Clear) - below canvas
     if (isDrawer) {
@@ -262,7 +493,7 @@ $lib.Picture.drawDisplay = function () {
             'display': 'flex',
             'justify-content': 'center',
             'gap': '10px',
-            'margin-top': '8px',
+            'margin-top': '4px',
             'width': '100%'
         });
 
@@ -272,13 +503,13 @@ $lib.Picture.drawDisplay = function () {
             var $passBtn = $('<button>')
                 .attr('id', 'pq-pass-btn')
                 .css({
-                    'padding': '6px 16px',
+                    'padding': '4px 12px',
                     'background': 'linear-gradient(135deg, #FF6B6B, #EE5A5A)',
                     'color': '#FFFFFF',
                     'border': 'none',
                     'border-radius': '4px',
                     'cursor': 'pointer',
-                    'font-size': '12px',
+                    'font-size': '11px',
                     'font-weight': 'bold',
                     'box-shadow': '0 2px 4px rgba(0,0,0,0.3)'
                 })
@@ -295,26 +526,26 @@ $lib.Picture.drawDisplay = function () {
         var $clearBtn = $('<button>')
             .attr('id', 'pq-clear-btn')
             .css({
-                'padding': '6px 16px',
+                'padding': '4px 12px',
                 'background': 'linear-gradient(135deg, #FFB74D, #FFA726)',
                 'color': '#FFFFFF',
                 'border': 'none',
                 'border-radius': '4px',
                 'cursor': 'pointer',
-                'font-size': '12px',
+                'font-size': '11px',
                 'font-weight': 'bold',
-                'box-shadow': '0 2px 4px rgba(0,0,0,0.3)',
-                'display': 'flex', // Flex to align icon/text if added later
-                'align-items': 'center'
+                'box-shadow': '0 2px 4px rgba(0,0,0,0.3)'
             })
             .html((L['pqClear'] || '모두 지우기'))
             .on('click', function () {
                 showConfirm(L['pqSureClear'] || '정말 모두 지우시겠습니까?', function (res) {
                     if (res) {
-                        // Client-side clear immediately for responsiveness
-                        $data._pqCanvas = {};
-                        $canvas.children().css('background-color', '#FFFFFF');
-                        // Send clear to server
+                        $data._pqStrokes = [];
+                        var ctx = $data._pqCtx;
+                        if (ctx) {
+                            ctx.fillStyle = '#FFFFFF';
+                            ctx.fillRect(0, 0, PQ_CANVAS_W, PQ_CANVAS_H);
+                        }
                         send('clear', {});
                     }
                 });
@@ -327,34 +558,50 @@ $lib.Picture.drawDisplay = function () {
     $stage.game.display.empty().append($main);
 };
 
-$lib.Picture.onCellClick = function (x, y) {
-    if (!$data._pqIsDrawer) return;
-
-    var key = x + ',' + y;
-    var color = $data._pqColor;
-
-    $data._pqCanvas[key] = color;
-    $("div[data-x='" + x + "'][data-y='" + y + "']").css("background-color", color);
-
-    send('draw', { x: x, y: y, color: color });
-};
-
 $lib.Picture.handleDraw = function (data) {
-    var key = data.x + ',' + data.y;
-    $data._pqCanvas[key] = data.color;
-    $("div[data-x='" + data.x + "'][data-y='" + data.y + "']").css("background-color", data.color);
+    var ctx = $data._pqCtx;
+    if (!ctx || !data.pts || data.pts.length === 0) return;
+
+    var fromPt = null;
+    if (data.cont && $data._pqRemoteLastPt) {
+        fromPt = $data._pqRemoteLastPt;
+    }
+
+    drawStrokeSegment(ctx, data.pts, data.c, data.w, fromPt);
+    $data._pqRemoteLastPt = data.pts[data.pts.length - 1];
+
+    // Reset remote tracking on stroke end
+    if (data.end) {
+        $data._pqRemoteLastPt = null;
+    }
 };
 
 $lib.Picture.handleClear = function (data) {
-    $data._pqCanvas = {};
-    // Reset all cells to white
-    // Assuming $stage.game.display contains the canvas cells
-    // We can select them by attribute or just rebuild, but selecting is faster
-    $("div[data-x][data-y]").css("background-color", "#FFFFFF");
+    $data._pqStrokes = [];
+    $data._pqRemoteLastPt = null;
+    var ctx = $data._pqCtx;
+    if (ctx) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, PQ_CANVAS_W, PQ_CANVAS_H);
+    }
 };
 
-$lib.Picture.turnStart = function (data, spec) {
-    // Clear previous visual effects (like Jaqwi does)
+$lib.Picture.replayStrokes = function (strokes) {
+    var ctx = $data._pqCtx;
+    if (!ctx || !strokes) return;
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, PQ_CANVAS_W, PQ_CANVAS_H);
+
+    for (var s = 0; s < strokes.length; s++) {
+        var stroke = strokes[s];
+        drawStrokeSegment(ctx, stroke.pts, stroke.c, stroke.w, null);
+    }
+    $data._pqStrokes = strokes.slice();
+};
+
+$lib.Picture.turnStart = function (data) {
+    // Clear previous visual effects
     $(".game-user-current").removeClass("game-user-current");
     $(".game-user-bomb").removeClass("game-user-bomb");
 
@@ -380,7 +627,6 @@ $lib.Picture.turnStart = function (data, spec) {
     $(".game-user-current").removeClass("game-user-current");
     $("#game-user-" + data.drawer).addClass("game-user-current");
 
-    // 그림퀴즈는 채팅창으로 입력하므로 게임 입력창 숨김
     $stage.game.here.hide();
 };
 
@@ -426,7 +672,6 @@ $lib.Picture.turnEnd = function (id, data) {
             var $drawerUc = $("#game-user-" + data.drawer);
             var $drawerSc = $("<div>").addClass("deltaScore");
             if (data.drawerScore < 0) {
-                // Negative score (penalty)
                 $drawerSc.addClass("lost").html(data.drawerScore);
                 $drawerUc.addClass("game-user-bomb");
             } else {
@@ -434,7 +679,6 @@ $lib.Picture.turnEnd = function (id, data) {
             }
             drawObtainedScore($drawerUc, $drawerSc);
 
-            // Update Drawer Total Score UI
             var currentScore = getScore(data.drawer);
             var newScore = currentScore + data.drawerScore;
             addScore(data.drawer, data.drawerScore, newScore);
@@ -459,8 +703,8 @@ $lib.Picture.turnEnd = function (id, data) {
             }).html(L['pqAnswer'] + ": " + data.answer)
         );
         $data._relay = false;
-        clearInterval($data._tTime); // Stop the timer
-        stopBGM(); // Stop fast music if playing
+        clearInterval($data._tTime);
+        stopBGM();
         playSound('horr');
 
         // Reset UI states
