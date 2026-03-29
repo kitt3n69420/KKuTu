@@ -43,8 +43,7 @@ $lib.Sock.roundReady = function (data, spec) {
 	$data._fastTime = 10000;
 	$stage.game.items.hide();
 	$stage.game.bb.show();
-	// 솎솎은 채팅창으로 입력하므로 게임 입력창 숨김
-	$stage.game.here.hide();
+	$stage.game.here.css({ 'opacity': 0.3, 'top': '-35px' }).show();
 	$lib.Sock.drawDisplay();
 	drawRound(data.round);
 	if (!spec) playSound('round_start');

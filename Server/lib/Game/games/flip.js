@@ -238,6 +238,8 @@ exports.submit = function (client, text) {
 	if (!play) return client.chat(text);
 	if (!my.game.board) return;
 
+	if (text.length !== 2) return client.chat(text);
+
 	if (!my.game.wordMap.hasOwnProperty(text)) {
 		client.send('turnEnd', { error: true });
 		return;

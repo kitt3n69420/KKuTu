@@ -55,7 +55,7 @@ function send(type, data, toMaster) {
 	}
 
 	// Exempt 'draw' and 'test' from spam counter
-	if (type != "test" && type != "draw" && type != "team") if (spamCount++ > 10) {
+	if (type != "test" && type != "draw" && type != "fill" && type != "team") if (spamCount++ > 10) {
 		if (++spamWarning >= 3) return subj.close();
 		spamCount = 5;
 	}
@@ -677,6 +677,11 @@ function onMessage(data) {
 				$lib.Picture.handleClear(data);
 			}
 			break;
+		case 'fill':
+			if ($lib.Picture && $lib.Picture.handleFill) {
+				$lib.Picture.handleFill(data);
+			}
+			break;
 		case 'kickVote':
 			$data._kickTarget = $data.users[data.target];
 			if ($data.id != data.target && $data.id != $data.room.master) {
@@ -1215,6 +1220,7 @@ function processRoom(data) {
 				}
 			}
 			if (data.spec && data.target == $data.id) {
+				$stage.game.here.css('top', '');
 				if (!$data._spectate) {
 					$data._spectate = true;
 					clearBoard();
@@ -2898,6 +2904,7 @@ function clearBoard() {
 		if (window.badAppleFrames) window.badAppleFrames = null;
 	}
 	loading();
+	$stage.game.here.css('top', '');
 	if (mobile) {
 		$stage.game.here.css('opacity', 0.5).show();
 	} else {

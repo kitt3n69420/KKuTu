@@ -403,16 +403,16 @@ exports.handleDraw = function (client, msg) {
     // Accumulate into current stroke or start a new one
     if (msg.end) {
         if (my.game._currentStroke) {
-            my.game._currentStroke.pts = my.game._currentStroke.pts.concat(msg.pts);
+            for (var j = 0; j < msg.pts.length; j++) my.game._currentStroke.pts.push(msg.pts[j]);
             my.game.strokes.push(my.game._currentStroke);
             my.game._currentStroke = null;
         } else {
-            my.game.strokes.push({ pts: msg.pts, c: msg.c, w: msg.w });
+            my.game.strokes.push({ pts: msg.pts.slice(), c: msg.c, w: msg.w });
         }
     } else if (!my.game._currentStroke) {
         my.game._currentStroke = { pts: msg.pts.slice(), c: msg.c, w: msg.w };
     } else {
-        my.game._currentStroke.pts = my.game._currentStroke.pts.concat(msg.pts);
+        for (var j = 0; j < msg.pts.length; j++) my.game._currentStroke.pts.push(msg.pts[j]);
     }
 
     // Limit total strokes to prevent memory abuse
@@ -428,6 +428,24 @@ exports.handleDraw = function (client, msg) {
         cont: msg.cont || false,
         end: msg.end || false
     }, true);
+};
+
+// Handle flood fill from drawer
+exports.handleFill = function (client, msg) {
+    var my = this;
+
+    var drawerId = my.game.drawer;
+    if (drawerId && drawerId.id) drawerId = drawerId.id;
+    if (client.id !== drawerId) return;
+
+    if (typeof msg.x !== 'number' || typeof msg.y !== 'number') return;
+    if (msg.x < 0 || msg.x > PQ_CANVAS_W || msg.y < 0 || msg.y > PQ_CANVAS_H) return;
+    if (typeof msg.c !== 'string' || msg.c.length > 20) return;
+
+    my.game.strokes.push({ fill: true, x: msg.x, y: msg.y, c: msg.c });
+    if (my.game.strokes.length > MAX_STROKES) my.game.strokes.shift();
+
+    my.byMaster('fill', { x: msg.x, y: msg.y, c: msg.c }, true);
 };
 
 // Handle clear canvas from drawer

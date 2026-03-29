@@ -3523,6 +3523,9 @@ exports.Room = function (room, channel) {
 	my.handleDraw = function (client, msg) {
 		return my.route("handleDraw", client, msg);
 	};
+	my.handleFill = function (client, msg) {
+		return my.route("handleFill", client, msg);
+	};
 	my.handleClear = function (client, msg) {
 		return my.route("handleClear", client, msg);
 	};

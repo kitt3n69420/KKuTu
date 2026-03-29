@@ -102,6 +102,7 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 
 	addScore(id, data.score, data.totalScore);
 	if (data.ok) {
+		checkFailCombo();
 		clearTimeout($data._fail);
 		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
@@ -112,6 +113,7 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 			$data._question = data.nextQuestion;
 		}
 	} else {
+		checkFailCombo(id);
 		$sc.addClass("lost");
 		$(".game-user-current").addClass("game-user-bomb");
 		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();

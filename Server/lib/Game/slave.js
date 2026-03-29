@@ -616,6 +616,13 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (!temp.handlePass) return;
       temp.handlePass($c);
       break;
+    case "fill":
+      if ($c.subPlace) temp = $c.pracRoom;
+      else if (!(temp = ROOM[$c.place])) return;
+      if (!temp.gaming) return;
+      if (!temp.handleFill) return;
+      temp.handleFill($c, { x: msg.x, y: msg.y, c: msg.c });
+      break;
     default:
       break;
   }
