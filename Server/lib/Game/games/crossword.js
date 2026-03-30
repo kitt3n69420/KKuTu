@@ -21,9 +21,35 @@ var Lizard = require('../../sub/lizard');
 var DB;
 var DIC;
 
-var ROBOT_SEEK_DELAY = [5000, 3000, 1500, 700, 100];
-var ROBOT_CATCH_RATE = [0.05, 0.2, 0.4, 0.6, 0.99];
-var ROBOT_TYPE_COEF = [2000, 1200, 800, 300, 0];
+const ROBOT_CW_INTERVAL = [24000, 12000, 6000, 3000, 1500];
+
+function getBoardQuestions(my, boardIdx) {
+	var board = my.game.boards[boardIdx];
+	var qs = board.map(function (item) {
+		return {
+			key: boardIdx + ',' + item[0] + ',' + item[1] + ',' + item[2],
+			data: [boardIdx, Number(item[0]), Number(item[1]), Number(item[2])]
+		};
+	});
+	for (var i = qs.length - 1; i > 0; i--) {
+		var j = Math.floor(Math.random() * (i + 1));
+		var t = qs[i]; qs[i] = qs[j]; qs[j] = t;
+	}
+	return qs;
+}
+
+function pickRandomUnsolvedBoard(my) {
+	var available = [];
+	for (var i = 0; i < my.game.boards.length; i++) {
+		var board = my.game.boards[i];
+		for (var j = 0; j < board.length; j++) {
+			var key = i + ',' + board[j][0] + ',' + board[j][1] + ',' + board[j][2];
+			if (my.game.answers[key]) { available.push(i); break; }
+		}
+	}
+	if (available.length === 0) return -1;
+	return available[Math.floor(Math.random() * available.length)];
+}
 
 exports.init = function (_DB, _DIC) {
 	DB = _DB;
@@ -127,9 +153,15 @@ exports.turnStart = function () {
 		means: my.game.means
 	}, true);
 
-	/*for(i in my.game.robots){
-		my.readyRobot(my.game.robots[i]);
-	}*/
+	if (my.game.robots) {
+		my.game.robots.forEach(function (robot) {
+			robot._cwBoard = undefined;
+			robot._cwQuestions = null;
+			robot._cwQIdx = 0;
+			robot._cwTimer = null;
+			my.readyRobot(robot);
+		});
+	}
 };
 function turnHint() {
 	var my = this;
@@ -143,6 +175,12 @@ exports.turnEnd = function () {
 	var i;
 
 	my.game.late = true;
+	if (my.game.robots) {
+		my.game.robots.forEach(function (robot) {
+			clearTimeout(robot._cwTimer);
+			robot._cwTimer = null;
+		});
+	}
 	my.byMaster('turnEnd', {});
 	my.game._rrt = setTimeout(my.roundReady, 2500);
 };
@@ -228,36 +266,42 @@ exports.getScore = function (text, delay) {
 	// NaN 방어
 	return isNaN(result) ? 0 : result;
 };
-/*exports.readyRobot = function(robot){
+exports.readyRobot = function (robot) {
 	var my = this;
-	var level = robot.level;
-	var delay, text;
-	var board, data, obj;
-	var i;
-	
-	if(my.game.late) return;
-	clearTimeout(robot._timerSeek);
-	clearTimeout(robot._timerCatch);
-	if(robot._board == undefined) changeBoard();
-	delay = ROBOT_SEEK_DELAY[level];
-	if(Math.random() < ROBOT_CATCH_RATE[level]){
-		robot._timerCatch = false;
-		board = my.game.boards[robot._board];
-		for(i in board){
-			data = board[i];
-			key = `${robot._board},${data[0]},${data[1]},${data[2]}`;
-			if(obj = my.game.answers[key]){
-				delay += obj.length * ROBOT_TYPE_COEF[level];
-				robot._timerCatch = setTimeout(my.turnRobot, delay, robot, obj, key.split(','));
-				break;
-			}
+	if (my.game.late || !my.gaming) return;
+
+	var level = robot.level || 2;
+
+	function getNextQuestion() {
+		// 현재 보드의 남은 문제 시도
+		while (robot._cwBoard !== undefined && robot._cwBoard !== -1 &&
+				robot._cwQuestions && robot._cwQIdx < robot._cwQuestions.length) {
+			var q = robot._cwQuestions[robot._cwQIdx++];
+			if (my.game.answers[q.key]) return q;
 		}
-		if(!robot._timerCatch) changeBoard();
-	}else if(Math.random() < 0.05){
-		changeBoard();
+		// 현재 보드 소진 → 새 보드 선택
+		var newBoard = pickRandomUnsolvedBoard(my);
+		if (newBoard === -1) return null;
+		robot._cwBoard = newBoard;
+		robot._cwQuestions = getBoardQuestions(my, newBoard);
+		robot._cwQIdx = 0;
+		while (robot._cwQIdx < robot._cwQuestions.length) {
+			var q = robot._cwQuestions[robot._cwQIdx++];
+			if (my.game.answers[q.key]) return q;
+		}
+		return null;
 	}
-	robot._timerSeek = setTimeout(my.readyRobot, delay, robot);
-	function changeBoard(){
-		robot._board = Math.floor(Math.random() * my.game.boards.length);
-	}
-};*/
+
+	var q = getNextQuestion();
+	if (!q) return;
+
+	var interval = ROBOT_CW_INTERVAL[level];
+	interval += Math.round((Math.random() * 0.4 - 0.2) * interval);
+
+	robot._cwTimer = setTimeout(function () {
+		if (my.game.late || !my.gaming) return;
+		var answer = my.game.answers[q.key];
+		if (answer) my.turnRobot(robot, answer, q.data);
+		my.readyRobot(robot);
+	}, interval);
+};

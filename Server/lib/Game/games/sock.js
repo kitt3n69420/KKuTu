@@ -21,6 +21,170 @@ var Lizard = require('../../sub/lizard');
 var DB;
 var DIC;
 
+const ROBOT_SOCK_START_DELAY = [5000, 3000, 1800, 900, 300];
+const ROBOT_SOCK_MAX_WORDS   = [10, 20, 30, 50, 999];
+const BOT_SOCK_CPM           = [45, 90, 175, 350, 700];
+const ROBOT_SOCK_MAX_LEN_KO  = [3, 3, 4, 5, 10];
+const ROBOT_SOCK_MAX_LEN_EN  = [3, 3, 6, 10, 20];
+
+function buildFreqMap(str) {
+	var map = {};
+	for (var i = 0; i < str.length; i++) {
+		var ch = str[i];
+		if (ch !== '　') map[ch] = (map[ch] || 0) + 1;
+	}
+	return map;
+}
+
+function canMakeWord(boardFreq, word) {
+	var need = {};
+	for (var i = 0; i < word.length; i++) {
+		var ch = word[i];
+		need[ch] = (need[ch] || 0) + 1;
+		if ((boardFreq[ch] || 0) < need[ch]) return false;
+	}
+	return true;
+}
+
+function fetchRobotWords(my) {
+	if (my.game.robotWordsLoading) return;
+	if (my.game.robotFetchExhausted) return;
+	my.game.robotWordsLoading = true;
+	my.game.robotWords = null;
+	my.game.robotClaimed = new Set();
+
+	var conf = LANG_STATS[my.rule.lang];
+	var freq = my.game.robotBoardFreq;
+	var uniqueChars = Object.keys(freq).filter(function (ch) { return freq[ch] > 0; }).join('');
+	var lenMatch = conf.reg.source.match(/\{(\d+),(\d+)\}/);
+	var minLen = lenMatch ? parseInt(lenMatch[1]) : 2;
+	var maxLen = Math.max.apply(null, my.rule.lang === 'ko' ? ROBOT_SOCK_MAX_LEN_KO : ROBOT_SOCK_MAX_LEN_EN);
+	if (my.opts.no2 && minLen < 3) minLen = 3;
+
+	var botSql = "SELECT _id FROM kkutu_" + my.rule.lang
+		+ " WHERE _id ~ '^[" + uniqueChars + "]{" + minLen + "," + maxLen + "}$' AND hit >= 1";
+	if (conf.add) botSql += " AND " + conf.add[0] + " ~ '" + conf.add[1].source + "'";
+
+	var submitted = my.game.words;
+	if (submitted && submitted.length > 0) {
+		var escaped = submitted.map(function (w) { return "'" + w.replace(/'/g, "''") + "'"; }).join(',');
+		botSql += " AND _id NOT IN (" + escaped + ")";
+	}
+
+	botSql += " ORDER BY hit DESC LIMIT 2500";
+
+	DB.kkutu[my.rule.lang].direct(botSql, function (err, res) {
+		my.game.robotWordsLoading = false;
+		if (err || !res || !my.game.robotBoardFreq) return;
+		var list = res.rows
+			.map(function (r) { return r._id; })
+			.filter(function (w) { return canMakeWord(my.game.robotBoardFreq, w); });
+		if (list.length === 0) {
+			my.game.robotEmptyCount = (my.game.robotEmptyCount || 0) + 1;
+			if (my.game.robotEmptyCount >= 10) my.game.robotFetchExhausted = true;
+		} else {
+			my.game.robotEmptyCount = 0;
+		}
+		for (var i = list.length - 1; i > 0; i--) {
+			var j = Math.floor(Math.random() * (i + 1));
+			var t = list[i]; list[i] = list[j]; list[j] = t;
+		}
+		my.game.robotWords = list;
+		my.game.robotClaimed = new Set();
+	});
+}
+
+function fetchRobotWordsFallback(my) {
+	if (my.game.robotWordsLoading) return;
+	if (my.game.robotFallbackDone) return;
+	my.game.robotWordsLoading = true;
+	my.game.robotFallbackDone = true;
+	my.game.robotWords = null;
+	my.game.robotClaimed = new Set();
+
+	var conf = LANG_STATS[my.rule.lang];
+	var freq = my.game.robotBoardFreq;
+	var uniqueChars = Object.keys(freq).filter(function (ch) { return freq[ch] > 0; }).join('');
+	var exactLen = my.opts.no2 ? 3 : 2;
+
+	var botSql = "SELECT _id FROM kkutu_" + my.rule.lang
+		+ " WHERE _id ~ '^[" + uniqueChars + "]{" + exactLen + "," + exactLen + "}$' AND hit >= 1";
+	if (conf.add) botSql += " AND " + conf.add[0] + " ~ '" + conf.add[1].source + "'";
+
+	var submitted = my.game.words;
+	if (submitted && submitted.length > 0) {
+		var escaped = submitted.map(function (w) { return "'" + w.replace(/'/g, "''") + "'"; }).join(',');
+		botSql += " AND _id NOT IN (" + escaped + ")";
+	}
+
+	DB.kkutu[my.rule.lang].direct(botSql, function (err, res) {
+		my.game.robotWordsLoading = false;
+		if (err || !res || !my.game.robotBoardFreq) return;
+		var list = res.rows
+			.map(function (r) { return r._id; })
+			.filter(function (w) { return canMakeWord(my.game.robotBoardFreq, w); });
+		for (var i = list.length - 1; i > 0; i--) {
+			var j = Math.floor(Math.random() * (i + 1));
+			var t = list[i]; list[i] = list[j]; list[j] = t;
+		}
+		my.game.robotWords = list;
+		my.game.robotClaimed = new Set();
+	});
+}
+
+function pickForRobot(my, level) {
+	var maxLen = (my.rule.lang === 'ko') ? ROBOT_SOCK_MAX_LEN_KO[level] : ROBOT_SOCK_MAX_LEN_EN[level];
+	var claimed = my.game.robotClaimed;
+	var submitted = my.game.words;
+	var freq = my.game.robotBoardFreq;
+	var words = my.game.robotWords;
+
+	for (var i = 0; i < words.length; i++) {
+		var w = words[i];
+		if (w.length > maxLen) continue;
+		if (submitted.indexOf(w) !== -1) continue;
+		if (claimed.has(w)) continue;
+		if (!canMakeWord(freq, w)) continue;
+		claimed.add(w);
+		return w;
+	}
+	return null;
+}
+
+function robotSubmitOne(my, robot) {
+	if (my.game.late || !my.gaming) return;
+
+	var level = robot.level || 2;
+	if ((robot._sockSubmitted || 0) >= ROBOT_SOCK_MAX_WORDS[level]) return;
+
+	if (my.game.robotWordsLoading || !my.game.robotWords) {
+		robot._sockTimer = setTimeout(function () { robotSubmitOne(my, robot); }, 500);
+		return;
+	}
+
+	var picked = pickForRobot(my, level);
+
+	if (!picked) {
+		if (my.game.robotFetchExhausted) {
+			fetchRobotWordsFallback(my);
+		} else {
+			fetchRobotWords(my);
+		}
+		robot._sockTimer = setTimeout(function () { robotSubmitOne(my, robot); }, 1000);
+		return;
+	}
+
+	var cpm = BOT_SOCK_CPM[level] * (my.opts.no2 ? 0.5 : 1);
+	var typingTime = Math.max(200, (picked.length * 60000) / cpm + (Math.random() * 300 - 150));
+
+	robot._sockTimer = setTimeout(function () {
+		if (my.game.late || !my.gaming) return;
+		robot._sockSubmitted = (robot._sockSubmitted || 0) + 1;
+		my.turnRobot(robot, picked);
+		robotSubmitOne(my, robot);
+	}, typingTime);
+}
+
 const LANG_STATS = {
 	'ko': {
 		reg: /^[가-힣]{2,5}$/,
@@ -83,6 +247,18 @@ exports.roundReady = function () {
 			words.sort(function (a, b) { return b.length - a.length; });
 			my.game.words = [];
 			my.game.board = getBoard(words, effectiveBig ? 196 : 100);
+			my.game.robotBoardFreq = buildFreqMap(my.game.board);
+			my.game.robotWords = null;
+			my.game.robotClaimed = new Set();
+			my.game.robotWordsLoading = false;
+			my.game.robotEmptyCount = 0;
+			my.game.robotFetchExhausted = false;
+			my.game.robotFallbackDone = false;
+
+			if (my.game.robots && my.game.robots.length > 0) {
+				fetchRobotWords(my);
+			}
+
 			my.byMaster('roundReady', {
 				round: my.game.round,
 				board: my.game.board,
@@ -104,11 +280,29 @@ exports.turnStart = function () {
 	my.byMaster('turnStart', {
 		roundTime: my.game.roundTime
 	}, true);
+
+	if (my.game.robots) {
+		my.game.robots.forEach(function (robot) {
+			robot._sockSubmitted = 0;
+			robot._sockTimer = setTimeout(function () {
+				robotSubmitOne(my, robot);
+			}, ROBOT_SOCK_START_DELAY[robot.level || 2]);
+		});
+	}
 };
 exports.turnEnd = function () {
 	var my = this;
 
 	my.game.late = true;
+
+	if (my.game.robots) {
+		my.game.robots.forEach(function (robot) {
+			if (robot._sockTimer) {
+				clearTimeout(robot._sockTimer);
+				robot._sockTimer = null;
+			}
+		});
+	}
 
 	my.byMaster('turnEnd', {});
 	my.game._rrt = setTimeout(my.roundReady, 3000);
@@ -128,6 +322,36 @@ exports.submit = function (client, text, data) {
 	if (my.game.words.indexOf(text) != -1) {
 		return client.chat(text);
 	}
+
+	if (client.robot) {
+		if (!my.game.board) return;
+		var newBoard = my.game.board;
+		var _newBoard = newBoard;
+		var wl = text.split('');
+		for (i = 0; i < wl.length; i++) {
+			newBoard = newBoard.replace(wl[i], "");
+			if (newBoard === _newBoard) return;
+			_newBoard = newBoard;
+		}
+		score = my.getScore(text);
+		my.game.words.push(text);
+		my.game.board = newBoard;
+		if (my.game.robotBoardFreq) {
+			for (i = 0; i < wl.length; i++) {
+				if (my.game.robotBoardFreq[wl[i]] > 0) my.game.robotBoardFreq[wl[i]]--;
+			}
+		}
+		client.game.score += score;
+		client.publish('turnEnd', {
+			target: client.id,
+			value: text,
+			score: score,
+			totalScore: client.game.score
+		}, true);
+		client.invokeWordPiece(text, 1.1);
+		return;
+	}
+
 	DB.kkutu[my.rule.lang].findOne(['_id', text]).limit(['_id', true]).on(function ($doc) {
 		if (!my.game.board) return;
 
@@ -149,6 +373,11 @@ exports.submit = function (client, text, data) {
 			score = my.getScore(text);
 			my.game.words.push(text);
 			my.game.board = newBoard;
+			if (my.game.robotBoardFreq) {
+				for (i = 0; i < wl.length; i++) {
+					if (my.game.robotBoardFreq[wl[i]] > 0) my.game.robotBoardFreq[wl[i]]--;
+				}
+			}
 			client.game.score += score;
 			client.publish('turnEnd', {
 				target: client.id,

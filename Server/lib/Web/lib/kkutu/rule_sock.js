@@ -43,7 +43,8 @@ $lib.Sock.roundReady = function (data, spec) {
 	$data._fastTime = 10000;
 	$stage.game.items.hide();
 	$stage.game.bb.show();
-	$stage.game.here.css({ 'opacity': 0.3, 'top': '-35px' }).show();
+	if (mobile) $stage.game.here.css({ 'opacity': 0.3, 'top': '-35px' }).show();
+	else $stage.game.here.hide();
 	$lib.Sock.drawDisplay();
 	drawRound(data.round);
 	if (!spec) playSound('round_start');

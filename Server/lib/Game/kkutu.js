@@ -2461,7 +2461,18 @@ exports.Room = function (room, channel) {
 		if (my.practice) {
 			if (my.gaming) my.interrupt();
 			client.subPlace = 0;
-		} else client.place = 0;
+		} else {
+			// place=0 초기화 전에 disconnRoom 전송 (이후엔 _place==0 이라 slave.js에서 전송 안 됨)
+			if (Cluster.isWorker) {
+				var _dm = JSON.stringify({ type: "disconnRoom", id: client.id });
+				for (var _di in DIC) {
+					if (DIC[_di] !== client && DIC[_di].place == my.id && DIC[_di].socket && DIC[_di].socket.readyState == 1) {
+						DIC[_di].socket.send(_dm);
+					}
+				}
+			}
+			client.place = 0;
+		}
 
 		if (Cluster.isWorker) {
 			if (!my.practice) {

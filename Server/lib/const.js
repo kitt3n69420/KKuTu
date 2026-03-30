@@ -253,7 +253,7 @@ exports.RULE = {
 		rule: "Crossword",
 		opts: ["drg"],
 		time: 2,
-		ai: false,
+		ai: true,
 		big: true,
 		ewq: false
 	},
@@ -327,7 +327,7 @@ exports.RULE = {
 		rule: "Sock",
 		opts: ["no2", "big", "drg", "apl","nsw"],
 		time: 1,
-		ai: false,
+		ai: true,
 		big: true,
 		ewq: false
 	},
@@ -336,7 +336,7 @@ exports.RULE = {
 		rule: "Sock",
 		opts: ["no2", "big", "drg"],
 		time: 1,
-		ai: false,
+		ai: true,
 		big: true,
 		ewq: false
 	},

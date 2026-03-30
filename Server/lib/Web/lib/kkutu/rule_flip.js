@@ -123,7 +123,8 @@ $lib.Flip.roundReady = function (data, spec) {
 	$stage.game.items.hide();
 	$stage.game.bb.hide();
 	$stage.game.cwcmd.hide();
-	$stage.game.here.css({ 'opacity': 0.3, 'top': '-35px' }).show();
+	if (mobile) $stage.game.here.css({ 'opacity': 0.3, 'top': '-35px' }).show();
+	else $stage.game.here.hide();
 	if (!$data._flipColorMap) {
 		$lib.Flip._buildColorMap();
 	}
