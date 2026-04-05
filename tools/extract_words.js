@@ -48,6 +48,11 @@ function korSort(arr) {
     return arr.sort((a, b) => a.localeCompare(b, 'ko'));
 }
 
+// Replace characters invalid in Windows filenames: \ / : * ? " < > |
+function sanitizeFilename(name) {
+    return name.replace(/[\\/:*?"<>|]/g, '_');
+}
+
 async function main() {
     console.log("Connecting to database...");
     const client = await pool.connect();
@@ -103,7 +108,7 @@ async function main() {
         for (const [code, wordSet] of Object.entries(themeMap)) {
             const korName = themeNames[code];
             const words = korSort(Array.from(wordSet));
-            const filePath = path.join(themeDirPath, `${korName}.txt`);
+            const filePath = path.join(themeDirPath, `${sanitizeFilename(korName)}.txt`);
             fs.writeFileSync(filePath, words.join('\n'), 'utf8');
             console.log(`  [${code}] ${korName}: ${words.length}개 -> ${korName}.txt`);
             themeCount++;
