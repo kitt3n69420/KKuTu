@@ -1,0 +1,54 @@
+extends ../layout
+
+block CSS
+	style.
+		.legal-box { line-height: 1.8; word-break: keep-all; }
+		.legal-box h1 { margin-bottom: 30px; border-bottom: 2px solid #fff; padding-bottom: 10px; }
+		.legal-box h3 { margin-top: 40px; margin-bottom: 15px; font-size: 1.3em; font-weight: bold; color: #81D4FA; }
+		.legal-box ul { margin-bottom: 15px; list-style-type: none; padding-left: 10px; }
+		.legal-box li { margin-bottom: 8px; color: #ddd; }
+		.legal-box a { color: #B3E5FC; }
+		.legal-box a:hover { color: #fff; }
+
+block Subject
+	title 저작권 안내 - 끄투엔
+
+block Middle
+	div.legal-box(style='padding: 20px; color: white; overflow-y: scroll; height: 100%;')
+		h1 저작권 안내
+
+		h3 사운드 팩 라이선스
+		p
+			| 끄투엔에서 제공하는 사운드 팩 중 #[strong 병맛] 및 #[strong 오리지널]을 제외한 모든 사운드 팩은
+			|  #[a(href='https://creativecommons.org/licenses/by/4.0/deed.ko', target='_blank') CC BY 4.0 (Creative Commons Attribution 4.0 International)] 라이선스 하에 배포됩니다.
+		p 단, 해당 사운드 팩을 끄투 서버 운영 목적으로 활용하는 경우에 한해 출처 표기(BY) 의무를 생략할 수 있습니다.
+
+		h3 적용한 PR
+		ul
+			li
+				a(href='https://github.com/JJoriping/KKuTu/pull/326', target='_blank') https://github.com/JJoriping/KKuTu/pull/326
+			li
+				a(href='https://github.com/JJoriping/KKuTu/pull/865', target='_blank') https://github.com/JJoriping/KKuTu/pull/865
+			li
+				a(href='https://github.com/JJoriping/KKuTu/pull/871', target='_blank') https://github.com/JJoriping/KKuTu/pull/871 
+			li
+				a(href='https://github.com/JJoriping/KKuTu/pull/877', target='_blank') https://github.com/JJoriping/KKuTu/pull/877
+			li
+				a(href='https://github.com/JJoriping/KKuTu/pull/935', target='_blank') https://github.com/JJoriping/KKuTu/pull/935
+
+		h3 참고한 레포지토리
+		ul
+			li
+				a(href='https://github.com/jhj1228/KKuTu', target='_blank') https://github.com/jhj1228/KKuTu
+			li
+				a(href='https://github.com/githubmahan/KKuTu', target='_blank') https://github.com/githubmahan/KKuTu
+			li
+				a(href='https://github.com/bfkkutu/KKuTu', target='_blank') https://github.com/bfkkutu/KKuTu
+			li
+				a(href='https://github.com/Kimu-Nowchira/TTuKu', target='_blank') https://github.com/Kimu-Nowchira/TTuKu
+			li
+				a(href='https://github.com/PrjKKuTu/KKuTu', target='_blank') https://github.com/PrjKKuTu/KKuTu
+			li
+				a(href='https://github.com/KKuTuIO/KKuTu-Game', target='_blank') https://github.com/KKuTuIO/KKuTu-Game
+			li
+				a(href='https://github.com/RevelabsKR/KKuTu', target='_blank') https://github.com/RevelabsKR/KKuTu

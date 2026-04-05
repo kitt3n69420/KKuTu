@@ -103,7 +103,9 @@ exports.OPTIONS = {
 	'nsw': { name: "Noswear" },    // 욕 금지: 욕이 포함된 단어 제출 시 채팅으로 처리
 	'dod': { name: "NoDodoli" },   // 도돌이 금지: 이어지는 글자와 이을 글자가 같은 단어 금지
 	'nyh': { name: "Nyeohweok" },  // 녜힁: 어려운 한글 조합으로 랜덤 생성
-	'ctc': { name: "Catch" }       // 캐치: 그림퀴즈 전용 특수 데이터베이스 사용
+	'ctc': { name: "Catch" },      // 캐치: 그림퀴즈 전용 특수 데이터베이스 사용
+	'ord': { name: "Order" },      // 순서대로: seq 순서로 술래
+	'shf': { name: "Shuffle" }     // 공정랜덤: 셔플 후 한 명씩 술래
 
 };
 
@@ -343,7 +345,7 @@ exports.RULE = {
 	'KPQ': {
 		lang: "ko",
 		rule: "Picture",
-		opts: ["ijp", "ctc", "drg"],
+		opts: ["ijp", "ctc", "drg", "ord", "shf"],
 		time: 2,
 		ai: false,
 		big: true,
@@ -388,7 +390,7 @@ exports.RULE = {
 	'EPQ': {
 		lang: "en",
 		rule: "Picture",
-		opts: ["ijp", "drg"],
+		opts: ["ijp", "drg", "ord", "shf"],
 		time: 2,
 		ai: false,
 		big: true,
@@ -494,6 +496,15 @@ exports.RULE = {
 		ai: true,
 		big: true,
 		ewq: false
+	},
+	'EPF': {
+		lang: "en",
+		rule: "Flip",
+		opts: ["nyh", "drg"],
+		time: 1,
+		ai: true,
+		big: true,
+		ewq: false
 	}
 
 };
@@ -508,7 +519,7 @@ exports.GAME_CATEGORIES = {
 	},
 	'other': {
 		name: 'GameCategoryOther',
-		modes: ['KDA', 'EDA', 'KTY', 'ETY', 'HUN', 'KFR', 'EFR', 'KCB', 'ECB', 'CAL', 'KPF']
+		modes: ['KDA', 'EDA', 'KTY', 'ETY', 'HUN', 'KFR', 'EFR', 'KCB', 'ECB', 'CAL', 'KPF', 'EPF']
 	},
 	'etc': { //이건뭐지
 		name: 'GameCategoryEtc',
@@ -592,11 +603,11 @@ exports.MISSION_ko = ["가", "나", "다", "라", "마", "바", "사", "아", "�
 exports.MISSION_en = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
 exports.KO_INJEONG = [
-	"KRR", "KDI", "KTV", "KBS", "KHJ", "KSC", "TPW",
+	"KRR", "KDI", "KTV", "KBS", "KPT", "KHJ", "KSC", "TPW",
 	"BTC", "KOT", "DOT", "DGM", "RAG",
 	"JLN", "LVL", "LOL", "MAM", "MMM",
 	"MCJ", "JAN", "MAP", "MKK", "MNG",
-	"MOB", "BRS", "BLA", "NEX", "INC",
+	"MOB", "VAL", "BRS", "BLA", "NEX", "INC",
 	"COL", "SAO", "HRH", "STA", "OIJ",
 	"KGR", "ESB", "ELW", "KMV", "OVW",
 	"WEB", "KPO", "VOC", "JAT", "ZEL",

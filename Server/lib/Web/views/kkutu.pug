@@ -39,6 +39,7 @@ mixin SettingOption(id, text, st)
 
 block Subject
 	title= L('title')
+	meta(name='google' content='notranslate')
 
 block JS
 	script(src='https://www.google.com/recaptcha/api.js')
@@ -216,6 +217,7 @@ block Middle
 						option(value=20)= L('modeEPQ')
 						option(value=18)= L('modeEFR')
 						option(value=29)= L('modeEQZ')
+						option(value=32)= L('modeEPF')
 					optgroup(label=L('mcEtc'))
 						option(value=24)= L('modeCRL')
 						option(value=27)= L('modeCAL')
@@ -280,6 +282,7 @@ block Middle
 					option(value=18)= L('modeEFR')
 					option(value=29)= L('modeEQZ')
 					option(value=30)= L('modeESQ')
+					option(value=32)= L('modeEPF')
 				optgroup(label=L('mcEtc'))
 					option(value=24)= L('modeCRL')
 					option(value=27)= L('modeCAL')
@@ -361,7 +364,7 @@ block Middle
 		div.dialog-bar#room-simple-rules-panel(style='height: auto; display: none;')
 			h4(style='height: 30px;')= L('misc')
 			div(style='float: left; width: 300px;')
-				- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh'];
+				- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf'];
 				- for(var i in locals.OPTIONS)
 					- if(keyRules.indexOf(i) === -1) continue;
 					+GameOption(i, 'room-simple')
@@ -750,3 +753,5 @@ block Middle
 block Bottom
 	div.bottom-legal!= L('dictionarySupport')
 	div.bottom-legal!= L('etcSupport')
+	div.bottom-legal
+		a.bottom-contact(href='/legal/copyright', target='_blank')= '저작권 안내'

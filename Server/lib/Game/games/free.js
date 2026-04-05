@@ -12,7 +12,7 @@ const ROBOT_START_DELAY = [1200, 800, 400, 200, 0];
 const ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0];
 const ROBOT_THINK_COEF = [4, 2, 1, 0, 0];
 const ROBOT_HIT_LIMIT = [4, 3, 2, 1, 0];
-const ROBOT_LENGTH_LIMIT = [3, 7, 15, 31, 999];
+const ROBOT_LENGTH_LIMIT = [3, 7, 15, 31, 80];
 const ROBOT_CANDIDATE_LIMIT = [10, 20, 40, 80, 40];
 
 // Helper function to get player ID (supports both robot objects and player ID strings)

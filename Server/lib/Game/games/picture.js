@@ -43,6 +43,14 @@ var PQ_CANVAS_H = 180;
 var MAX_STROKES = 500;
 var MAX_POINTS_PER_BATCH = 200;
 
+function shuffleArray(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+}
+
 exports.init = function (_DB, _DIC) {
     DB = _DB;
     DIC = _DIC;
@@ -78,28 +86,49 @@ exports.roundReady = function () {
     }
 
     if (my.game.round <= my.round) {
-        // Select drawer: first round = random, after = previous winner
-        if (my.game.round === 1) {
-            // Random drawer for first round
-            var playerIdx = Math.floor(Math.random() * my.game.seq.length);
-            my.game.drawer = my.game.seq[playerIdx];
-        } else if (my.game.nextDrawer) {
-            my.game.drawer = my.game.nextDrawer;
-        } else {
-            // No winner - pick random player EXCLUDING previous drawer
-            var prevDrawer = my.game.drawer;
-            if (prevDrawer && prevDrawer.id) prevDrawer = prevDrawer.id;
-
-            var candidates = [];
-            for (var i = 0; i < my.game.seq.length; i++) {
-                var pid = my.game.seq[i];
-                if (pid && pid.id) pid = pid.id;
-                if (pid !== prevDrawer) candidates.push(my.game.seq[i]);
-            }
-            if (candidates.length > 0) {
-                my.game.drawer = candidates[Math.floor(Math.random() * candidates.length)];
+        // Select drawer based on active rule
+        if (my.opts.order) {
+            // 순서대로: seq 배열 순서대로 술래
+            if (my.game.round === 1) {
+                my.game.drawerIndex = 0;
             } else {
-                my.game.drawer = my.game.seq[0];
+                my.game.drawerIndex = ((my.game.drawerIndex || 0) + 1) % my.game.seq.length;
+            }
+            my.game.drawer = my.game.seq[my.game.drawerIndex];
+        } else if (my.opts.shuffle) {
+            // 공정랜덤: 셔플 큐에서 한 명씩, 소진 시 재셔플
+            if (my.game.round === 1 || !my.game.shuffleQueue) {
+                my.game.shuffleQueue = shuffleArray(my.game.seq.slice());
+                my.game.shufflePos = 0;
+            } else if (my.game.shufflePos >= my.game.shuffleQueue.length) {
+                my.game.shuffleQueue = shuffleArray(my.game.seq.slice());
+                my.game.shufflePos = 0;
+            }
+            my.game.drawer = my.game.shuffleQueue[my.game.shufflePos];
+            my.game.shufflePos++;
+        } else {
+            // 기존 동작: 첫 라운드 랜덤, 이후 정답자가 다음 술래
+            if (my.game.round === 1) {
+                var playerIdx = Math.floor(Math.random() * my.game.seq.length);
+                my.game.drawer = my.game.seq[playerIdx];
+            } else if (my.game.nextDrawer) {
+                my.game.drawer = my.game.nextDrawer;
+            } else {
+                // No winner - pick random player EXCLUDING previous drawer
+                var prevDrawer = my.game.drawer;
+                if (prevDrawer && prevDrawer.id) prevDrawer = prevDrawer.id;
+
+                var candidates = [];
+                for (var i = 0; i < my.game.seq.length; i++) {
+                    var pid = my.game.seq[i];
+                    if (pid && pid.id) pid = pid.id;
+                    if (pid !== prevDrawer) candidates.push(my.game.seq[i]);
+                }
+                if (candidates.length > 0) {
+                    my.game.drawer = candidates[Math.floor(Math.random() * candidates.length)];
+                } else {
+                    my.game.drawer = my.game.seq[0];
+                }
             }
         }
         my.game.nextDrawer = null;
@@ -517,18 +546,32 @@ exports.handlePass = function (client) {
     clearTimeout(my.game._turnStartTimer);
     clearTimeout(my.game.qTimer);
 
-    // Select new drawer (excluding current drawer)
-    var candidates = [];
-    for (var i = 0; i < my.game.seq.length; i++) {
-        var pid = my.game.seq[i];
-        if (pid && pid.id) pid = pid.id;
-        if (pid !== drawerId) candidates.push(my.game.seq[i]);
-    }
-    if (candidates.length > 0) {
-        my.game.drawer = candidates[Math.floor(Math.random() * candidates.length)];
+    // Select new drawer based on active rule
+    if (my.opts.order) {
+        // 순서대로: 다음 인덱스로 이동
+        my.game.drawerIndex = ((my.game.drawerIndex || 0) + 1) % my.game.seq.length;
+        my.game.drawer = my.game.seq[my.game.drawerIndex];
+    } else if (my.opts.shuffle) {
+        // 공정랜덤: 큐에서 다음 사람 꺼냄, 소진 시 재셔플
+        if (!my.game.shuffleQueue || my.game.shufflePos >= my.game.shuffleQueue.length) {
+            my.game.shuffleQueue = shuffleArray(my.game.seq.slice());
+            my.game.shufflePos = 0;
+        }
+        my.game.drawer = my.game.shuffleQueue[my.game.shufflePos];
+        my.game.shufflePos++;
     } else {
-        // No other candidates, keep current drawer
-        my.game.drawer = my.game.seq[0];
+        // 기존: 현재 술래 제외 랜덤
+        var candidates = [];
+        for (var i = 0; i < my.game.seq.length; i++) {
+            var pid = my.game.seq[i];
+            if (pid && pid.id) pid = pid.id;
+            if (pid !== drawerId) candidates.push(my.game.seq[i]);
+        }
+        if (candidates.length > 0) {
+            my.game.drawer = candidates[Math.floor(Math.random() * candidates.length)];
+        } else {
+            my.game.drawer = my.game.seq[0];
+        }
     }
 
     var newDrawerId = my.game.drawer;

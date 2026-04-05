@@ -1320,6 +1320,13 @@ $(document).ready(function () {
 	window.RULE_CHECKBOXES['no2'].on('change', function () {
 		if ($(this).is(':checked')) window.RULE_CHECKBOXES['noshort'].prop('checked', false);
 	});
+	// 순서대로-공정랜덤 상호배타: 그림퀴즈 술래 결정 방식
+	window.RULE_CHECKBOXES['order'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['shuffle'].prop('checked', false);
+	});
+	window.RULE_CHECKBOXES['shuffle'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['order'].prop('checked', false);
+	});
 	// 매너 그룹 상호배타: man, gen, shi, etq 중 하나만 선택 가능
 	var mannerGroup = ['manner', 'gentle', 'shield', 'etiquette'];
 	mannerGroup.forEach(function (opt) {
@@ -5832,6 +5839,7 @@ $lib.Flip.drawDisplay = function () {
 	var $cell;
 
 	var isNyh = $data.room.opts.nyeohweok;
+	var isEnFlip = MODE[$data.room.mode] === 'EPF';
 
 	for (i = 0; i < 50; i++) {
 		row = Math.floor(i / COLS);
@@ -5859,7 +5867,8 @@ $lib.Flip.drawDisplay = function () {
 				'background-color': bgColor,
 				'border': borderColor ? ('3px solid ' + borderColor) : '1px solid #999',
 				'color': (owner ? '#000' : '#FFF'),
-				'font-weight': isNyh ? 'normal' : 'bold'
+				'font-weight': (isNyh || isEnFlip) ? 'normal' : 'bold',
+				'font-size': isEnFlip ? '80%' : ''
 			})
 			.html(word)
 		);

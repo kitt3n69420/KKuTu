@@ -26,7 +26,7 @@ const ROBOT_START_DELAY = [1200, 800, 400, 200, 0];
 const ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0];
 const ROBOT_THINK_COEF = [4, 2, 1, 0, 0];
 const ROBOT_HIT_LIMIT = [4, 3, 2, 1, 0];
-const ROBOT_LENGTH_LIMIT = [3, 6, 12, 24, 999];
+const ROBOT_LENGTH_LIMIT = [3, 6, 12, 24, 80];
 const ROBOT_CANDIDATE_LIMIT = [10, 20, 40, 80, 40];
 const SPECIAL_MOVE_PROB = [0, 0, 0.1, 0.25, 0.4];
 const PERSONALITY_CONST = [0, 0, 0.5, 0.8, 0.99];
@@ -1977,7 +1977,7 @@ exports.readyRobot = function (robot) {
 					shortCol = isRev ? `end2_${state}` : `start2_${state}`;
 				} else {
 					var nextLen = getNextTurnLength.call(my);
-					var lenSuffix = (nextLen === 2) ? "2" : (nextLen === 3) ? "3" : "all";
+					var lenSuffix = (nextLen === 2) ? "2" : (nextLen === 3) ? "3" : (nextLen === 4) ? "4" : "all";
 					col = isRev ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
 				}
 			} else {
@@ -3505,7 +3505,7 @@ function getAuto(char, subc, type, limit, sort) {
 				col = isKAP ? `endall_${state}` : `startall_${state}`;
 			} else {
 				var nextLen = getNextTurnLength.call(my);
-				var lenSuffix = (nextLen === 2) ? "2" : (nextLen === 3) ? "3" : "all";
+				var lenSuffix = (nextLen === 2) ? "2" : (nextLen === 3) ? "3" : (nextLen === 4) ? "4" : "all";
 				col = isKAP ? `end${lenSuffix}_${state}` : `start${lenSuffix}_${state}`;
 			}
 		} else {

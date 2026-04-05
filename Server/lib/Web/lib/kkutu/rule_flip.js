@@ -197,6 +197,7 @@ $lib.Flip.drawDisplay = function () {
 	var $cell;
 
 	var isNyh = $data.room.opts.nyeohweok;
+	var isEnFlip = MODE[$data.room.mode] === 'EPF';
 
 	for (i = 0; i < 50; i++) {
 		row = Math.floor(i / COLS);
@@ -224,7 +225,8 @@ $lib.Flip.drawDisplay = function () {
 				'background-color': bgColor,
 				'border': borderColor ? ('3px solid ' + borderColor) : '1px solid #999',
 				'color': (owner ? '#000' : '#FFF'),
-				'font-weight': isNyh ? 'normal' : 'bold'
+				'font-weight': (isNyh || isEnFlip) ? 'normal' : 'bold',
+				'font-size': isEnFlip ? '80%' : ''
 			})
 			.html(word)
 		);

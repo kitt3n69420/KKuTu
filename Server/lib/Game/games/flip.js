@@ -55,6 +55,30 @@ function generateNyhPool(size) {
 	return pool;
 }
 
+// 영어 녜힁 모드용 알파벳+숫자 4글자 조합
+var EN_NYH_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+function generateEnNyhWord() {
+	var word = '';
+	for (var i = 0; i < 4; i++) {
+		word += EN_NYH_CHARS[Math.floor(Math.random() * EN_NYH_CHARS.length)];
+	}
+	return word;
+}
+
+function generateEnNyhPool(size) {
+	var pool = [];
+	var used = {};
+	while (pool.length < size) {
+		var word = generateEnNyhWord();
+		if (!used[word]) {
+			used[word] = true;
+			pool.push(word);
+		}
+	}
+	return pool;
+}
+
 function traverse(my, func) {
 	var i, o, item;
 
@@ -102,18 +126,22 @@ exports.init = function (_DB, _DIC) {
 exports.getTitle = function () {
 	var R = new Lizard.Tail();
 	var my = this;
+	var isEn = my.rule.lang === 'en';
 
 	my.game.round = 0;
 
 	if (my.opts.nyeohweok) {
-		// 녜힁 모드: 랜덤 한글 200개 생성 (전 라운드 재사용)
-		my.game.wordPool = generateNyhPool(POOL_SIZE);
+		// 녜힁 모드: 랜덤 단어 200개 생성 (전 라운드 재사용)
+		my.game.wordPool = isEn ? generateEnNyhPool(POOL_SIZE) : generateNyhPool(POOL_SIZE);
 		R.go("①②③④⑤⑥⑦⑧⑨⑩");
 	} else {
 		// 일반 모드: DB에서 단어 200개 조회 (전 라운드 재사용)
-		var sql = "SELECT _id FROM kkutu_ko WHERE LENGTH(_id) = 2 AND hit >= 1 AND _id NOT LIKE '% %' ORDER BY log(greatest(hit, 2)) + random() * 3 DESC LIMIT 500";
+		var table = isEn ? 'kkutu_en' : 'kkutu_ko';
+		var wordLen = isEn ? 4 : 2;
+		var filter = isEn ? "_id ~ '^[A-Za-z]+$'" : "_id NOT LIKE '% %'";
+		var sql = "SELECT _id FROM " + table + " WHERE LENGTH(_id) = " + wordLen + " AND hit >= 1 AND " + filter + " ORDER BY log(greatest(hit, 2)) + random() * 3 DESC LIMIT 500";
 
-		DB.kkutu.ko.direct(sql, function (err, res) {
+		DB.kkutu[isEn ? 'en' : 'ko'].direct(sql, function (err, res) {
 			if (err || !res || !res.rows) return;
 			var rows = shuffle(res.rows.slice());
 			my.game.wordPool = rows.slice(0, POOL_SIZE).map(function (item) { return item._id; });
@@ -238,7 +266,8 @@ exports.submit = function (client, text) {
 	if (!play) return client.chat(text);
 	if (!my.game.board) return;
 
-	if (text.length !== 2) return client.chat(text);
+	var expectedLen = (my.rule.lang === 'en') ? 4 : 2;
+	if (text.length !== expectedLen) return client.chat(text);
 
 	if (!my.game.wordMap.hasOwnProperty(text)) {
 		client.send('turnEnd', { error: true });
