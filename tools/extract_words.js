@@ -59,7 +59,7 @@ async function main() {
 
     try {
         console.log("Fetching all words from kkutu_ko...");
-        const res = await client.query("SELECT _id, type FROM kkutu_ko");
+        const res = await client.query("SELECT _id, type, theme FROM kkutu_ko");
 
         const allWords = [];
         const playableWords = [];
@@ -68,6 +68,7 @@ async function main() {
         for (const row of res.rows) {
             const word = row._id;
             const type = row.type || "";
+            const theme = row.theme || "";
 
             allWords.push(word);
 
@@ -75,10 +76,10 @@ async function main() {
                 playableWords.push(word);
             }
 
-            // Group by theme codes found in the type field
-            if (type) {
-                for (const code of type.split(',')) {
-                    if (themeNames[code] !== undefined) {
+            // Group by theme codes found in the theme column
+            if (theme) {
+                for (const code of theme.split(',').map(c => c.trim())) {
+                    if (code && themeNames[code] !== undefined) {
                         if (!themeMap[code]) themeMap[code] = new Set();
                         themeMap[code].add(word);
                     }
