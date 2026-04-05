@@ -355,6 +355,11 @@ async function updateDatabaseSimple(table, theme, words) {
         var stats = { inserted: 0, updated: 0, skipped: 0, overwritten: 0, error: 0 };
 
         for (var word of words) {
+            if (/^\d|\d$/.test(word)) {
+                console.log("    ! 오류: '" + word + "' - 숫자로 시작하거나 끝나는 단어는 추가할 수 없습니다.");
+                stats.error++;
+                continue;
+            }
             try {
                 var res = await client.query(
                     "SELECT _id, type, theme, mean FROM " + table + " WHERE _id = $1", [word]

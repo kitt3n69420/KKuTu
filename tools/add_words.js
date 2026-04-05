@@ -187,6 +187,10 @@ async function updateStatsKoForWord(client, word) {
 // 단어 추가 메인 함수
 // =============================================
 async function addWord(word, theme) {
+    if (/^\d|\d$/.test(word)) {
+        console.log('  [오류] "' + word + '" - 숫자로 시작하거나 끝나는 단어는 추가할 수 없습니다.');
+        return;
+    }
     var client;
     try {
         client = await pool.connect();

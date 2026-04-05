@@ -66,6 +66,12 @@ async function addWords(client, lang, theme, words) {
         var word = words[i].trim();
         if (!word) continue;
 
+        if (/^\d|\d$/.test(word)) {
+            result.errors.push({ word: word, error: '숫자로 시작하거나 끝나는 단어는 추가할 수 없습니다.' });
+            console.log('  ✗ 오류: ' + word + ' - 숫자로 시작하거나 끝나는 단어는 추가할 수 없습니다.');
+            continue;
+        }
+
         try {
             // 기존 단어 조회
             var res = await client.query('SELECT _id, type, theme, mean FROM ' + tableName + ' WHERE _id = $1', [word]);
