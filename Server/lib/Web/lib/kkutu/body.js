@@ -603,7 +603,21 @@ function onMessage(data) {
 			route("turnStart", data);
 			break;
 		case 'turnError':
-			turnError(data.code, data.value);
+			if ($data.room && MODE[$data.room.mode] === 'KOM') {
+				if (data.code === 'invalid_word') {
+					// 단어/음절 자체가 아님 → 채팅 알림
+					notice(L['turnError_' + data.code] || data.value || data.code);
+				} else {
+					// 위치는 맞지만 못 놓임 (cell_taken, cannot_steal, forbidden) → fail
+					playSound('fail');
+					var $omokErr = $("<div>").addClass("omok-err-flash")
+						.text((L['turnError_' + data.code] || data.code) + (data.value ? (': ' + data.value) : ''));
+					$(".jjoriping").append($omokErr);
+					addTimeout(function () { $omokErr.remove(); }, 1600);
+				}
+			} else {
+				turnError(data.code, data.value);
+			}
 			break;
 		case 'turnHint':
 			route("turnHint", data);
@@ -665,6 +679,35 @@ function onMessage(data) {
 			$data.pendingItem = null;
 			$data._resultRank = data.ranks;
 			roundEnd(data.result, data.data);
+			break;
+		// ── 단어 오목 (KOM) 전용 메시지 ──────────────────────────────────────────
+		case 'omokRoundReady':
+			$('.game-user-ko').removeClass('game-user-ko');
+			$('.survival-ko').removeClass('survival-ko');
+			$('.survival-ko-score').removeClass('survival-ko-score');
+			initItemUI();
+			$lib.Omok.roundReady(data);
+			break;
+		case 'omokTurnStart':
+			$lib.Omok.turnStart(data);
+			break;
+		case 'omokTurnEnd':
+			$lib.Omok.placeTurn(data);
+			break;
+		case 'omokBoardEnd':
+			$lib.Omok.boardEnd(data);
+			break;
+		case 'omokTimeout':
+			$lib.Omok.timeout(data);
+			break;
+		case 'omokRoundEnd':
+			// 점수 동기화 후 표준 roundEnd가 결과 화면 처리함
+			if (data.scores) {
+				for (var omokPid in data.scores) {
+					addScore(omokPid, 0, data.scores[omokPid]);
+					updateScore(omokPid, data.scores[omokPid]);
+				}
+			}
 			break;
 		case 'draw':
 			// Picture Quiz drawing sync
@@ -3415,7 +3458,7 @@ function vibrate(level) {
 function getRandomColor() {
 	return "hsl(" + Math.floor(Math.random() * 360) + ", 100%, 85%)";
 }
-function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars) {
+function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars, historyOverride) {
 	var len;
 	var mode = MODE[$data.room.mode];
 	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK";
@@ -3426,7 +3469,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 	var $l;
 	var tick = $data.turnTime / 96;
 	var sg = $data.turnTime / 12;
-	var displayText = text.replace(/</g, '〈').replace(/>/g, '〉');
+	var displayText = text.replace(/</g, '〈').replace(/&/g, '＆').replace(/>/g, '〉');
 
 	// Sumi-Sanggwan Highlight Index: Last Char for Normal, First Char for Reverse
 
@@ -3700,7 +3743,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 					.animate({ 'font-size': 20 }, tick);
 			}, i * tick * 2, i);
 		}
-		addTimeout(pushHistory, tick * 4, displayText, mean, theme, wc);
+		addTimeout(pushHistory, tick * 4, (historyOverride !== undefined ? historyOverride : displayText), mean, theme, wc);
 		if (!isKKT) playSound(kkt);
 	}, sg);
 }

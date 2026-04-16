@@ -556,6 +556,19 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 							room.game.loading = false;
 							room.game._rrt = setTimeout(function () { if (room.gaming) room.turnNext(); }, 2000);
 						}
+						// 봇은 퇴장하므로 seq에서 제거하고 turn 인덱스 보정 (버그 #1 수정)
+						room.game.seq.splice(seqIndex, 1);
+						if (room.game.seq.length > 0) {
+							if (isTurn) {
+								// 현재 턴 봇 제거: turn을 seqIndex-1로 맞춰 turnNext가 seqIndex를 가리키게 함
+								room.game.turn = (seqIndex - 1 + room.game.seq.length) % room.game.seq.length;
+							} else if (room.game.turn > seqIndex) {
+								// 현재 턴 앞의 봇 제거: 현재 턴 인덱스 보정
+								room.game.turn--;
+								if (room.game.turn < 0) room.game.turn = room.game.seq.length - 1;
+							}
+							if (room.game.turn >= room.game.seq.length) room.game.turn = 0;
+						}
 					} else {
 						// 비서바이벌 모드
 						var isTurn = room.game.turn == seqIndex;
@@ -2969,8 +2982,8 @@ exports.Room = function (room, channel) {
 			if (!o) continue;
 			if (!o.game) continue; // Fix: o.game이 없으면 스킵
 
-			// Fix: null/undefined 점수를 0으로 처리
-			var playerScore = (typeof o.game.score === 'number') ? o.game.score : 0;
+			// Fix: null/undefined/NaN 점수를 0으로 처리 (typeof NaN === 'number'이므로 isNaN도 체크)
+			var playerScore = (typeof o.game.score === 'number' && !isNaN(o.game.score)) ? o.game.score : 0;
 			sumScore += playerScore;
 
 			var actualTeam = o.robot ? o.game.team : o.team;
@@ -3076,8 +3089,10 @@ exports.Room = function (room, channel) {
 				o.onOKG(rw.playTime);
 			}
 			res[i].reward = rw;
+			if (typeof o.data.score !== 'number' || isNaN(o.data.score)) o.data.score = 0;
 			o.data.score += rw.score || 0;
 			o.money += rw.money || 0;
+			if (typeof o.data.record[Const.GAME_TYPE[my.mode]][2] !== 'number' || isNaN(o.data.record[Const.GAME_TYPE[my.mode]][2])) o.data.record[Const.GAME_TYPE[my.mode]][2] = 0;
 			o.data.record[Const.GAME_TYPE[my.mode]][2] += rw.score || 0;
 			o.data.record[Const.GAME_TYPE[my.mode]][3] += rw.playTime;
 			if (!my.practice && rw.together) {
@@ -3389,6 +3404,8 @@ exports.Room = function (room, channel) {
 	};
 	my.turnRobot = function (robot, text, data) {
 		if (!my.gaming) return;
+		// 서바이벌: DB 조회 완료 전에 KO된 봇의 stale robotTimer 방지 (버그 #6 수정)
+		if (my.opts.survival && robot && robot.game && !robot.game.alive) return;
 
 		my.submit(robot, text, data);
 		//return my.route("turnRobot", robot, text);
@@ -3485,6 +3502,14 @@ exports.Room = function (room, channel) {
 		} else {
 			// 기존 로직: 순차 진행
 			my.game.turn = my.calculateNextTurn();
+			// 서바이벌 안전망: _defaultNextTurn 루프 소진 시 dead 플레이어 반환 방지 (버그 #2 수정)
+			if (my.opts.survival) {
+				var _nextP = DIC[my.game.seq[my.game.turn]] || my.game.seq[my.game.turn];
+				if (!_nextP || !_nextP.game || !_nextP.game.alive) {
+					my.roundEnd();
+					return;
+				}
+			}
 		}
 
 		my.turnStart(force);
@@ -3697,6 +3722,11 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 		case "EPQ":
 			rw.score += score * 2.56;
 			break;
+		case "KJM":
+		case "KJA":
+			rw.score += score * 0.5;
+			break;
+
 		default:
 			rw.score += score * 1.25;
 			break;

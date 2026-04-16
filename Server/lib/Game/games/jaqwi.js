@@ -170,6 +170,8 @@ exports.submit = function (client, text) {
 	var play = (my.game.seq ? my.game.seq.includes(client.id) : false) || client.robot;
 	var gu = my.game.giveup ? my.game.giveup.includes(client.id) : false;
 
+	if (my.game.late) return;
+	if (!$ans) return;
 	if (!my.game.winner) return;
 	if (my.game.winner.indexOf(client.id) == -1
 		&& text == $ans._id

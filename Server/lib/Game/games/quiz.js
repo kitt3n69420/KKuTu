@@ -180,6 +180,8 @@ exports.turnEnd = function () {
 	var my = this;
 	var i;
 
+	if (my.game.late) return;
+
 	if (my.game.question) {
 		my.game.late = true;
 		my.byMaster('turnEnd', {
@@ -192,6 +194,7 @@ exports.turnEnd = function () {
 		clearTimeout(my.game.robots[i]._timer);
 	}
 
+	clearTimeout(my.game._rrt);
 	my.game._rrt = setTimeout(my.roundReady, 2500);
 };
 
@@ -202,6 +205,7 @@ exports.submit = function (client, text) {
 	var play = (my.game.seq ? my.game.seq.includes(client.id) : false) || client.robot;
 	var gu = my.game.giveup ? my.game.giveup.includes(client.id) : false;
 
+	if (my.game.late) return;
 	if (!my.game.winner) return;
 
 	var isCorrect = checkAnswer(text, my.game.answer, my.game.aliases, my.game.topic, my.rule.lang);

@@ -2755,3 +2755,207 @@ iframe {
 	visibility: visible;
 	transform: translateX(-50%) scale(0);
 }
+/* ─── 단어 오목 (KOM) ─────────────────────────────────────────────────────── */
+
+/* .jjoriping를 flex row로 펼쳐서 보드들을 나란히 배치 */
+.omok.cw.jjoriping {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-items: flex-start;
+	gap: 5px;
+	width: 990px;
+	overflow-x: auto;
+	overflow-y: visible;
+	margin-top: -10px;
+}
+
+/* 기존 static .jjoDisplayBar는 숨김 (JS에서도 hide() 처리) */
+.omok.cw.jjoriping > .jjoDisplayBar:not(.omok-bar) {
+	display: none !important;
+}
+
+/* 오목 전용 보드 바 */
+.omok-bar {
+	flex-shrink: 0;
+	width: 296px;
+	height: auto !important;
+	padding: 5px;
+	background: #2a2a2a;
+	border-radius: 6px;
+	position: relative;
+}
+
+.omok-bar.omok-finished {
+	opacity: 0.75;
+}
+
+/* ── 타이머 바 ── */
+.omok-timer-wrap {
+	height: 4px;
+	background: #444;
+	border-radius: 2px;
+	margin-bottom: 4px;
+	overflow: hidden;
+}
+
+.omok-timer-bar {
+	height: 100%;
+	width: 100%;
+	background: #4CAF50;
+	transition: width 0.03s linear, background-color 0.3s;
+	border-radius: 2px;
+}
+
+/* ── 보드 테이블 ── */
+.omok-board {
+	border-collapse: collapse;
+	table-layout: fixed;
+}
+
+.omok-corner {
+	width: 16px;
+	height: 16px;
+	background: #111;
+	border: 1px solid #222;
+}
+
+.omok-lbl-c,
+.omok-lbl-r {
+	background: #333;
+	color: #aaa;
+	font-size: 9px;
+	width: 17px;
+	height: 17px;
+	text-align: center;
+	padding: 0;
+	border: 1px solid #222;
+	overflow: hidden;
+}
+
+/* omok-cell은 flip-cell을 상속 (transition, flex 등) */
+.omok-cell {
+	position: static !important;   /* flip-cell의 absolute 오버라이드 */
+	width: 17px;
+	height: 17px;
+	border: 1px solid #555;
+	padding: 0;
+	font-size: 9px;
+	box-sizing: border-box;
+	border-radius: 3px;
+	box-shadow: 0 1px 1px rgba(0,0,0,0.5);
+	cursor: default;
+	vertical-align: middle;
+	text-align: center;
+}
+
+.omok-cell.omok-empty {
+	background: #B0B0B0;
+	color: #444;
+	font-size: 8px;
+}
+
+.omok-cell.omok-blue {
+	background: #1565C0;
+	color: #fff;
+	font-weight: bold;
+	border-color: #0d47a1;
+}
+
+.omok-cell.omok-white {
+	background: #f0f0f0;
+	color: #111;
+	font-weight: bold;
+	border: 2px solid #333;
+}
+
+/* ── 플레이어 표시 ── */
+.omok-players {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 4px;
+}
+
+.omok-player {
+	display: flex;
+	align-items: center;
+	gap: 3px;
+	font-size: 9px;
+	padding: 1px 4px;
+	border-radius: 3px;
+	opacity: 0.45;
+	transition: opacity 0.25s, font-weight 0.25s;
+	max-width: 48%;
+}
+
+.omok-player.omok-active {
+	opacity: 1;
+	font-weight: bold;
+}
+
+.omok-player.omok-me {
+	background: rgba(255,255,255,0.07);
+}
+
+.omok-mark {
+	flex-shrink: 0;
+}
+
+.omok-blue-p .omok-mark { color: #64b5f6; }
+.omok-white-p .omok-mark { color: #e0e0e0; }
+
+.omok-pname {
+	display: inline-block;
+	max-width: 56px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: #ccc;
+}
+
+/* ── 판 종료 오버레이 ── */
+.omok-result-overlay {
+	position: absolute;
+	top: 40%;
+	left: 0;
+	right: 0;
+	text-align: center;
+	font-size: 13px;
+	font-weight: bold;
+	color: #fff;
+	text-shadow: 0 0 5px #000;
+	background: rgba(0,0,0,0.55);
+	padding: 5px 0;
+	pointer-events: none;
+	z-index: 10;
+}
+
+/* ── 오류 플래시 ── */
+.omok-err-flash {
+	position: absolute;
+	bottom: 10px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: rgba(200,0,0,0.8);
+	color: #fff;
+	font-size: 11px;
+	padding: 3px 10px;
+	border-radius: 4px;
+	white-space: nowrap;
+	z-index: 20;
+	animation: OmokErrFade 1.6s ease forwards;
+	pointer-events: none;
+}
+
+@keyframes OmokErrFade {
+	0%   { opacity: 1; }
+	70%  { opacity: 1; }
+	100% { opacity: 0; }
+}
+
+/* .game-body 위치 — cw 기본값 유지 (omok에서 player card 표시) */
+.omok.cw.game-body {
+	top: -378px;
+	left: 660px;
+	width: 334px;
+}

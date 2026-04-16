@@ -2467,3 +2467,155 @@ body {
 	visibility: visible;
 	transform: translateX(-50%) scale(0);
 }
+/* ─── 단어 오목 (KOM) 모바일 ─────────────────────────────────────────────── */
+
+.omok.cw.jjoriping {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	width: 100%;
+	overflow-x: auto;
+	gap: 4px;
+	margin-top: 0;
+}
+
+.omok.cw.jjoriping > .jjoDisplayBar:not(.omok-bar) {
+	display: none !important;
+}
+
+.omok-bar {
+	flex-shrink: 0;
+	width: calc(100vw - 20px);
+	max-width: 320px;
+	height: auto !important;
+	padding: 4px;
+	background: #2a2a2a;
+	border-radius: 6px;
+	position: relative;
+}
+
+.omok-bar.omok-finished {
+	opacity: 0.75;
+}
+
+.omok-timer-wrap {
+	height: 4px;
+	background: #444;
+	border-radius: 2px;
+	margin-bottom: 4px;
+	overflow: hidden;
+}
+
+.omok-timer-bar {
+	height: 100%;
+	width: 100%;
+	background: #4CAF50;
+	transition: width 0.03s linear, background-color 0.3s;
+	border-radius: 2px;
+}
+
+.omok-board {
+	border-collapse: collapse;
+	table-layout: fixed;
+}
+
+.omok-corner { width: 14px; height: 14px; background: #111; border: 1px solid #222; }
+
+.omok-lbl-c,
+.omok-lbl-r {
+	background: #333;
+	color: #999;
+	font-size: 8px;
+	width: 15px;
+	height: 15px;
+	text-align: center;
+	padding: 0;
+	border: 1px solid #222;
+	overflow: hidden;
+}
+
+.omok-cell {
+	position: static !important;
+	width: 15px;
+	height: 15px;
+	border: 1px solid #555;
+	padding: 0;
+	font-size: 8px;
+	box-sizing: border-box;
+	border-radius: 2px;
+	cursor: default;
+	vertical-align: middle;
+	text-align: center;
+}
+
+.omok-cell.omok-empty  { background: #B0B0B0; color: #444; font-size: 7px; }
+.omok-cell.omok-blue   { background: #1565C0; color: #fff; font-weight: bold; }
+.omok-cell.omok-white  { background: #f0f0f0; color: #111; font-weight: bold; border: 2px solid #333; }
+
+.omok-players {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 3px;
+}
+
+.omok-player {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	font-size: 9px;
+	padding: 1px 3px;
+	border-radius: 3px;
+	opacity: 0.45;
+	transition: opacity 0.25s;
+	max-width: 48%;
+}
+
+.omok-player.omok-active { opacity: 1; font-weight: bold; }
+.omok-player.omok-me     { background: rgba(255,255,255,0.07); }
+
+.omok-blue-p .omok-mark  { color: #64b5f6; }
+.omok-white-p .omok-mark { color: #e0e0e0; }
+
+.omok-pname {
+	display: inline-block;
+	max-width: 50px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: #ccc;
+}
+
+.omok-result-overlay {
+	position: absolute;
+	top: 40%;
+	left: 0; right: 0;
+	text-align: center;
+	font-size: 13px;
+	font-weight: bold;
+	color: #fff;
+	text-shadow: 0 0 5px #000;
+	background: rgba(0,0,0,0.55);
+	padding: 5px 0;
+	pointer-events: none;
+	z-index: 10;
+}
+
+.omok-err-flash {
+	position: fixed;
+	bottom: 80px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: rgba(200,0,0,0.85);
+	color: #fff;
+	font-size: 12px;
+	padding: 4px 12px;
+	border-radius: 4px;
+	white-space: nowrap;
+	z-index: 9999;
+	animation: OmokErrFade 1.6s ease forwards;
+	pointer-events: none;
+}
+
+.omok.cw.game-body {
+	display: none;
+}
