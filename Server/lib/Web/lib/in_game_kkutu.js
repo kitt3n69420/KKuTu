@@ -2866,7 +2866,14 @@ $lib.Classic.turnEnd = function (id, data) {
 		clearTimeout($data._fail);
 		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
-		pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0, data.linkIndex, data.straightBonus > 0, data.isHanbang, data.fullHouseChars);
+		// KJM: 자모 분해 문자열을 애니메이션으로 표시, 히스토리에는 원래 단어 기록
+		if (data.jamoText) {
+			var jamoDisplay = data.jamoText.slice(0, 500);
+			var clampedLink = (typeof data.linkIndex !== 'undefined') ? Math.min(data.linkIndex, jamoDisplay.length - 1) : undefined;
+			pushDisplay(jamoDisplay, data.mean, data.theme, data.wc, data.speedToss > 0, clampedLink, data.straightBonus > 0, data.isHanbang, data.fullHouseChars, data.value);
+		} else {
+			pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0, data.linkIndex, data.straightBonus > 0, data.isHanbang, data.fullHouseChars);
+		}
 	} else {
 		checkFailCombo(id);
 		$sc.addClass("lost");
@@ -9296,7 +9303,7 @@ function vibrate(level) {
 function getRandomColor() {
 	return "hsl(" + Math.floor(Math.random() * 360) + ", 100%, 85%)";
 }
-function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars) {
+function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars, historyOverride) {
 	var len;
 	var mode = MODE[$data.room.mode];
 	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK";
@@ -9307,7 +9314,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 	var $l;
 	var tick = $data.turnTime / 96;
 	var sg = $data.turnTime / 12;
-	var displayText = text.replace(/</g, '〈').replace(/>/g, '〉');
+	var displayText = text.replace(/</g, '〈').replace(/&/g, '＆').replace(/>/g, '〉');
 
 	// Sumi-Sanggwan Highlight Index: Last Char for Normal, First Char for Reverse
 
@@ -9581,7 +9588,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 					.animate({ 'font-size': 20 }, tick);
 			}, i * tick * 2, i);
 		}
-		addTimeout(pushHistory, tick * 4, displayText, mean, theme, wc);
+		addTimeout(pushHistory, tick * 4, (historyOverride !== undefined ? historyOverride : displayText), mean, theme, wc);
 		if (!isKKT) playSound(kkt);
 	}, sg);
 }

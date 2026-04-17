@@ -505,6 +505,16 @@ exports.RULE = {
 		ai: true,
 		big: true,
 		ewq: false
+	},
+	'KJM': {
+		lang: "ko",
+		rule: "Classic",
+		opts: ["ext", "mis", "rdm", "loa", "str", "one", "ret", "spd", "drg",
+		       "bbg", "nar", "god", "rnt", "sur", "obo", "itm", "nsw"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: true
 	}
 
 };
@@ -519,7 +529,7 @@ exports.GAME_CATEGORIES = {
 	},
 	'other': {
 		name: 'GameCategoryOther',
-		modes: ['KDA', 'EDA', 'KTY', 'ETY', 'HUN', 'KFR', 'EFR', 'KCB', 'ECB', 'CAL', 'KPF', 'EPF']
+		modes: ['KDA', 'EDA', 'KTY', 'ETY', 'HUN', 'KFR', 'EFR', 'KCB', 'ECB', 'CAL', 'KPF', 'EPF', 'KJM']
 	},
 	'etc': { //이건뭐지
 		name: 'GameCategoryEtc',
@@ -601,6 +611,56 @@ exports.INIT_SOUNDS = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "
 exports.VOWEL_SOUNDS = ["ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", "ㅗ", "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"];
 exports.MISSION_ko = ["가", "나", "다", "라", "마", "바", "사", "아", "자", "차", "카", "타", "파", "하"];
 exports.MISSION_en = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
+exports.MISSION_jamo = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ','ㅏ','ㅐ','ㅓ','ㅔ','ㅗ','ㅜ','ㅡ','ㅣ','ㅑ','ㅕ','ㅛ','ㅠ'];
+
+// KJM 자모 분해 테이블 (ㅐ·ㅔ 기본 자모 도입, ㅙ=ㅗ+ㅐ, ㅞ=ㅜ+ㅔ, ㅒ=ㅑ+ㅣ, ㅖ=ㅕ+ㅣ)
+var _JAMO_INITIALS = ['ㄱ','ㄱㄱ','ㄴ','ㄷ','ㄷㄷ','ㄹ','ㅁ','ㅂ','ㅂㅂ','ㅅ','ㅅㅅ','ㅇ','ㅈ','ㅈㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+var _JAMO_MEDIALS  = ['ㅏ','ㅐ','ㅑ','ㅑㅣ','ㅓ','ㅔ','ㅕ','ㅕㅣ','ㅗ','ㅗㅏ','ㅗㅐ','ㅗㅣ','ㅛ','ㅜ','ㅜㅓ','ㅜㅔ','ㅜㅣ','ㅠ','ㅡ','ㅡㅣ','ㅣ'];
+var _JAMO_FINALS   = ['','ㄱ','ㄱㄱ','ㄱㅅ','ㄴ','ㄴㅈ','ㄴㅎ','ㄷ','ㄹ','ㄹㄱ','ㄹㅁ','ㄹㅂ','ㄹㅅ','ㄹㅌ','ㄹㅍ','ㄹㅎ','ㅁ','ㅂ','ㅂㅅ','ㅅ','ㅅㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+// 숫자 → 한국어 이름 변환표 (자모 분해 전 치환용)
+var _NUM_KO = {'0':'영','1':'일','2':'이','3':'삼','4':'사','5':'오','6':'육','7':'칠','8':'팔','9':'구'};
+
+exports.decomposeToJamo = function (text) {
+	// 숫자를 한국어 이름으로 치환 후 자모 분해 (0→영, 1→일, ..., 9→구)
+	text = text.replace(/[0-9]/g, function(d) { return _NUM_KO[d]; });
+	var result = '';
+	for (var i = 0; i < text.length; i++) {
+		var code = text.charCodeAt(i) - 0xAC00;
+		if (code < 0 || code > 11171) { result += text[i]; continue; }
+		result += _JAMO_INITIALS[Math.floor(code / 588)]
+		        + _JAMO_MEDIALS[Math.floor((code % 588) / 28)]
+		        + _JAMO_FINALS[code % 28];
+	}
+	return result;
+};
+
+// 자모 1개 → 해당 자모로 시작하는 한국어 음절 범위 RegExp 반환
+// 자음: 쌍자음 포함 초성 전체 / 모음: ㅇ 초성 + 해당 중성(복합모음 포함)
+var _JAMO_RANGES = {
+	'ㄱ':'\uAC00-\uB097', 'ㄴ':'\uB098-\uB2E3', 'ㄷ':'\uB2E4-\uB77B',
+	'ㄹ':'\uB77C-\uB9C7', 'ㅁ':'\uB9C8-\uBC13', 'ㅂ':'\uBC14-\uC0AB',
+	'ㅅ':'\uC0AC-\uC543', 'ㅇ':'\uC544-\uC78F', 'ㅈ':'\uC790-\uCC27',
+	'ㅊ':'\uCC28-\uCE73', 'ㅋ':'\uCE74-\uD0BF', 'ㅌ':'\uD0C0-\uD30B',
+	'ㅍ':'\uD30C-\uD557', 'ㅎ':'\uD558-\uD7A3',
+	// 모음 (ㅇ 초성 고정)
+	'ㅏ':'\uC544-\uC55F', 'ㅐ':'\uC560-\uC57B',
+	'ㅑ':'\uC57C-\uC5B3', 'ㅓ':'\uC5B4-\uC5CF',
+	'ㅔ':'\uC5D0-\uC5EB', 'ㅕ':'\uC5EC-\uC623',
+	'ㅗ':'\uC624-\uC693', 'ㅛ':'\uC694-\uC6AF',
+	'ㅜ':'\uC6B0-\uC71F',
+	'ㅠ':'\uC720-\uC73B', 'ㅡ':'\uC73C-\uC773',
+	'ㅣ':'\uC774-\uC78F'
+};
+exports.getJamoRegex = function (jamo) {
+	var range = _JAMO_RANGES[jamo];
+	if (!range) return /(?!)/;
+	return new RegExp('^[' + range + ']');
+};
+
+exports.getPreScoreJamo = function (text, chain, tr) {
+	var jamoLen = exports.decomposeToJamo(text || '').length;
+	return 2 * (Math.pow(5 + 7 * jamoLen, 0.74) + 1.18 * (chain || []).length) * (0.5 + 0.5 * tr);
+};
 
 exports.KO_INJEONG = [
 	"KRR", "KDI", "KTV", "KBS", "KPT", "KHJ", "KSC", "TPW",
@@ -795,10 +855,19 @@ exports.applySurvivalDamage = function (my, DIC, damage, currentTurn) {
 		var p = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
 		found = p && p.game && p.game.alive;
 	} else if (my.opts.randomturn) {
-		var nextIdx = (my.game.randomTurnIndex + 1) % my.game.randomTurnOrder.length;
-		nextTurn = my.game.randomTurnOrder[nextIdx];
-		var p = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
-		found = p && p.game && p.game.alive;
+		// 버그 #3 수정: 다음 한 칸만 보지 않고, 살아있는 플레이어가 나올 때까지 순회
+		var orderLen = my.game.randomTurnOrder.length;
+		var startIdx = (my.game.randomTurnIndex + 1) % orderLen;
+		for (var ri = 0; ri < orderLen; ri++) {
+			var candidateIdx = (startIdx + ri) % orderLen;
+			var candidateTurn = my.game.randomTurnOrder[candidateIdx];
+			var rp = DIC[my.game.seq[candidateTurn]] || my.game.seq[candidateTurn];
+			if (rp && rp.game && rp.game.alive) {
+				nextTurn = candidateTurn;
+				found = true;
+				break;
+			}
+		}
 	} else {
 		nextTurn = currentTurn;
 		for (var attempts = 0; attempts < my.game.seq.length; attempts++) {
@@ -877,6 +946,7 @@ exports.handleSurvivalTimeout = function (my, DIC, target, extraData) {
 
 	if (status.gameOver) {
 		clearTimeout(my.game.robotTimer);
+		clearTimeout(my.game._rrt); // 중복 roundEnd 방지 (버그 #4 수정)
 		my.game._rrt = setTimeout(function () {
 			my.roundEnd();
 		}, 2000);

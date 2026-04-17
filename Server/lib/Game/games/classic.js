@@ -256,8 +256,8 @@ exports.getTitle = function () {
 	EXAMPLE = Const.EXAMPLE_TITLE[l.lang];
 	my.game.dic = {};
 
-	// EKT/KKU: 타이틀을 단어가 아니라 1~10 동그라미 숫자로 표시
-	if (Const.GAME_TYPE[my.mode] === 'EKT' || Const.GAME_TYPE[my.mode] === 'KKU') {
+	// EKT/KKU/KJM: 타이틀을 단어가 아니라 1~10 동그라미 숫자로 표시
+	if (Const.GAME_TYPE[my.mode] === 'EKT' || Const.GAME_TYPE[my.mode] === 'KKU' || Const.GAME_TYPE[my.mode] === 'KJM') {
 		R.go("①②③④⑤⑥⑦⑧⑨⑩");
 		return R;
 	}
@@ -490,6 +490,10 @@ exports.roundReady = function () {
 		} else if (Const.GAME_TYPE[my.mode] === 'KKU') {
 			// KKU: 매 라운드마다 KKU_START_BIGRAMS에서 랜덤 2그램 직접 선택
 			my.game.char = Const.KKU_START_BIGRAMS[Math.floor(Math.random() * Const.KKU_START_BIGRAMS.length)];
+		} else if (Const.GAME_TYPE[my.mode] === 'KJM') {
+			// KJM: 26개 기본 자모에서 랜덤 선택
+			my.game.char = Const.MISSION_jamo[Math.floor(Math.random() * Const.MISSION_jamo.length)];
+			my.game.jamoRegex = Const.getJamoRegex(my.game.char);
 		} else {
 			my.game.char = my.game.title[my.game.round - 1];
 		}
@@ -504,7 +508,7 @@ exports.roundReady = function () {
 			my.game.isHanbang = false;
 		}
 
-		if (my.opts.mission) my.game.mission = getMission(my.rule.lang, my.opts);
+		if (my.opts.mission) my.game.mission = getMission(my.rule.lang, my.opts, Const.GAME_TYPE[my.mode]);
 		if (my.opts.sami) {
 			my.game.wordLength = 2;
 			my.game.samiCount = 0;
@@ -934,9 +938,17 @@ exports.submit = function (client, text) {
 	if (!isChainable(text, my.mode, my.game.char, my.game.subChar)) return client.chat(text);
 	text = text.replace(/\s/g, '');
 	// noLong/noShort/no2 길이 검증 (통과 못하면 채팅으로 처리)
-	if (my.opts.nolong && text.length >= 9) return client.chat(text);
-	if (my.opts.noshort && text.length <= 8) return client.chat(text);
-	if (my.opts.no2 && text.length <= 2) return client.chat(text);
+	// KJM: 자모 분해 길이 기준 적용
+	if (Const.GAME_TYPE[my.mode] === 'KJM') {
+		var _kjmJamoLen = Const.decomposeToJamo(text).length;
+		if (my.opts.nolong && _kjmJamoLen >= 9) return client.chat(text);
+		if (my.opts.noshort && _kjmJamoLen <= 8) return client.chat(text);
+		if (my.opts.no2 && _kjmJamoLen <= 2) return client.chat(text);
+	} else {
+		if (my.opts.nolong && text.length >= 9) return client.chat(text);
+		if (my.opts.noshort && text.length <= 8) return client.chat(text);
+		if (my.opts.no2 && text.length <= 2) return client.chat(text);
+	}
 
 	// Surrogate character check: reject inputs containing surrogates (e.g., emojis)
 	if (/[\uD800-\uDFFF]/.test(text)) {
@@ -1183,6 +1195,10 @@ exports.submit = function (client, text) {
 					}
 					my.game.char = preChar;
 					my.game.subChar = preSubChar;
+					// KJM: 다음 체인 자모에 맞는 regex 업데이트
+					if (Const.GAME_TYPE[my.mode] === 'KJM') {
+						my.game.jamoRegex = Const.getJamoRegex(preChar);
+					}
 					// 서버에서 linkIndex 계산하여 클라이언트에 전달 (하이라이팅 위치 일원화)
 					var linkIdx = getLinkIndex.call(my, text);
 					if (linkOverrideActive) {
@@ -1323,14 +1339,15 @@ exports.submit = function (client, text) {
 								isHanbang: isHanbang,
 								survival: true,
 								survivalDamage: survivalDamageInfo,
-								attackerHP: client.game.score
+								attackerHP: client.game.score,
+								jamoText: (gameType === 'KJM') ? Const.decomposeToJamo(text) : undefined
 							}, true);
 
 							if (status.gameOver) {
 								clearTimeout(my.game.turnTimer);
 								clearTimeout(my.game.robotTimer);
-			if (my.game._rrt) clearTimeout(my.game._rrt);
-			my.game._rrt = setTimeout(function () {
+								clearTimeout(my.game._rrt);
+								my.game._rrt = setTimeout(function () {
 									my.roundEnd();
 								}, 2000);
 								return;
@@ -1338,9 +1355,9 @@ exports.submit = function (client, text) {
 
 							// 미션 처리
 							if (my.game.mission === true) {
-								my.game.mission = getMission(my.rule.lang, my.opts);
+								my.game.mission = getMission(my.rule.lang, my.opts, gameType);
 							} else if (my.opts.rndmission) {
-								my.game.mission = getMission(my.rule.lang, my.opts);
+								my.game.mission = getMission(my.rule.lang, my.opts, gameType);
 							}
 
 							// 아이템전: 아이템 지급 판정 (서바이벌)
@@ -1352,8 +1369,8 @@ exports.submit = function (client, text) {
 							// 다음 턴으로 진행
 							clearTimeout(my.game.turnTimer);
 							clearTimeout(my.game.robotTimer);
-			if (my.game._rrt) clearTimeout(my.game._rrt);
-			my.game._rrt = setTimeout(function () {
+							clearTimeout(my.game._rrt);
+							my.game._rrt = setTimeout(function () {
 								my.turnNext();
 							}, my.game.turnTime / 6);
 
@@ -1407,6 +1424,12 @@ exports.submit = function (client, text) {
 							client.game.straightStreak = 0;
 						}
 
+						if (!client.game) {
+							client.game = { score: 0, bonus: 0, team: 0 };
+						}
+						if (typeof client.game.score !== 'number' || isNaN(client.game.score)) {
+							client.game.score = 0;
+						}
 						client.game.score += score;
 						client.publish('turnEnd', {
 							ok: true,
@@ -1423,14 +1446,15 @@ exports.submit = function (client, text) {
 							baby: $doc.baby,
 							totalScore: client.game.score,
 							linkIndex: linkIdx, // Send Link Index
-							isHanbang: isHanbang // 한방 여부 전송!
+							isHanbang: isHanbang, // 한방 여부 전송!
+							jamoText: (gameType === 'KJM') ? Const.decomposeToJamo(text) : undefined
 						}, true);
 
 						if (my.game.mission === true) {
-							my.game.mission = getMission(my.rule.lang, my.opts);
+							my.game.mission = getMission(my.rule.lang, my.opts, gameType);
 						} else if (my.opts.rndmission) {
 							// 랜덤미션: 달성하지 않아도 매 턴마다 미션 변경
-							my.game.mission = getMission(my.rule.lang, my.opts);
+							my.game.mission = getMission(my.rule.lang, my.opts, gameType);
 						}
 						// 아이템전: 아이템 지급 판정 (일반)
 						if (my.opts.item) {
@@ -1859,6 +1883,14 @@ exports.submit = function (client, text) {
 		var subChars = subChar ? subChar.split('|') : [];
 
 		if (!text) return false;
+
+		// KJM: 자모 체인 확인 (jamoRegex로 첫 글자 범위 매칭)
+		if (type === 'KJM') {
+			if (Const.decomposeToJamo(text).length <= 1) return false;
+			if (my.game.wordLength && text.length != my.game.wordLength) return false;
+			return my.game.jamoRegex ? my.game.jamoRegex.test(text) : false;
+		}
+
 		if (text.length <= l) return false;
 		if (my.game.wordLength && text.length != my.game.wordLength) return false;
 		if (type == "KAP" || type == "KAK" || type == "EAP" || type == "EAK") {
@@ -1885,14 +1917,31 @@ exports.getScore = function (text, delay, ignoreMission) {
 	var my = this;
 	var tr = 1 - delay / my.game.turnTime;
 	var score, arr;
+	var gameType = Const.GAME_TYPE[my.mode];
 
 	if (!text || !my.game.chain || !my.game.dic) return 0;
-	score = Const.getPreScore(text, my.game.chain, tr);
+	score = (gameType === 'KJM')
+		? Const.getPreScoreJamo(text, my.game.chain, tr)
+		: Const.getPreScore(text, my.game.chain, tr);
 
 	if (my.game.dic[text]) score *= 15 / (my.game.dic[text] + 15);
 	if (!ignoreMission && my.game.mission && typeof my.game.mission === "string") {
+		// KJM: 자모 분해 문자열에서 미션 자모 개수 계산
+		if (gameType === 'KJM') {
+			var jamoStr = Const.decomposeToJamo(text);
+			var missionJamo = my.game.mission;
+			var mCount = 0;
+			for (var ci = 0; ci < jamoStr.length; ci++) {
+				if (jamoStr[ci] === missionJamo) mCount++;
+			}
+			if (mCount > 0) {
+				var missionBonus = score * 0.5 * mCount;
+				if (my.opts.bbungtwigi) missionBonus *= 2;
+				score += missionBonus;
+				my.game.mission = true;
+			}
 		// 쉬운 미션 (easymission) 규칙: 초성과 중성만 일치하면 미션 달성
-		if (my.opts.easymission && my.rule.lang === "ko") {
+		} else if (my.opts.easymission && my.rule.lang === "ko") {
 			var missionChar = my.game.mission;
 			var matchCount = 0;
 
@@ -1929,7 +1978,8 @@ exports.getScore = function (text, delay, ignoreMission) {
 			}
 		}
 	}
-	return Math.round(score);
+	var result = Math.round(score);
+	return isNaN(result) ? 0 : result;
 };
 exports.readyRobot = function (robot) {
 	var my = this;
@@ -2456,7 +2506,8 @@ exports.readyRobot = function (robot) {
 					}
 					list = list.filter(function (w) {
 						if (my.game.wordLength > 0 && w._id.length !== my.game.wordLength) return false;
-						if (w._id.length < minLen || w._id.length > maxLen) return false;
+						var wLen = (Const.GAME_TYPE[my.mode] === 'KJM') ? Const.decomposeToJamo(w._id).length : w._id.length;
+						if (wLen < minLen || wLen > maxLen) return false;
 						if (robot._done.has(w._id)) return false;
 						// JS 위치 검증: getChar()로 실제 연결 글자를 구해서 preferredChar와 비교
 						if (needJSCheck) {
@@ -2491,6 +2542,12 @@ exports.readyRobot = function (robot) {
 		// KKU 모드: 별도의 간단한 봇 로직 사용
 		if (isKKU) {
 			executeKKUBot();
+			return;
+		}
+
+		// KJM 모드: 스탯 테이블 없음, ATTACK 전략 불가
+		if (Const.GAME_TYPE[my.mode] === 'KJM') {
+			executeStrategy("NORMAL");
 			return;
 		}
 
@@ -2634,7 +2691,8 @@ exports.readyRobot = function (robot) {
 				}
 				list = list.filter(function (w) {
 					if (my.game.wordLength > 0 && w._id.length !== my.game.wordLength) return false;
-					if (w._id.length < minLen || w._id.length > maxLen) return false;
+					var wLen = (Const.GAME_TYPE[my.mode] === 'KJM') ? Const.decomposeToJamo(w._id).length : w._id.length;
+					if (wLen < minLen || wLen > maxLen) return false;
 					if (robot._done.has(w._id)) return false;
 					if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
 					if (my.opts.noswear && checkSwearWords && checkSwearWords(w._id).length > 0) return false;
@@ -3318,6 +3376,9 @@ exports.readyRobot = function (robot) {
 	function after() {
 		if (my.game.late) return; // Prevent scheduling after round end
 		delay += text.length * ROBOT_TYPE_COEF[level];
+		if (Const.GAME_TYPE[my.mode] === 'KJM') {
+			delay += 30 + Math.random() * 70; // KJM: 추가 30~100ms 랜덤 딜레이
+		}
 		robot._done.add(text);
 		my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
 	}
@@ -3356,7 +3417,11 @@ exports.readyRobot = function (robot) {
 	}
 };
 
-function getMission(l, opts) {
+function getMission(l, opts, gameType) {
+	// KJM: 26개 기본 자모에서 랜덤 선택
+	if (gameType === 'KJM') {
+		return Const.MISSION_jamo[Math.floor(Math.random() * Const.MISSION_jamo.length)];
+	}
 	// 미션플러스 옵션이 활성화되고 한국어 게임모드일 때
 	if (opts && opts.missionplus && l === "ko") {
 		// 초성 배열 (ㄱ~ㅎ, 쌍자음 제외)
@@ -3480,13 +3545,18 @@ function getAuto(char, subc, type, limit, sort) {
 		case 'EAK':
 			adv = `^.{${my.game.wordLength - char.length}}(${adc})$`;
 			break;
+		case 'KJM': {
+			var kjmRange = Const.getJamoRegex(char).source.slice(1); // '[가-낗]' etc.
+			adv = '^' + kjmRange; // 길이 필터는 filterByLengthRule에서 자모 기준으로 처리
+			break;
+		}
 	}
 	if (!char) {
 	}
 
 	// type=1 (존재 여부 확인 Check): kkutu_stats table check
-	// KKU는 통계 테이블이 없으므로 DB 직접 쿼리로 fallback
-	if (bool && char && gameType !== 'KKU') {
+	// KKU/KJM은 통계 테이블이 없으므로 DB 직접 쿼리로 fallback
+	if (bool && char && gameType !== 'KKU' && gameType !== 'KJM') {
 		// Bitmask State (bit0=noInjeong, bit1=strict, bit2=noLoan, bit3=allpos)
 		var state = getMannerState(my.opts);
 
@@ -3592,20 +3662,24 @@ function getAuto(char, subc, type, limit, sort) {
 			aqs.push(['_id', Const.ENG_ID]);
 		}
 		// noLong/noShort/no2 길이 필터 함수
+		// KJM: 자모 분해 길이 기준 적용
 		function filterByLengthRule($md) {
 			if (my.opts.nolong) {
 				$md = $md.filter(function (item) {
-					return item._id && item._id.length <= 8;
+					var len = (gameType === 'KJM') ? Const.decomposeToJamo(item._id).length : item._id.length;
+					return item._id && len <= 8;
 				});
 			}
 			if (my.opts.noshort) {
 				$md = $md.filter(function (item) {
-					return item._id && item._id.length >= 9;
+					var len = (gameType === 'KJM') ? Const.decomposeToJamo(item._id).length : item._id.length;
+					return item._id && len >= 9;
 				});
 			}
 			if (my.opts.no2) {
 				$md = $md.filter(function (item) {
-					return item._id && item._id.length >= 3;
+					var len = (gameType === 'KJM') ? Const.decomposeToJamo(item._id).length : item._id.length;
+					return item._id && len >= 3;
 				});
 			}
 			return $md;
@@ -3780,6 +3854,9 @@ function getChar(text) {
 		case 'KKT':
 		case 'KSH':
 			return text.slice(-1);
+		case 'KJM':
+			// KJM: 자모 분해 후 마지막 자모 반환
+			return Const.decomposeToJamo(text).slice(-1);
 		case 'KAP':
 		case 'EAP':
 		case 'KAK':
@@ -3878,6 +3955,9 @@ function getLinkIndex(text) {
 		case 'KKT':
 		case 'KSH':
 			return len - 1;
+		case 'KJM':
+			// KJM: 자모 분해 문자열에서 마지막 자모의 인덱스
+			return Const.decomposeToJamo(text).length - 1;
 		case 'KAP':
 		case 'EAP':
 		case 'KAK':
