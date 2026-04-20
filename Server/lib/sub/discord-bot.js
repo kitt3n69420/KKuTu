@@ -19,6 +19,7 @@ const MAX_RANDOM_COUNT = 50;
 const MAX_REGEX_GROUPS = 5;
 const MAX_REGEX_QUANTIFIERS = 5;
 const VALID_WORD_CHARS = /^[0-9a-zㄱ-ㅣ가-힣]+$/;
+const DB_TIMEOUT = 8000;
 
 // State
 let client = null;
@@ -898,20 +899,27 @@ async function handleDefine(interaction) {
 }
 
 /**
+ * Wraps the DB .on() callback pattern with a timeout to prevent hanging Promises.
+ */
+function dbFindOne(table, key) {
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('DB 응답 시간 초과')), DB_TIMEOUT);
+        table.findOne(key).on(function (result) {
+            clearTimeout(timer);
+            resolve(result);
+        });
+    });
+}
+
+/**
  * Look up a word in the database (with language detection)
  */
 function lookupWord(word, lang = 'ko') {
-    return new Promise((resolve, reject) => {
-        const dbLang = lang === 'en' ? 'en' : 'ko';
-        if (!DB || !DB.kkutu || !DB.kkutu[dbLang]) {
-            reject(new Error(`데이터베이스(${dbLang})가 준비되지 않았습니다.`));
-            return;
-        }
-
-        DB.kkutu[dbLang].findOne(['_id', word]).on(function ($word) {
-            resolve($word);
-        });
-    });
+    const dbLang = lang === 'en' ? 'en' : 'ko';
+    if (!DB || !DB.kkutu || !DB.kkutu[dbLang]) {
+        return Promise.reject(new Error(`데이터베이스(${dbLang})가 준비되지 않았습니다.`));
+    }
+    return dbFindOne(DB.kkutu[dbLang], ['_id', word]);
 }
 
 /**
@@ -968,16 +976,8 @@ async function handleRecord(interaction) {
             // No argument: look up own record by Discord ID in DB
             const kkutuId = `discord-${discordUser.id}`;
 
-            userData = await new Promise((resolve, reject) => {
-                if (!DB || !DB.users) {
-                    reject(new Error('데이터베이스가 준비되지 않았습니다.'));
-                    return;
-                }
-
-                DB.users.findOne(['_id', kkutuId]).on(function ($user) {
-                    resolve($user);
-                });
-            });
+            if (!DB || !DB.users) throw new Error('데이터베이스가 준비되지 않았습니다.');
+            userData = await dbFindOne(DB.users, ['_id', kkutuId]);
 
             if (!userData) {
                 await interaction.editReply({ content: '❌ 디스코드 계정과 연동되어있지 않아요. 디스코드 계정으로 로그인을 하면 자신의 전적을 볼 수 있어요.' });
