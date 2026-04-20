@@ -470,6 +470,32 @@ exports.roundReady = function () {
 			if (_p && _p.game) delete _p.game.lastWord;
 		}
 	}
+	// 플러시/잭팟 스트릭 및 디펜스 보너스 상태 초기화 (라운드마다)
+	if (my.game.seq) {
+		var fluI, fluP;
+		for (fluI in my.game.seq) {
+			fluP = (typeof my.game.seq[fluI] === 'string') ? DIC[my.game.seq[fluI]] : my.game.seq[fluI];
+			if (fluP && fluP.game) {
+				fluP.game.flush = null;
+				fluP.game.jackpot = null;
+			}
+		}
+	}
+	my.game.pendingAttackDefense = null;
+	my.game.pendingFlushDefense = null;
+	my.game.flushDefenseState = {};
+	// 전체 사용 가능 단어 수 카운트 (공격 판정 임계값용, 0.01% 기준)
+	if (my.game.round === 1) {
+		my.game.totalWordCount = 0;
+		var tcFilter = [];
+		if (!my.opts.allpos) {
+			if (my.rule.lang === 'ko') tcFilter.push(['type', Const.KOR_GROUP]);
+			else tcFilter.push(['_id', Const.ENG_ID]);
+		}
+		DB.kkutu[my.rule.lang].count.apply(DB.kkutu[my.rule.lang], tcFilter).on(function(n) {
+			if (typeof n === 'number' && n > 0) my.game.totalWordCount = n;
+		});
+	}
 	my.game.roundTime = my.time * 1000;
 	// 라운드 시작 시 봇의 선호 글자 거부 상태 초기화
 	if (my.game.seq) {
@@ -1310,10 +1336,112 @@ exports.submit = function (client, text) {
 					});
 
 					function finalizeTurn(isHanbang) {
+						// ========== 공격/플러시/잭팟/디펜스 보너스 계산 ==========
+						var givenChar = my.game.char;
+						var givenSubChar = my.game.subChar;
+
+						// 공격 판정: 이을 수 있는 단어가 전체의 0.01% 이하
+						var isAttack = false;
+						if (typeof my.game.nextCharWordCount !== 'undefined') {
+							isAttack = (my.game.nextCharWordCount / Math.max(my.game.totalWordCount, 500000) <= 0.0001);
+						}
+						if (isAttack && my.game.seq) {
+							var nextAtkIdx = (my.game.turn + 1) % my.game.seq.length;
+							var nextAtkP = my.game.seq[nextAtkIdx];
+							my.game.pendingAttackDefense = {
+								playerId: typeof nextAtkP === 'string' ? nextAtkP : (nextAtkP && nextAtkP.id),
+								wordCount: my.game.nextCharWordCount
+							};
+						}
+
+						// 플러시 보너스 (앞말잇기·랜덤잇기 제외, 쿵쿵따/앞쿵따 포함)
+						var flushBonus = 0;
+						if (my.opts.flush && !my.opts.first && !my.opts.random) {
+							if (!client.game.flush) client.game.flush = { char: null, subChar: null, streak: 0 };
+							var f = client.game.flush;
+							var flushCharMatch = f.char && (
+								givenChar === f.char ||
+								(givenSubChar && givenSubChar === f.char) ||
+								(f.subChar && f.subChar === givenChar)
+							);
+							if (text.length <= 2) {
+								f.char = null; f.subChar = null; f.streak = 0;
+							} else if (flushCharMatch) {
+								f.streak++;
+								f.char = givenChar; f.subChar = givenSubChar;
+							} else {
+								f.char = givenChar; f.subChar = givenSubChar; f.streak = 1;
+							}
+							if (f.streak >= 3) {
+								flushBonus = Math.round(baseScoreWithoutMission * 0.20);
+								if (my.game.seq) {
+									var nextFlIdx = (my.game.turn + 1) % my.game.seq.length;
+									var nextFlP = my.game.seq[nextFlIdx];
+									my.game.pendingFlushDefense = typeof nextFlP === 'string' ? nextFlP : (nextFlP && nextFlP.id);
+								}
+							}
+						}
+
+						// 잭팟 보너스 (쿵쿵따/앞쿵따에서는 opts에 없으므로 자동 비활성)
+						var jackpotBonus = 0;
+						if (my.opts.jackpot) {
+							if (!client.game.jackpot) client.game.jackpot = { length: null, streak: 0 };
+							var jp = client.game.jackpot;
+							if (text.length >= 7 && jp.length === text.length) {
+								jp.streak++;
+							} else if (text.length >= 7) {
+								jp.length = text.length;
+								jp.streak = 1;
+							} else {
+								jp.length = null;
+								jp.streak = 0;
+							}
+							if (jp.streak >= 3) {
+								jackpotBonus = Math.round(baseScoreWithoutMission * 1.0);
+							}
+						}
+
+						// 디펜스 보너스
+						var defenseBonus = 0;
+						var defenseType = null;
+						if (my.opts.defensebonus) {
+							my.game.flushDefenseState = my.game.flushDefenseState || {};
+							// 공격 방어
+							if (my.game.pendingAttackDefense &&
+								my.game.pendingAttackDefense.playerId === client.id) {
+								var atkWC = my.game.pendingAttackDefense.wordCount;
+								var atkRatio = (my.game.totalWordCount > 0)
+									? Math.max(0, Math.min(atkWC / my.game.totalWordCount, 0.0001)) : 0;
+								defenseBonus += Math.round(baseScoreWithoutMission * (0.50 - (atkRatio / 0.0001) * 0.25));
+								defenseType = 'attack';
+								my.game.pendingAttackDefense = null;
+							}
+							// 플러시 방어
+							if (my.game.pendingFlushDefense === client.id) {
+								my.game.flushDefenseState[client.id] = (my.game.flushDefenseState[client.id] || 0) + 1;
+								var fdStreak = my.game.flushDefenseState[client.id];
+								defenseBonus += Math.round(baseScoreWithoutMission * Math.min(0.15 + (fdStreak - 1) * 0.05, 0.50));
+								defenseType = defenseType || 'flush';
+								my.game.pendingFlushDefense = null;
+							} else {
+								my.game.flushDefenseState[client.id] = 0;
+							}
+						}
+						// ====================================================
+
+						// KJM 모드: 공격/방어 효과 비활성화
+						if (gameType === 'KJM') {
+							isAttack = false;
+							defenseBonus = 0;
+							defenseType = null;
+							my.game.pendingAttackDefense = null;
+							my.game.pendingFlushDefense = null;
+						}
+
 						// ========== 서바이벌 모드: 득점 = 다음 사람 데미지 ==========
 						if (my.opts.survival) {
 							client.game.survivalSubmitted = true;
-							var damage = score;
+							var damage = score + flushBonus + jackpotBonus + defenseBonus;
 							var survivalDamageInfo = Const.applySurvivalDamage(my, DIC, damage, my.game.turn);
 
 							// 한방 단어 감지 저장
@@ -1329,7 +1457,7 @@ exports.submit = function (client, text) {
 								mean: $doc.mean,
 								theme: $doc.theme,
 								wc: $doc.type,
-								score: score,
+								score: damage,
 								bonus: missionBonus,
 								speedToss: speedTossBonus,
 								straightBonus: straightBonus,
@@ -1340,7 +1468,12 @@ exports.submit = function (client, text) {
 								survival: true,
 								survivalDamage: survivalDamageInfo,
 								attackerHP: client.game.score,
-								jamoText: (gameType === 'KJM') ? Const.decomposeToJamo(text) : undefined
+								jamoText: (gameType === 'KJM') ? Const.decomposeToJamo(text) : undefined,
+								isAttack: isAttack || undefined,
+								flushBonus: flushBonus > 0 ? flushBonus : undefined,
+								jackpotBonus: jackpotBonus > 0 ? jackpotBonus : undefined,
+								defenseBonus: defenseBonus > 0 ? defenseBonus : undefined,
+								defenseType: defenseType || undefined
 							}, true);
 
 							if (status.gameOver) {
@@ -1411,8 +1544,8 @@ exports.submit = function (client, text) {
 						}
 						client.game.lastWord = text;
 
-						// 최종 점수 = 기본 점수 + 미션 보너스 + 스피드보너스 + 스트레이트 보너스 + 풀하우스 보너스
-						score = baseScoreWithoutMission + missionBonus + speedTossBonus + straightBonus + fullHouseBonus;
+						// 최종 점수 = 기본 점수 + 미션 보너스 + 스피드보너스 + 스트레이트 보너스 + 풀하우스 보너스 + 플러시/잭팟/디펜스 보너스
+						score = baseScoreWithoutMission + missionBonus + speedTossBonus + straightBonus + fullHouseBonus + flushBonus + jackpotBonus + defenseBonus;
 
 						if (isReturn) {
 							score = 0;
@@ -1421,7 +1554,12 @@ exports.submit = function (client, text) {
 							straightBonus = 0;
 							fullHouseBonus = 0;
 							fullHouseChars = [];
+							flushBonus = 0;
+							jackpotBonus = 0;
+							defenseBonus = 0;
 							client.game.straightStreak = 0;
+							if (client.game.flush) client.game.flush = null;
+							if (client.game.jackpot) client.game.jackpot = null;
 						}
 
 						if (!client.game) {
@@ -1440,14 +1578,19 @@ exports.submit = function (client, text) {
 							score: score,
 							bonus: missionBonus,
 							speedToss: speedTossBonus,
-							straightBonus: straightBonus, // Send Straight Bonus
+							straightBonus: straightBonus,
 							fullHouseBonus: fullHouseBonus > 0 ? fullHouseBonus : undefined,
 							fullHouseChars: fullHouseChars,
 							baby: $doc.baby,
 							totalScore: client.game.score,
-							linkIndex: linkIdx, // Send Link Index
-							isHanbang: isHanbang, // 한방 여부 전송!
-							jamoText: (gameType === 'KJM') ? Const.decomposeToJamo(text) : undefined
+							linkIndex: linkIdx,
+							isHanbang: isHanbang,
+							jamoText: (gameType === 'KJM') ? Const.decomposeToJamo(text) : undefined,
+							isAttack: isAttack || undefined,
+							flushBonus: flushBonus > 0 ? flushBonus : undefined,
+							jackpotBonus: jackpotBonus > 0 ? jackpotBonus : undefined,
+							defenseBonus: defenseBonus > 0 ? defenseBonus : undefined,
+							defenseType: defenseType || undefined
 						}, true);
 
 						if (my.game.mission === true) {

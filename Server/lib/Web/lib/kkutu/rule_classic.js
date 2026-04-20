@@ -32,6 +32,8 @@ $lib.Classic.roundReady = function (data) {
 	}
 	drawRound(data.round);
 	playSound('round_start');
+	$data._nextIsDefense = false;
+	$data._nextIsFlushDefense = false;
 	recordEvent('roundReady', { data: data });
 };
 $lib.Classic.turnStart = function (data) {
@@ -91,7 +93,7 @@ $lib.Classic.turnGoing = function () {
 	if (!$stage.game.roundBar.hasClass("round-extreme")) if ($data._roundTime <= 5000) $stage.game.roundBar.addClass("round-extreme");
 };
 $lib.Classic.turnEnd = function (id, data) {
-	var baseScore = data.score - (data.bonus || 0) - (data.speedToss || 0) - (data.straightBonus || 0);
+	var baseScore = data.score - (data.bonus || 0) - (data.speedToss || 0) - (data.straightBonus || 0) - (data.flushBonus || 0) - (data.jackpotBonus || 0) - (data.defenseBonus || 0);
 	var $sc = $("<div>")
 		.addClass("deltaScore")
 		.html((data.score > 0) ? ("+" + baseScore) : data.score);
@@ -114,12 +116,15 @@ $lib.Classic.turnEnd = function (id, data) {
 		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		$stage.game.chain.html(++$data.chain);
 		// KJM: 자모 분해 문자열을 애니메이션으로 표시, 히스토리에는 원래 단어 기록
+		var isDefense = !!$data._nextIsDefense || !!$data._nextIsFlushDefense;
+		$data._nextIsDefense = !!data.isAttack;
+		$data._nextIsFlushDefense = !!(data.flushBonus);
 		if (data.jamoText) {
 			var jamoDisplay = data.jamoText.slice(0, 500);
 			var clampedLink = (typeof data.linkIndex !== 'undefined') ? Math.min(data.linkIndex, jamoDisplay.length - 1) : undefined;
-			pushDisplay(jamoDisplay, data.mean, data.theme, data.wc, data.speedToss > 0, clampedLink, data.straightBonus > 0, data.isHanbang, data.fullHouseChars, data.value);
+			pushDisplay(jamoDisplay, data.mean, data.theme, data.wc, data.speedToss > 0, clampedLink, data.straightBonus > 0, data.isHanbang, data.fullHouseChars, data.value, !!data.isAttack, isDefense, !!(data.flushBonus), !!(data.jackpotBonus));
 		} else {
-			pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0, data.linkIndex, data.straightBonus > 0, data.isHanbang, data.fullHouseChars);
+			pushDisplay(data.value, data.mean, data.theme, data.wc, data.speedToss > 0, data.linkIndex, data.straightBonus > 0, data.isHanbang, data.fullHouseChars, undefined, !!data.isAttack, isDefense, !!(data.flushBonus), !!(data.jackpotBonus));
 		}
 	} else {
 		checkFailCombo(id);
@@ -151,53 +156,62 @@ $lib.Classic.turnEnd = function (id, data) {
 	}
 	// 서바이벌 모드에서는 자신의 점수/보너스 스플래시 숨김 (데미지만 표시)
 	if (!data.survival) {
+		var nextDelay = 500;
 		if (data.bonus) {
-			mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function ($target) {
+			mobile ? $sc.html("+" + baseScore + "+" + data.bonus) : addTimeout((function ($target, d) {
 				return function () {
-					var $bc = $("<div>")
-						.addClass("deltaScore bonus")
-						.css('color', '#66FF66')
-						.html("+" + data.bonus);
-
-					drawObtainedScore($target, $bc);
+					drawObtainedScore($target, $("<div>").addClass("deltaScore bonus").css('color', BONUS_COLORS.missionRev).html("+" + data.bonus));
 				};
-			})($uc), 500);
+			})($uc, nextDelay), nextDelay);
+			nextDelay += 100;
 		}
 		if (data.speedToss) {
-			mobile ? $sc.append("+" + data.speedToss) : addTimeout((function ($target) {
+			mobile ? $sc.append("+" + data.speedToss) : addTimeout((function ($target, d) {
 				return function () {
-					var $bc = $("<div>")
-						.addClass("deltaScore sumi-sanggwan")
-						.css('color', '#00FFFF') // Cyan
-						.html("+" + data.speedToss);
-
-					drawObtainedScore($target, $bc);
+					drawObtainedScore($target, $("<div>").addClass("deltaScore sumi-sanggwan").css('color', BONUS_COLORS.sumi).html("+" + data.speedToss));
 				};
-			})($uc), 800);
+			})($uc, nextDelay), nextDelay);
+			nextDelay += 100;
 		}
 		if (data.straightBonus) {
-			mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function ($target) {
+			mobile ? $sc.append("+" + data.straightBonus) : addTimeout((function ($target, d) {
 				return function () {
-					var $bc = $("<div>")
-						.addClass("deltaScore straight-bonus")
-						.css('color', '#FFFF00') // Yellow
-						.html("+" + data.straightBonus);
-
-					drawObtainedScore($target, $bc);
+					drawObtainedScore($target, $("<div>").addClass("deltaScore straight-bonus").css('color', BONUS_COLORS.straight).html("+" + data.straightBonus));
 				};
-			})($uc), 1100);
+			})($uc, nextDelay), nextDelay);
+			nextDelay += 100;
 		}
 		if (data.fullHouseBonus) {
-			mobile ? $sc.append("+" + data.fullHouseBonus) : addTimeout((function ($target) {
+			mobile ? $sc.append("+" + data.fullHouseBonus) : addTimeout((function ($target, d) {
 				return function () {
-					var $bc = $("<div>")
-						.addClass("deltaScore full-house-bonus")
-						.css('color', '#c26eff') // Purple
-						.html("+" + data.fullHouseBonus);
-
-					drawObtainedScore($target, $bc);
+					drawObtainedScore($target, $("<div>").addClass("deltaScore full-house-bonus").css('color', BONUS_COLORS.fullhouse).html("+" + data.fullHouseBonus));
 				};
-			})($uc), 1400); // Trigger after straight bonus
+			})($uc, nextDelay), nextDelay);
+			nextDelay += 100;
+		}
+		if (data.flushBonus) {
+			mobile ? $sc.append("+" + data.flushBonus) : addTimeout((function ($target, d) {
+				return function () {
+					drawObtainedScore($target, $("<div>").addClass("deltaScore flush-bonus").css('color', BONUS_COLORS.flush).html("+" + data.flushBonus));
+				};
+			})($uc, nextDelay), nextDelay);
+			nextDelay += 100;
+		}
+		if (data.jackpotBonus) {
+			mobile ? $sc.append("+" + data.jackpotBonus) : addTimeout((function ($target, d) {
+				return function () {
+					drawObtainedScore($target, $("<div>").addClass("deltaScore jackpot-bonus").css({ 'color': BONUS_COLORS.jackpot, 'text-shadow': BONUS_COLORS.jackpotShadow }).html("+" + data.jackpotBonus));
+				};
+			})($uc, nextDelay), nextDelay);
+			nextDelay += 100;
+		}
+		if (data.defenseBonus) {
+			mobile ? $sc.append("+" + data.defenseBonus) : addTimeout((function ($target, d) {
+				return function () {
+					drawObtainedScore($target, $("<div>").addClass("deltaScore defense-bonus").css('color', BONUS_COLORS.defense).html("+" + data.defenseBonus));
+				};
+			})($uc, nextDelay), nextDelay);
+			nextDelay += 100;
 		}
 		drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	} else {

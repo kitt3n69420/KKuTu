@@ -300,6 +300,8 @@ $(document).ready(function () {
 				{ key: "kung", value: "/media/kkutu/kung.mp3" },
 				{ key: "horr", value: "/media/kkutu/horr.mp3" },
 				{ key: "KO", value: "/media/common/ko.mp3" },
+				{ key: "attack", value: "/media/common/attack.mp3" },
+				{ key: "defence", value: "/media/common/defence.mp3" },
 			];
 			for (i = 0; i <= 10; i++) $data._soundList.push(
 				{ key: "T" + i, value: "/media/kkutu/T" + i + ".mp3" },
@@ -972,7 +974,7 @@ $(document).ready(function () {
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
-		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
+		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg', 'flu', 'jkp', 'dfb'];
 
 		if (showCategory) {
 			// Categorized view - hide flat panel, show category panels
@@ -1237,7 +1239,7 @@ $(document).ready(function () {
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
-		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg'];
+		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg', 'flu', 'jkp', 'dfb'];
 
 		if (showCategory) {
 			// Categorized view - hide flat panel, show category panels
@@ -2305,6 +2307,11 @@ $(document).ready(function () {
 			$("#room-simple-middle, #room-simple-random").prop('checked', false);
 			$("#view-all-middle, #view-all-random").prop('checked', false);
 			$("#view-all-flat-middle, #view-all-flat-random").prop('checked', false);
+			$("#room-flush, #view-all-flush, #view-all-flat-flush").prop('checked', false).prop('disabled', true);
+		} else {
+			if (!$("#room-random").is(':checked')) {
+				$("#room-flush, #view-all-flush, #view-all-flat-flush").prop('disabled', false);
+			}
 		}
 	});
 
@@ -2321,12 +2328,16 @@ $(document).ready(function () {
 			$("#room-simple-second, #room-simple-speedtoss").prop('checked', false).prop('disabled', true);
 			$("#view-all-second, #view-all-speedtoss").prop('checked', false).prop('disabled', true);
 			$("#view-all-flat-second, #view-all-flat-speedtoss").prop('checked', false).prop('disabled', true);
+			$("#room-flush, #view-all-flush, #view-all-flat-flush").prop('checked', false).prop('disabled', true);
 		} else {
 			$("#room-second, #room-speedtoss").prop('disabled', false);
 			$("#room-flat-second, #room-flat-speedtoss").prop('disabled', false);
 			$("#room-simple-second, #room-simple-speedtoss").prop('disabled', false);
 			$("#view-all-second, #view-all-speedtoss").prop('disabled', false);
 			$("#view-all-flat-second, #view-all-flat-speedtoss").prop('disabled', false);
+			if (!$("#room-first").is(':checked')) {
+				$("#room-flush, #view-all-flush, #view-all-flat-flush").prop('disabled', false);
+			}
 		}
 	});
 

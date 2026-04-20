@@ -281,8 +281,8 @@ function addInterval(cb, v, a1, a2, a3, a4, a5) {
 	$data._timers.push(R);
 	return R;
 }
-function addTimeout(cb, v, a1, a2, a3, a4, a5, a6, a7, a8) {
-	var R = _setTimeout(cb, v, a1, a2, a3, a4, a5, a6, a7, a8);
+function addTimeout(cb, v, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) {
+	var R = _setTimeout(cb, v, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
 
 	$data._timers.push(R);
 	return R;
@@ -325,7 +325,7 @@ function connectToRoom(chan, rid) {
 	}) + "&" + chan + "&" + rid;
 
 	if (rws) return;
-	rws = new _WebSocket(url);
+	rws = new _WebSocket(url + "&locale=" + (localStorage.getItem('kkutu_lang') || 'ko_KR'));
 
 	loading(L['connectToRoom'] + "\n<center><button id='ctr-close'>" + L['ctrCancel'] + "</button></center>");
 	$("#ctr-close").on('click', function () {
@@ -461,6 +461,7 @@ function onMessage(data) {
 			welcome();
 			if (data.caj) checkAge();
 			updateCommunity();
+			runCommand(['/randomtip', '2']);
 			break;
 		case 'roomSync':
 			$data.rooms = data.rooms;
@@ -514,7 +515,7 @@ function onMessage(data) {
 			break;
 		case 'chat':
 			if (data.notice) {
-				notice(data.value || L[data.code] || L['error_' + data.code]);
+				notice(data.value || L[data.code] || L['error_' + data.code], data.head);
 			} else {
 				chat(data.profile || { title: L['robot'] }, data.value, data.from, data.timestamp);
 			}
@@ -990,7 +991,9 @@ function runCommand(cmd) {
 		'/차단': L['cmd_shut'],
 		'/id': L['cmd_id'],
 		'/친추': L['cmd_fa'],
-		'/사전': L['cmd_dict']
+		'/사전': L['cmd_dict'],
+		'/팁': L['cmd_tip'],
+		'/랜덤팁': L['cmd_randomtip']
 	};
 
 	switch (cmd[0].toLowerCase()) {
@@ -1099,6 +1102,36 @@ function runCommand(cmd) {
 				});
 			} else {
 				notice(L['cmd_dict']);
+			}
+			break;
+		case "/tip":
+		case "/팁":
+		case "/ㅌ":
+		
+			var _tips = L.tips || [];
+			if (_tips.length) {
+				var _tipN = Math.min(Math.max(parseInt(cmd[1]) || 1, 1), _tips.length);
+				var _tipNum = String(_tipN).padStart(2, '0');
+				var _tipTot = String(_tips.length).padStart(2, '0');
+				notice("[" + _tipNum + "/" + _tipTot + "] " + _tips[_tipN - 1], "TIP");
+			}
+			break;
+		case "/randomtip":
+		case "/랜덤팁":
+		case "/ㄹㄷㅌ":
+			var _rtips = L.tips || [];
+			if (_rtips.length) {
+				var _rCount = Math.min(Math.max(parseInt(cmd[1]) || 1, 1), _rtips.length);
+				var _rTot = String(_rtips.length).padStart(2, '0');
+				var _rIdx = _rtips.map(function (_, i) { return i; });
+				for (var _rk = _rIdx.length - 1; _rk > 0; _rk--) {
+					var _rj = Math.floor(Math.random() * (_rk + 1));
+					var _rt = _rIdx[_rk]; _rIdx[_rk] = _rIdx[_rj]; _rIdx[_rj] = _rt;
+				}
+				_rIdx.slice(0, _rCount).forEach(function (idx) {
+					var _n = String(idx + 1).padStart(2, '0');
+					notice("[" + _n + "/" + _rTot + "] " + _rtips[idx], "TIP");
+				});
 			}
 			break;
 		case "/1":
@@ -3415,7 +3448,21 @@ function vibrate(level) {
 function getRandomColor() {
 	return "hsl(" + Math.floor(Math.random() * 360) + ", 100%, 85%)";
 }
-function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars, historyOverride) {
+var BONUS_COLORS = {
+	hanbang: '#FF6666',
+	jackpot: '#000000',
+	jackpotShadow: '-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff',
+	attack: '#ff9e59',
+	flush: '#ff52cb',
+	sumi: '#00FFFF',
+	straight: '#FFFF00',
+	mission: '#00FF00',
+	missionRev: '#66FF66',
+	fullhouse: '#c26eff',
+	defense: '#647bff',
+	linking: 'rgb(146, 203, 250)'
+};
+function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars, historyOverride, isAttack, isDefense, isFlush, isJackpot) {
 	var len;
 	var mode = MODE[$data.room.mode];
 	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK";
@@ -3573,6 +3620,8 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 			var isStraightChar = isStraight && (isRev ? (charIdx === 0) : (charIdx === len - 1));
 			var isLinking = (RULE[mode].rule === "Classic") && (linkingIndices.indexOf(charIdx) !== -1);
 			var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(charIdx) !== -1;
+			var isLinkPos = isRev ? (charIdx === 0) : (charIdx === len - 1);
+			var isDefPos = isRev ? (charIdx === len - 1) : (charIdx === 0);
 
 			$stage.game.display.append($l = $("<div>")
 				.addClass("display-text")
@@ -3582,36 +3631,54 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				.html(displayText.charAt(charIdx))
 			);
 			j++;
-			addTimeout(function ($l, snd, isSumiChar, isStraightChar, isLinking, isHanbang, originalChar, isFullHouseChar) {
+			addTimeout(function ($l, snd, isSumiChar, isStraightChar, isLinking, isHanbang, originalChar, isFullHouseChar, isLinkPos, isDefPos) {
 				var anim = { 'margin-top': 0 };
 
 				playSound(snd);
-				if (isSumiChar) {
+				if (isHanbang && isLinkPos) {
+					playSound('missing');
+					$l.css({ 'color': BONUS_COLORS.hanbang });
+					anim['font-size'] = 20;
+				} else if (isJackpot && isLinkPos) {
 					playSound('mission');
-					$l.css({ 'color': "#00FFFF" }); // Cyan (Priority 1)
+					$l.css({ 'color': BONUS_COLORS.jackpot, 'text-shadow': BONUS_COLORS.jackpotShadow });
+					anim['font-size'] = 28;
+				} else if (isAttack && isLinkPos) {
+					playSound('attack');
+					$l.css({ 'color': BONUS_COLORS.attack });
+					anim['font-size'] = 28;
+				} else if (isFlush && isLinkPos) {
+					playSound('mission');
+					$l.css({ 'color': BONUS_COLORS.flush });
+					anim['font-size'] = 28;
+				} else if (isSumiChar) {
+					playSound('mission');
+					$l.css({ 'color': BONUS_COLORS.sumi });
 					anim['font-size'] = 24;
 				} else if (isStraightChar) {
 					playSound('mission');
-					$l.css({ 'color': "#FFFF00" }); // Yellow (Priority 2)
+					$l.css({ 'color': BONUS_COLORS.straight });
 					anim['font-size'] = 24;
 				} else if (originalChar == $data.mission || matchesEasyMission(originalChar, $data.mission)) {
 					playSound('mission');
-					$l.css({ 'color': "#00FF00" }); // Green (Priority 2 -> 3)
+					$l.css({ 'color': BONUS_COLORS.mission });
 					anim['font-size'] = 24;
 				} else if (isFullHouseChar) {
 					playSound('mission');
-					$l.css({ 'color': "#c26eff" }); // Purple (Priority 4)
+					$l.css({ 'color': BONUS_COLORS.fullhouse });
 					anim['font-size'] = 24;
+				} else if (isDefense && isDefPos) {
+					playSound('defence');
+					$l.css({ 'color': BONUS_COLORS.defense });
+					anim['font-size'] = 28;
 				} else if (isLinking) {
-					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
-					if (isHanbang) playSound('missing');
-					$l.css({ 'color': isHanbang ? "#FF6666" : "rgb(146, 203, 250)" });
-					anim['font-size'] = 20; // Normal size unless bonus
+					$l.css({ 'color': BONUS_COLORS.linking });
+					anim['font-size'] = 20;
 				} else {
 					anim['font-size'] = 20;
 				}
 				$l.show().animate(anim, 100);
-			}, Number(i) * tick, $l, ta, isSumiChar, isStraightChar, isLinking, isHanbang, text.charAt(charIdx), isFullHouseChar);
+			}, Number(i) * tick, $l, ta, isSumiChar, isStraightChar, isLinking, isHanbang, text.charAt(charIdx), isFullHouseChar, isLinkPos, isDefPos);
 		}
 		i = $stage.game.display.children("div").get(0);
 		$(i).css(isRev ? 'margin-right' : 'margin-left', ($stage.game.display.width() - 20 * len) * 0.5);
@@ -3621,36 +3688,41 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 			addTimeout(function (t, idx, _h, t_disp) {
 				playSound(ta);
 				var isSumiChar = isSumi && (idx === sumiIdx);
-				var isStraightChar = isStraight && (idx === 0); // Rev: Last char is idx 0 (visually first)? No inside loop text[len-i-1].
-				// In this loop: text[len-i-1]. idx is passed as len-i-1. 
-				// Rev logic: Visually First == String Index 0? 
-				// Rev: "고구마" -> "구마" -> "...구". Index 0 is "고". Back-linking.
-				// Straight: "Last Char" visually? Or "End of word"?
-				// "always highlight the last character (front-linking ... first)".
-				// Normal: Last char (Index len-1).
-				// Rev (Front-linking): First char (Index 0).
-				// So logic `isRev ? (idx === 0) : (idx === len - 1)` holds.
-
 				var isLinking = linkingIndices.indexOf(idx) !== -1;
 				var isStraightChar = isStraight && (idx === 0);
 				var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(idx) !== -1;
+				var isLinkPos = (idx === 0); // Rev: linking char = first char (string index 0)
+				var isDefPos = (idx === len - 1); // Rev: defense char = last char
 
-				if (isSumiChar) {
+				if (isHanbang && isLinkPos) {
+					playSound('missing');
+					j = "<label style='color: " + BONUS_COLORS.hanbang + ";'>" + t_disp + "</label>" + j;
+				} else if (isJackpot && isLinkPos) {
 					playSound('mission');
-					j = "<label style='color: #00FFFF;'>" + t_disp + "</label>" + j;
+					j = "<label style='color: " + BONUS_COLORS.jackpot + "; text-shadow: " + BONUS_COLORS.jackpotShadow + ";'>" + t_disp + "</label>" + j;
+				} else if (isAttack && isLinkPos) {
+					playSound('attack');
+					j = "<label style='color: " + BONUS_COLORS.attack + ";'>" + t_disp + "</label>" + j;
+				} else if (isFlush && isLinkPos) {
+					playSound('mission');
+					j = "<label style='color: " + BONUS_COLORS.flush + ";'>" + t_disp + "</label>" + j;
+				} else if (isSumiChar) {
+					playSound('mission');
+					j = "<label style='color: " + BONUS_COLORS.sumi + ";'>" + t_disp + "</label>" + j;
 				} else if (isStraightChar) {
 					playSound('mission');
-					j = "<label style='color: #FFFF00;'>" + t_disp + "</label>" + j;
+					j = "<label style='color: " + BONUS_COLORS.straight + ";'>" + t_disp + "</label>" + j;
 				} else if (t == $data.mission || matchesEasyMission(t, $data.mission)) {
 					playSound('mission');
-					j = "<label style='color: #66FF66;'>" + t_disp + "</label>" + j;
+					j = "<label style='color: " + BONUS_COLORS.missionRev + ";'>" + t_disp + "</label>" + j;
 				} else if (isFullHouseChar) {
 					playSound('mission');
-					j = "<label style='color: #c26eff;'>" + t_disp + "</label>" + j;
+					j = "<label style='color: " + BONUS_COLORS.fullhouse + ";'>" + t_disp + "</label>" + j;
+				} else if (isDefense && isDefPos) {
+					playSound('defence');
+					j = "<label style='color: " + BONUS_COLORS.defense + ";'>" + t_disp + "</label>" + j;
 				} else if (isLinking) {
-					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
-					if (isHanbang) playSound('missing');
-					j = "<label style='color: " + (isHanbang ? "#FF6666" : "rgb(146, 203, 250)") + ";'>" + t_disp + "</label>" + j;
+					j = "<label style='color: " + BONUS_COLORS.linking + ";'>" + t_disp + "</label>" + j;
 				} else {
 					j = ($data.room.opts.drg ? ("<label style='color:" + getRandomColor() + "'>" + t_disp + "</label>") : t_disp) + j;
 				}
@@ -3664,23 +3736,38 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				var isStraightChar = isStraight && (idx === len - 1); // Normal: Last char
 				var isLinking = (RULE[mode].rule === "Classic") && (linkingIndices.indexOf(idx) !== -1);
 				var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(idx) !== -1;
+				var isLinkPos = (idx === len - 1); // Normal: linking char = last char
+				var isDefPos = (idx === 0); // Normal: defense char = first char
 
-				if (isSumiChar) {
+				if (isHanbang && isLinkPos) {
+					playSound('missing');
+					j += "<label style='color: " + BONUS_COLORS.hanbang + ";'>" + t_disp + "</label>";
+				} else if (isJackpot && isLinkPos) {
 					playSound('mission');
-					j += "<label style='color: #00FFFF;'>" + t_disp + "</label>";
+					j += "<label style='color: " + BONUS_COLORS.jackpot + "; text-shadow: " + BONUS_COLORS.jackpotShadow + ";'>" + t_disp + "</label>";
+				} else if (isAttack && isLinkPos) {
+					playSound('attack');
+					j += "<label style='color: " + BONUS_COLORS.attack + ";'>" + t_disp + "</label>";
+				} else if (isFlush && isLinkPos) {
+					playSound('mission');
+					j += "<label style='color: " + BONUS_COLORS.flush + ";'>" + t_disp + "</label>";
+				} else if (isSumiChar) {
+					playSound('mission');
+					j += "<label style='color: " + BONUS_COLORS.sumi + ";'>" + t_disp + "</label>";
 				} else if (isStraightChar) {
 					playSound('mission');
-					j += "<label style='color: #FFFF00;'>" + t_disp + "</label>";
+					j += "<label style='color: " + BONUS_COLORS.straight + ";'>" + t_disp + "</label>";
 				} else if (t == $data.mission || matchesEasyMission(t, $data.mission)) {
 					playSound('mission');
-					j += "<label style='color: #66FF66;'>" + t_disp + "</label>";
+					j += "<label style='color: " + BONUS_COLORS.mission + ";'>" + t_disp + "</label>";
 				} else if (isFullHouseChar) {
 					playSound('mission');
-					j += "<label style='color: #c26eff;'>" + t_disp + "</label>";
+					j += "<label style='color: " + BONUS_COLORS.fullhouse + ";'>" + t_disp + "</label>";
+				} else if (isDefense && isDefPos) {
+					playSound('defence');
+					j += "<label style='color: " + BONUS_COLORS.defense + ";'>" + t_disp + "</label>";
 				} else if (isLinking) {
-					// 한방 글자는 빨간색으로, 일반 이을 글자는 하늘색으로
-					if (isHanbang) playSound('missing');
-					j += "<label style='color: " + (isHanbang ? "#FF6666" : "rgb(146, 203, 250)") + ";'>" + t_disp + "</label>";
+					j += "<label style='color: " + BONUS_COLORS.linking + ";'>" + t_disp + "</label>";
 				} else {
 					j += ($data.room.opts.drg ? ("<label style='color:" + getRandomColor() + "'>" + t_disp + "</label>") : t_disp);
 				}
@@ -4095,7 +4182,9 @@ function changeSoundPack(newPackName, callback) {
 			{ key: "missing", value: "/media/kkutu/missing.mp3" },
 			{ key: "mission", value: "/media/kkutu/mission.mp3" },
 			{ key: "kung", value: "/media/kkutu/kung.mp3" },
-			{ key: "horr", value: "/media/kkutu/horr.mp3" }
+			{ key: "horr", value: "/media/kkutu/horr.mp3" },
+			{ key: "attack", value: "/media/common/attack.mp3" },
+			{ key: "defence", value: "/media/common/defence.mp3" }
 		];
 		for (i = 0; i <= 10; i++) {
 			soundList.push(

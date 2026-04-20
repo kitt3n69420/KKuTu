@@ -90,6 +90,14 @@ process.on("SIGTERM", function () {
     process.exit(0);
   });
 });
+
+process.on("unhandledRejection", function (reason) {
+  var text = `:${PORT} [${new Date().toLocaleString()}] UNHANDLED REJECTION: ${reason}\n`;
+  File.appendFile("/jjolol/KKUTU_ERROR.log", text, function () {});
+  JLog.error(`Unhandled promise rejection (서버 계속 실행): ${reason}`);
+  console.error("[Unhandled Rejection]", reason);
+});
+
 function processAdmin(id, value) {
   var cmd, temp, i, j;
 

@@ -42,6 +42,22 @@ var Lizard = require("../sub/lizard");
 var MainDB = require("../Web/db");
 var JLog = require("../sub/jjlog");
 var GLOBAL = require("../sub/global.json");
+var LANG_DATA = {
+  'ko_KR': require("../Web/lang/ko_KR.json"),
+  'en_US': require("../Web/lang/en_US.json"),
+  'nya':   require("../Web/lang/nya.json")
+};
+
+function sendTip(client, langData, idx) {
+  var tips = langData.tips;
+  var num = String(idx + 1).padStart(2, '0');
+  var total = String(tips.length).padStart(2, '0');
+  client.send("chat", {
+    notice: true,
+    value: "[" + num + "/" + total + "] " + tips[idx],
+    head: "TIP"
+  });
+}
 
 var DIC = {};
 var DNAME = {};
@@ -144,6 +160,14 @@ Server.on("connection", function (socket, info) {
   var reserve = RESERVED[key] || {},
     room;
   var $c;
+  var userLang = 'ko_KR';
+  for (var ci = 2; ci < chunk.length; ci++) {
+    if (chunk[ci].indexOf('locale=') === 0) {
+      var _l = chunk[ci].slice(7);
+      if (LANG_DATA[_l]) { userLang = _l; break; }
+    }
+  }
+  var connLang = LANG_DATA[userLang];
 
   socket.on("error", function (err) {
     JLog.warn("Error on #" + key + " on ws: " + err.toString());
@@ -201,6 +225,7 @@ Server.on("connection", function (socket, info) {
         $c.refresh().then(function (ref) {
           if (ref.result == 200) {
             DIC[$c.id] = $c;
+            $c._lang = userLang;
             DNAME[($c.profile.title || $c.profile.name).replace(/\s/g, "")] = $c.id;
 
             $c.enter(room, reserve.spec, reserve.pass);
@@ -307,6 +332,25 @@ KKuTu.onClientMessage = function ($c, msg) {
           temp.submit($c, msg.value, safeData);
         }
       } else {
+        if (msg.value.charAt(0) === "/") {
+          var slashParts = msg.value.slice(1).split(/\s+/);
+          var slashCmd = slashParts[0].toLowerCase();
+          var tipLang = LANG_DATA[$c._lang] || LANG_DATA['ko_KR'];
+          var tips = tipLang.tips;
+          if (slashCmd === "tip") {
+            var tipNum = Math.min(Math.max(parseInt(slashParts[1]) || 1, 1), tips.length);
+            sendTip($c, tipLang, tipNum - 1);
+          } else if (slashCmd === "randomtip") {
+            var tipCount = Math.min(Math.max(parseInt(slashParts[1]) || 1, 1), tips.length);
+            var all = tips.map(function (_, i) { return i; });
+            for (var k = all.length - 1; k > 0; k--) {
+              var j = Math.floor(Math.random() * (k + 1));
+              var tmp = all[k]; all[k] = all[j]; all[j] = tmp;
+            }
+            all.slice(0, tipCount).forEach(function (idx) { sendTip($c, tipLang, idx); });
+          }
+          break;
+        }
         if ($c.admin) {
           if (msg.value.charAt() == "#") {
             process.send({ type: "admin", id: $c.id, value: msg.value });

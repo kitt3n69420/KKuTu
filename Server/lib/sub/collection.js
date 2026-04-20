@@ -293,6 +293,8 @@ exports.Agent = function(type, origin){
 					if(res){
 						if(mode == "findOne"){
 							if(res.rows) res = res.rows[0];
+						}else if(mode == "count"){
+							if(res.rows) res = parseInt(res.rows[0].count, 10);
 						}else if(res.rows) res = res.rows;
 					}
 					callback(err, res);
@@ -326,6 +328,10 @@ exports.Agent = function(type, origin){
 							return item[0] + ((item[1] == 1) ? ' ASC' : ' DESC');
 						}).join(','));
 						if(_my.findLimit) sql += Escape(" LIMIT %V", _my.findLimit);
+						break;
+					case "count":
+						sql = Escape("SELECT COUNT(*) FROM %I", col);
+						if(q) sql += Escape(" WHERE %s", sqlWhere(q));
 						break;
 					case "insert":
 						sql = Escape("INSERT INTO %I (%s) VALUES (%s)", col, sqlIK(q), sqlIV(q));
@@ -415,6 +421,9 @@ exports.Agent = function(type, origin){
 		};
 		my.remove = function(){
 			return new pointer("remove", query(arguments));
+		};
+		my.count = function(){
+			return new pointer("count", query(arguments));
 		};
 		my.createColumn = function(name, type){
 			return new pointer("createColumn", [ name, type ]);

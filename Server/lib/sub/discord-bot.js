@@ -29,6 +29,9 @@ let ROOM = null;
 let ADMIN = [];
 let isReady = false;
 let isEnabled = true;  // Can be disabled for test servers
+let _botToken = null;
+let _reconnectTimer = null;
+const RECONNECT_DELAY = 30000; // 30s before manual reconnect attempt
 
 /**
  * Safe wrapper for async operations
@@ -47,6 +50,27 @@ async function safeExecute(operation, context = 'Unknown') {
             console.error('[Discord Bot] ERROR: Failed to send error message:', sendErr);
         }
     }
+}
+
+function scheduleReconnect() {
+    if (_reconnectTimer || !isEnabled || !_botToken) return;
+    _reconnectTimer = setTimeout(async () => {
+        _reconnectTimer = null;
+        if (isReady) return;
+        JLog.warn('[Discord Bot] 수동 재접속 시도...');
+        try {
+            if (client) {
+                client.removeAllListeners();
+                await client.destroy().catch(() => {});
+            }
+            client = null;
+            channel = null;
+            await exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN });
+        } catch (err) {
+            JLog.error(`[Discord Bot] 재접속 실패: ${err.message}`);
+            scheduleReconnect();
+        }
+    }, RECONNECT_DELAY);
 }
 
 /**
@@ -178,6 +202,7 @@ exports.init = async function (token, db, dic, options = {}) {
         return;
     }
 
+    _botToken = token;
     DB = db;
     DIC = dic;
     ROOM = options.ROOM || null;
@@ -199,13 +224,23 @@ exports.init = async function (token, db, dic, options = {}) {
             JLog.warn(`[Discord Bot] Warning: ${msg}`);
         });
 
-        client.on('disconnect', () => {
-            JLog.warn('[Discord Bot] Disconnected, will attempt to reconnect...');
+        client.on('shardDisconnect', (event) => {
+            JLog.warn(`[Discord Bot] Disconnected (code: ${event.code}), 재접속 대기 중...`);
             isReady = false;
+            scheduleReconnect();
         });
 
-        client.on('reconnecting', () => {
+        client.on('shardReconnecting', () => {
             JLog.info('[Discord Bot] Reconnecting...');
+        });
+
+        client.on('shardResume', () => {
+            JLog.info('[Discord Bot] Connection resumed');
+            if (!isReady && client) {
+                client.channels.fetch(CHANNEL_ID).then(ch => {
+                    if (ch) { channel = ch; isReady = true; }
+                }).catch(err => JLog.error(`[Discord Bot] Failed to re-fetch channel on resume: ${err.message}`));
+            }
         });
 
         client.on('ready', async () => {
@@ -1764,21 +1799,26 @@ const SHUTDOWN_CHANNEL_ID = '1447978640913469521';
 exports.notifyShutdown = async function (err) {
     if (!client || !isReady) return;
 
-    try {
+    const reason = err
+        ? `서버에 예기치 않은 오류가 생겨서`
+        : `서버 점검으로 인해`;
+
+    let message = `<@&1463396681646215392> ${reason} 서버가 종료됩니다. 이용에 불편을 드려서 죄송합니다.`;
+
+    if (err) {
+        message += `\n\n**오류 사유:**\n\`\`\`\n${err.toString()}\n\`\`\``;
+    }
+
+    const sendOp = async () => {
         const shutdownChannel = await client.channels.fetch(SHUTDOWN_CHANNEL_ID);
-        if (!shutdownChannel) return;
+        if (shutdownChannel) await shutdownChannel.send(message);
+    };
 
-        const reason = err
-            ? `서버에 예기치 않은 오류가 생겨서`
-            : `서버 점검으로 인해`;
-
-        let message = `<@&1463396681646215392> ${reason} 서버가 종료됩니다. 이용에 불편을 드려서 죄송합니다.`;
-
-        if (err) {
-            message += `\n\n**오류 사유:**\n\`\`\`\n${err.toString()}\n\`\`\``;
-        }
-
-        await shutdownChannel.send(message);
+    try {
+        await Promise.race([
+            sendOp(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+        ]);
     } catch (e) {
         JLog.error(`[Discord Bot] Failed to send shutdown notification: ${e.message}`);
     }
