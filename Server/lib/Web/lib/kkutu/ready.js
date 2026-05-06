@@ -142,6 +142,8 @@ $(document).ready(function () {
 			kickVote: $("#KickVoteDiag"),
 			kickVoteY: $("#kick-vote-yes"),
 			kickVoteN: $("#kick-vote-no"),
+			afkWarn: $("#AfkWarnDiag"),
+			afkWarnOk: $("#afk-warn-ok"),
 			purchase: $("#PurchaseDiag"),
 			purchaseOK: $("#purchase-ok"),
 			purchaseNO: $("#purchase-no"),
@@ -436,6 +438,10 @@ $(document).ready(function () {
 		} else {
 			if ($stage.game.here.is(":visible") || $data._relay) {
 				o.relay = true;
+				var _mode = $data.room && MODE[$data.room.mode];
+				if (_mode === 'KWR' || _mode === 'EWR') {
+					o.strategy = $lib.Raingame._strategy || 0;
+				}
 			}
 			send('talk', o);
 		}
@@ -714,7 +720,8 @@ $(document).ready(function () {
 		var currentLang = pageLang || savedLang || detectedLang || "ko_KR";
 		$("#language-setting").val(currentLang);
 
-
+		// 테마 설정
+		$("#theme-setting").val(savedSettings.theme || 'blue');
 
 		showDialog($stage.dialog.setting);
 	});
@@ -754,14 +761,11 @@ $(document).ready(function () {
 	});
 
 	window.updateViewAllRulesBtn = function () {
-		var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc'];
 		var count = 0;
 		for (var i in OPTIONS) {
-			if (true || keyRules.indexOf(i) === -1) {
-				var name = OPTIONS[i].name.toLowerCase();
-				if (window.RULE_CHECKBOXES[name] && window.RULE_CHECKBOXES[name].first().is(':checked')) {
-					count++;
-				}
+			var name = OPTIONS[i].name.toLowerCase();
+			if (window.RULE_CHECKBOXES[name] && window.RULE_CHECKBOXES[name].first().is(':checked')) {
+				count++;
 			}
 		}
 		var baseText = L['viewAllRules'];
@@ -1475,6 +1479,7 @@ $(document).ready(function () {
 		var newLevelPack = $("#level-pack").val();
 		var newLobbyBGM = $("#lobby-bgm").val();
 		var newLang = $("#language-setting").val();
+		var newTheme = $("#theme-setting").val() || 'blue';
 		var savedLang = localStorage.getItem('kkutu_lang'); // 이전에 저장된 언어 확인
 
 		// 먼저 모든 설정을 저장 (언어 변경으로 리로드되더라도 설정이 보존되도록)
@@ -1508,7 +1513,8 @@ $(document).ready(function () {
 			levelPack: newLevelPack,
 			lobbyBGM: newLobbyBGM,
 			noEasterEgg: $("#no-easter-egg").is(":checked"),
-			aiAutoApply: $("#ai-auto-apply").is(":checked")
+			aiAutoApply: $("#ai-auto-apply").is(":checked"),
+			theme: newTheme
 		});
 
 		// 언어 설정 저장
@@ -1536,6 +1542,7 @@ $(document).ready(function () {
 			return; // 리로드 하니까 여기서 중단
 		}
 
+		applyTheme(newTheme);
 		$stage.dialog.setting.hide();
 
 		var updateLobbyBGM = function (bgmName, packName) {
@@ -2160,6 +2167,11 @@ $(document).ready(function () {
 		clearTimeout($data._kickTimer);
 		$stage.dialog.kickVote.hide();
 	});
+	$stage.dialog.afkWarnOk.on('click', function (e) {
+		send('afkPing', {});
+		clearTimeout($data._afkTimer);
+		$stage.dialog.afkWarn.hide();
+	});
 	$stage.dialog.purchaseOK.on('click', function (e) {
 		$.post("/buy/" + $data._sgood, function (res) {
 			var my = $data.users[$data.id];
@@ -2469,14 +2481,16 @@ $(document).ready(function () {
 	});
 
 	// 8. 서바이벌 모드 UI 변경
+	// ALWAYS_SURVIVAL_MODES is defined globally in head.js
 	function updateSurvivalUI(isSurvival) {
 		// 현재 선택된 게임 모드가 서바이벌을 지원하는지 확인
 		var currentMode = $("#room-mode").val();
 		var rule = RULE[MODE[currentMode]];
-		var supportsSurvival = rule && rule.opts && rule.opts.indexOf("sur") !== -1;
+		var isAlwaysSurvival = ALWAYS_SURVIVAL_MODES.indexOf(MODE[currentMode]) !== -1;
+		var supportsSurvival = isAlwaysSurvival || (rule && rule.opts && rule.opts.indexOf("sur") !== -1);
 
 		// 서바이벌이 활성화되었고, 해당 게임이 서바이벌을 지원하는 경우에만 HP UI 표시
-		if (isSurvival && supportsSurvival) {
+		if ((isSurvival || isAlwaysSurvival) && supportsSurvival) {
 			// 라운드 수 1로 고정하고 숨김
 			$("#room-round").val(1).prop('disabled', true).hide();
 			// HP 선택 드롭다운 표시 (라운드 위치에)

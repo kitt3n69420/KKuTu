@@ -41,21 +41,15 @@ exports.init = function (_DB, _DIC) {
 	DIC = _DIC;
 };
 
-// 주제를 공평하게 분배한 순서 배열을 만든다.
-// 주제 수 >= 라운드 수: 중복 없이 랜덤으로 라운드 수만큼 선택
-// 주제 수 < 라운드 수: 주제를 한 번씩 돌고, 남은 라운드는 1번씩 반복하다가 마지막은 랜덤
-// 결과 배열을 셔플해서 반환
 function buildThemeQueue(topics, rounds) {
 	var pool = [];
 	var remaining = rounds;
 
-	// 주제를 한 번씩 채울 수 있는 만큼 반복해서 채운다
 	while (remaining >= topics.length) {
 		for (var i = 0; i < topics.length; i++) pool.push(topics[i]);
 		remaining -= topics.length;
 	}
 
-	// 남은 라운드만큼 중복 없이 랜덤으로 추가
 	if (remaining > 0) {
 		var rest = topics.slice();
 		for (var j = 0; j < remaining; j++) {
@@ -65,7 +59,6 @@ function buildThemeQueue(topics, rounds) {
 		}
 	}
 
-	// 전체 셔플
 	for (var k = pool.length - 1; k > 0; k--) {
 		var r = Math.floor(Math.random() * (k + 1));
 		var tmp = pool[k]; pool[k] = pool[r]; pool[r] = tmp;
@@ -73,11 +66,36 @@ function buildThemeQueue(topics, rounds) {
 	return pool;
 }
 
+// triple 모드 전용: 라운드마다 needed개의 고유 주제 그룹을 미리 구성한다.
+// 셔플된 사이클을 needed 단위로 잘라 이어 붙이므로 그룹 내 중복이 없다.
+function buildThemeQueueTriple(topics, rounds) {
+	var needed = Math.min(3, topics.length);
+	var flat = [];
+	var target = rounds * needed;
+
+	while (flat.length < target) {
+		var cycle = topics.slice();
+		for (var i = cycle.length - 1; i > 0; i--) {
+			var j = Math.floor(Math.random() * (i + 1));
+			var tmp = cycle[i]; cycle[i] = cycle[j]; cycle[j] = tmp;
+		}
+		// needed의 배수만큼만 취해 그룹 경계를 맞춘다
+		var take = Math.floor(cycle.length / needed) * needed;
+		for (var k = 0; k < take && flat.length < target; k++) {
+			flat.push(cycle[k]);
+		}
+	}
+
+	return flat;
+}
+
 exports.getTitle = function () {
 	var R = new Lizard.Tail();
 	var my = this;
 
-	my.game.themeQueue = buildThemeQueue(my.opts.injpick, my.round);
+	my.game.themeQueue = my.opts.triple
+		? buildThemeQueueTriple(my.opts.injpick, my.round)
+		: buildThemeQueue(my.opts.injpick, my.round);
 	setTimeout(function () {
 		R.go("①②③④⑤⑥⑦⑧⑨⑩");
 	}, 500);
@@ -115,9 +133,10 @@ exports.roundReady = function () {
 	if (my.game.round <= my.round) {
 		if (my.opts.triple) {
 			my.game.theme = [];
-			while (my.game.theme.length < 3 && my.game.theme.length < ijl) {
-				var t = my.opts.injpick[Math.floor(Math.random() * ijl)];
-				if (my.game.theme.indexOf(t) == -1) my.game.theme.push(t);
+			var _needed = Math.min(3, ijl);
+			for (var _ti = 0; _ti < _needed; _ti++) {
+				var t = my.game.themeQueue.shift();
+				if (t !== undefined) my.game.theme.push(t);
 			}
 		} else {
 			my.game.theme = my.game.themeQueue.shift() || my.opts.injpick[Math.floor(Math.random() * ijl)];
@@ -144,6 +163,7 @@ exports.turnStart = function (force) {
 	clearTimeout(my.game.turnTimer);
 	clearTimeout(my.game.robotTimer);
 	my.game.late = false;
+	my.game.loading = false;
 	my.game.turnTime = 15000 - 1400 * speed;
 	my.game.turnAt = (new Date()).getTime();
 	my.byMaster('turnStart', {
@@ -363,6 +383,7 @@ exports.submit = function (client, text, data) {
 			function preApproved() {
 				if (my.game.late) return;
 				if (!my.game.chain) return;
+				if (getPlayerId(my.game.seq[my.game.turn]) !== getPlayerId(client)) return;
 
 				my.game.loading = false;
 				my.game.late = true;

@@ -45,7 +45,18 @@ $lib.Typing.roundReady = function (data) {
 		.html("")
 		.css({ 'text-align': "center", 'background-color': "#70712D" });
 
-	drawList();
+	var modeCode = MODE[$data.room.mode];
+	var isTopicTypingMode = (modeCode === 'KTT' || modeCode === 'ETT');
+	if (isTopicTypingMode) {
+		var themeStr = (L['theme_' + data.theme]) || data.theme || '';
+		var placeholderMark = data.hasPlaceholder ? " (!)" : "";
+		$stage.game.display.html("&lt;" + themeStr + placeholderMark + "&gt;");
+		var lv = data.long ? 2 : 5;
+		$(".jjo-turn-time .graph-bar")
+			.html($data._list.slice(0, lv).join(' '));
+	} else {
+		drawList();
+	}
 	drawRound(data.round);
 	playSound('round_start');
 	recordEvent('roundReady', { data: data });
@@ -84,6 +95,10 @@ $lib.Typing.spaceOff = function () {
 	$("body").off('keydown', "#" + $data._chatter.attr('id'), onSpace);
 };
 $lib.Typing.turnStart = function (data) {
+	var modeCode = MODE[$data.room.mode];
+	if (modeCode === 'KTT' || modeCode === 'ETT') {
+		drawList();
+	}
 	if (!$data._spectate) {
 		$data._relay = true;
 		$stage.game.here.css('opacity', 1).show();

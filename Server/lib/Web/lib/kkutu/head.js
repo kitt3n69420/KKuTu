@@ -17,6 +17,7 @@
  */
 
 var MODE;
+var ALWAYS_SURVIVAL_MODES = ['KWR', 'EWR', 'KWS', 'EWS'];
 var BEAT = [null,
 	"10000000",
 	"10001000",
@@ -111,7 +112,7 @@ var $stage;
 var $sound = {};
 var $_sound = {}; // 현재 재생 중인 것들
 var $data = {};
-var $lib = { Classic: {}, Jaqwi: {}, Crossword: {}, Typing: {}, Hunmin: {}, Daneo: {}, Sock: {}, Picture: {}, Flip: {} };
+var $lib = { Classic: {}, Jaqwi: {}, Crossword: {}, Typing: {}, Hunmin: {}, Daneo: {}, Sock: {}, Picture: {}, Flip: {}, Raingame: {} };
 var $rec;
 var mobile;
 

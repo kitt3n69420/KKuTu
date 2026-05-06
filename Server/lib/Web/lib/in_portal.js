@@ -22,6 +22,23 @@
 	var LIST;
 
 	$(document).ready(function(){
+		try {
+			var savedLang = localStorage.getItem('kkutu_lang');
+			var match = location.href.match(/[?&]locale=([^&#]+)/);
+			var urlLang = match ? match[1] : null;
+			var currentLang = urlLang || "ko_KR";
+			if (savedLang && savedLang !== currentLang) {
+				var search = location.search;
+				if (search.indexOf('locale=') >= 0) {
+					search = search.replace(/locale=[^&]+/, 'locale=' + savedLang);
+				} else {
+					search = search + (search ? '&' : '?') + 'locale=' + savedLang;
+				}
+				location.replace(location.pathname + search);
+				return;
+			}
+		} catch (e) {}
+
 		$stage = {
 			list: $("#server-list"),
 			total: $("#server-total"),

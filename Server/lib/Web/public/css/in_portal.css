@@ -25,6 +25,30 @@
 #logo{
 	margin-top: -20px;
 }
+
+body.theme-red #logo {
+	filter: hue-rotate(135deg);
+}
+
+body.theme-orange #logo {
+	filter: hue-rotate(-180deg) saturate(130%) brightness(110%);
+}
+
+body.theme-red #Background {
+	filter: hue-rotate(135deg);
+}
+
+body.theme-orange #Background {
+	filter: hue-rotate(-180deg) saturate(130%) brightness(110%);
+}
+
+body.theme-gray #logo {
+	filter: saturate(0);
+}
+
+body.theme-gray #Background {
+	filter: saturate(0);
+}
 #kkutu-bulletin{
 	border: 0px;
 	margin-bottom: 5px;

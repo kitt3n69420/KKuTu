@@ -17,6 +17,7 @@
  */
 
 var MODE;
+var ALWAYS_SURVIVAL_MODES = ['KWR', 'EWR', 'KWS', 'EWS'];
 var BEAT = [null,
 	"10000000",
 	"10001000",
@@ -111,7 +112,7 @@ var $stage;
 var $sound = {};
 var $_sound = {}; // 현재 재생 중인 것들
 var $data = {};
-var $lib = { Classic: {}, Jaqwi: {}, Crossword: {}, Typing: {}, Hunmin: {}, Daneo: {}, Sock: {}, Picture: {}, Flip: {} };
+var $lib = { Classic: {}, Jaqwi: {}, Crossword: {}, Typing: {}, Hunmin: {}, Daneo: {}, Sock: {}, Picture: {}, Flip: {}, Raingame: {} };
 var $rec;
 var mobile;
 
@@ -283,6 +284,8 @@ $(document).ready(function () {
 			kickVote: $("#KickVoteDiag"),
 			kickVoteY: $("#kick-vote-yes"),
 			kickVoteN: $("#kick-vote-no"),
+			afkWarn: $("#AfkWarnDiag"),
+			afkWarnOk: $("#afk-warn-ok"),
 			purchase: $("#PurchaseDiag"),
 			purchaseOK: $("#purchase-ok"),
 			purchaseNO: $("#purchase-no"),
@@ -577,6 +580,10 @@ $(document).ready(function () {
 		} else {
 			if ($stage.game.here.is(":visible") || $data._relay) {
 				o.relay = true;
+				var _mode = $data.room && MODE[$data.room.mode];
+				if (_mode === 'KWR' || _mode === 'EWR') {
+					o.strategy = $lib.Raingame._strategy || 0;
+				}
 			}
 			send('talk', o);
 		}
@@ -855,7 +862,8 @@ $(document).ready(function () {
 		var currentLang = pageLang || savedLang || detectedLang || "ko_KR";
 		$("#language-setting").val(currentLang);
 
-
+		// 테마 설정
+		$("#theme-setting").val(savedSettings.theme || 'blue');
 
 		showDialog($stage.dialog.setting);
 	});
@@ -895,14 +903,11 @@ $(document).ready(function () {
 	});
 
 	window.updateViewAllRulesBtn = function () {
-		var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc'];
 		var count = 0;
 		for (var i in OPTIONS) {
-			if (true || keyRules.indexOf(i) === -1) {
-				var name = OPTIONS[i].name.toLowerCase();
-				if (window.RULE_CHECKBOXES[name] && window.RULE_CHECKBOXES[name].first().is(':checked')) {
-					count++;
-				}
+			var name = OPTIONS[i].name.toLowerCase();
+			if (window.RULE_CHECKBOXES[name] && window.RULE_CHECKBOXES[name].first().is(':checked')) {
+				count++;
 			}
 		}
 		var baseText = L['viewAllRules'];
@@ -1616,6 +1621,7 @@ $(document).ready(function () {
 		var newLevelPack = $("#level-pack").val();
 		var newLobbyBGM = $("#lobby-bgm").val();
 		var newLang = $("#language-setting").val();
+		var newTheme = $("#theme-setting").val() || 'blue';
 		var savedLang = localStorage.getItem('kkutu_lang'); // 이전에 저장된 언어 확인
 
 		// 먼저 모든 설정을 저장 (언어 변경으로 리로드되더라도 설정이 보존되도록)
@@ -1649,7 +1655,8 @@ $(document).ready(function () {
 			levelPack: newLevelPack,
 			lobbyBGM: newLobbyBGM,
 			noEasterEgg: $("#no-easter-egg").is(":checked"),
-			aiAutoApply: $("#ai-auto-apply").is(":checked")
+			aiAutoApply: $("#ai-auto-apply").is(":checked"),
+			theme: newTheme
 		});
 
 		// 언어 설정 저장
@@ -1677,6 +1684,7 @@ $(document).ready(function () {
 			return; // 리로드 하니까 여기서 중단
 		}
 
+		applyTheme(newTheme);
 		$stage.dialog.setting.hide();
 
 		var updateLobbyBGM = function (bgmName, packName) {
@@ -2301,6 +2309,11 @@ $(document).ready(function () {
 		clearTimeout($data._kickTimer);
 		$stage.dialog.kickVote.hide();
 	});
+	$stage.dialog.afkWarnOk.on('click', function (e) {
+		send('afkPing', {});
+		clearTimeout($data._afkTimer);
+		$stage.dialog.afkWarn.hide();
+	});
 	$stage.dialog.purchaseOK.on('click', function (e) {
 		$.post("/buy/" + $data._sgood, function (res) {
 			var my = $data.users[$data.id];
@@ -2610,14 +2623,16 @@ $(document).ready(function () {
 	});
 
 	// 8. 서바이벌 모드 UI 변경
+	// ALWAYS_SURVIVAL_MODES is defined globally in head.js
 	function updateSurvivalUI(isSurvival) {
 		// 현재 선택된 게임 모드가 서바이벌을 지원하는지 확인
 		var currentMode = $("#room-mode").val();
 		var rule = RULE[MODE[currentMode]];
-		var supportsSurvival = rule && rule.opts && rule.opts.indexOf("sur") !== -1;
+		var isAlwaysSurvival = ALWAYS_SURVIVAL_MODES.indexOf(MODE[currentMode]) !== -1;
+		var supportsSurvival = isAlwaysSurvival || (rule && rule.opts && rule.opts.indexOf("sur") !== -1);
 
 		// 서바이벌이 활성화되었고, 해당 게임이 서바이벌을 지원하는 경우에만 HP UI 표시
-		if (isSurvival && supportsSurvival) {
+		if ((isSurvival || isAlwaysSurvival) && supportsSurvival) {
 			// 라운드 수 1로 고정하고 숨김
 			$("#room-round").val(1).prop('disabled', true).hide();
 			// HP 선택 드롭다운 표시 (라운드 위치에)
@@ -3286,7 +3301,18 @@ $lib.Typing.roundReady = function (data) {
 		.html("")
 		.css({ 'text-align': "center", 'background-color': "#70712D" });
 
-	drawList();
+	var modeCode = MODE[$data.room.mode];
+	var isTopicTypingMode = (modeCode === 'KTT' || modeCode === 'ETT');
+	if (isTopicTypingMode) {
+		var themeStr = (L['theme_' + data.theme]) || data.theme || '';
+		var placeholderMark = data.hasPlaceholder ? " (!)" : "";
+		$stage.game.display.html("&lt;" + themeStr + placeholderMark + "&gt;");
+		var lv = data.long ? 2 : 5;
+		$(".jjo-turn-time .graph-bar")
+			.html($data._list.slice(0, lv).join(' '));
+	} else {
+		drawList();
+	}
 	drawRound(data.round);
 	playSound('round_start');
 	recordEvent('roundReady', { data: data });
@@ -3325,6 +3351,10 @@ $lib.Typing.spaceOff = function () {
 	$("body").off('keydown', "#" + $data._chatter.attr('id'), onSpace);
 };
 $lib.Typing.turnStart = function (data) {
+	var modeCode = MODE[$data.room.mode];
+	if (modeCode === 'KTT' || modeCode === 'ETT') {
+		drawList();
+	}
 	if (!$data._spectate) {
 		$data._relay = true;
 		$stage.game.here.css('opacity', 1).show();
@@ -3729,9 +3759,18 @@ $lib.Free.roundReady = function (data) {
     clearBoard();
     $data._roundTime = $data.room.time * 1000;
 
-    // Display "Free Mode" or similar. 
-    // Since there is no specific theme, maybe just "아무거나" (Anything)
-    var tStr = "&lt;" + (L && L['anything'] ? L['anything'] : "아무거나") + "&gt;";
+    var modeCode = MODE[$data.room.mode];
+    var isTopicFreeMode = (modeCode === 'KTF' || modeCode === 'ETF');
+    var tStr;
+    if (isTopicFreeMode && $data.room.opts.injpick && $data.room.opts.injpick.length) {
+        var allPicks = $data.room.opts.injpick;
+        var picks = allPicks.slice(0, 3);
+        var names = picks.map(function (t) { return (L && L['theme_' + t]) || t; });
+        var suffix = allPicks.length >= 4 ? ', ...' : '';
+        tStr = "&lt;" + names.join(', ') + suffix + "&gt;";
+    } else {
+        tStr = "&lt;" + (L && L['anything'] ? L['anything'] : "아무거나") + "&gt;";
+    }
     if ($data.room.opts.drg) tStr = "<label style='color:" + getRandomColor() + "'>" + tStr + "</label>";
     $stage.game.display.html($data._char = tStr);
 
@@ -4490,7 +4529,7 @@ $lib.Picture.drawDisplay = function () {
         $header.append($("<div>").css({
             'color': ($data.room.opts.drg ? getRandomColor() : '#FFFFFF'),
             'font-size': '14px', 'font-weight': 'bold', 'text-shadow': '1px 1px 1px #000'
-        }).html($data._pqAnswer.length + (L['pqChars'] || "글자")));
+        }).html($data._pqAnswer.replace(/\s/g, '').length + (L['pqChars'] || "글자")));
     }
     $main.append($header);
 
@@ -5914,6 +5953,534 @@ $lib.Flip.turnHint = function (data) {
 /**
  * Rule the words! KKuTu Online
  * Copyright (C) 2017 JJoriping(op@jjo.kr)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+$lib.Raingame._LANES    = [12.5, 25, 37.5, 50, 62.5, 75, 87.5];
+$lib.Raingame._laneAt   = [0, 0, 0, 0, 0, 0, 0];
+$lib.Raingame._lastLane = -1;
+$lib.Raingame._words    = {};
+$lib.Raingame._strategy = 0;
+
+$lib.Raingame._pickLane = function () {
+	var now = Date.now();
+	var lanes = $lib.Raingame._laneAt;
+	var last = $lib.Raingame._lastLane;
+	var n = lanes.length;
+	var i, idx, pool;
+
+	function isAdj(j) { return last >= 0 && Math.abs(j - last) <= 1; }
+
+	// pass 1: cooled-down AND non-adjacent
+	pool = [];
+	for (i = 0; i < n; i++) {
+		if (!isAdj(i) && now - lanes[i] >= 1000) pool.push(i);
+	}
+	if (pool.length > 0) {
+		idx = pool[Math.floor(Math.random() * pool.length)];
+		lanes[idx] = now; $lib.Raingame._lastLane = idx; return idx;
+	}
+
+	// pass 2: non-adjacent only (ignore cooldown)
+	pool = [];
+	for (i = 0; i < n; i++) {
+		if (!isAdj(i)) pool.push(i);
+	}
+	if (pool.length > 0) {
+		idx = pool[Math.floor(Math.random() * pool.length)];
+		lanes[idx] = now; $lib.Raingame._lastLane = idx; return idx;
+	}
+
+	// pass 3: any lane — pick oldest
+	idx = 0;
+	for (i = 1; i < n; i++) {
+		if (lanes[i] < lanes[idx]) idx = i;
+	}
+	lanes[idx] = now; $lib.Raingame._lastLane = idx; return idx;
+};
+
+$lib.Raingame._updateStrategyUI = function () {
+	var s = $lib.Raingame._strategy;
+	$(".raingame-strategy-btn").each(function () {
+		var v = parseInt($(this).attr("data-strategy"), 10);
+		$(this).toggleClass("toggled", v === s);
+	});
+};
+
+$lib.Raingame._showDamage = function (targetId, damage, newHP) {
+	var $uc = $("#game-user-" + targetId);
+	if (!$uc.length) return;
+
+	var user = $data.users[targetId] || $data.robots[targetId];
+	if (user && user.game) user.game.score = newHP;
+
+	$uc.addClass("survival-damage");
+	addTimeout(function () { $uc.removeClass("survival-damage"); }, 500);
+
+	var $sc = $("<div>").addClass("deltaScore damage").css("color", "#FF6666").text("-" + damage);
+	drawObtainedScore($uc, $sc);
+	updateScore(targetId, newHP);
+};
+
+$lib.Raingame.roundReady = function (data, spec) {
+	clearBoard();
+	$data._relay = true;
+	$data._fastTime = 20000;
+	$(".jjoriping,.rounds,.game-body").addClass("cw");
+	$(".jjoriping").addClass("flip");
+	$stage.game.items.hide();
+	$stage.game.bb.hide();
+	$stage.game.cwcmd.hide();
+	if (mobile) $stage.game.here.css({ opacity: 0.3, top: "-35px" }).show();
+	else $stage.game.here.hide();
+
+	$lib.Raingame._words = {};
+	$lib.Raingame._laneAt = [0, 0, 0, 0, 0, 0, 0];
+	$lib.Raingame._lastLane = -1;
+	$lib.Raingame._strategy = 0;
+
+	$stage.game.display.empty().addClass("raingame-board");
+	$("#raingame-strategy").show().find(".raingame-strategy-btn").show();
+	$lib.Raingame._updateStrategyUI();
+
+	// 초기 HP 표시
+	if (data.surHP && $data.room && $data.room.game && $data.room.game.seq) {
+		var seq = $data.room.game.seq;
+		for (var i = 0; i < seq.length; i++) {
+			var uid = typeof seq[i] === 'string' ? seq[i] : seq[i].id;
+			var u = $data.users[uid] || $data.robots[uid];
+			if (u) { if (!u.game) u.game = {}; u.game.score = data.surHP; u.game.alive = true; }
+			updateScore(uid, data.surHP);
+		}
+	}
+
+	drawRound(data.round);
+	if (!spec) playSound("round_start");
+	clearInterval($data._tTime);
+};
+
+$lib.Raingame.turnStart = function (data) {
+	clearInterval($data._tTime);
+	$data._roundTime = data.roundTime;
+	$data._tTime = addInterval(turnGoing, TICK);
+	playBGM("jaqwi");
+};
+
+$lib.Raingame.onWord = function (data) {
+	var lane = $lib.Raingame._pickLane();
+	var laneX = $lib.Raingame._LANES[lane];
+	var word = data.word;
+	var timeout = data.timeout;
+	var wordId = data.wordId;
+
+	if ($data.room && $data.room.opts && $data.room.opts.mirror) {
+		word = word.split("").reverse().join("");
+	}
+
+	var $word = $("<div>")
+		.addClass("raingame-word")
+		.css({ left: laneX + "%", top: "-5%" })
+		.text(word);
+
+	$stage.game.display.append($word);
+
+	// delay 1 frame so the initial position is painted before transition starts
+	addTimeout(function () {
+		$word.css({
+			transition: "top " + timeout + "ms linear",
+			top: "105%"
+		});
+	}, 20);
+
+	// 하단 도달 시 DOM 자동 정리
+	(function (wId) {
+		$word.on("transitionend", function (e) {
+			if (e.originalEvent.propertyName === "top") {
+				$word.remove();
+				delete $lib.Raingame._words[wId];
+			}
+		});
+	})(wordId);
+
+	if ($data.room && $data.room.opts && $data.room.opts.nyeohweok) {
+		$word.css('font-weight', 'normal');
+	}
+	playSound("mission");
+	$lib.Raingame._words[wordId] = { $el: $word, createdAt: Date.now(), timeout: timeout };
+};
+
+$lib.Raingame.turnEnd = function (id, data) {
+	var wObj, $el;
+
+	if (data.error) {
+		playSound("fail");
+		return;
+	}
+
+	// round over (time expired)
+	if (data.timeUp) {
+		$data._relay = false;
+		clearInterval($data._tTime);
+		stopBGM();
+		playSound("horr");
+		// clear all falling words
+		$stage.game.display.empty();
+		$lib.Raingame._words = {};
+		$("#raingame-strategy").hide();
+		return;
+	}
+
+	// word timed out (server 스캔 감지)
+	if (!data.ok && data.wordId !== undefined) {
+		// 내 화면에서만 해당 단어 제거 (wordId가 플레이어별로 독립적이므로 target 확인)
+		if (data.target === $data.id) {
+			wObj = $lib.Raingame._words[data.wordId];
+			if (wObj) {
+				wObj.$el.remove();
+				delete $lib.Raingame._words[data.wordId];
+			}
+			playSound("fail");
+		}
+		if (data.damage !== undefined && data.hp !== undefined) {
+			$lib.Raingame._showDamage(data.target, data.damage, data.hp);
+		}
+		if (data.ko) {
+			applySurvivalKODisplay(data.target);
+			var koUser = $data.users[data.target] || $data.robots[data.target];
+			if (koUser && koUser.game) koUser.game.alive = false;
+			playSound("KO");
+		}
+		return;
+	}
+
+	// word typed successfully
+	if (data.ok && data.wordId !== undefined) {
+		// 단어를 입력한 플레이어의 화면에서만 제거
+		if (data.target === $data.id) {
+			wObj = $lib.Raingame._words[data.wordId];
+			if (wObj) {
+				$el = wObj.$el;
+				$el.addClass("raingame-success");
+				(function (wId, $e) {
+					addTimeout(function () {
+						$e.remove();
+						delete $lib.Raingame._words[wId];
+					}, 300);
+				})(data.wordId, $el);
+			}
+		}
+		if (data.target === $data.id) playSound("success");
+		return;
+	}
+};
+
+$lib.Raingame.turnGoing = $lib.Jaqwi.turnGoing;
+
+// strategy key handlers — attached once when this file loads
+$(document).on("keydown.raingame", function (e) {
+	if (!$data.room || !$data.room.gaming) return;
+	var mode = MODE[$data.room.mode];
+	if (mode !== "KWR" && mode !== "EWR") return;
+
+	var key = e.key;
+	if (key === "1") { $lib.Raingame._strategy = 0; $lib.Raingame._updateStrategyUI(); }
+	else if (key === "2") { $lib.Raingame._strategy = 1; $lib.Raingame._updateStrategyUI(); }
+	else if (key === "3") { $lib.Raingame._strategy = 2; $lib.Raingame._updateStrategyUI(); }
+});
+
+// strategy button clicks
+$(document).on("click.raingame", ".raingame-strategy-btn", function () {
+	$lib.Raingame._strategy = parseInt($(this).attr("data-strategy"), 10);
+	$lib.Raingame._updateStrategyUI();
+});
+
+// 모바일: 전략 버튼 롱프레스 툴팁
+(function () {
+	var _lpt = null;
+	$(document).on("touchstart", ".raingame-strategy-btn[data-tooltip]", function (e) {
+		var $btn = $(this);
+		_lpt = setTimeout(function () {
+			_lpt = null;
+			$(".item-tooltip-popup").remove();
+			var $tip = $("<div>").addClass("item-tooltip-popup").text($btn.attr("data-tooltip"));
+			$btn.append($tip);
+			setTimeout(function () { $tip.remove(); }, 2000);
+		}, 500);
+	}).on("touchend touchcancel touchmove", ".raingame-strategy-btn", function () {
+		if (_lpt) { clearTimeout(_lpt); _lpt = null; }
+	});
+})();
+
+// 창 포커스 복귀 시 단어 위치 재계산
+$(document).on("visibilitychange.raingame", function () {
+	if (document.hidden) return;
+	if (!$data.room || !$data.room.gaming) return;
+	var mode = MODE[$data.room.mode];
+	if (mode !== "KWR" && mode !== "EWR") return;
+
+	var now = Date.now();
+	$.each($lib.Raingame._words, function (wId, wObj) {
+		if (!wObj || !wObj.$el) return;
+		var elapsed = now - wObj.createdAt;
+		var remaining = wObj.timeout - elapsed;
+		if (remaining <= 0) {
+			wObj.$el.css({ transition: 'none', top: '105%' });
+		} else {
+			var progress = Math.min(1, elapsed / wObj.timeout);
+			var currentTop = -5 + 110 * progress;
+			wObj.$el.css({ transition: 'none', top: currentTop + '%' });
+			(function (el, rem) {
+				addTimeout(function () {
+					el.css({ transition: 'top ' + rem + 'ms linear', top: '105%' });
+				}, 20);
+			})(wObj.$el, remaining);
+		}
+	});
+});
+
+/**
+ * Rule the words! KKuTu Online
+ * WordStack (워드스택) client rule
+ */
+
+$lib.Wordstack = {};
+
+$lib.Wordstack._strategy = 0;
+$lib.Wordstack._stackLen = 0;
+$lib.Wordstack._chars = [];
+$lib.Wordstack._subChars = [];
+
+$lib.Wordstack._updateStrategyUI = function () {
+	var s = $lib.Wordstack._strategy;
+	$(".raingame-strategy-btn").each(function () {
+		$(this).toggleClass("toggled", parseInt($(this).attr("data-strategy"), 10) === s);
+	});
+};
+
+$lib.Wordstack._updateStackBar = function (len) {
+	$lib.Wordstack._stackLen = len;
+	var pct = Math.min(100, (len / 8) * 100);
+	var $bar = $(".jjo-turn-time .graph-bar");
+	$bar.width(pct + "%");
+	if (len > 8) $bar.addClass("overflow");
+	else $bar.removeClass("overflow");
+};
+
+// rule_classic.js 방식 - 각 글자를 getCharText로 변환 후 공백 구분 HTML
+$lib.Wordstack._renderStack = function () {
+	var parts = $lib.Wordstack._chars.map(function (c, i) {
+		var sub = $lib.Wordstack._subChars[i] || null;
+		return getCharText(c, sub);
+	});
+	$stage.game.display.html(parts.join(' '));
+	$lib.Wordstack._updateStackBar($lib.Wordstack._chars.length);
+};
+
+// 유저 표시 이름 조회
+$lib.Wordstack._getName = function (id) {
+	var u = ($data.users && $data.users[id]) || ($data.robots && $data.robots[id]);
+	if (!u) return id;
+	var p = u.profile || u;
+	return p.title || p.name || id;
+};
+
+// 히스토리에 단어 + 공격 정보 추가
+$lib.Wordstack._addHistory = function (word, label) {
+	var $v = $("<div>").addClass("ellipse history-item").width(0).animate({ width: 200 }).text(word);
+	$stage.game.history.prepend($v);
+	if ($stage.game.history.children().length > 6) $stage.game.history.children().last().remove();
+	$v.append($("<div>").addClass("history-mean ellipse").text(label));
+};
+
+$lib.Wordstack.roundReady = function (data, spec) {
+	clearBoard();
+	$data._relay = true;
+	$stage.game.items.hide();
+	$stage.game.bb.hide();
+	$stage.game.cwcmd.hide();
+	if (mobile) $stage.game.here.css({ opacity: 0.5, top: "" }).show();
+	else $stage.game.here.hide();
+	$(".jjoriping").css({ "float": "none", "margin": "0 auto" });
+
+	$lib.Wordstack._strategy = 0;
+	$lib.Wordstack._stackLen = 0;
+	$lib.Wordstack._chars = [];
+	$lib.Wordstack._subChars = [];
+
+	if (data.chars) {
+		$lib.Wordstack._chars = data.chars.slice();
+		$lib.Wordstack._subChars = data.subChars ? data.subChars.slice() : [];
+		$lib.Wordstack._renderStack();
+	}
+
+	$("#raingame-strategy").show().find(".raingame-strategy-btn").show();
+	$lib.Wordstack._updateStrategyUI();
+
+	if (data.surHP && $data.room && $data.room.game && $data.room.game.seq) {
+		var seq = $data.room.game.seq;
+		for (var i = 0; i < seq.length; i++) {
+			var uid = typeof seq[i] === 'string' ? seq[i] : seq[i].id;
+			var u = $data.users[uid] || $data.robots[uid];
+			if (u) { if (!u.game) u.game = {}; u.game.score = data.surHP; u.game.alive = true; }
+			updateScore(uid, data.surHP);
+		}
+	}
+
+	drawRound(data.round);
+	if (!spec) playSound("round_start");
+	clearInterval($data._tTime);
+};
+
+$lib.Wordstack.turnStart = function (data) {
+	clearInterval($data._tTime);
+	$data._roundTime = data.roundTime;
+	$data._fastTime = 20000;
+	$data._tTime = addInterval(turnGoing, TICK);
+	playBGM("jaqwi");
+};
+
+// 공격 글자 수신: 내 스택에 추가 후 재렌더링
+$lib.Wordstack.onAtk = function (data) {
+	if (!data.char) return;
+	$lib.Wordstack._chars.push(data.char);
+	$lib.Wordstack._subChars.push(data.subChar || null);
+	$lib.Wordstack._renderStack();
+};
+
+$lib.Wordstack.turnEnd = function (id, data) {
+	if (data.error) {
+		playSound("fail");
+		return;
+	}
+
+	// 라운드 종료
+	if (data.timeUp) {
+		$data._relay = false;
+		clearInterval($data._tTime);
+		stopBGM();
+		playSound("horr");
+		$stage.game.display.empty();
+		$("#raingame-strategy").hide();
+		$(".jjo-turn-time .graph-bar").width(0).removeClass("overflow");
+		$(".jjo-round-time .graph-bar").width(0).removeClass("round-extreme");
+		return;
+	}
+
+	// 오버플로우 페널티
+	if (!data.ok && data.overflow) {
+		if (data.hp !== undefined) updateScore(data.target, data.hp);
+		if (data.damage) {
+			var $uc = $("#game-user-" + data.target);
+			drawObtainedScore($uc, $("<div>").addClass("deltaScore").css("color", "#FF6666").text("-" + data.damage));
+		}
+		if (data.ko) {
+			applySurvivalKODisplay(data.target);
+			var koU = $data.users[data.target] || $data.robots[data.target];
+			if (koU && koU.game) koU.game.alive = false;
+			playSound("KO");
+		} else if (data.target === $data.id) {
+			playSound("fail");
+		}
+		return;
+	}
+
+	// 단어 성공
+	if (data.ok) {
+		if (data.hp !== undefined) updateScore(data.target, data.hp);
+
+		if (data.target === $data.id) {
+			// 내 스택에서 사용된 글자 제거 후 재렌더링
+			if (data.removed !== undefined) {
+				var idx = $lib.Wordstack._chars.indexOf(data.removed);
+				if (idx !== -1) {
+					$lib.Wordstack._chars.splice(idx, 1);
+					$lib.Wordstack._subChars.splice(idx, 1);
+				}
+				$lib.Wordstack._renderStack();
+			}
+			// HP 회복 표시
+			if (data.recovered) {
+				var $uc = $("#game-user-" + $data.id);
+				var $sc = $("<div>").addClass("deltaScore").css("color", "#2255FF").text("+" + data.recovered);
+				drawObtainedScore($uc, $sc);
+			}
+			playSound("success");
+		}
+
+		// 히스토리
+		if (data.word) {
+			var meKO = !$data._spectate && (function () {
+				var me = $data.users[$data.id] || $data.robots[$data.id];
+				return me && me.game && me.game.alive === false;
+			}());
+			var watchAll = $data._spectate || meKO;
+			var label = "";
+			if (data.attackTargets && data.attackTargets.length > 0) {
+				if (data.target === $data.id) {
+					var names = [];
+					data.attackTargets.forEach(function (tid) {
+						var n = $lib.Wordstack._getName(tid);
+						if (names.indexOf(n) === -1) names.push(n);
+					});
+					label = "▶ " + names.join(", ");
+				} else if (data.attackTargets.indexOf($data.id) !== -1) {
+					label = "◀ " + $lib.Wordstack._getName(data.target);
+				} else if (watchAll) {
+					label = $lib.Wordstack._getName(data.target) + " ▶ " + data.attackTargets.map($lib.Wordstack._getName).join(", ");
+				}
+			} else if (watchAll) {
+				label = $lib.Wordstack._getName(data.target);
+			}
+			if (label) $lib.Wordstack._addHistory(data.word, label);
+		}
+
+		return;
+	}
+};
+
+$lib.Wordstack.turnGoing = function () {
+	if (!$data.room || !$data.room.gaming) {
+		clearInterval($data._tTime);
+		$(".jjo-round-time .graph-bar").removeClass("round-extreme");
+		return;
+	}
+	$lib.Jaqwi.turnGoing.call(this);
+};
+
+// 전략 키 1/2/3
+$(document).off("keydown.wordstack").on("keydown.wordstack", function (e) {
+	if (!$data.room || !$data.room.gaming) return;
+	var mode = MODE[$data.room.mode];
+	if (mode !== "KWS" && mode !== "EWS") return;
+	if (e.key === "1") { $lib.Wordstack._strategy = 0; $lib.Wordstack._updateStrategyUI(); }
+	else if (e.key === "2") { $lib.Wordstack._strategy = 1; $lib.Wordstack._updateStrategyUI(); }
+	else if (e.key === "3") { $lib.Wordstack._strategy = 2; $lib.Wordstack._updateStrategyUI(); }
+});
+
+// 전략 버튼 클릭
+$(document).off("click.wordstack").on("click.wordstack", ".raingame-strategy-btn", function () {
+	if (!$data.room || !$data.room.gaming) return;
+	var mode = MODE[$data.room.mode];
+	if (mode !== "KWS" && mode !== "EWS") return;
+	$lib.Wordstack._strategy = parseInt($(this).attr("data-strategy"), 10);
+	$lib.Wordstack._updateStrategyUI();
+});
+
+/**
+ * Rule the words! KKuTu Online
+ * Copyright (C) 2017 JJoriping(op@jjo.kr)
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -6053,6 +6620,13 @@ function showPrompt(msg, value, callback) {
 		if (e.which == 13) onOK();
 	});
 }
+function applyTheme(theme) {
+	document.body.classList.remove('theme-red', 'theme-orange', 'theme-gray');
+	if (theme === 'red') document.body.classList.add('theme-red');
+	else if (theme === 'orange') document.body.classList.add('theme-orange');
+	else if (theme === 'gray') document.body.classList.add('theme-gray');
+}
+
 function applyOptions(opt) {
 	$data.opts = opt;
 
@@ -6104,13 +6678,16 @@ function applyOptions(opt) {
 	// 볼륨 적용
 	updateBGMVol();
 	updateEffectVol();
+
+	// 테마 적용
+	applyTheme(savedSettings.theme || 'blue');
 }
 
 function loadVolumeSettings() {
 	try {
-		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null };
+		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null, theme: null };
 	} catch (e) {
-		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null };
+		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null, theme: null };
 	}
 }
 
@@ -6252,6 +6829,8 @@ function connectToRoom(chan, rid) {
 	rws.onclose = function (e) {
 		console.log("room-disc", chan, rid);
 		rws = undefined;
+		clearInterval($data._tTime);
+		clearBoard();
 		if ($data.place != 0) {
 			$data.place = 0;
 			$data.room = null;
@@ -6539,7 +7118,14 @@ function onMessage(data) {
 		case 'survivalKO':
 			// 서바이벌 모드: 중도 퇴장으로 인한 KO 처리
 			var koTarget = data.target;
-			applySurvivalKODisplay(koTarget);
+			if (data.reason === 'leave') {
+				// 떠난 플레이어는 카드를 즉시 제거하고, 이후 updateRoom 재렌더에서도 스킵
+				if (!$data._survivalLeftPlayers) $data._survivalLeftPlayers = {};
+				$data._survivalLeftPlayers[koTarget] = true;
+				$('#game-user-' + koTarget).remove();
+			} else {
+				applySurvivalKODisplay(koTarget);
+			}
 
 			var koUser = $data.users[koTarget] || $data.robots[koTarget];
 			if (koUser && koUser.game) {
@@ -6548,6 +7134,12 @@ function onMessage(data) {
 			}
 			playSound('KO');
 			playSound('timeout');
+			break;
+		case 'raingameWord':
+			if ($lib.Raingame && $lib.Raingame.onWord) $lib.Raingame.onWord(data);
+			break;
+		case 'wordstackAtk':
+			if ($lib.Wordstack && $lib.Wordstack.onAtk) $lib.Wordstack.onAtk(data);
 			break;
 		case 'roundEnd':
 			for (i in data.users) {
@@ -6602,6 +7194,9 @@ function onMessage(data) {
 				kickVoting(data.target);
 			}
 			notice(($data._kickTarget.profile.title || $data._kickTarget.profile.name) + L['kickVoting']);
+			break;
+		case 'afkWarn':
+			afkWarning(data.duration || 30);
 			break;
 		case 'kickDeny':
 			notice(getKickText($data._kickTarget.profile, data));
@@ -7104,12 +7699,15 @@ function processRoom(data) {
 			if ($target.id == data.id) showAlert(L['hasKicked']);
 		}
 		if (data.room.players.indexOf($data.id) == -1) {
-			if ($data.room) if ($data.room.gaming) {
-				stopAllSounds();
-				$data.practicing = false;
-				$data._gaming = false;
-				$stage.box.room.height(360);
-				playBGM('lobby');
+			if ($data.room) {
+				if ($data.room.gaming) {
+					stopAllSounds();
+					$data.practicing = false;
+					$data._gaming = false;
+					$stage.box.room.height(360);
+					playBGM('lobby');
+				}
+				clearBoard();
 			}
 			$data.users[$data.id].game.ready = false;
 			$data.users[$data.id].game.team = 0;
@@ -7160,9 +7758,19 @@ function processRoom(data) {
 			$data.place = $data.room.id;
 			$data.master = $data.room.master == $data.id;
 			// 게임 중일 때 spec 데이터로 플레이어 점수 동기화 (서바이벌 HP 포함)
+			// spec[id]는 구버전(숫자=점수) 또는 신버전({score, alive}) 모두 처리
 			if (data.spec && data.room.gaming) {
 				for (i in data.spec) {
-					if ($data.users[i]) $data.users[i].game.score = data.spec[i];
+					if (!$data.users[i] || !$data.users[i].game) continue;
+					var _sv = data.spec[i];
+					if (_sv !== null && typeof _sv === 'object') {
+						$data.users[i].game.score = _sv.score;
+						// 서바이벌: alive를 동기화해야 관전자/뒤늦은 진입자가 KO 상태를 볼 수 있고,
+						// 다음 판에 stale alive=false가 남아 KO 라벨이 다시 그려지는 문제도 막힘
+						$data.users[i].game.alive = (_sv.alive !== false);
+					} else {
+						$data.users[i].game.score = _sv;
+					}
 				}
 			}
 			if (data.spec && data.target == $data.id) {
@@ -7257,6 +7865,7 @@ function updateUI(myRoom, refresh) {
 	if ($data.practicing) only = "for-gaming";
 
 	$(".kkutu-menu button").not(".ItemButton").hide();
+	$("#raingame-strategy").hide();
 	for (i in $stage.box) $stage.box[i].hide();
 	if (!mobile) $stage.box.me.show();
 	$stage.box.chat.show().width(790).height(190);
@@ -7533,8 +8142,9 @@ function roomListBar(o) {
 	var $R, $ch, $rm;
 	var opts = getOptions(o.mode, o.opts, false, mobile);
 	var rule = RULE[MODE[o.mode]];
-	var isSurvival = o.opts && o.opts.survival;
-	var roundOrHP = isSurvival ? ((o.opts.surHP || 500) + " HP") : (L['rounds'] + " " + o.round);
+	var isAlwaysSurvival = ALWAYS_SURVIVAL_MODES.indexOf(MODE[o.mode]) !== -1;
+	var isSurvival = isAlwaysSurvival || (o.opts && o.opts.survival);
+	var roundOrHP = isSurvival ? ((o.opts && o.opts.surHP || 500) + " HP") : (L['rounds'] + " " + o.round);
 
 	$R = $("<div>").attr('id', "room-" + o.id).addClass("rooms-item")
 		.append($ch = $("<div>").addClass("rooms-channel channel-" + o.channel).on('click', function (e) { requestRoomInfo(o.id); }))
@@ -7659,6 +8269,10 @@ function updateRoom(gaming) {
 		var survivalHP = ($data.room.opts && $data.room.opts.survival) ? ($data.room.opts.surHP || 500) : 0;
 
 		for (i in $data.room.game.seq) {
+			// 서바이벌: 떠난 플레이어는 카드 렌더에서 스킵 (서버 seq에는 KO 상태로 남아 있음)
+			var _seqEntry = $data.room.game.seq[i];
+			var _seqEntryId = (_seqEntry && typeof _seqEntry === 'object') ? _seqEntry.id : _seqEntry;
+			if ($data._survivalLeftPlayers && $data._survivalLeftPlayers[_seqEntryId]) continue;
 			if ($data._replay) {
 				o = $rec.users[$data.room.game.seq[i]] || $data.room.game.seq[i];
 			} else {
@@ -7687,14 +8301,17 @@ function updateRoom(gaming) {
 			// 서바이벌 모드에서 플레이어 초기 HP 설정
 			// 단, 게임이 끝난 후(gaming=false)에는 폴백 적용하지 않음 (KO된 플레이어 점수 0 유지)
 			var initialScore = o.game.score;
-			if (survivalHP > 0 && !o.robot && (initialScore === undefined || initialScore === 0)) {
-				// 게임이 진행 중일 때만 폴백 적용 (라운드 시작 시)
+			if (survivalHP > 0 && !o.robot && (initialScore === undefined || initialScore === 0) && o.game.alive !== false) {
+				// 게임이 진행 중일 때만 폴백 적용 (라운드 시작 시) — KO된 플레이어(alive===false)는 제외
 				if ($data.room.gaming) {
 					initialScore = survivalHP;
 					if (o.game) o.game.score = survivalHP;
 				}
 			}
 			updateScore(o.id, initialScore || 0);
+			if ($data.room.opts && $data.room.opts.survival && o.game && o.game.alive === false) {
+				applySurvivalKODisplay(o.id);
+			}
 		}
 		clearTimeout($data._jamsu);
 		delete $data._jamsu;
@@ -8572,6 +9189,9 @@ function clearGame() {
 function gameReady() {
 	var i, u;
 
+	// 서바이벌: 새 게임 시작 시 이전 게임의 leaver set 초기화 (재입장한 플레이어 카드가 다시 보이도록)
+	$data._survivalLeftPlayers = {};
+
 	for (i in $data.room.players) {
 		if ($data._replay) {
 			u = $rec.users[$data.room.players[i]] || $data.room.players[i];
@@ -8580,6 +9200,8 @@ function gameReady() {
 		}
 		if (!u) continue;
 		u.game.score = 0;
+		// 서바이벌: 이전 게임에서 KO/leave로 alive=false였다면 초기화 (자기 자신 포함)
+		u.game.alive = true;
 		delete $data["_s" + $data.room.players[i]];
 	}
 	delete $data.lastFail;
@@ -8863,7 +9485,7 @@ function clearBoard() {
 	$(".jjoriping").removeClass("flip");
 	$(".jjoriping").css({ "float": "", "margin": "" });
 	// Small-mode class is managed by updateRoom() based on player count, don't remove it here
-	$stage.game.display.empty();
+	$stage.game.display.removeClass("raingame-board").empty();
 	$stage.game.chain.hide();
 	$stage.game.hints.empty().hide();
 	$stage.game.cwcmd.hide();
@@ -8871,9 +9493,10 @@ function clearBoard() {
 	$stage.game.round.empty();
 	$stage.game.history.empty();
 	$stage.game.items.show().css('opacity', 0);
-	$(".jjo-turn-time .graph-bar").width(0).css({ 'float': "", 'text-align': "", 'background-color': "" });
-	$(".jjo-round-time .graph-bar").width(0).css({ 'float': "", 'text-align': "" }).removeClass("round-extreme");
+	$(".jjo-turn-time .graph-bar").width(0).css({ 'float': "", 'text-align': "", 'background-color': "" }).removeClass("overflow").html("");
+	$(".jjo-round-time .graph-bar").width(0).css({ 'float': "", 'text-align': "" }).removeClass("round-extreme").html("");
 	$(".game-user-bomb").removeClass("game-user-bomb");
+	$("#raingame-strategy").hide();
 }
 function drawRound(round) {
 	var i;
@@ -9042,7 +9665,7 @@ function roundEnd(result, data) {
 	$data._relay = false;
 
 	$(".result-me-expl").empty();
-	$stage.game.display.html(L['roundEnd']);
+	$stage.game.display.removeClass("raingame-board").html(L['roundEnd']);
 	$data._resultPage = 1;
 	$data._result = null;
 	for (i in result) {
@@ -9064,9 +9687,12 @@ function roundEnd(result, data) {
 		// 서바이벌 모드: KO된 플레이어 점수 표시
 		var isSurvival = $data.room && $data.room.opts && $data.room.opts.survival;
 		var isKO = isSurvival && r.alive === false;
-		var scoreDisplay = data.scores
-			? (L['avg'] + " " + commify(data.scores[r.id]) + L['kpm'])
-			: (isKO ? "KO" : (commify(r.score || 0) + (isSurvival ? " HP" : L['PTS'])));
+		var chainLabel = L['chainCount'] || 'Chain';
+		var scoreDisplay = data.chains
+			? (commify(data.chains[r.id] || 0) + " " + chainLabel)
+			: data.scores
+				? (L['avg'] + " " + commify(data.scores[r.id]) + L['kpm'])
+				: (isKO ? "KO" : (commify(r.score || 0) + (isSurvival ? " HP" : L['PTS'])));
 
 		$b.append($o = $("<div>").addClass("result-board-item")
 			.append($p = $("<div>").addClass("result-board-rank").html(r.rank + 1))
@@ -9239,6 +9865,24 @@ function kickVoteTick() {
 	if (--$data.kickTime > 0) $data._kickTimer = addTimeout(kickVoteTick, 1000);
 	else $stage.dialog.kickVoteY.trigger('click');
 }
+function afkWarning(duration) {
+	$("#afk-warn-text").text(L['afkWarnText']);
+	$data._afkEndTime = Date.now() + duration * 1000;
+	$data._afkDuration = duration * 1000;
+	clearTimeout($data._afkTimer);
+	$data._afkTimer = addTimeout(afkWarnTick, 50);
+	showDialog($stage.dialog.afkWarn);
+}
+function afkWarnTick() {
+	var remaining = $data._afkEndTime - Date.now();
+	if (remaining <= 0) {
+		$(".afk-warn-time .graph-bar").width(0);
+		// 바 만료 시에는 서버 킥 타이머가 소켓을 닫음. 클라이언트에서 afkPing을 보내지 않음.
+		return;
+	}
+	$(".afk-warn-time .graph-bar").width(remaining / $data._afkDuration * 300);
+	$data._afkTimer = addTimeout(afkWarnTick, 50);
+}
 function loadShop() {
 	var $body = $("#shop-shelf");
 
@@ -9373,8 +10017,17 @@ var BONUS_COLORS = {
 	missionRev: '#66FF66',
 	fullhouse: '#c26eff',
 	defense: '#647bff',
-	linking: 'rgb(146, 203, 250)'
 };
+Object.defineProperty(BONUS_COLORS, 'linking', {
+	get: function() {
+		if (document.body.classList.contains('theme-red')) return 'rgb(239, 154, 154)';
+		if (document.body.classList.contains('theme-orange')) return 'rgb(255, 204, 128)';
+		if (document.body.classList.contains('theme-gray')) return 'rgb(189, 189, 189)';
+		return 'rgb(146, 203, 250)';
+	},
+	enumerable: true,
+	configurable: true
+});
 function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars, historyOverride, isAttack, isDefense, isFlush, isJackpot) {
 	var len;
 	var mode = MODE[$data.room.mode];
@@ -9533,7 +10186,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 			var isStraightChar = isStraight && (isRev ? (charIdx === 0) : (charIdx === len - 1));
 			var isLinking = (RULE[mode].rule === "Classic") && (linkingIndices.indexOf(charIdx) !== -1);
 			var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(charIdx) !== -1;
-			var isLinkPos = isRev ? (charIdx === 0) : (charIdx === len - 1);
+			var isLinkPos = linkingIndices.indexOf(charIdx) !== -1;
 			var isDefPos = isRev ? (charIdx === len - 1) : (charIdx === 0);
 
 			$stage.game.display.append($l = $("<div>")
@@ -9604,7 +10257,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				var isLinking = linkingIndices.indexOf(idx) !== -1;
 				var isStraightChar = isStraight && (idx === 0);
 				var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(idx) !== -1;
-				var isLinkPos = (idx === 0); // Rev: linking char = first char (string index 0)
+				var isLinkPos = linkingIndices.indexOf(idx) !== -1;
 				var isDefPos = (idx === len - 1); // Rev: defense char = last char
 
 				if (isHanbang && isLinkPos) {
@@ -9649,7 +10302,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				var isStraightChar = isStraight && (idx === len - 1); // Normal: Last char
 				var isLinking = (RULE[mode].rule === "Classic") && (linkingIndices.indexOf(idx) !== -1);
 				var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(idx) !== -1;
-				var isLinkPos = (idx === len - 1); // Normal: linking char = last char
+				var isLinkPos = linkingIndices.indexOf(idx) !== -1;
 				var isDefPos = (idx === 0); // Normal: defense char = first char
 
 				if (isHanbang && isLinkPos) {
@@ -9898,8 +10551,9 @@ function setRoomHead($obj, room) {
 	var opts = getOptions(room.mode, room.opts, false, false);
 	var rule = RULE[MODE[room.mode]];
 	var $rm;
-	var isSurvival = room.opts && room.opts.survival;
-	var roundOrHP = isSurvival ? ((room.opts.surHP || 500) + " HP") : (room.round + " " + L['rounds']);
+	var isAlwaysSurvival = ALWAYS_SURVIVAL_MODES.indexOf(MODE[room.mode]) !== -1;
+	var isSurvival = isAlwaysSurvival || (room.opts && room.opts.survival);
+	var roundOrHP = isSurvival ? ((room.opts && room.opts.surHP || 500) + " HP") : (room.round + " " + L['rounds']);
 
 	$obj.empty()
 		.append($("<h5>").addClass("room-head-number").text("[" + (room.practice ? L['practice'] : room.id) + "]"))

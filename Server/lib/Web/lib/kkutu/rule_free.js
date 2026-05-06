@@ -23,9 +23,18 @@ $lib.Free.roundReady = function (data) {
     clearBoard();
     $data._roundTime = $data.room.time * 1000;
 
-    // Display "Free Mode" or similar. 
-    // Since there is no specific theme, maybe just "아무거나" (Anything)
-    var tStr = "&lt;" + (L && L['anything'] ? L['anything'] : "아무거나") + "&gt;";
+    var modeCode = MODE[$data.room.mode];
+    var isTopicFreeMode = (modeCode === 'KTF' || modeCode === 'ETF');
+    var tStr;
+    if (isTopicFreeMode && $data.room.opts.injpick && $data.room.opts.injpick.length) {
+        var allPicks = $data.room.opts.injpick;
+        var picks = allPicks.slice(0, 3);
+        var names = picks.map(function (t) { return (L && L['theme_' + t]) || t; });
+        var suffix = allPicks.length >= 4 ? ', ...' : '';
+        tStr = "&lt;" + names.join(', ') + suffix + "&gt;";
+    } else {
+        tStr = "&lt;" + (L && L['anything'] ? L['anything'] : "아무거나") + "&gt;";
+    }
     if ($data.room.opts.drg) tStr = "<label style='color:" + getRandomColor() + "'>" + tStr + "</label>";
     $stage.game.display.html($data._char = tStr);
 

@@ -87,6 +87,7 @@ exports.turnStart = function (force) {
 	clearTimeout(my.game.turnTimer);
 	clearTimeout(my.game.robotTimer);
 	my.game.late = false;
+	my.game.loading = false;
 	my.game.turnTime = 15000 - 1400 * speed;
 	my.game.turnAt = (new Date()).getTime();
 	my.byMaster('turnStart', {

@@ -30,6 +30,8 @@ exports.MAX_OBSERVER = 8;
 exports.JAMSU_WARN_TIME = 300000; // 모두 잠수
 exports.JAMSU_WARN2_TIME = 240000;
 exports.JAMSU_BOOM_TIME = 60000;
+exports.LOBBY_AFK_WARN_TIME = 30 * 60 * 1000 - 30 * 1000; // 로비 잠수 경고: 2시간 59분 30초
+exports.LOBBY_AFK_KICK_TIME = 30000;    // 경고 후 30초 안에 응답 없으면 추방
 exports.TESTER = GLOBAL.ADMIN.concat([
 	"Input tester id here"
 ]);
@@ -159,18 +161,18 @@ exports.ROBOT_DEFEAT_MESSAGES = [ // 봇이 한방단어를 받았을 때 보내
 	"선넘네", "이렇게 가는구나...", "당했다!", "에라이", "하...", "엣?",
 	"아니 님아", "아 제발", "뿌에엥", "뾄!", "악", "안돼", "ㅠㅠ", "저기요?",
 	"이럴수가", "너 봇이지?", "으아악", "어...?", "???", "무...무슨?", "뭐...뭐야?",
-	"한방 단어는 너무 하잖아... ㅠㅠ"
+	"한방 단어는 너무 하잖아... ㅠㅠ", "쌰갈"
 ];
 exports.ROBOT_ANGRY_MESSAGES = [ //봇이 빡치면 보내는 메시지
-	"이건 불공평해", "억까 제발좀", "아오!!!!!!", "개짜증나",
+	"이건 불공평해", "억까 제발좀", "아오!!!!!!", "개짜증나", "쌰갈!!!!",
 	"ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", "재밌냐?",
 	"야!!!", "치트 쓰지마", "사기치지마", "끄글 꺼라", "더러운짓 하지마",
 	"억까겜", "작작 해라?", "적당히 하자?", "뿌에에에에엥", "엿같네"
 ]
 exports.ROBOT_FINAL_MESSAGES = [ //봇이 중퇴하기 전에 보내는 메시지
 	"나 안해", "망겜", "개노잼", "니들끼리나 잘 해라", "안할거임 ㅅㄱ",
-	"내가 너랑 다시 하나 봐라", "안해", "게임 뭣같이하네", "억까겜",
-	"탈주함 ㅂㅂ", "이타치가 왜 짱센지 알아? 탈주닌자라서", "ㅇ"
+	"내가 너랑 다시 하나 봐라", "안해", "게임 뭣같이하네", "억까겜", "냥냥",
+	"탈주함 ㅂㅂ", "이타치가 왜 짱센지 알아? 탈주닌자라서", "ㅇ", "."
 ]
 exports.MOREMI_PART = ["back", "shoes", "clothes", "head", "eye", "mouth", "lhand", "rhand"];
 exports.CATEGORIES = ["all", "spec", "skin", "badge", "head", "eye", "mouth", "clothes", "hs", "back"];
@@ -304,7 +306,7 @@ exports.RULE = {
 	'HUN': {
 		lang: "ko",
 		rule: "Hunmin",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god", "rnt", "sur", "obo", "fho", "itm","nsw"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god", "rnt", "sur", "obo", "fho", "itm", "nsw"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -313,7 +315,7 @@ exports.RULE = {
 	'KDA': {
 		lang: "ko",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm","nsw"],
+		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm", "nsw"],
 		time: 1,
 		ai: true,
 		ewq: false
@@ -330,7 +332,7 @@ exports.RULE = {
 	'KSS': {
 		lang: "ko",
 		rule: "Sock",
-		opts: ["no2", "big", "drg", "apl","nsw"],
+		opts: ["no2", "big", "drg", "apl", "nsw"],
 		time: 1,
 		ai: true,
 		big: true,
@@ -366,7 +368,7 @@ exports.RULE = {
 	'KFR': {
 		lang: "ko",
 		rule: "Free",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm","nsw"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm", "nsw"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -441,7 +443,7 @@ exports.RULE = {
 		lang: "ko",
 		rule: "Chainbattle",
 		opts: ["ext", "str", "loa", "one", "drg"],
-		time: 2,
+		time: 1,
 		ai: true,
 		big: false,
 		ewq: false
@@ -450,7 +452,7 @@ exports.RULE = {
 		lang: "en",
 		rule: "Chainbattle",
 		opts: ["ext", "one", "drg"],
-		time: 2,
+		time: 1,
 		ai: true,
 		big: false,
 		ewq: false
@@ -513,7 +515,82 @@ exports.RULE = {
 		lang: "ko",
 		rule: "Classic",
 		opts: ["ext", "mis", "rdm", "loa", "str", "one", "ret", "spd", "drg",
-		       "bbg", "nar", "god", "rnt", "sur", "obo", "itm", "nsw"],
+			"bbg", "nar", "god", "rnt", "sur", "obo", "itm", "nsw"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: true
+	},
+	'KWR': {
+		lang: "ko",
+		rule: "Raingame",
+		opts: ["mir", "nyh", "drg"],
+		time: 2,
+		ai: true,
+		big: true,
+		ewq: false
+	},
+	'EWR': {
+		lang: "en",
+		rule: "Raingame",
+		opts: ["mir", "nyh", "drg"],
+		time: 2,
+		ai: true,
+		big: true,
+		ewq: false
+	},
+	'KWS': {
+		lang: "ko",
+		rule: "Wordstack",
+		opts: ["ext", "drg"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: false
+	},
+	'EWS': {
+		lang: "en",
+		rule: "Wordstack",
+		opts: ["drg"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: false
+	},
+	'KTT': {
+		lang: "ko",
+		rule: "Typing",
+		opts: ["ijp", "mir", "lng"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: false
+	},
+	'ETT': {
+		lang: "en",
+		rule: "Typing",
+		opts: ["ijp", "mir", "lng"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: false
+	},
+	'KTF': {
+		lang: "ko",
+		rule: "Free",
+		opts: ["ijp", "mis", "mpl", "eam", "rdm", "one", "ret", "spd", "drg",
+			"stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2",
+			"obo", "itm", "nsw"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: true
+	},
+	'ETF': {
+		lang: "en",
+		rule: "Free",
+		opts: ["ijp", "mis", "rdm", "one", "ret", "spd", "drg", "stt", "bbg",
+			"nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -524,7 +601,7 @@ exports.RULE = {
 exports.GAME_CATEGORIES = {
 	'classic': {
 		name: 'GameCategoryClassic',
-		modes: ['KKT', 'KSH', 'KAP', 'KAK', 'KKU', 'EKT', 'ESH', 'EKK', 'EAP', 'EAK']
+		modes: ['KKT', 'KSH', 'KJM', 'KAP', 'KAK', 'KKU', 'EKT', 'ESH', 'EKK', 'EAP', 'EAK']
 	},
 	'quiz': {
 		name: 'GameCategoryQuiz',
@@ -532,7 +609,7 @@ exports.GAME_CATEGORIES = {
 	},
 	'other': {
 		name: 'GameCategoryOther',
-		modes: ['KDA', 'EDA', 'KTY', 'ETY', 'HUN', 'KFR', 'EFR', 'KCB', 'ECB', 'CAL', 'KPF', 'EPF', 'KJM']
+		modes: ['KDA', 'EDA', 'KTY', 'ETY', 'HUN', 'KFR', 'EFR', 'KCB', 'ECB', 'CAL', 'KPF', 'EPF', 'KWR', 'EWR', 'KWS', 'EWS', 'KTT', 'ETT', 'KTF', 'ETF']
 	},
 	'etc': { //이건뭐지
 		name: 'GameCategoryEtc',
@@ -614,25 +691,25 @@ exports.INIT_SOUNDS = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "
 exports.VOWEL_SOUNDS = ["ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", "ㅗ", "ㅘ", "ㅙ", "ㅚ", "ㅛ", "ㅜ", "ㅝ", "ㅞ", "ㅟ", "ㅠ", "ㅡ", "ㅢ", "ㅣ"];
 exports.MISSION_ko = ["가", "나", "다", "라", "마", "바", "사", "아", "자", "차", "카", "타", "파", "하"];
 exports.MISSION_en = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
-exports.MISSION_jamo = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ','ㅏ','ㅐ','ㅓ','ㅔ','ㅗ','ㅜ','ㅡ','ㅣ','ㅑ','ㅕ','ㅛ','ㅠ'];
+exports.MISSION_jamo = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅅ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ', 'ㅏ', 'ㅐ', 'ㅓ', 'ㅔ', 'ㅗ', 'ㅜ', 'ㅡ', 'ㅣ', 'ㅑ', 'ㅕ', 'ㅛ', 'ㅠ'];
 
 // KJM 자모 분해 테이블 (ㅐ·ㅔ 기본 자모 도입, ㅙ=ㅗ+ㅐ, ㅞ=ㅜ+ㅔ, ㅒ=ㅑ+ㅣ, ㅖ=ㅕ+ㅣ)
-var _JAMO_INITIALS = ['ㄱ','ㄱㄱ','ㄴ','ㄷ','ㄷㄷ','ㄹ','ㅁ','ㅂ','ㅂㅂ','ㅅ','ㅅㅅ','ㅇ','ㅈ','ㅈㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
-var _JAMO_MEDIALS  = ['ㅏ','ㅐ','ㅑ','ㅑㅣ','ㅓ','ㅔ','ㅕ','ㅕㅣ','ㅗ','ㅗㅏ','ㅗㅐ','ㅗㅣ','ㅛ','ㅜ','ㅜㅓ','ㅜㅔ','ㅜㅣ','ㅠ','ㅡ','ㅡㅣ','ㅣ'];
-var _JAMO_FINALS   = ['','ㄱ','ㄱㄱ','ㄱㅅ','ㄴ','ㄴㅈ','ㄴㅎ','ㄷ','ㄹ','ㄹㄱ','ㄹㅁ','ㄹㅂ','ㄹㅅ','ㄹㅌ','ㄹㅍ','ㄹㅎ','ㅁ','ㅂ','ㅂㅅ','ㅅ','ㅅㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+var _JAMO_INITIALS = ['ㄱ', 'ㄱㄱ', 'ㄴ', 'ㄷ', 'ㄷㄷ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅂㅂ', 'ㅅ', 'ㅅㅅ', 'ㅇ', 'ㅈ', 'ㅈㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+var _JAMO_MEDIALS = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅑㅣ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅕㅣ', 'ㅗ', 'ㅗㅏ', 'ㅗㅐ', 'ㅗㅣ', 'ㅛ', 'ㅜ', 'ㅜㅓ', 'ㅜㅔ', 'ㅜㅣ', 'ㅠ', 'ㅡ', 'ㅡㅣ', 'ㅣ'];
+var _JAMO_FINALS = ['', 'ㄱ', 'ㄱㄱ', 'ㄱㅅ', 'ㄴ', 'ㄴㅈ', 'ㄴㅎ', 'ㄷ', 'ㄹ', 'ㄹㄱ', 'ㄹㅁ', 'ㄹㅂ', 'ㄹㅅ', 'ㄹㅌ', 'ㄹㅍ', 'ㄹㅎ', 'ㅁ', 'ㅂ', 'ㅂㅅ', 'ㅅ', 'ㅅㅅ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
 // 숫자 → 한국어 이름 변환표 (자모 분해 전 치환용)
-var _NUM_KO = {'0':'영','1':'일','2':'이','3':'삼','4':'사','5':'오','6':'육','7':'칠','8':'팔','9':'구'};
+var _NUM_KO = { '0': '영', '1': '일', '2': '이', '3': '삼', '4': '사', '5': '오', '6': '육', '7': '칠', '8': '팔', '9': '구' };
 
 exports.decomposeToJamo = function (text) {
 	// 숫자를 한국어 이름으로 치환 후 자모 분해 (0→영, 1→일, ..., 9→구)
-	text = text.replace(/[0-9]/g, function(d) { return _NUM_KO[d]; });
+	text = text.replace(/[0-9]/g, function (d) { return _NUM_KO[d]; });
 	var result = '';
 	for (var i = 0; i < text.length; i++) {
 		var code = text.charCodeAt(i) - 0xAC00;
 		if (code < 0 || code > 11171) { result += text[i]; continue; }
 		result += _JAMO_INITIALS[Math.floor(code / 588)]
-		        + _JAMO_MEDIALS[Math.floor((code % 588) / 28)]
-		        + _JAMO_FINALS[code % 28];
+			+ _JAMO_MEDIALS[Math.floor((code % 588) / 28)]
+			+ _JAMO_FINALS[code % 28];
 	}
 	return result;
 };
@@ -640,24 +717,62 @@ exports.decomposeToJamo = function (text) {
 // 자모 1개 → 해당 자모로 시작하는 한국어 음절 범위 RegExp 반환
 // 자음: 쌍자음 포함 초성 전체 / 모음: ㅇ 초성 + 해당 중성(복합모음 포함)
 var _JAMO_RANGES = {
-	'ㄱ':'\uAC00-\uB097', 'ㄴ':'\uB098-\uB2E3', 'ㄷ':'\uB2E4-\uB77B',
-	'ㄹ':'\uB77C-\uB9C7', 'ㅁ':'\uB9C8-\uBC13', 'ㅂ':'\uBC14-\uC0AB',
-	'ㅅ':'\uC0AC-\uC543', 'ㅇ':'\uC544-\uC78F', 'ㅈ':'\uC790-\uCC27',
-	'ㅊ':'\uCC28-\uCE73', 'ㅋ':'\uCE74-\uD0BF', 'ㅌ':'\uD0C0-\uD30B',
-	'ㅍ':'\uD30C-\uD557', 'ㅎ':'\uD558-\uD7A3',
+	'ㄱ': '\uAC00-\uB097', 'ㄴ': '\uB098-\uB2E3', 'ㄷ': '\uB2E4-\uB77B',
+	'ㄹ': '\uB77C-\uB9C7', 'ㅁ': '\uB9C8-\uBC13', 'ㅂ': '\uBC14-\uC0AB',
+	'ㅅ': '\uC0AC-\uC543', 'ㅇ': '\uC544-\uC78F', 'ㅈ': '\uC790-\uCC27',
+	'ㅊ': '\uCC28-\uCE73', 'ㅋ': '\uCE74-\uD0BF', 'ㅌ': '\uD0C0-\uD30B',
+	'ㅍ': '\uD30C-\uD557', 'ㅎ': '\uD558-\uD7A3',
 	// 모음 (ㅇ 초성 고정)
-	'ㅏ':'\uC544-\uC55F', 'ㅐ':'\uC560-\uC57B',
-	'ㅑ':'\uC57C-\uC5B3', 'ㅓ':'\uC5B4-\uC5CF',
-	'ㅔ':'\uC5D0-\uC5EB', 'ㅕ':'\uC5EC-\uC623',
-	'ㅗ':'\uC624-\uC693', 'ㅛ':'\uC694-\uC6AF',
-	'ㅜ':'\uC6B0-\uC71F',
-	'ㅠ':'\uC720-\uC73B', 'ㅡ':'\uC73C-\uC773',
-	'ㅣ':'\uC774-\uC78F'
+	'ㅏ': '\uC544-\uC55F', 'ㅐ': '\uC560-\uC57B',
+	'ㅑ': '\uC57C-\uC5B3', 'ㅓ': '\uC5B4-\uC5CF',
+	'ㅔ': '\uC5D0-\uC5EB', 'ㅕ': '\uC5EC-\uC623',
+	'ㅗ': '\uC624-\uC693', 'ㅛ': '\uC694-\uC6AF',
+	'ㅜ': '\uC6B0-\uC71F',
+	'ㅠ': '\uC720-\uC73B', 'ㅡ': '\uC73C-\uC773',
+	'ㅣ': '\uC774-\uC78F'
 };
 exports.getJamoRegex = function (jamo) {
 	var range = _JAMO_RANGES[jamo];
 	if (!range) return /(?!)/;
 	return new RegExp('^[' + range + ']');
+};
+
+// KJM: 낱자 포함 + 모음 연결 시 모든 초성 허용
+// decomposed: decomposeToJamo() 결과, jamo: 연결 자모 1개
+exports.kjmStartsWith = function (decomposed, jamo) {
+	if (!decomposed || !jamo) return false;
+	// U+314F~ 이상이면 모음 (ㅏ~ㅣ), 미만이면 자음
+	var isVowel = jamo.charCodeAt(0) >= 0x314F;
+	if (isVowel) {
+		// 모음 연결: 첫 번째 모음 자모가 일치하면 초성 무관
+		for (var i = 0; i < decomposed.length; i++) {
+			if (decomposed.charCodeAt(i) >= 0x314F) return decomposed[i] === jamo;
+		}
+		return false;
+	}
+	// 자음 연결: 첫 자모가 일치 (낱자 포함)
+	return decomposed[0] === jamo;
+};
+
+// KJM DB 쿼리용 regex: 낱자 + 모음이면 모든 초성 허용
+exports.getKjmStartRegex = function (jamo) {
+	var jamoCode = jamo.charCodeAt(0);
+	var isVowel = jamoCode >= 0x314F && jamoCode <= 0x3163;
+	if (!isVowel) {
+		var range = _JAMO_RANGES[jamo];
+		if (!range) return /(?!)/;
+		// 낱자 자음 + 기존 음절 범위
+		return new RegExp('^[' + jamo + range + ']');
+	}
+	var medialIndex = _JAMO_MEDIALS.indexOf(jamo);
+	if (medialIndex === -1) return /(?!)/;
+	// 낱자 모음 + 모든 초성(0~18) × 해당 중성 × 모든 종성
+	var chars = jamo;
+	for (var i = 0; i < 19; i++) {
+		var start = 0xAC00 + i * 588 + medialIndex * 28;
+		chars += String.fromCharCode(start) + '-' + String.fromCharCode(start + 27);
+	}
+	return new RegExp('^[' + chars + ']');
 };
 
 exports.getPreScoreJamo = function (text, chain, tr) {
@@ -674,8 +789,8 @@ exports.KO_INJEONG = [
 	"COL", "SAO", "HRH", "STA", "OIJ",
 	"KGR", "ESB", "ELW", "KMV", "OVW",
 	"WEB", "KPO", "VOC", "JAT", "ZEL",
-	"CKR", "POK", "FRC", "HSS", "HAI",
-	"HDC", "HAR", "HOS", "IMS"
+	"CKR", "FUR", "POK", "FRC", "HSS",
+	"HAI", "HDC", "HAR", "HOS", "IMS"
 ];
 exports.EN_INJEONG = [
 	"LOL", "MCJ"
@@ -692,7 +807,7 @@ exports.EN_THEME = [
 	"e18", "e20", "e43"
 ];
 exports.IJP_EXCEPT = [
-	"OIJ", "TPW"
+	"OIJ", "TPW", "40", "MMM", "MKK", "1001", "HRH", "MNG", "LVL", "KGR", "KRR", "DOT"
 ];
 exports.QUIZ_TOPIC = [
 	"MATH", "CAPI", "CHEM", "UNIT", "NUMG", "ASTR", "ARTS", "ANML", "GAME", "LITR" /*, "CNTR" */
@@ -854,11 +969,12 @@ exports.applySurvivalDamage = function (my, DIC, damage, currentTurn) {
 	var nextTurn;
 	var found = false;
 	if (my.opts.item) {
-		nextTurn = my.calculateNextTurn(true);
+		// peek=false: 아이템 소비 등 부작용을 여기서 한 번만 커밋 (turnNext 재계산 방지)
+		nextTurn = my.calculateNextTurn(false);
 		var p = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
 		found = p && p.game && p.game.alive;
+		if (found) my.game._survivalCachedTarget = nextTurn;
 	} else if (my.opts.randomturn) {
-		// 버그 #3 수정: 다음 한 칸만 보지 않고, 살아있는 플레이어가 나올 때까지 순회
 		var orderLen = my.game.randomTurnOrder.length;
 		var startIdx = (my.game.randomTurnIndex + 1) % orderLen;
 		for (var ri = 0; ri < orderLen; ri++) {
@@ -871,6 +987,8 @@ exports.applySurvivalDamage = function (my, DIC, damage, currentTurn) {
 				break;
 			}
 		}
+		// turnNext가 재셔플 후 다른 사람을 선택하는 문제 방지 — 미리 확정한 타겟을 캐싱
+		if (found) my.game._survivalCachedTarget = nextTurn;
 	} else {
 		nextTurn = currentTurn;
 		for (var attempts = 0; attempts < my.game.seq.length; attempts++) {

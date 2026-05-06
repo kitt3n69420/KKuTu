@@ -87,6 +87,27 @@ process.on("uncaughtException", function (err) {
     process.exit();
   }, 10000);
 });
+// 이슈 4 진단: promise 체인 내부 throw가 슬레이브를 죽이는 경로 추적
+process.on("unhandledRejection", function (reason, promise) {
+  var stack = (reason && reason.stack) ? reason.stack : String(reason);
+  var text = `:${process.env["KKUTU_PORT"]} [${new Date().toLocaleString()}] UNHANDLED_REJECTION: ${stack}\n`;
+  File.appendFile("../KKUTU_ERROR.log", text, function () {});
+  JLog.error("UNHANDLED REJECTION: " + stack);
+});
+// 이슈 4 진단: 슬레이브가 어떤 신호로 죽는지 + WebSocket 서버 자체 에러도 추적
+process.on("exit", function (code) {
+  JLog.warn(`[diag#4] slave process exit: code=${code} chan=${process.env["KKUTU_PORT"]}`);
+});
+process.on("SIGTERM", function () { JLog.warn(`[diag#4] slave got SIGTERM`); });
+process.on("SIGINT", function () { JLog.warn(`[diag#4] slave got SIGINT`); });
+Server.on("error", function (err) {
+  var text = `:${process.env["KKUTU_PORT"]} [${new Date().toLocaleString()}] WS_SERVER_ERROR: ${err && err.stack || err}\n`;
+  File.appendFile("../KKUTU_ERROR.log", text, function () {});
+  JLog.error("[diag#4] WS server error: " + (err && err.stack || err));
+});
+Server.on("close", function () {
+  JLog.warn(`[diag#4] slave WebSocket server CLOSED`);
+});
 process.on("message", function (msg) {
   switch (msg.type) {
     case "broadcast":
@@ -328,7 +349,11 @@ KKuTu.onClientMessage = function ($c, msg) {
           var lateVal = (temp.opts.noswear && KKuTu.checkSwearWords(msg.value).length > 0) ? KKuTu.censorSwearWords(msg.value) : msg.value;
           $c.chat(lateVal);
         } else if (!temp.game.loading) {
-          var safeData = (Array.isArray(msg.data)) ? msg.data : undefined;
+          var safeData = Array.isArray(msg.data) ? msg.data : undefined;
+          if (typeof msg.strategy === 'number' && msg.strategy >= 0 && msg.strategy <= 2) {
+            if (!safeData) safeData = {};
+            if (!Array.isArray(safeData)) safeData.strategy = msg.strategy;
+          }
           temp.submit($c, msg.value, safeData);
         }
       } else {

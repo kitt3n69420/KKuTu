@@ -428,11 +428,11 @@ exports.roundReady = function () {
 		setTimeout(my.turnStart, 2400);
 	} else {
 		// 게임 종료
-		var scores = {};
+		var chains = {};
 		traverse.call(my, function (o) {
-			scores[o.id] = Math.round(o.game.spl / my.round);
+			chains[o.id] = Math.round(o.game.spl / my.round);
 		});
-		my.roundEnd({ scores: scores });
+		my.roundEnd({ chains: chains });
 	}
 };
 

@@ -21,7 +21,7 @@ var Lizard = require('../../sub/lizard');
 var DB;
 var DIC;
 
-const ROBOT_CW_INTERVAL = [24000, 12000, 6000, 3000, 1500];
+const ROBOT_CW_INTERVAL = [48000, 24000, 12000, 6000, 3000];
 
 function getBoardQuestions(my, boardIdx) {
 	var board = my.game.boards[boardIdx];
@@ -275,7 +275,7 @@ exports.readyRobot = function (robot) {
 	function getNextQuestion() {
 		// 현재 보드의 남은 문제 시도
 		while (robot._cwBoard !== undefined && robot._cwBoard !== -1 &&
-				robot._cwQuestions && robot._cwQIdx < robot._cwQuestions.length) {
+			robot._cwQuestions && robot._cwQIdx < robot._cwQuestions.length) {
 			var q = robot._cwQuestions[robot._cwQIdx++];
 			if (my.game.answers[q.key]) return q;
 		}

@@ -140,6 +140,13 @@ function showPrompt(msg, value, callback) {
 		if (e.which == 13) onOK();
 	});
 }
+function applyTheme(theme) {
+	document.body.classList.remove('theme-red', 'theme-orange', 'theme-gray');
+	if (theme === 'red') document.body.classList.add('theme-red');
+	else if (theme === 'orange') document.body.classList.add('theme-orange');
+	else if (theme === 'gray') document.body.classList.add('theme-gray');
+}
+
 function applyOptions(opt) {
 	$data.opts = opt;
 
@@ -191,13 +198,16 @@ function applyOptions(opt) {
 	// 볼륨 적용
 	updateBGMVol();
 	updateEffectVol();
+
+	// 테마 적용
+	applyTheme(savedSettings.theme || 'blue');
 }
 
 function loadVolumeSettings() {
 	try {
-		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null };
+		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null, theme: null };
 	} catch (e) {
-		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null };
+		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null, theme: null };
 	}
 }
 
@@ -339,6 +349,8 @@ function connectToRoom(chan, rid) {
 	rws.onclose = function (e) {
 		console.log("room-disc", chan, rid);
 		rws = undefined;
+		clearInterval($data._tTime);
+		clearBoard();
 		if ($data.place != 0) {
 			$data.place = 0;
 			$data.room = null;
@@ -626,7 +638,14 @@ function onMessage(data) {
 		case 'survivalKO':
 			// 서바이벌 모드: 중도 퇴장으로 인한 KO 처리
 			var koTarget = data.target;
-			applySurvivalKODisplay(koTarget);
+			if (data.reason === 'leave') {
+				// 떠난 플레이어는 카드를 즉시 제거하고, 이후 updateRoom 재렌더에서도 스킵
+				if (!$data._survivalLeftPlayers) $data._survivalLeftPlayers = {};
+				$data._survivalLeftPlayers[koTarget] = true;
+				$('#game-user-' + koTarget).remove();
+			} else {
+				applySurvivalKODisplay(koTarget);
+			}
 
 			var koUser = $data.users[koTarget] || $data.robots[koTarget];
 			if (koUser && koUser.game) {
@@ -635,6 +654,12 @@ function onMessage(data) {
 			}
 			playSound('KO');
 			playSound('timeout');
+			break;
+		case 'raingameWord':
+			if ($lib.Raingame && $lib.Raingame.onWord) $lib.Raingame.onWord(data);
+			break;
+		case 'wordstackAtk':
+			if ($lib.Wordstack && $lib.Wordstack.onAtk) $lib.Wordstack.onAtk(data);
 			break;
 		case 'roundEnd':
 			for (i in data.users) {
@@ -689,6 +714,9 @@ function onMessage(data) {
 				kickVoting(data.target);
 			}
 			notice(($data._kickTarget.profile.title || $data._kickTarget.profile.name) + L['kickVoting']);
+			break;
+		case 'afkWarn':
+			afkWarning(data.duration || 30);
 			break;
 		case 'kickDeny':
 			notice(getKickText($data._kickTarget.profile, data));
@@ -1191,12 +1219,15 @@ function processRoom(data) {
 			if ($target.id == data.id) showAlert(L['hasKicked']);
 		}
 		if (data.room.players.indexOf($data.id) == -1) {
-			if ($data.room) if ($data.room.gaming) {
-				stopAllSounds();
-				$data.practicing = false;
-				$data._gaming = false;
-				$stage.box.room.height(360);
-				playBGM('lobby');
+			if ($data.room) {
+				if ($data.room.gaming) {
+					stopAllSounds();
+					$data.practicing = false;
+					$data._gaming = false;
+					$stage.box.room.height(360);
+					playBGM('lobby');
+				}
+				clearBoard();
 			}
 			$data.users[$data.id].game.ready = false;
 			$data.users[$data.id].game.team = 0;
@@ -1247,9 +1278,19 @@ function processRoom(data) {
 			$data.place = $data.room.id;
 			$data.master = $data.room.master == $data.id;
 			// 게임 중일 때 spec 데이터로 플레이어 점수 동기화 (서바이벌 HP 포함)
+			// spec[id]는 구버전(숫자=점수) 또는 신버전({score, alive}) 모두 처리
 			if (data.spec && data.room.gaming) {
 				for (i in data.spec) {
-					if ($data.users[i]) $data.users[i].game.score = data.spec[i];
+					if (!$data.users[i] || !$data.users[i].game) continue;
+					var _sv = data.spec[i];
+					if (_sv !== null && typeof _sv === 'object') {
+						$data.users[i].game.score = _sv.score;
+						// 서바이벌: alive를 동기화해야 관전자/뒤늦은 진입자가 KO 상태를 볼 수 있고,
+						// 다음 판에 stale alive=false가 남아 KO 라벨이 다시 그려지는 문제도 막힘
+						$data.users[i].game.alive = (_sv.alive !== false);
+					} else {
+						$data.users[i].game.score = _sv;
+					}
 				}
 			}
 			if (data.spec && data.target == $data.id) {
@@ -1344,6 +1385,7 @@ function updateUI(myRoom, refresh) {
 	if ($data.practicing) only = "for-gaming";
 
 	$(".kkutu-menu button").not(".ItemButton").hide();
+	$("#raingame-strategy").hide();
 	for (i in $stage.box) $stage.box[i].hide();
 	if (!mobile) $stage.box.me.show();
 	$stage.box.chat.show().width(790).height(190);
@@ -1620,8 +1662,9 @@ function roomListBar(o) {
 	var $R, $ch, $rm;
 	var opts = getOptions(o.mode, o.opts, false, mobile);
 	var rule = RULE[MODE[o.mode]];
-	var isSurvival = o.opts && o.opts.survival;
-	var roundOrHP = isSurvival ? ((o.opts.surHP || 500) + " HP") : (L['rounds'] + " " + o.round);
+	var isAlwaysSurvival = ALWAYS_SURVIVAL_MODES.indexOf(MODE[o.mode]) !== -1;
+	var isSurvival = isAlwaysSurvival || (o.opts && o.opts.survival);
+	var roundOrHP = isSurvival ? ((o.opts && o.opts.surHP || 500) + " HP") : (L['rounds'] + " " + o.round);
 
 	$R = $("<div>").attr('id', "room-" + o.id).addClass("rooms-item")
 		.append($ch = $("<div>").addClass("rooms-channel channel-" + o.channel).on('click', function (e) { requestRoomInfo(o.id); }))
@@ -1746,6 +1789,10 @@ function updateRoom(gaming) {
 		var survivalHP = ($data.room.opts && $data.room.opts.survival) ? ($data.room.opts.surHP || 500) : 0;
 
 		for (i in $data.room.game.seq) {
+			// 서바이벌: 떠난 플레이어는 카드 렌더에서 스킵 (서버 seq에는 KO 상태로 남아 있음)
+			var _seqEntry = $data.room.game.seq[i];
+			var _seqEntryId = (_seqEntry && typeof _seqEntry === 'object') ? _seqEntry.id : _seqEntry;
+			if ($data._survivalLeftPlayers && $data._survivalLeftPlayers[_seqEntryId]) continue;
 			if ($data._replay) {
 				o = $rec.users[$data.room.game.seq[i]] || $data.room.game.seq[i];
 			} else {
@@ -1774,14 +1821,17 @@ function updateRoom(gaming) {
 			// 서바이벌 모드에서 플레이어 초기 HP 설정
 			// 단, 게임이 끝난 후(gaming=false)에는 폴백 적용하지 않음 (KO된 플레이어 점수 0 유지)
 			var initialScore = o.game.score;
-			if (survivalHP > 0 && !o.robot && (initialScore === undefined || initialScore === 0)) {
-				// 게임이 진행 중일 때만 폴백 적용 (라운드 시작 시)
+			if (survivalHP > 0 && !o.robot && (initialScore === undefined || initialScore === 0) && o.game.alive !== false) {
+				// 게임이 진행 중일 때만 폴백 적용 (라운드 시작 시) — KO된 플레이어(alive===false)는 제외
 				if ($data.room.gaming) {
 					initialScore = survivalHP;
 					if (o.game) o.game.score = survivalHP;
 				}
 			}
 			updateScore(o.id, initialScore || 0);
+			if ($data.room.opts && $data.room.opts.survival && o.game && o.game.alive === false) {
+				applySurvivalKODisplay(o.id);
+			}
 		}
 		clearTimeout($data._jamsu);
 		delete $data._jamsu;
@@ -2659,6 +2709,9 @@ function clearGame() {
 function gameReady() {
 	var i, u;
 
+	// 서바이벌: 새 게임 시작 시 이전 게임의 leaver set 초기화 (재입장한 플레이어 카드가 다시 보이도록)
+	$data._survivalLeftPlayers = {};
+
 	for (i in $data.room.players) {
 		if ($data._replay) {
 			u = $rec.users[$data.room.players[i]] || $data.room.players[i];
@@ -2667,6 +2720,8 @@ function gameReady() {
 		}
 		if (!u) continue;
 		u.game.score = 0;
+		// 서바이벌: 이전 게임에서 KO/leave로 alive=false였다면 초기화 (자기 자신 포함)
+		u.game.alive = true;
 		delete $data["_s" + $data.room.players[i]];
 	}
 	delete $data.lastFail;
@@ -2950,7 +3005,7 @@ function clearBoard() {
 	$(".jjoriping").removeClass("flip");
 	$(".jjoriping").css({ "float": "", "margin": "" });
 	// Small-mode class is managed by updateRoom() based on player count, don't remove it here
-	$stage.game.display.empty();
+	$stage.game.display.removeClass("raingame-board").empty();
 	$stage.game.chain.hide();
 	$stage.game.hints.empty().hide();
 	$stage.game.cwcmd.hide();
@@ -2958,9 +3013,10 @@ function clearBoard() {
 	$stage.game.round.empty();
 	$stage.game.history.empty();
 	$stage.game.items.show().css('opacity', 0);
-	$(".jjo-turn-time .graph-bar").width(0).css({ 'float': "", 'text-align': "", 'background-color': "" });
-	$(".jjo-round-time .graph-bar").width(0).css({ 'float': "", 'text-align': "" }).removeClass("round-extreme");
+	$(".jjo-turn-time .graph-bar").width(0).css({ 'float': "", 'text-align': "", 'background-color': "" }).removeClass("overflow").html("");
+	$(".jjo-round-time .graph-bar").width(0).css({ 'float': "", 'text-align': "" }).removeClass("round-extreme").html("");
 	$(".game-user-bomb").removeClass("game-user-bomb");
+	$("#raingame-strategy").hide();
 }
 function drawRound(round) {
 	var i;
@@ -3129,7 +3185,7 @@ function roundEnd(result, data) {
 	$data._relay = false;
 
 	$(".result-me-expl").empty();
-	$stage.game.display.html(L['roundEnd']);
+	$stage.game.display.removeClass("raingame-board").html(L['roundEnd']);
 	$data._resultPage = 1;
 	$data._result = null;
 	for (i in result) {
@@ -3151,9 +3207,12 @@ function roundEnd(result, data) {
 		// 서바이벌 모드: KO된 플레이어 점수 표시
 		var isSurvival = $data.room && $data.room.opts && $data.room.opts.survival;
 		var isKO = isSurvival && r.alive === false;
-		var scoreDisplay = data.scores
-			? (L['avg'] + " " + commify(data.scores[r.id]) + L['kpm'])
-			: (isKO ? "KO" : (commify(r.score || 0) + (isSurvival ? " HP" : L['PTS'])));
+		var chainLabel = L['chainCount'] || 'Chain';
+		var scoreDisplay = data.chains
+			? (commify(data.chains[r.id] || 0) + " " + chainLabel)
+			: data.scores
+				? (L['avg'] + " " + commify(data.scores[r.id]) + L['kpm'])
+				: (isKO ? "KO" : (commify(r.score || 0) + (isSurvival ? " HP" : L['PTS'])));
 
 		$b.append($o = $("<div>").addClass("result-board-item")
 			.append($p = $("<div>").addClass("result-board-rank").html(r.rank + 1))
@@ -3326,6 +3385,24 @@ function kickVoteTick() {
 	if (--$data.kickTime > 0) $data._kickTimer = addTimeout(kickVoteTick, 1000);
 	else $stage.dialog.kickVoteY.trigger('click');
 }
+function afkWarning(duration) {
+	$("#afk-warn-text").text(L['afkWarnText']);
+	$data._afkEndTime = Date.now() + duration * 1000;
+	$data._afkDuration = duration * 1000;
+	clearTimeout($data._afkTimer);
+	$data._afkTimer = addTimeout(afkWarnTick, 50);
+	showDialog($stage.dialog.afkWarn);
+}
+function afkWarnTick() {
+	var remaining = $data._afkEndTime - Date.now();
+	if (remaining <= 0) {
+		$(".afk-warn-time .graph-bar").width(0);
+		// 바 만료 시에는 서버 킥 타이머가 소켓을 닫음. 클라이언트에서 afkPing을 보내지 않음.
+		return;
+	}
+	$(".afk-warn-time .graph-bar").width(remaining / $data._afkDuration * 300);
+	$data._afkTimer = addTimeout(afkWarnTick, 50);
+}
 function loadShop() {
 	var $body = $("#shop-shelf");
 
@@ -3460,8 +3537,17 @@ var BONUS_COLORS = {
 	missionRev: '#66FF66',
 	fullhouse: '#c26eff',
 	defense: '#647bff',
-	linking: 'rgb(146, 203, 250)'
 };
+Object.defineProperty(BONUS_COLORS, 'linking', {
+	get: function() {
+		if (document.body.classList.contains('theme-red')) return 'rgb(239, 154, 154)';
+		if (document.body.classList.contains('theme-orange')) return 'rgb(255, 204, 128)';
+		if (document.body.classList.contains('theme-gray')) return 'rgb(189, 189, 189)';
+		return 'rgb(146, 203, 250)';
+	},
+	enumerable: true,
+	configurable: true
+});
 function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars, historyOverride, isAttack, isDefense, isFlush, isJackpot) {
 	var len;
 	var mode = MODE[$data.room.mode];
@@ -3620,7 +3706,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 			var isStraightChar = isStraight && (isRev ? (charIdx === 0) : (charIdx === len - 1));
 			var isLinking = (RULE[mode].rule === "Classic") && (linkingIndices.indexOf(charIdx) !== -1);
 			var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(charIdx) !== -1;
-			var isLinkPos = isRev ? (charIdx === 0) : (charIdx === len - 1);
+			var isLinkPos = linkingIndices.indexOf(charIdx) !== -1;
 			var isDefPos = isRev ? (charIdx === len - 1) : (charIdx === 0);
 
 			$stage.game.display.append($l = $("<div>")
@@ -3691,7 +3777,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				var isLinking = linkingIndices.indexOf(idx) !== -1;
 				var isStraightChar = isStraight && (idx === 0);
 				var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(idx) !== -1;
-				var isLinkPos = (idx === 0); // Rev: linking char = first char (string index 0)
+				var isLinkPos = linkingIndices.indexOf(idx) !== -1;
 				var isDefPos = (idx === len - 1); // Rev: defense char = last char
 
 				if (isHanbang && isLinkPos) {
@@ -3736,7 +3822,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 				var isStraightChar = isStraight && (idx === len - 1); // Normal: Last char
 				var isLinking = (RULE[mode].rule === "Classic") && (linkingIndices.indexOf(idx) !== -1);
 				var isFullHouseChar = fullHouseChars && fullHouseChars.indexOf(idx) !== -1;
-				var isLinkPos = (idx === len - 1); // Normal: linking char = last char
+				var isLinkPos = linkingIndices.indexOf(idx) !== -1;
 				var isDefPos = (idx === 0); // Normal: defense char = first char
 
 				if (isHanbang && isLinkPos) {
@@ -3985,8 +4071,9 @@ function setRoomHead($obj, room) {
 	var opts = getOptions(room.mode, room.opts, false, false);
 	var rule = RULE[MODE[room.mode]];
 	var $rm;
-	var isSurvival = room.opts && room.opts.survival;
-	var roundOrHP = isSurvival ? ((room.opts.surHP || 500) + " HP") : (room.round + " " + L['rounds']);
+	var isAlwaysSurvival = ALWAYS_SURVIVAL_MODES.indexOf(MODE[room.mode]) !== -1;
+	var isSurvival = isAlwaysSurvival || (room.opts && room.opts.survival);
+	var roundOrHP = isSurvival ? ((room.opts && room.opts.surHP || 500) + " HP") : (room.round + " " + L['rounds']);
 
 	$obj.empty()
 		.append($("<h5>").addClass("room-head-number").text("[" + (room.practice ? L['practice'] : room.id) + "]"))

@@ -417,7 +417,7 @@ function getHints(answer, lang) {
 	var hints = [];
 
 	// 1차 힌트: N글자
-	hints.push(answer.length + (lang === 'ko' ? '글자' : ' letters'));
+	hints.push(answer.replace(/\s/g, '').length + (lang === 'ko' ? '글자' : ' letters'));
 
 	// 2차 힌트: 첫 글자
 	hints.push(answer.charAt(0).toUpperCase());

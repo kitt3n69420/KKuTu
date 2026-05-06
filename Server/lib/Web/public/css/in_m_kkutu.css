@@ -16,6 +16,31 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* ===== Theme Variables ===== */
+:root {
+	--color-primary: #1976D2;
+	--color-primary-dark: #1565C0;
+	--color-bg-light: #E3F2FD;
+	--color-bg-medium: #90CAF9;
+	--color-border: #BBDEFB;
+}
+
+body.theme-red {
+	--color-primary: #C62828;
+	--color-primary-dark: #B71C1C;
+	--color-bg-light: #FFEBEE;
+	--color-bg-medium: #EF9A9A;
+	--color-border: #FFCDD2;
+}
+
+body.theme-orange {
+	--color-primary: #E65100;
+	--color-primary-dark: #BF360C;
+	--color-bg-light: #FFF3E0;
+	--color-bg-medium: #FFCC80;
+	--color-border: #FFE0B2;
+}
+
 equ {
 	font-family: consolas;
 	font-style: italic;
@@ -33,6 +58,14 @@ equ {
 
 #Intro img {
 	width: 100%;
+}
+
+body.theme-red #Intro img {
+	filter: hue-rotate(135deg);
+}
+
+body.theme-orange #Intro img {
+	filter: hue-rotate(-180deg) saturate(130%) brightness(110%);
 }
 
 #version {
@@ -66,7 +99,7 @@ equ {
 
 /* Global Background - Blue Theme (Mobile) */
 body {
-	background: linear-gradient(135deg, #E3F2FD 0%, #90CAF9 100%) fixed !important;
+	background: linear-gradient(135deg, var(--color-bg-light) 0%, var(--color-bg-medium) 100%) fixed !important;
 }
 
 #Background {
@@ -74,7 +107,7 @@ body {
 }
 
 #Top {
-	background-color: #1976D2 !important;
+	background-color: var(--color-primary) !important;
 	/* Blue Theme */
 	background-image: none;
 	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
@@ -93,6 +126,17 @@ body {
 
 /* ... existing rules ... */
 
+.kkutu-menu {
+	position: relative;
+	z-index: 0;
+}
+
+.kkutu-menu::after {
+	content: "";
+	display: block;
+	clear: both;
+}
+
 .kkutu-menu button:not(.ItemButton) {
 	float: left;
 	border: none;
@@ -103,7 +147,7 @@ body {
 
 	/* Unified Button Style */
 	font-weight: bold;
-	color: #1976D2 !important;
+	color: var(--color-primary) !important;
 	background-color: rgba(255, 255, 255, 0.9) !important;
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 	margin: 1px;
@@ -112,13 +156,13 @@ body {
 
 /* Primary Action Buttons - High Contrast */
 #StartBtn {
-	background-color: #1976D2 !important;
+	background-color: var(--color-primary) !important;
 	/* Blue (Unified) */
 	color: white !important;
 }
 
 #ReadyBtn {
-	background-color: #1976D2 !important;
+	background-color: var(--color-primary) !important;
 	/* Blue */
 	color: white !important;
 }
@@ -130,6 +174,18 @@ body {
 	/* Border removed */
 }
 
+#DictionaryBtn {
+	width: 35px;
+	height: 30px;
+	padding: 0;
+	margin: 0px 1px;
+}
+
+#DictionaryBtn:hover {
+	height: 35px;
+	margin-top: -5px;
+}
+
 .kkutu-menu button:not(.ItemButton):hover {
 	margin-top: -5px;
 	height: 25px;
@@ -138,9 +194,9 @@ body {
 /* Toggled State for Unified Menu Buttons (Spectate, etc.) */
 .kkutu-menu .toggled {
 	margin-top: 5px !important;
-	color: #1565C0 !important;
+	color: var(--color-primary-dark) !important;
 	/* Darker Blue Text */
-	background-color: #E3F2FD !important;
+	background-color: var(--color-bg-light) !important;
 	/* Very Light Blue Background */
 	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -149,8 +205,7 @@ body {
 #ReadyBtn.toggled {
 	margin-top: 5px !important;
 	animation: none;
-	background-color: #64B5F6 !important;
-	/* Lighter Blue */
+	background-color: var(--color-bg-medium) !important;
 	color: white !important;
 	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2) !important;
 }
@@ -236,13 +291,13 @@ body {
 
 .dialog-head {
 	padding: 3px;
-	border-bottom: 1px solid #BBDEFB;
+	border-bottom: 1px solid var(--color-border);
 	border-radius: 5px;
 	margin-bottom: 5px;
 	height: 12px;
-	color: #1565C0;
+	color: var(--color-primary-dark);
 	font-size: 11px;
-	background-color: #E3F2FD;
+	background-color: var(--color-bg-light);
 }
 
 .dialog-head .dialog-title {
@@ -276,7 +331,7 @@ body {
 
 .ranking-me {
 	font-weight: bold;
-	background-color: #E3F2FD;
+	background-color: var(--color-bg-light);
 }
 
 .ranking-image {
@@ -294,6 +349,8 @@ body {
 }
 
 .Product {
+	position: relative;
+	z-index: 1;
 	border-radius: 0px;
 	color: #111111;
 	box-shadow: 0px 2px 1px #B0BEC5;
@@ -301,10 +358,10 @@ body {
 }
 
 .product-title {
-	border-bottom-color: #BBDEFB;
+	border-bottom-color: var(--color-border);
 	border-radius: 5px;
-	color: #1565C0;
-	background-color: #E3F2FD;
+	color: var(--color-primary-dark);
+	background-color: var(--color-bg-light);
 	overflow: hidden;
 }
 
@@ -456,7 +513,7 @@ body {
 
 .users-item:hover {
 	cursor: pointer;
-	background-color: #E3F2FD;
+	background-color: var(--color-bg-light);
 }
 
 .invite-item {
@@ -501,7 +558,7 @@ body {
 }
 
 .rooms-create {
-	background-color: #8EC0F3;
+	background-color: var(--color-bg-medium);
 }
 
 .rooms-create>div {
@@ -545,7 +602,7 @@ body {
 }
 
 .rooms-item:hover {
-	background-color: #E3F2FD;
+	background-color: var(--color-bg-light);
 }
 
 .rooms-gaming:hover {
@@ -553,7 +610,7 @@ body {
 }
 
 .rooms-create:hover {
-	background-color: #AADDFF;
+	background-color: var(--color-border);
 }
 
 .rooms-number {
@@ -729,7 +786,7 @@ body {
 }
 
 .team-0 {
-	background-color: #E3F2FD;
+	background-color: var(--color-bg-light);
 }
 
 .team-1 {
@@ -756,7 +813,7 @@ body {
 	width: calc(100% - 10px);
 	height: 24px;
 	box-shadow: 0px 1px 1px #B0BEC5;
-	background-color: #E3F2FD;
+	background-color: var(--color-bg-light);
 }
 
 .room-user div {
@@ -844,7 +901,28 @@ body {
 .GameBox {
 	width: calc(100% - 10px);
 	height: 410px;
+	position: relative;
+	isolation: isolate;
+}
+
+.GameBox::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
 	background-image: url('/img/kkutu/gamebg.png');
+	z-index: -1;
+	pointer-events: none;
+}
+
+body.theme-red .GameBox::before {
+	filter: hue-rotate(135deg);
+}
+
+body.theme-orange .GameBox::before {
+	filter: hue-rotate(-180deg) saturate(130%) brightness(110%);
 }
 
 .GameBox .product-title {
@@ -1327,13 +1405,13 @@ body {
 }
 
 .game-user {
-	border: 2px solid #BBDEFB;
+	border: 2px solid var(--color-border);
 	border-radius: 10px;
 	margin: 1px;
 	width: 100%;
 	height: 22px;
 	box-shadow: 0px 1px 1px #141414;
-	background-color: #BBDEFB;
+	background-color: var(--color-border);
 	transition: all 300ms ease;
 }
 
@@ -1617,6 +1695,21 @@ body {
 	background-color: #FF6D6D;
 }
 
+#AfkWarnDiag {}
+
+.afk-warn-time {
+	border-radius: 10px;
+	width: 100%;
+	height: 40px;
+	overflow: hidden;
+	background-color: #996600;
+}
+
+.afk-warn-time .graph-bar {
+	height: 40px;
+	background-color: #FFAA00;
+}
+
 .purchase-not-enough {
 	color: #EE2222;
 }
@@ -1851,7 +1944,7 @@ body {
 
 .cf-rew-item {
 	float: left;
-	border-bottom: 1px dashed #BBDEFB;
+	border-bottom: 1px dashed var(--color-border);
 	margin-bottom: 1px;
 }
 
@@ -1876,7 +1969,7 @@ body {
 
 #cf-cost {
 	text-align: center;
-	background-color: #BBDEFB;
+	background-color: var(--color-border);
 }
 
 .cf-composable {
@@ -1913,7 +2006,7 @@ body {
 	font-size: 11px;
 	text-align: center;
 	cursor: pointer;
-	background-color: #BBDEFB;
+	background-color: var(--color-border);
 	transition: all 300ms ease;
 }
 
@@ -2001,6 +2094,7 @@ body {
 
 .ChatBox {
 	width: calc(100% - 10px) !important;
+	z-index: 2;
 }
 
 #Chat {
@@ -2044,11 +2138,11 @@ body {
 }
 
 .chat-notice {
-	background-color: #E3F2FD;
+	background-color: var(--color-bg-light);
 }
 
 .chat-notice .chat-head {
-	color: #1767CA;
+	color: var(--color-primary);
 }
 
 .chat-stamp {
@@ -2147,7 +2241,7 @@ body {
 	}
 
 	100% {
-		background-color: #BBDEFB;
+		background-color: var(--color-border);
 	}
 }
 
@@ -2318,6 +2412,16 @@ body {
 	align-items: center;
 }
 
+/* KO 점수 표시 스타일 - cw 레이아웃 */
+.game-body.cw .game-user-score.survival-ko-score {
+	font-size: 15px;
+	text-shadow: none;
+	text-align: center;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
 /* KO 점수 표시 스타일 - 스몰 모드 (점수와 같은 크기 12px, 중앙정렬) */
 .game-body.small-mode .game-user-score.survival-ko-score {
 	font-size: 12px;
@@ -2410,12 +2514,12 @@ body {
 
 .kkutu-menu .ItemButton.item-available {
 	background-color: rgba(255, 255, 255, 0.9);
-	color: #1976D2;
+	color: var(--color-primary);
 }
 
 .kkutu-menu .ItemButton.item-queued {
-	background-color: #BBDEFB;
-	color: #1565C0;
+	background-color: var(--color-border);
+	color: var(--color-primary-dark);
 }
 
 .ItemIcon {
@@ -2466,4 +2570,62 @@ body {
 .MobileItemOverlay.hiding {
 	visibility: visible;
 	transform: translateX(-50%) scale(0);
+}
+
+/* ===== 단어비 (Raingame) ===== */
+.raingame-board {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+.raingame-word {
+	position: absolute;
+	transform: translateX(-50%);
+	font-size: 18px;
+	font-weight: bold;
+	color: #fff;
+	text-shadow: 1px 1px 2px #000;
+	pointer-events: none;
+	white-space: nowrap;
+	will-change: top;
+}
+
+.raingame-word.raingame-success {
+	color: #ffe066;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+}
+
+#raingame-strategy {
+	float: right;
+}
+
+.raingame-strategy-btn {
+	position: relative;
+	overflow: visible;
+	width: 25px !important;
+	height: 20px !important;
+	padding: 5px !important;
+	cursor: pointer;
+}
+
+.raingame-strategy-btn .StratIcon {
+	margin-right: 0;
+}
+
+.raingame-strategy-btn .StratName {
+	display: none;
+}
+
+.kkutu-menu .raingame-strategy-btn.toggled {
+	margin-top: 0 !important;
+	background-color: var(--color-border) !important;
+	color: var(--color-primary-dark) !important;
+}
+
+/* WordStack */
+.jjo-turn-time .graph-bar.overflow {
+	background-color: #ff4444 !important;
 }

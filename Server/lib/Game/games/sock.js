@@ -22,10 +22,10 @@ var DB;
 var DIC;
 
 const ROBOT_SOCK_START_DELAY = [5000, 3000, 1800, 900, 300];
-const ROBOT_SOCK_MAX_WORDS   = [10, 20, 30, 50, 999];
-const BOT_SOCK_CPM           = [45, 90, 175, 350, 700];
-const ROBOT_SOCK_MAX_LEN_KO  = [3, 3, 4, 5, 10];
-const ROBOT_SOCK_MAX_LEN_EN  = [3, 3, 6, 10, 20];
+const ROBOT_SOCK_MAX_WORDS = [10, 20, 30, 50, 999];
+const BOT_SOCK_CPM = [30, 60, 120, 300, 800];
+const ROBOT_SOCK_MAX_LEN_KO = [3, 2, 3, 4, 8];
+const ROBOT_SOCK_MAX_LEN_EN = [4, 5, 7, 10, 20];
 
 function buildFreqMap(str) {
 	var map = {};

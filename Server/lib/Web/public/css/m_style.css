@@ -16,9 +16,36 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* ===== Theme Variables ===== */
 :root {
+	--color-primary: #1976D2;
+	--color-primary-dark: #1565C0;
+	--color-bg-light: #E3F2FD;
+	--color-bg-medium: #90CAF9;
+	--color-border: #BBDEFB;
 	/* CSS variable for viewport height, updated by JavaScript for keyboard handling */
 	--vh: 1vh;
+}
+body.theme-red {
+	--color-primary: #C62828;
+	--color-primary-dark: #B71C1C;
+	--color-bg-light: #FFEBEE;
+	--color-bg-medium: #EF9A9A;
+	--color-border: #FFCDD2;
+}
+body.theme-orange {
+	--color-primary: #E65100;
+	--color-primary-dark: #BF360C;
+	--color-bg-light: #FFF3E0;
+	--color-bg-medium: #FFCC80;
+	--color-border: #FFE0B2;
+}
+body.theme-gray {
+	--color-primary: #616161;
+	--color-primary-dark: #424242;
+	--color-bg-light: #F5F5F5;
+	--color-bg-medium: #BDBDBD;
+	--color-border: #E0E0E0;
 }
 
 html,
@@ -48,7 +75,7 @@ textarea {
 	display: block;
 	font-family: inherit;
 	padding: 5px;
-	border: 1px solid #90CAF9;
+	border: 1px solid var(--color-bg-medium);
 	border-radius: 10px;
 	resize: none;
 }
@@ -58,7 +85,7 @@ button {
 	box-sizing: inherit;
 	font-family: inherit;
 	padding: 5px;
-	border: 1px solid #90CAF9;
+	border: 1px solid var(--color-bg-medium);
 	border-radius: 10px;
 	background-color: #FFFFFF;
 	transition: all 200ms ease;
@@ -66,7 +93,7 @@ button {
 
 button:active {
 	color: #FFFFFF;
-	background-color: #1976D2;
+	background-color: var(--color-primary);
 }
 
 input:focus,
@@ -393,6 +420,13 @@ span {
 	box-shadow: 0px 2px 2px #111111;
 	background-image: url('/img/topbg.png');
 	z-index: 1;
+}
+
+body.theme-red #Top,
+body.theme-orange #Top,
+body.theme-gray #Top {
+	background-image: none;
+	background-color: var(--color-primary);
 }
 
 #Middle {

@@ -533,12 +533,12 @@ iframe {
 	height: 64px;
 	box-shadow: 0px 1px 1px #777777;
 	cursor: pointer;
-	background-color: #E3F2FD;
+	background-color: var(--color-bg-light);
 	transition: all 300ms ease;
 }
 
 .rooms-create {
-	background-color: #8EC0F3;
+	background-color: var(--color-bg-medium);
 }
 
 .rooms-create>div {
@@ -596,7 +596,7 @@ iframe {
 }
 
 .rooms-create:hover {
-	background-color: #AADDFF;
+	background-color: var(--color-border);
 }
 
 .rooms-number {
@@ -1913,11 +1913,11 @@ iframe {
 }
 
 .chat-notice {
-	background-color: #E3F2FD;
+	background-color: var(--color-bg-light);
 }
 
 .chat-notice .chat-head {
-	color: #1767CA;
+	color: var(--color-primary);
 }
 
 .chat-stamp {

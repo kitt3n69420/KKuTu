@@ -82,6 +82,7 @@ exports.turnStart = function (force) {
 	clearTimeout(my.game.turnTimer);
 	clearTimeout(my.game.robotTimer);
 	my.game.late = false;
+	my.game.loading = false;
 	my.game.turnTime = 15000 - 1400 * speed;
 	my.game.turnAt = (new Date()).getTime();
 	my.byMaster('turnStart', {
@@ -294,6 +295,7 @@ exports.submit = function (client, text, data) {
 				function preApproved() {
 					if (my.game.late) return;
 					if (!my.game.chain) return;
+					if (getPlayerId(my.game.seq[my.game.turn]) !== getPlayerId(client)) return;
 
 					my.game.loading = false;
 					my.game.late = true;

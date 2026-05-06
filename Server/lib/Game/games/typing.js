@@ -47,10 +47,100 @@ exports.init = function (_DB, _DIC) {
 	DB = _DB;
 	DIC = _DIC;
 };
+function isTopicTyping(my) {
+	var mc = Const.GAME_TYPE[my.mode];
+	return mc === 'KTT' || mc === 'ETT';
+}
+function buildThemeQueue(topics, rounds) {
+	var pool = [];
+	var remaining = rounds;
+	while (remaining >= topics.length) {
+		for (var i = 0; i < topics.length; i++) pool.push(topics[i]);
+		remaining -= topics.length;
+	}
+	if (remaining > 0) {
+		var rest = topics.slice();
+		for (var j = 0; j < remaining; j++) {
+			var idx = Math.floor(Math.random() * rest.length);
+			pool.push(rest[idx]);
+			rest.splice(idx, 1);
+		}
+	}
+	for (var k = pool.length - 1; k > 0; k--) {
+		var r = Math.floor(Math.random() * (k + 1));
+		var tmp = pool[k]; pool[k] = pool[r]; pool[r] = tmp;
+	}
+	return pool;
+}
 exports.getTitle = function () {
 	var R = new Lizard.Tail();
 	var my = this;
 	var i, j;
+
+	if (isTopicTyping(my)) {
+		var themeQueue = buildThemeQueue(my.opts.injpick, my.round);
+		my.game.themeQueue = themeQueue;
+		var themes = themeQueue.slice();
+		var uniqueThemes = themes.filter(function (t, i) { return themes.indexOf(t) === i; });
+		var minLen = my.opts.long ? 9 : 2;
+		var maxLen = my.opts.long ? 14 : 5;
+		var themeWords = {};
+		var fallbackWords = [];
+		var pending = uniqueThemes.length + 1;
+
+		function tryFinish() {
+			if (--pending > 0) return;
+			var data = [];
+			var placeholderRounds = [];
+			for (var i = 0; i < my.round; i++) {
+				var pool = themeWords[themes[i]] || [];
+				var arr = [];
+				var fb;
+				var hasPlaceholder = false;
+				if (pool.length >= 10) {
+					for (var j = 0; j < LIST_LENGTH; j++)
+						arr.push(pool[Math.floor(Math.random() * pool.length)]);
+				} else if (pool.length > 0) {
+					arr = pool.slice();
+					fb = fallbackWords.length ? fallbackWords : pool;
+					hasPlaceholder = (fb !== pool);
+					while (arr.length < LIST_LENGTH)
+						arr.push(fb[Math.floor(Math.random() * fb.length)]);
+				} else {
+					fb = fallbackWords.length ? fallbackWords : [""];
+					hasPlaceholder = true;
+					for (var j = 0; j < LIST_LENGTH; j++)
+						arr.push(fb[Math.floor(Math.random() * fb.length)]);
+				}
+				data.push(arr);
+				placeholderRounds.push(hasPlaceholder);
+			}
+			my.game.lists = data;
+			my.game.placeholderRounds = placeholderRounds;
+			R.go("①②③④⑤⑥⑦⑧⑨⑩");
+		}
+
+		DB.kkutu[my.rule.lang].direct(
+			`SELECT _id FROM kkutu_${my.rule.lang} WHERE LENGTH(_id) BETWEEN ${minLen} AND ${maxLen} AND hit >= 1 AND _id NOT LIKE '% %' ORDER BY log(greatest(hit,2)) + random()*3 DESC LIMIT 200`,
+			function (err, res) {
+				if (!err && res && res.rows) fallbackWords = res.rows.map(function (r) { return r._id; });
+				tryFinish();
+			}
+		);
+		uniqueThemes.forEach(function (theme) {
+			var safeTheme = theme.replace(/'/g, "''");
+			DB.kkutu[my.rule.lang].direct(
+				`SELECT _id FROM kkutu_${my.rule.lang} WHERE theme ~ '(^|,)${safeTheme}($|,)' AND LENGTH(_id) BETWEEN ${minLen} AND ${maxLen} AND hit >= 1 AND _id NOT LIKE '% %' ORDER BY log(greatest(hit,2)) + random()*3 DESC LIMIT 300`,
+				function (err, res) {
+					if (!err && res && res.rows) themeWords[theme] = res.rows.map(function (r) { return r._id; });
+					tryFinish();
+				}
+			);
+		});
+
+		traverse.call(my, function (o) { o.game.spl = 0; });
+		return R;
+	}
 
 	if (my.opts.proverb) pick(TYL.PROVERBS[my.rule.lang]);
 	else {
@@ -101,11 +191,15 @@ exports.roundReady = function () {
 	my.game.roundTime = my.time * 1000;
 	if (my.game.round <= my.round) {
 		my.game.clist = my.game.lists.shift();
-		my.byMaster('roundReady', {
-			round: my.game.round,
-			list: my.game.clist,
-			long: my.opts.long
-		}, true);
+		var payload = { round: my.game.round, list: my.game.clist, long: my.opts.long };
+		if (isTopicTyping(my)) {
+			my.game.theme = (my.game.themeQueue && my.game.themeQueue.shift()) || my.opts.injpick[0];
+			payload.theme = my.game.theme;
+			if (my.game.placeholderRounds && my.game.placeholderRounds.length > 0) {
+				payload.hasPlaceholder = my.game.placeholderRounds.shift();
+			}
+		}
+		my.byMaster('roundReady', payload, true);
 		setTimeout(my.turnStart, 2400);
 	} else {
 		traverse.call(my, function (o) {
@@ -212,7 +306,7 @@ exports.getScore = function (text) {
 				}
 			}
 			return r;
-		case 'en': return len;
+		case 'en': return text.replace(/\s/g, '').length;
 		default: return r;
 	}
 };

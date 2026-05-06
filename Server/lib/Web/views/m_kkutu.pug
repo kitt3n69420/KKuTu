@@ -1,4 +1,4 @@
-﻿//-
+//-
 	Rule the words! KKuTu Online
 	Copyright (C) 2017 JJoriping(op@jjo.kr)
 	
@@ -123,7 +123,17 @@ block Middle
 					i.fa.ItemIcon
 					span.ItemName
 					span.ItemCount 0
-	+Dialog('SettingDiag', 300, 450, L('settingsText'))
+		div#raingame-strategy(style='display: none;')
+			button.raingame-strategy-btn(data-strategy='0', data-tooltip=L('raingameStrategy0Desc'))
+				i.fa.fa-random.StratIcon
+				span.StratName= L('raingameStrategy0')
+			button.raingame-strategy-btn(data-strategy='1', data-tooltip=L('raingameStrategy1Desc'))
+				i.fa.fa-crosshairs.StratIcon
+				span.StratName= L('raingameStrategy1')
+			button.raingame-strategy-btn(data-strategy='2', data-tooltip=L('raingameStrategy2Desc'))
+				i.fa.fa-reply.StratIcon
+				span.StratName= L('raingameStrategy2')
+	+Dialog('SettingDiag', 300, 500, L('settingsText'))
 		div.dialog-bar
 			div.dialog-opt(style="width: 100%; margin-bottom: 5px;")
 				label(for='mute-bgm', style='float: left; width: 100px; text-align: center; padding-top: 5px;')= L('bgm')
@@ -162,9 +172,16 @@ block Middle
 		div.dialog-bar
 			h4= L('language')
 			select#language-setting(style="width: 150px;")
-				option(value="ko_KR") 한국어	
+				option(value="ko_KR") 한국어
 				option(value="en_US") English
 				option(value="nya") ???
+		div.dialog-bar
+			h4= L('theme')
+			select#theme-setting(style="width: 150px;")
+				option(value="blue")= L('themeBlue')
+				option(value="red")= L('themeRed')
+				option(value="orange")= L('themeOrange')
+				option(value="gray")= L('themeGray')
 		div.dialog-bar
 			h4= L('levelPack')
 			select#level-pack(style="width: 150px;")
@@ -224,7 +241,7 @@ block Middle
 				input#room-pw(type='password', placeholder=L('password'), maxlength=20)
 			div.dialog-bar
 				h4= L('userLimit')
-				input#room-limit(type='number', min=2, max=8, step=1, value=8)
+				input#room-limit(type='number', min=2, max=12, step=1, value=12)
 			div.dialog-bar
 				h4= L('gameCategory')
 				select#room-category
@@ -244,6 +261,7 @@ block Middle
 						option(value=21)= L('modeKAK')
 						option(value=11)= L('modeKDA')
 						option(value=6)= L('modeKTY')
+						option(value=38)= L('modeKTT')
 						option(value=25)= L('modeKCB')
 						option(value=5)= L('modeKCW')
 						option(value=13)= L('modeKSS')
@@ -252,8 +270,11 @@ block Middle
 						option(value=10)= L('modeHUN')
 						option(value=15)= L('modeKPQ')
 						option(value=17)= L('modeKFR')
+						option(value=40)= L('modeKTF')
 						option(value=28)= L('modeKQZ')
 						option(value=31)= L('modeKPF')
+						option(value=34)= L('modeKWR')
+						option(value=36)= L('modeKWS')
 					optgroup(label=L('mcEnglish'))
 						option(value=1)= L('modeESH')
 						option(value=19)= L('modeEKK')
@@ -262,19 +283,23 @@ block Middle
 						option(value=22)= L('modeEAK')
 						option(value=12)= L('modeEDA')
 						option(value=7)= L('modeETY')
+						option(value=39)= L('modeETT')
 						option(value=26)= L('modeECB')
 						option(value=14)= L('modeESS')
 						option(value=30)= L('modeESQ')
 						option(value=20)= L('modeEPQ')
 						option(value=18)= L('modeEFR')
+						option(value=41)= L('modeETF')
 						option(value=29)= L('modeEQZ')
 						option(value=32)= L('modeEPF')
+						option(value=35)= L('modeEWR')
+						option(value=37)= L('modeEWS')
 					optgroup(label=L('mcEtc'))
 						option(value=24)= L('modeCRL')
 						option(value=27)= L('modeCAL')
-			div.dialog-bar(style='margin-top: -5px; margin-bottom: 5px; height: 50px;')
+			div.dialog-bar(style='margin-top: -5px; margin-bottom: 5px; height: 50px; overflow: hidden;')
 				h4
-				h4#game-mode-expl.dialog-bar-value(style='width: 100%; font-size: 11px;')
+				h4#game-mode-expl(style='float: left; width: calc(100% - 80px); font-size: 11px; text-align: left; margin: 0; overflow: hidden;')
 			div.dialog-bar
 				h4#room-round-label= L('numRound')
 				input#room-round(type='number', min=1, max=10, step=1, value=5)
@@ -372,7 +397,7 @@ block Middle
 			div.dialog-bar#room-simple-rules-panel(style='height: auto; overflow: hidden; display: none;')
 				h4(style='height: 30px;')= L('misc')
 				div(style='float: left; width: calc(100% - 90px);')
-					- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf'];
+					- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf'];
 					- for(var i in locals.OPTIONS)
 						- if(keyRules.indexOf(i) === -1) continue;
 						+GameOptionFull(i, 'room-simple')
@@ -651,6 +676,12 @@ block Middle
 		div.dialog-bar.tail-button
 			button#kick-vote-no= L('disagree')
 			button#kick-vote-yes= L('agree')
+	+Dialog('AfkWarnDiag', 300, 160, L('afkWarn'))
+		div.dialog-bar#afk-warn-text(style='text-align: center;')
+		div.dialog-bar
+			+GraphBar('afk-warn-time')
+		div.dialog-bar.tail-button
+			button#afk-warn-ok= L('afkWarnOk')
 	+Dialog('PurchaseDiag', 300, 310, L('purchase'))
 		div.dialog-bar
 			h4= L('pingBefore')

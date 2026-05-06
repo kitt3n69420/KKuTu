@@ -65,12 +65,13 @@ const MODE_LENGTH = (exports.MODE_LENGTH = Const.GAME_TYPE.length);
 const PORT = process.env["KKUTU_PORT"];
 
 process.on("uncaughtException", function (err) {
-  var text = `:${PORT} [${new Date().toLocaleString()}] ERROR: ${err.toString()}\n${err.stack}\n`;
+  var text = `:${PORT} [${new Date().toLocaleString()}] MASTER_ERROR: ${err.toString()}\n${err.stack}\n`;
 
-  File.appendFile("/jjolol/KKUTU_ERROR.log", text, function (res) {
-    JLog.error(`ERROR OCCURRED ON THE MASTER!`);
-    console.log(text);
-  });
+  // 이슈 4 진단: 잘못된 절대경로(/jjolol/...) 대신 슬레이브와 동일한 상대경로 사용
+  // 그리고 콘솔에 즉시 출력해서 process.exit 전에 반드시 보이도록
+  console.error("[MASTER UNCAUGHT]", text);
+  JLog.error(`ERROR OCCURRED ON THE MASTER! ${err && err.stack || err}`);
+  try { File.appendFileSync("../KKUTU_ERROR.log", text); } catch (_) {}
 
   DiscordBot.notifyShutdown(err).finally(function () {
     process.exit(1);
@@ -92,10 +93,12 @@ process.on("SIGTERM", function () {
 });
 
 process.on("unhandledRejection", function (reason) {
-  var text = `:${PORT} [${new Date().toLocaleString()}] UNHANDLED REJECTION: ${reason}\n`;
-  File.appendFile("/jjolol/KKUTU_ERROR.log", text, function () {});
-  JLog.error(`Unhandled promise rejection (서버 계속 실행): ${reason}`);
-  console.error("[Unhandled Rejection]", reason);
+  var stack = (reason && reason.stack) ? reason.stack : String(reason);
+  var text = `:${PORT} [${new Date().toLocaleString()}] MASTER_UNHANDLED_REJECTION: ${stack}\n`;
+  // 이슈 4 진단: 경로 정상화 + 콘솔 출력 보장
+  try { File.appendFileSync("../KKUTU_ERROR.log", text); } catch (_) {}
+  JLog.error(`Unhandled promise rejection (서버 계속 실행): ${stack}`);
+  console.error("[Master Unhandled Rejection]", stack);
 });
 
 function processAdmin(id, value) {
@@ -763,7 +766,29 @@ exports.init = function (_SID, CHAN) {
   };
 };
 
+// 로비 잠수 유저 주기적 검사 (1분마다)
+setInterval(function () {
+  var now = Date.now();
+  for (var _afkId in DIC) {
+    var _afkC = DIC[_afkId];
+    if (_afkC.place) continue;         // 방 안 유저는 제외
+    if (_afkC._afkWarned) continue;    // 이미 경고 중
+    if (now - (_afkC._lastActivity || now) >= Const.LOBBY_AFK_WARN_TIME) {
+      _afkC._afkWarned = true;
+      _afkC.send("afkWarn", { duration: Const.LOBBY_AFK_KICK_TIME / 1000 });
+      (function (c) {
+        c._afkKickTimer = setTimeout(function () {
+          if (!c._afkWarned) return;    // ping으로 취소됨
+          if (c.place) return;           // 방에 입장했으면 취소
+          if (c.socket) c.socket.close();
+        }, Const.LOBBY_AFK_KICK_TIME + 2000); // 클라이언트 RTT 여유 2초
+      })(_afkC);
+    }
+  }
+}, 60000);
+
 function joinNewUser($c) {
+  $c._lastActivity = Date.now();
   $c.send("welcome", {
     id: $c.id,
     guest: $c.guest,
@@ -834,7 +859,18 @@ function processClientRequest($c, msg) {
   var temp;
   var now = new Date().getTime();
 
+  // heartbeat는 이미 onClientMessage에서 걸러졌으므로 여기 오는 메시지는 모두 활동으로 간주
+  $c._lastActivity = Date.now();
+
   switch (msg.type) {
+    case "afkPing":
+      // 잠수 경고 다이얼로그에서 확인 버튼을 눌렀을 때
+      if ($c._afkKickTimer) {
+        clearTimeout($c._afkKickTimer);
+        delete $c._afkKickTimer;
+      }
+      $c._afkWarned = false;
+      break;
     case "yell":
       if (!msg.value) return;
       if (!$c.admin) return;

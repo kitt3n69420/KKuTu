@@ -51,6 +51,31 @@ function shuffleArray(arr) {
     return arr;
 }
 
+function buildThemeQueue(topics, rounds) {
+    var pool = [];
+    var remaining = rounds;
+
+    while (remaining >= topics.length) {
+        for (var i = 0; i < topics.length; i++) pool.push(topics[i]);
+        remaining -= topics.length;
+    }
+
+    if (remaining > 0) {
+        var rest = topics.slice();
+        for (var j = 0; j < remaining; j++) {
+            var idx = Math.floor(Math.random() * rest.length);
+            pool.push(rest[idx]);
+            rest.splice(idx, 1);
+        }
+    }
+
+    for (var k = pool.length - 1; k > 0; k--) {
+        var r = Math.floor(Math.random() * (k + 1));
+        var tmp = pool[k]; pool[k] = pool[r]; pool[r] = tmp;
+    }
+    return pool;
+}
+
 exports.init = function (_DB, _DIC) {
     DB = _DB;
     DIC = _DIC;
@@ -63,6 +88,9 @@ exports.getTitle = function () {
     my.game.done = new Set();
     my.game.passCount = 0; // Reset pass count for new game
     my.game._lastPassRound = 0; // Reset last pass round tracker
+    if (!my.opts.catch && my.opts.injpick && my.opts.injpick.length > 0) {
+        my.game.themeQueue = buildThemeQueue(my.opts.injpick, my.round);
+    }
     setTimeout(function () {
         R.go("①②③④⑤⑥⑦⑧⑨⑩");
     }, 500);
@@ -157,7 +185,7 @@ exports.roundReady = function () {
             }, true);
             my.game._turnStartTimer = setTimeout(my.turnStart, 2400);
         } else {
-            my.game.theme = my.opts.injpick[Math.floor(Math.random() * ijl)];
+            my.game.theme = (my.game.themeQueue && my.game.themeQueue.shift()) || my.opts.injpick[Math.floor(Math.random() * ijl)];
             getAnswer.call(my, my.game.theme).then(function ($ans) {
                 if (!my.game.done) return;
 
@@ -598,7 +626,7 @@ exports.handlePass = function (client) {
         }, true);
         my.game._turnStartTimer = setTimeout(my.turnStart, 2400);
     } else {
-        my.game.theme = my.opts.injpick[Math.floor(Math.random() * ijl)];
+        my.game.theme = (my.game.themeQueue && my.game.themeQueue.shift()) || my.opts.injpick[Math.floor(Math.random() * ijl)];
         getAnswer.call(my, my.game.theme).then(function ($ans) {
             if (!my.game.done) return;
 

@@ -1454,6 +1454,16 @@ exports.logChat = function (profile, message, place, isRobot = false) {
  */
 exports.notifyUserJoin = function (profile, userCount) {
     if (!isEnabled || !isReady || !channel) return;
+    if (userCount <= 10) {
+        safeExecute(async () => {
+            const embed = new EmbedBuilder()
+                .setColor(0x2ECC71)
+                .setDescription('\u{1F7E2} **' + getDisplayName(profile) + '** 입장\n현재 **' + userCount + '**명')
+                .setTimestamp();
+            await channel.send({ embeds: [embed] });
+        }, 'notifyUserJoin-instant');
+        return;
+    }
     _notifyQueue.join.push({ name: getDisplayName(profile), count: userCount });
     scheduleNotifyFlush();
 };
@@ -1463,6 +1473,16 @@ exports.notifyUserJoin = function (profile, userCount) {
  */
 exports.notifyUserLeave = function (profile, userCount) {
     if (!isEnabled || !isReady || !channel) return;
+    if (userCount <= 10) {
+        safeExecute(async () => {
+            const embed = new EmbedBuilder()
+                .setColor(0xE74C3C)
+                .setDescription('\u{1F534} **' + getDisplayName(profile) + '** 퇴장\n현재 **' + userCount + '**명')
+                .setTimestamp();
+            await channel.send({ embeds: [embed] });
+        }, 'notifyUserLeave-instant');
+        return;
+    }
     _notifyQueue.leave.push({ name: getDisplayName(profile), count: userCount });
     scheduleNotifyFlush();
 };

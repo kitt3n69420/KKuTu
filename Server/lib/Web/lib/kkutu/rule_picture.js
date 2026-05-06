@@ -403,7 +403,7 @@ $lib.Picture.drawDisplay = function () {
         $header.append($("<div>").css({
             'color': ($data.room.opts.drg ? getRandomColor() : '#FFFFFF'),
             'font-size': '14px', 'font-weight': 'bold', 'text-shadow': '1px 1px 1px #000'
-        }).html($data._pqAnswer.length + (L['pqChars'] || "글자")));
+        }).html($data._pqAnswer.replace(/\s/g, '').length + (L['pqChars'] || "글자")));
     }
     $main.append($header);
 

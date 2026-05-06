@@ -305,6 +305,17 @@ exports.getTitle = function () {
 			R.go(EXAMPLE);
 			return;
 		}
+		// Re-randomize syllable range on each retry to avoid getting stuck on a bad range
+		if (h > 10) {
+			var gt = Const.GAME_TYPE[my.mode];
+			if (gt === 'KSH' || gt === 'KKT') {
+				ja = 44032 + 588 * Math.floor(Math.random() * 18);
+				eng = "^[\\u" + ja.toString(16) + "-\\u" + (ja + 587).toString(16) + "]";
+			} else if (gt === 'KAP' || gt === 'KAK') {
+				ja = 44032 + 588 * Math.floor(Math.random() * 18);
+				eng = "[\\u" + ja.toString(16) + "-\\u" + (ja + 587).toString(16) + "]$";
+			}
+		}
 		var titleTypeFilter = (l.lang == "ko") ? (my.opts.allpos ? null : ['type', Const.KOR_GROUP]) : ['_id', Const.ENG_ID];
 		var titleArgs = [['_id', new RegExp(eng + ".{" + Math.max(1, my.round - 1) + "}$")]];
 		if (titleTypeFilter) titleArgs.push(titleTypeFilter);
@@ -320,7 +331,7 @@ exports.getTitle = function () {
 				function onChecked(v) {
 					if (v) R.go(v);
 					else if (list.length) checkTitle(list.shift()._id).then(onChecked);
-					else R.go(EXAMPLE);
+					else tryTitle(h + 10);
 				}
 			} else {
 				tryTitle(h + 10);
@@ -581,6 +592,7 @@ exports.turnStart = function (force) {
 	clearTimeout(my.game.turnTimer);
 	clearTimeout(my.game.robotTimer);
 	my.game.late = false;
+	my.game.loading = false;
 	my.game.turnTime = 15000 - 1400 * speed;
 	my.game.turnAt = (new Date()).getTime();
 	//my.game.turnAt = (new Date()).getTime(); // 이건 콩의 저주야
@@ -1081,6 +1093,8 @@ exports.submit = function (client, text) {
 				if (my.game.late) return;
 				if (!my.game.chain) return;
 				if (!my.game.dic) return;
+				// Stale callback: turn advanced while DB query was in flight
+				if (getPlayerId(my.game.seq[my.game.turn]) !== getPlayerId(client)) return;
 
 				if (client.robot) client.data._usingPreferredChar = false;
 				my.game.loading = false;
@@ -1484,6 +1498,14 @@ exports.submit = function (client, text) {
 									my.roundEnd();
 								}, 2000);
 								return;
+							}
+
+							// 한방 단어로 다음 사람이 데미지 즉사한 경우: originalChar 복구
+							// (turnEnd 타임아웃 KO 경로와 동일 — 받은 사람이 죽었으면 더 이을 게 없으므로 라운드 시작 글자로 리셋)
+							if (isHanbang && survivalDamageInfo && survivalDamageInfo.ko && my.game.originalChar) {
+								my.game.char = my.game.originalChar;
+								my.game.subChar = my.game.originalSubChar;
+								my.game.hanbangRecovery = true;
 							}
 
 							// 미션 처리
@@ -2027,11 +2049,12 @@ exports.submit = function (client, text) {
 
 		if (!text) return false;
 
-		// KJM: 자모 체인 확인 (jamoRegex로 첫 글자 범위 매칭)
+		// KJM: 자모 체인 확인
 		if (type === 'KJM') {
-			if (Const.decomposeToJamo(text).length <= 1) return false;
+			var decomposed = Const.decomposeToJamo(text);
+			if (decomposed.length <= 1) return false;
 			if (my.game.wordLength && text.length != my.game.wordLength) return false;
-			return my.game.jamoRegex ? my.game.jamoRegex.test(text) : false;
+			return Const.kjmStartsWith(decomposed, my.game.char);
 		}
 
 		if (text.length <= l) return false;
@@ -3035,7 +3058,6 @@ exports.readyRobot = function (robot) {
 								else n.push(w);
 							});
 
-							if (p.length > 0) console.log(`[BOT] SmartShuffle: Prioritized ${p.length} / ${list.length} words.`);
 							return shuffle(p).concat(shuffle(n));
 						}
 
@@ -3689,8 +3711,7 @@ function getAuto(char, subc, type, limit, sort) {
 			adv = `^.{${my.game.wordLength - char.length}}(${adc})$`;
 			break;
 		case 'KJM': {
-			var kjmRange = Const.getJamoRegex(char).source.slice(1); // '[가-낗]' etc.
-			adv = '^' + kjmRange; // 길이 필터는 filterByLengthRule에서 자모 기준으로 처리
+			adv = Const.getKjmStartRegex(char).source;
 			break;
 		}
 	}

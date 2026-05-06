@@ -24,12 +24,21 @@ exports.init = function (_DB, _DIC) {
     DB = _DB;
     DIC = _DIC;
 };
+function isTopicFree(my) {
+    var mc = Const.GAME_TYPE[my.mode];
+    return mc === 'KTF' || mc === 'ETF';
+}
+function toRegex(theme) {
+    if (Array.isArray(theme)) return new RegExp('(^|,)(' + theme.join('|') + ')($|,)');
+    return new RegExp('(^|,)' + theme + '($|,)');
+}
 exports.getTitle = function () {
     var R = new Lizard.Tail();
     var my = this;
 
     setTimeout(function () {
-        if (Const.GAME_TYPE[my.mode] === 'KFR' || Const.GAME_TYPE[my.mode] === 'EFR') {
+        var mc = Const.GAME_TYPE[my.mode];
+        if (mc === 'KFR' || mc === 'EFR' || mc === 'KTF' || mc === 'ETF') {
             R.go("①②③④⑤⑥⑦⑧⑨⑩");
         } else {
             R.go(Const.EXAMPLE_TITLE[my.rule.lang]);
@@ -89,6 +98,7 @@ exports.turnStart = function (force) {
     clearTimeout(my.game.turnTimer);
     clearTimeout(my.game.robotTimer);
     my.game.late = false;
+    my.game.loading = false;
     my.game.turnTime = 15000 - 1400 * speed;
     my.game.turnAt = (new Date()).getTime();
 
@@ -186,8 +196,9 @@ exports.turnEnd = function () {
         target.adjustAnger(1);
     }
 
-    // Hint logic: Just pick a random word since there's no restriction
-    getAuto.call(my, null, 0).then(function (w) {
+    // Hint logic: KTF/ETF uses topic-filtered hint
+    var hintArg = (isTopicFree(my) && my.opts.injpick && my.opts.injpick.length) ? my.opts.injpick : null;
+    getAuto.call(my, hintArg, 0).then(function (w) {
         my.byMaster('turnEnd', {
             ok: false,
             target: target ? target.id : null,
@@ -326,6 +337,7 @@ exports.submit = function (client, text) {
             function approved() {
                 if (my.game.late) return;
                 if (!my.game.chain) return;
+                if (getPlayerId(my.game.seq[my.game.turn]) !== getPlayerId(client)) return;
 
                 my.game.loading = false;
                 my.game.late = true;
@@ -540,8 +552,15 @@ exports.submit = function (client, text) {
                 }
             }
         } else if ($doc) {
+            // KTF/ETF: topic validation
+            if (isTopicFree(my) && my.opts.injpick && my.opts.injpick.length) {
+                if (!$doc.theme || !$doc.theme.match(toRegex(my.opts.injpick))) {
+                    return denied(407);
+                }
+            }
             // Injeong check applies to all languages if flag exists
-            if (!my.opts.injeong && ($doc.flag & Const.KOR_FLAG.INJEONG)) denied();
+            // KTF/ETF: always treat injeong as enabled (topic filtering is sufficient)
+            if (!isTopicFree(my) && !my.opts.injeong && ($doc.flag & Const.KOR_FLAG.INJEONG)) denied();
             else if (l == "ko") {
                 if (my.opts.loanword && ($doc.flag & Const.KOR_FLAG.LOANWORD)) denied(405);
                 else preApproved();
@@ -687,7 +706,8 @@ exports.readyRobot = function (robot) {
         else if (my.rule.lang == "en" && /[a-zA-Z]/.test(preferredChar)) usePreferred = true;
     }
 
-    getAuto.call(my, null, 2).then(function (list) {
+    var autoArg = (isTopicFree(my) && my.opts.injpick && my.opts.injpick.length) ? my.opts.injpick : null;
+    getAuto.call(my, autoArg, 2).then(function (list) {
         if (list.length) {
             // Filter by mission if active (Strategy 2)
             if (my.game.mission) {
@@ -795,7 +815,7 @@ function getMission(l, opts) {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 function getAuto(char, type) {
-    // char is ignored in Free mode
+    // char: null for normal, array of injpick for KTF/ETF topic filtering
     var my = this;
     var R = new Lizard.Tail();
     var bool = type == 1;
@@ -803,6 +823,11 @@ function getAuto(char, type) {
     var aqs = [];
     var aft;
     var raiser;
+
+    // KTF/ETF: filter by injpick topics
+    if (Array.isArray(char) && char.length) {
+        aqs.push(['theme', toRegex(char)]);
+    }
 
     if (!my.opts.injeong) aqs.push(['flag', { '$nand': Const.KOR_FLAG.INJEONG }]);
     if (my.rule.lang == "ko") {
@@ -813,8 +838,8 @@ function getAuto(char, type) {
     }
 
     // In Free mode, fetch words starting with a random character to distribute load and get variety.
-
-    if (type === 2) {
+    // Skip random char filter when filtering by theme (would reduce results too much)
+    if (type === 2 && !Array.isArray(char)) {
         // For bot list, pick a random start char to get a variety of words
         if (my.rule.lang == "ko") {
             var ja = 44032 + 588 * Math.floor(Math.random() * 19); // Random initial consonant group

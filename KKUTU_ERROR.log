@@ -2613,4 +2613,9 @@ TypeError: Cannot read properties of null (reading 'handleRowDescription')
     at addChunk (node:internal/streams/readable:559:12)
     at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
     at Readable.push (node:internal/streams/readable:390:5)
-    at TCP.onStreamRead (node:internal/stream_base_commons:189:23)
+    at TCP.onStreamRead (node:internal/stream_base_commons:189:23):2053 [2026. 4. 25. 오후 8:42:47] MASTER_ERROR: TypeError: o.getData is not a function
+TypeError: o.getData is not a function
+    at my.roundEnd (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:3000:22)
+    at Timeout._onTimeout (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:2290:13)
+    at listOnTimeout (node:internal/timers:588:17)
+    at process.processTimers (node:internal/timers:523:7)
