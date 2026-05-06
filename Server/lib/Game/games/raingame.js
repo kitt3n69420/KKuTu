@@ -437,7 +437,7 @@ exports.roundReady = function() {
 		return;
 	}
 
-	my.game.roundTime = my.time * 1000;
+	my.game.roundTime = (Number.isFinite(my.time) && my.time > 0) ? my.time * 1000 : 60000;
 	var surHP = Math.max(50, Math.min(2000, parseInt(my.opts.surHP) || 500));
 
 	// 플레이어 수 계산
