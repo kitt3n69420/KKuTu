@@ -18,6 +18,8 @@
 
 var Cluster = require("cluster");
 var File = require("fs");
+var Path = require("path");
+var ChildProcess = require("child_process");
 var WebSocket = require("ws");
 var https = require("https");
 var HTTPS_Server;
@@ -28,7 +30,6 @@ var Const = require("../const");
 var JLog = require("../sub/jjlog");
 var Secure = require("../sub/secure");
 var Recaptcha = require("../sub/recaptcha");
-var DiscordBot = require("../sub/discord-bot");
 var { validateInput, checkPrototypePollution } = require("../Web/validators");
 
 var MainDB;
@@ -64,6 +65,116 @@ const ENABLE_FORM = (exports.ENABLE_FORM = ["S", "J"]);
 const MODE_LENGTH = (exports.MODE_LENGTH = Const.GAME_TYPE.length);
 const PORT = process.env["KKUTU_PORT"];
 
+// === Discord child process management ===
+var discordProcess = null;
+var _shuttingDown = false;
+
+function discordSend(type, data) {
+  if (!discordProcess) return;
+  try {
+    discordProcess.send(Object.assign({ type: type }, data));
+  } catch (e) {
+    JLog.warn("[Discord] IPC send failed: " + e.message);
+  }
+}
+
+function handleDiscordProcessMessage(msg) {
+  switch (msg.type) {
+    case "query-online-user": {
+      var foundUser = null;
+      for (var uid in DIC) {
+        var $u = DIC[uid];
+        if (!$u) continue;
+        if (uid === msg.query) {
+          foundUser = { profile: $u.profile, data: $u.data };
+          break;
+        }
+        var uTitle = $u.profile && $u.profile.title;
+        var uName = $u.profile && $u.profile.name;
+        if ((uTitle && uTitle === msg.query) || (uName && uName === msg.query)) {
+          foundUser = { profile: $u.profile, data: $u.data };
+          break;
+        }
+      }
+      try {
+        discordProcess.send({ type: "query-online-user-result", _reqId: msg._reqId, user: foundUser });
+      } catch (e) {}
+      break;
+    }
+    case "send-roommsg": {
+      var rid = msg.roomId;
+      var rmExists = !!(ROOM && ROOM[rid]);
+      var rmSent = 0;
+      if (rmExists) {
+        var rmData = JSON.stringify({ type: "chat", value: msg.message, notice: true, profile: { title: "관리자" } });
+        for (var k in DIC) {
+          if (DIC[k].place == rid && DIC[k].socket && DIC[k].socket.readyState == 1) {
+            DIC[k].socket.send(rmData);
+            rmSent++;
+          }
+        }
+        JLog.info("[Discord] roommsg to room " + rid + ": " + msg.message);
+      }
+      try {
+        discordProcess.send({ type: "send-roommsg-result", _reqId: msg._reqId, exists: rmExists, sent: rmSent });
+      } catch (e) {}
+      break;
+    }
+  }
+}
+
+function spawnDiscordProcess() {
+  if (!GLOBAL.BOT_ENABLED || !GLOBAL.DISCORD_TOKEN) return;
+
+  discordProcess = ChildProcess.fork(
+    Path.join(__dirname, "../sub/discord-process.js"),
+    { silent: false }
+  );
+
+  discordProcess.on("message", handleDiscordProcessMessage);
+
+  discordProcess.on("error", function (err) {
+    JLog.error("[Discord Process] Error: " + err.message);
+  });
+
+  discordProcess.on("exit", function (code, signal) {
+    JLog.error("[Discord Process] Exited (code=" + code + ", signal=" + signal + ")");
+    discordProcess = null;
+    if (!_shuttingDown) {
+      JLog.warn("[Discord Process] 30초 후 재시작합니다...");
+      setTimeout(spawnDiscordProcess, 30000);
+    }
+  });
+}
+
+function shutdownDiscord(err, exitCode) {
+  _shuttingDown = true;
+  if (!discordProcess) {
+    process.exit(exitCode);
+    return;
+  }
+  var done = false;
+  function finish() {
+    if (done) return;
+    done = true;
+    if (discordProcess) {
+      try { discordProcess.removeAllListeners(); discordProcess.kill(); } catch (e) {}
+      discordProcess = null;
+    }
+    process.exit(exitCode);
+  }
+  setTimeout(finish, 5500);
+  discordProcess.once("message", function (msg) {
+    if (msg && msg.type === "shutdown-done") finish();
+  });
+  try {
+    discordProcess.send({ type: "shutdown", error: err ? err.toString() : null });
+  } catch (e) {
+    finish();
+  }
+}
+// === end Discord process management ===
+
 process.on("uncaughtException", function (err) {
   var text = `:${PORT} [${new Date().toLocaleString()}] MASTER_ERROR: ${err.toString()}\n${err.stack}\n`;
 
@@ -73,23 +184,17 @@ process.on("uncaughtException", function (err) {
   JLog.error(`ERROR OCCURRED ON THE MASTER! ${err && err.stack || err}`);
   try { File.appendFileSync("../KKUTU_ERROR.log", text); } catch (_) {}
 
-  DiscordBot.notifyShutdown(err).finally(function () {
-    process.exit(1);
-  });
+  shutdownDiscord(err, 1);
 });
 
 process.on("SIGINT", function () {
   JLog.info("Server shutting down (SIGINT)...");
-  DiscordBot.notifyShutdown(null).finally(function () {
-    process.exit(0);
-  });
+  shutdownDiscord(null, 0);
 });
 
 process.on("SIGTERM", function () {
   JLog.info("Server shutting down (SIGTERM)...");
-  DiscordBot.notifyShutdown(null).finally(function () {
-    process.exit(0);
-  });
+  shutdownDiscord(null, 0);
 });
 
 process.on("unhandledRejection", function (reason) {
@@ -326,7 +431,7 @@ Cluster.on("message", function (worker, msg) {
         ROOM[msg.room.id] = new KKuTu.Room(msg.room, msg.room.channel);
         JLog.info(`[IPC] room-new: Room ${msg.room.id} created on master (channel: ${msg.room.channel})`);
         // Discord notification
-        DiscordBot.notifyRoomCreate(msg.room.id, msg.room, msg.realPassword);
+        discordSend("notify-room-create", { roomId: msg.room.id, room: msg.room, realPassword: msg.realPassword });
       }
       break;
     case "room-come":
@@ -480,42 +585,34 @@ Cluster.on("message", function (worker, msg) {
         JLog.info(`[IPC] room-invalid: Room ${msg.room.id} deleted from master`);
         KKuTu.publish("room", { room: { id: msg.room.id, players: [] } });
         // Discord notification
-        DiscordBot.notifyRoomDelete(msg.room.id);
+        discordSend("notify-room-delete", { roomId: msg.room.id });
       } else {
         JLog.warn(`[IPC] room-invalid: Room ${msg.room.id} not found on master (already deleted?)`);
       }
       break;
     case "game-start":
-      // Discord notification for game start
-      DiscordBot.notifyGameStart(msg.room);
+      discordSend("notify-game-start", { roomId: msg.room });
       break;
     case "chat-log":
-      // Log chat message
-      DiscordBot.logChat(msg.profile, msg.message, msg.place, msg.isRobot);
+      discordSend("notify-chat-log", { profile: msg.profile, message: msg.message, place: msg.place, isRobot: msg.isRobot });
       break;
     case "round-end":
-      // Log round end with word chain
-      DiscordBot.notifyRoundEnd(msg.room, msg.chainLog, msg.round, msg.totalRounds);
+      discordSend("notify-round-end", { roomId: msg.room, chainLog: msg.chainLog, round: msg.round, totalRounds: msg.totalRounds });
       break;
     case "game-over":
-      // Game over with score rankings
-      DiscordBot.notifyGameOver(msg.room, msg.rankings);
+      discordSend("notify-game-over", { roomId: msg.room, rankings: msg.rankings });
       break;
     case "room-settings":
-      // Room settings changed
-      DiscordBot.notifyRoomSettings(msg.roomId, msg.room);
+      discordSend("notify-room-settings", { roomId: msg.roomId, room: msg.room });
       break;
     case "bot-settings":
-      // Bot settings changed
-      DiscordBot.notifyBotSettings(msg.roomId, msg.botInfo);
+      discordSend("notify-bot-settings", { roomId: msg.roomId, botInfo: msg.botInfo });
       break;
     case "room-join":
-      // Player/bot joined a room
-      DiscordBot.notifyRoomJoin(msg.roomId, msg.name, msg.isRobot);
+      discordSend("notify-room-join", { roomId: msg.roomId, name: msg.name, isRobot: msg.isRobot });
       break;
     case "room-leave":
-      // Player/bot left a room
-      DiscordBot.notifyRoomLeave(msg.roomId, msg.name, msg.isRobot, msg.reason);
+      discordSend("notify-room-leave", { roomId: msg.roomId, name: msg.name, isRobot: msg.isRobot, reason: msg.reason });
       break;
     default:
       JLog.warn(`Unhandled IPC message type: ${msg.type}`);
@@ -574,12 +671,8 @@ exports.init = function (_SID, CHAN) {
   MainDB.ready = function () {
     JLog.success("Master DB is ready.");
 
-    // Initialize Discord Bot (can be disabled for test servers via BOT_ENABLED)
-    DiscordBot.init(GLOBAL.DISCORD_TOKEN, MainDB, DIC, {
-      enabled: GLOBAL.BOT_ENABLED !== false,
-      ROOM: ROOM,
-      ADMIN: GLOBAL.ADMIN
-    });
+    // Spawn Discord bot as a separate child process
+    spawnDiscordProcess();
 
     MainDB.users.update(["server", SID]).set(["server", ""]).on();
     if (Const.IS_SECURED || Const.WAF) {
@@ -641,7 +734,7 @@ exports.init = function (_SID, CHAN) {
               ROOM[old.place].go(old);
             }
             delete DIC[$c.id];
-            if (old.profile) delete DNAME[old.profile.title || old.profile.name];
+            if (old.profile) delete DNAME[(old.profile.title || old.profile.name).replace(/\s/g, "")];
             if (!old.guest) MainDB.users.update(["_id", old.id]).set(["server", ""]).on();
             if (old.friends) narrateFriends(old.id, old.friends, "off");
             KKuTu.publish("disconn", { id: old.id });
@@ -780,7 +873,13 @@ setInterval(function () {
         c._afkKickTimer = setTimeout(function () {
           if (!c._afkWarned) return;    // ping으로 취소됨
           if (c.place) return;           // 방에 입장했으면 취소
-          if (c.socket) c.socket.close();
+          // setImmediate: I/O poll 단계(afkPing 처리)가 완료된 후 소켓 닫기
+          // timers 단계와 poll 단계의 레이스 컨디션 방지
+          setImmediate(function () {
+            if (!c._afkWarned) return;
+            if (c.place) return;
+            if (c.socket) c.socket.close();
+          });
         }, Const.LOBBY_AFK_KICK_TIME + 2000); // 클라이언트 RTT 여유 2초
       })(_afkC);
     }
@@ -808,7 +907,7 @@ function joinNewUser($c) {
   for (var _ch in CHAN_DIC) CHAN_DIC[_ch].send({ type: "broadcast", event: "conn", data: { user: $c.getData() } });
 
   // Discord notification
-  DiscordBot.notifyUserJoin($c.profile, Object.keys(DIC).length);
+  discordSend("notify-user-join", { profile: $c.profile, userCount: Object.keys(DIC).length });
 
   JLog.info("New user #" + $c.id);
 
@@ -1058,11 +1157,11 @@ KKuTu.onClientClosed = function ($c, code) {
   delete DIC[$c.id];
 
   // Discord notification (삭제 후 정확한 카운트)
-  DiscordBot.notifyUserLeave($c.profile, Object.keys(DIC).length);
+  discordSend("notify-user-leave", { profile: $c.profile, userCount: Object.keys(DIC).length });
 
   // server 필드를 항상 정리 (유령 방지)
   if (!$c.guest) MainDB.users.update(["_id", $c.id]).set(["server", ""]).on();
-  if ($c.profile) delete DNAME[$c.profile.title || $c.profile.name];
+  if ($c.profile) delete DNAME[($c.profile.title || $c.profile.name).replace(/\s/g, "")];
   if ($c.friends) narrateFriends($c.id, $c.friends, "off");
   KKuTu.publish("disconn", { id: $c.id });
   // 방 안 유저(slave)에게도 전달

@@ -256,7 +256,7 @@ exports.turnEnd = function () {
                         }
 
                         var rand = Math.random();
-                        if (rand < prob && !bot.mute) {
+                        if (rand < prob && !bot.muteGame) {
                             setTimeout(function () {
                                 var msgs = isTeammate ?
                                     Const.ROBOT_TIMEOUT_MESSAGES_SAMETEAM :
@@ -470,8 +470,8 @@ exports.submit = function (client, text) {
                         }
                         clearTimeout(my.game.turnTimer);
                         clearTimeout(my.game.robotTimer);
-                        // 아이템전: 아이템 지급 판정
-                        if (my.opts.item) {
+                        // 아이템전 / 카오스: 아이템 지급 판정
+                        if (my.opts.item || my.opts.chaos) {
                             var bp = Const.calcItemBonusPoints(itemMissionCount, false, client.game.straightStreak, fullHouseBonus > 0);
                             my.checkItemGrant(client.id, bp, true);
                         }
@@ -745,7 +745,7 @@ exports.readyRobot = function (robot) {
     });
 
     function denied() {
-        if (robot.mute) return;
+        if (robot.muteGame) return;
         if (robot.anger >= 5) {
             text = Const.ROBOT_ANGRY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_ANGRY_MESSAGES.length)];
         } else {

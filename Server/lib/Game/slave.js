@@ -509,7 +509,8 @@ KKuTu.onClientMessage = function ($c, msg) {
         level: msg.level,
         personality: msg.personality,
         preferredChar: msg.preferredChar,
-        mute: !!msg.mute,
+        muteGame: !!msg.muteGame,
+        muteLobby: !!msg.muteLobby,
         canRageQuit: !!msg.canRageQuit,
         fastMode: !!msg.fastMode,
       });
@@ -560,7 +561,6 @@ KKuTu.onClientMessage = function ($c, msg) {
       if ($c.subPlace) temp = $c.pracRoom;
       else if (!(temp = ROOM[$c.place])) return;
       if (!temp.gaming) return;
-      if (!temp.opts.item) return;
       if (Const.ITEM_TYPES.indexOf(msg.itemType) === -1) return;
       temp.queueItem($c, msg.itemType);
       break;
@@ -568,7 +568,6 @@ KKuTu.onClientMessage = function ($c, msg) {
       if ($c.subPlace) temp = $c.pracRoom;
       else if (!(temp = ROOM[$c.place])) return;
       if (!temp.gaming) return;
-      if (!temp.opts.item) return;
       temp.dequeueItem($c);
       break;
     case "kick":
@@ -655,11 +654,12 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (msg.preferredChar !== undefined) {
         if (typeof msg.preferredChar !== "string" || msg.preferredChar.length > 1) return;
       }
-      if (msg.mute !== undefined && !validateInput(msg.mute, "boolean")) return;
+      if (msg.muteGame !== undefined && !validateInput(msg.muteGame, "boolean")) return;
+      if (msg.muteLobby !== undefined && !validateInput(msg.muteLobby, "boolean")) return;
       if (msg.canRageQuit !== undefined && !validateInput(msg.canRageQuit, "boolean")) return;
       if (msg.fastMode !== undefined && !validateInput(msg.fastMode, "boolean")) return;
 
-      ROOM[$c.place].setAI(msg.target, Math.round(msg.level), Math.round(msg.team), msg.personality, msg.preferredChar, msg.mute, msg.canRageQuit, msg.fastMode);
+      ROOM[$c.place].setAI(msg.target, Math.round(msg.level), Math.round(msg.team), msg.personality, msg.preferredChar, msg.muteGame, msg.muteLobby, msg.canRageQuit, msg.fastMode);
       break;
     case "draw":
       // Picture Quiz drawing message handler
@@ -720,7 +720,7 @@ KKuTu.onClientClosed = function ($c, code) {
 
   var _place = $c.place;
   delete DIC[$c.id];
-  if ($c.profile) delete DNAME[$c.profile.title || $c.profile.name];
+  if ($c.profile) delete DNAME[($c.profile.title || $c.profile.name).replace(/\s/g, "")];
   // disconnRoom은 같은 방 유저에게만 전송 (place==0이면 이미 leave()로 퇴장 처리됨)
   if (_place) {
     var _msg = JSON.stringify({ type: "disconnRoom", id: $c.id });

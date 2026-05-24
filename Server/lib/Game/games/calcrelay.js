@@ -261,7 +261,7 @@ exports.turnEnd = function () {
 					}
 
 					var rand = Math.random();
-					if (rand < prob && !bot.mute) {
+					if (rand < prob && !bot.muteGame) {
 						setTimeout(function () {
 							var msgs = isTeammate ?
 								Const.ROBOT_TIMEOUT_MESSAGES_SAMETEAM :
@@ -345,8 +345,8 @@ exports.submit = function (client, text, data) {
 			} else {
 				clearTimeout(my.game.turnTimer);
 				clearTimeout(my.game.robotTimer);
-				// 아이템전: 아이템 지급 판정
-				if (my.opts.item) {
+				// 아이템전 / 카오스: 아이템 지급 판정
+				if (my.opts.item || my.opts.chaos) {
 					my.checkItemGrant(client.id, 0, true);
 				}
 				my.game._rrt = setTimeout(function () {

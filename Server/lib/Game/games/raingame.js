@@ -135,29 +135,23 @@ function scheduleAutoAttack(my) {
 	}, interval);
 }
 
-function randomLen(my) {
-	if (my.rule.lang === 'en') return Math.floor(Math.random() * 5) + 3; // 3~7
-	return Math.floor(Math.random() * 3) + 2; // 2~4
+function buildWordSeq(my, size) {
+	var pool = my.game.wordPool;
+	var lens = Object.keys(pool).map(Number);
+	var seq = [];
+	for (var i = 0; i < size; i++) {
+		var len = lens[Math.floor(Math.random() * lens.length)];
+		var words = pool[len];
+		if (!words || words.length === 0) continue;
+		seq.push({ word: words[Math.floor(Math.random() * words.length)], len: len });
+	}
+	return seq;
 }
 
-function selectWordForLen(my, player, len) {
-	var pool = my.game.wordPool[len];
-	if (!pool || pool.length === 0) return null;
-	var activeSet = {};
-	var i;
-	for (i = 0; i < player.game.activeWords.length; i++) {
-		activeSet[player.game.activeWords[i].word] = true;
-	}
-	var word;
-	for (i = 0; i < MAX_WORD_RETRIES; i++) {
-		word = pool[Math.floor(Math.random() * pool.length)];
-		if (!activeSet[word]) return word;
-	}
-	return word;
-}
-
-function addToQueue(player, len) {
-	player.game.attackQueue.push(len);
+function addToQueue(my, player) {
+	var seq = my.game.wordSeq;
+	if (!seq || seq.length === 0) return;
+	player.game.attackQueue.push(seq[player.game.wordSeqIdx++ % seq.length]);
 }
 
 function tryPushFromQueue(my, player) {
@@ -165,21 +159,9 @@ function tryPushFromQueue(my, player) {
 	if (player.game.activeWords.length >= MAX_ACTIVE_WORDS) return;
 	if (player.game.attackQueue.length === 0) return;
 
-	var len = player.game.attackQueue.shift();
-	var word = selectWordForLen(my, player, len);
-
-	// R16: 해당 길이 풀이 비었으면 다른 길이로 대체
-	if (!word) {
-		var poolLens = Object.keys(my.game.wordPool);
-		for (var k = 0; k < poolLens.length; k++) {
-			var fl = parseInt(poolLens[k]);
-			if (fl !== len) {
-				word = selectWordForLen(my, player, fl);
-				if (word) { len = fl; break; }
-			}
-		}
-	}
-	if (!word) return;
+	var entry = player.game.attackQueue.shift();
+	var word = entry.word;
+	var len = entry.len;
 
 	var now = Date.now();
 	var T = my.game.roundTime;
@@ -288,7 +270,7 @@ function distributeKOSpill(my, koPlayer) {
 	for (var ti = 0; ti < aliveTargets.length; ti++) {
 		var give = base + (ti < extra ? 1 : 0);
 		for (var gi = 0; gi < give; gi++) {
-			addToQueue(aliveTargets[ti], randomLen(my));
+			addToQueue(my, aliveTargets[ti]);
 		}
 		tryPushFromQueue(my, aliveTargets[ti]);
 	}
@@ -357,7 +339,7 @@ function scanWords(my) {
 			} else {
 				o.game.missCount++;
 				if (o.game.missCount % 2 === 0) {
-					addToQueue(o, randomLen(my));
+					addToQueue(my, o);
 				}
 				tryPushFromQueue(my, o);
 				tryPushFromQueue(my, o);
@@ -370,7 +352,7 @@ function autoAttack(my) {
 	if (my.game.late) return;
 	traverse(my, function(o) {
 		if (!o.game.alive) return;
-		addToQueue(o, randomLen(my));
+		addToQueue(my, o);
 		tryPushFromQueue(my, o);
 	});
 }
@@ -440,6 +422,8 @@ exports.roundReady = function() {
 	my.game.roundTime = (Number.isFinite(my.time) && my.time > 0) ? my.time * 1000 : 60000;
 	var surHP = Math.max(50, Math.min(2000, parseInt(my.opts.surHP) || 500));
 
+	my.game.wordSeq = buildWordSeq(my, 1000);
+
 	// 플레이어 수 계산
 	var playerCount = 0;
 	traverse(my, function() { playerCount++; });
@@ -459,7 +443,8 @@ exports.roundReady = function() {
 		o.game.wordIdCounter   = 0;
 		o.game.nextWordTime    = 0;
 		o.game.missCount       = 0;
-		for (var i = 0; i < initialCount; i++) addToQueue(o, randomLen(my));
+		o.game.wordSeqIdx      = 0;
+		for (var i = 0; i < initialCount; i++) addToQueue(my, o);
 	});
 
 	my.byMaster('roundReady', { round: my.game.round, surHP: surHP }, true);
@@ -512,7 +497,7 @@ exports.submit = function(client, text, data) {
 		client.chat(text);
 		return;
 	}
-	if (my.game.late) return;
+	if (my.game.late) { client.chat(text); return; }
 
 	if (data && typeof data.strategy === 'number' && Number.isInteger(data.strategy) && data.strategy >= 0 && data.strategy <= 2) {
 		if (data.strategy === 0 && client.game.attackStrategy !== 0) {
@@ -557,7 +542,7 @@ exports.submit = function(client, text, data) {
 		if (target && target.game && target.game.alive) {
 			client.game.attacksSent[targetId] = (client.game.attacksSent[targetId] || 0) + 1;
 			target.game.lastAttacker = client.id;
-			addToQueue(target, found.len);
+			addToQueue(my, target);
 			tryPushFromQueue(my, target);
 		}
 	}
@@ -568,6 +553,7 @@ exports.submit = function(client, text, data) {
 		wordId: found.id,
 		attackTarget: targetId
 	}, true);
+	client.invokeWordPiece(text, 0.5);
 };
 
 exports.getScore = function() {

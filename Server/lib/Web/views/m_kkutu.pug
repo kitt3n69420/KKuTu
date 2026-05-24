@@ -117,6 +117,7 @@ block Middle
 		//- button#ReplayBtn.for-lobby(style='display: none; background-color: #D9FF82;'): +FA('video-camera')
 		button#LeaderboardBtn.for-lobby(style='display: none; background-color: #FFADD3;'): +FA('trophy')
 		button#UserListBtn.for-lobby(style='display: none; background-color: #B0D2F3;'): +FA('users')
+		button#ExchangeBtn.for-lobby(style='display: none; background-color: #FFE5AA;'): +FA('exchange')
 		div.ItemBar.for-gaming(style='display: none;')
 			each slot in [1, 2, 3, 4, 5]
 				button.ItemButton.item-disabled(data-slot=slot)
@@ -342,7 +343,7 @@ block Middle
 			div.dialog-bar#room-len-limit-panel(style='display: none;')
 				h4= L('lenLimit')
 				div(style='float: left; width: 200px;')
-					- var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
+					- var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 					- for(var i in locals.OPTIONS)
 						- if(lenOpts.indexOf(i) === -1) continue;
 						+GameOption(i, 'room')
@@ -358,7 +359,7 @@ block Middle
 				div(style='float: left; width: 200px;')
 					- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg', 'flu', 'jkp', 'dfb'];
 					- for(var i in locals.OPTIONS)
-						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'lng', 'prv', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp'].indexOf(i) !== -1) continue;
+						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'lng', 'prv', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp'].indexOf(i) !== -1) continue;
 						- if(bonusOpts.indexOf(i) !== -1) continue;
 						+GameOption(i, 'room')
 				div.dialog-opt#room-injpick-panel
@@ -397,7 +398,7 @@ block Middle
 			div.dialog-bar#room-simple-rules-panel(style='height: auto; overflow: hidden; display: none;')
 				h4(style='height: 30px;')= L('misc')
 				div(style='float: left; width: calc(100% - 90px);')
-					- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf'];
+					- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'lng', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'chs', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf'];
 					- for(var i in locals.OPTIONS)
 						- if(keyRules.indexOf(i) === -1) continue;
 						+GameOptionFull(i, 'room-simple')
@@ -472,7 +473,7 @@ block Middle
 			div.dialog-bar#view-all-len-limit-panel(style='display: none;')
 				h4= L('lenLimit')
 				div(style='float: left; width: calc(100% - 90px);')
-					- var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
+					- var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 					- for(var i in locals.OPTIONS)
 						- if(lenOpts.indexOf(i) === -1) continue;
 						+GameOptionFull(i, 'view-all')
@@ -488,7 +489,7 @@ block Middle
 				div(style='float: left; width: calc(100% - 90px);')
 					- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg', 'flu', 'jkp', 'dfb'];
 					- for(var i in locals.OPTIONS)
-						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp'].indexOf(i) !== -1) continue;
+						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp'].indexOf(i) !== -1) continue;
 						- if(bonusOpts.indexOf(i) !== -1) continue;
 						+GameOptionFull(i, 'view-all')
 				div.dialog-opt#view-all-injpick-panel
@@ -507,7 +508,7 @@ block Middle
 		div.dialog-bar.tail-button
 			button#view-all-ok= L('OK')
 			button#view-all-uncheck-all= L('uncheckAllRules')
-	+Dialog('PracticeDiag', 300, 225)
+	+Dialog('PracticeDiag', 300, 245)
 		div.dialog-bar
 			h4= L('selectLevel')
 			select#practice-level
@@ -668,6 +669,14 @@ block Middle
 					- var v = locals.GROUPS[locals.CATEGORIES[i]] || [];
 					div.category-filter.craft-type(id="craft-type-" + locals.CATEGORIES[i], value=v.join(','))= L('category_' + locals.CATEGORIES[i])
 		div#craft-goods.goods-box(style='height: 220px; overflow-y: auto;')
+	+Dialog('ExchangeDiag', 300, 380, L('excWorkshop'))
+		div.dialog-bar#exc-top(style='display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 5px; border-bottom: 1px solid #CCCCCC;')
+			div#exc-tray(style='display: flex; align-items: center; gap: 4px; flex-wrap: wrap;')
+			button#exc-compose(style='white-space: nowrap;')= L('excExchange')
+			div#exc-empty-slot(style='width: 50px; height: 50px; border: 2px dashed #CCC; border-radius: 5px; display: none;')
+				div#exc-result-preview(style='width: 100%; height: 100%;')
+			span#exc-arrow(style='font-size: 16px; color: #999; display: none;') &rArr;
+		div#exc-goods.goods-box(style='height: 260px; overflow-y: auto;')
 	+Dialog('KickVoteDiag', 300, 160, L('kickVote'))
 		div.dialog-bar#kick-vote-text(style='text-align: center;')
 		div.dialog-bar(style='text-align: center;')= L('kickVoteNotice')

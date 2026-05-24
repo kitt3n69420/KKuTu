@@ -48,8 +48,8 @@ Pub.ready = function (isPub) {
 		host: GLOBAL.PG_HOST,
 		max: 25,
 		idleTimeoutMillis: 60000,
-		connectionTimeoutMillis: 10000,
-		statement_timeout: 20000
+		connectionTimeoutMillis: 5000,
+		statement_timeout: 8000
 	});
 	Redis.on('connect', function () {
 		connectPg();
@@ -91,6 +91,8 @@ Pub.ready = function (isPub) {
 			DB.kkutu_shop = new mainAgent.Table("kkutu_shop");
 			DB.kkutu_shop_desc = new mainAgent.Table("kkutu_shop_desc");
 			DB.crafting = new mainAgent.Table("crafting");
+			DB.event = new mainAgent.Table("event");
+			DB.itemexc = new mainAgent.Table("itemexc");
 			DB.kkutu.quiz = new mainAgent.Table("quiz");
 
 			DB.session = new mainAgent.Table("session");

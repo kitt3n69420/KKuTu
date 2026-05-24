@@ -77,7 +77,7 @@
 	100%{ background-position: -200% 50%; }
 }
 /* Gradient text base styles - applied universally to all elements with gradient class */
-[class*="x-gradientname_"]{
+[class*="x-gradientname_"], .x-kkn_triname{
 	-webkit-background-clip: text !important;
 	-webkit-text-fill-color: transparent !important;
 	background-clip: text !important;
@@ -116,11 +116,36 @@
 .x-gradientname_pinkpurple{ background-image: linear-gradient(90deg, #F15F9A, #A939CC, #F15F9A); }
 .x-gradientname_pinkred{ background-image: linear-gradient(90deg, #F15F9A, #FF3333, #F15F9A); }
 .x-gradientname_purplered{ background-image: linear-gradient(90deg, #A939CC, #FF3333, #A939CC); }
+.x-kkn_triname{ background-image: linear-gradient(90deg, #1976D2, #C62828, #e67300, #1976D2 ); }
 
 /* Crafting Workshop UI */
 .craft-composable{ background-color: #B3E7B7 !important; cursor: pointer; }
 #craft-top{ box-sizing: border-box; }
-#craft-tray .jt-image{ width: 50px; height: 50px; cursor: pointer; border: 2px solid #CCC; border-radius: 5px; flex-shrink: 0; }
+.craft-img-wrap{ position: relative; display: inline-block; width: 50px; height: 50px; flex-shrink: 0; }
+#craft-tray .jt-image{ width: 50px; height: 50px; cursor: pointer; border: 2px solid #CCC; border-radius: 5px; }
 #craft-tray .jt-image:hover{ opacity: 0.7; }
+.craft-count-label{ position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.6); color: #fff; font-size: 10px; padding: 0 2px; border-radius: 2px; pointer-events: none; z-index: 1; }
 .craft-tray-selected{ box-shadow: 0px 0px 3px 2px #5599FF; }
 .craft-result-image{ width: 50px; height: 50px; flex-shrink: 0; }
+
+/* Exchange Workshop UI */
+.exc-exchangeable{ background-color: #B3E7B7 !important; cursor: pointer; }
+#exc-top{ box-sizing: border-box; }
+#exc-tray{ scrollbar-width: none; }
+#exc-tray::-webkit-scrollbar{ display: none; }
+#exc-tray .exc-tray-item{ display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; height: 54px; }
+.exc-img-wrap{ position: relative; width: 50px; height: 50px; flex-shrink: 0; }
+#exc-tray .jt-image{ width: 50px; height: 50px; cursor: pointer; border: 2px solid #CCC; border-radius: 5px; }
+#exc-tray .jt-image:hover{ opacity: 0.7; }
+.exc-count-label{ position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.6); color: #fff; font-size: 10px; padding: 0 2px; border-radius: 2px; pointer-events: none; z-index: 1; }
+.exc-tray-selected{ box-shadow: 0px 0px 3px 2px #5599FF; }
+.exc-result-image{ width: 50px; height: 50px; flex-shrink: 0; }
+#exc-empty-slot{ display: flex; align-items: center; justify-content: center; overflow: hidden; }
+#exc-result-preview{ display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 10px; text-align: center; flex-wrap: wrap; }
+@media (max-width: 400px){
+    .craft-img-wrap{ width: 40px; height: 40px; }
+    #craft-tray .jt-image{ width: 40px; height: 40px; }
+    .exc-img-wrap{ width: 40px; height: 40px; }
+    #exc-tray .jt-image{ width: 40px; height: 40px; }
+    .exc-result-image{ width: 40px; height: 40px; }
+}

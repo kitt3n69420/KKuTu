@@ -428,7 +428,7 @@ exports.submit = function(client, text, data) {
 		if (!client.robot) client.chat(text);
 		return;
 	}
-	if (my.game.late) return;
+	if (my.game.late) { if (!client.robot) client.chat(text); return; }
 
 	// 전략 업데이트
 	if (data && typeof data.strategy === 'number' && Number.isInteger(data.strategy) && data.strategy >= 0 && data.strategy <= 2) {

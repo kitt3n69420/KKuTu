@@ -262,6 +262,31 @@ exports.run = function (Server, page) {
     res.sendStatus(200);
   });
   Server.post("/gwalli/kkutudb", onKKuTuDB);
+  Server.post("/gwalli/kkutudb/bulkdelete", function (req, res) {
+    if (!checkAdmin(req, res)) return;
+    if (req.body.pw != GLOBAL.PASS) return res.sendStatus(400);
+
+    const ALLOWED_LANGS = ['ko', 'en', 'ja', 'th'];
+    if (!ALLOWED_LANGS.includes(req.body.lang)) return res.sendStatus(400);
+
+    var list;
+    try { list = JSON.parse(req.body.list); } catch (e) { return res.sendStatus(400); }
+    if (!Array.isArray(list)) return res.sendStatus(400);
+
+    var TABLE = MainDB.kkutu[req.body.lang];
+    if (!TABLE) return res.sendStatus(400);
+
+    var count = 0;
+    list.forEach(function (item) {
+      if (!item || typeof item !== 'string') return;
+      item = item.trim();
+      if (!item) return;
+      noticeAdmin(req, 'bulkdelete', item);
+      TABLE.remove(["_id", item]).on();
+      count++;
+    });
+    res.send(count + "개 삭제됨");
+  });
   function onKKuTuDB(req, res) {
     if (!checkAdmin(req, res)) return;
     if (req.body.pw != GLOBAL.PASS) return res.sendStatus(400);
@@ -411,6 +436,24 @@ exports.run = function (Server, page) {
     });
     res.sendStatus(200);
   });
+  Server.post("/gwalli/shop/delete", function (req, res) {
+    if (!checkAdmin(req, res)) return;
+    if (req.body.pw != GLOBAL.PASS) return res.sendStatus(400);
+
+    var list;
+    try { list = JSON.parse(req.body.list); } catch (e) { return res.sendStatus(400); }
+    if (!Array.isArray(list)) return res.sendStatus(400);
+
+    var count = 0;
+    list.forEach(function (id) {
+      if (!id || typeof id !== 'string') return;
+      noticeAdmin(req, 'shop/delete', id);
+      MainDB.kkutu_shop.remove(["_id", id]).on();
+      MainDB.kkutu_shop_desc.remove(["_id", id]).on();
+      count++;
+    });
+    res.send(count + "개 삭제됨");
+  });
   Server.post("/gwalli/shop", function (req, res) {
     if (!checkAdmin(req, res)) return;
     if (req.body.pw != GLOBAL.PASS) return res.sendStatus(400);
@@ -443,7 +486,7 @@ exports.run = function (Server, page) {
         return;
       }
 
-      // options는 JSON 문자열일 수 있으므로 파싱
+      // options/opts는 JSON 문자열일 수 있으므로 파싱
       if (typeof item.core.options === 'string') {
         try {
           item.core.options = JSON.parse(item.core.options);

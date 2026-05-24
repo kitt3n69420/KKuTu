@@ -300,9 +300,25 @@ exports.getTitle = function () {
 			break;
 	}
 
+	// DB 오류나 타임아웃 시 항상 결과를 반환하도록 보장하는 단일 resolve 래퍼
+	var _titleResolved = false;
+	function safeGo(val) {
+		if (_titleResolved) return;
+		_titleResolved = true;
+		clearTimeout(_titleTimeout);
+		R.go(val);
+	}
+	// 5초 안에 제시어를 못 찾으면 EXAMPLE로 폴백 (DB 쿼리 실패/풀 소진 시 게임 freezing 방지)
+	var _titleTimeout = setTimeout(function () {
+		if (!_titleResolved) {
+			JLog.warn("[getTitle] Timeout for room " + my.id + ", falling back to EXAMPLE");
+			safeGo(EXAMPLE);
+		}
+	}, 5000);
+
 	function tryTitle(h) {
 		if (h > 50) {
-			R.go(EXAMPLE);
+			safeGo(EXAMPLE);
 			return;
 		}
 		// Re-randomize syllable range on each retry to avoid getting stuck on a bad range
@@ -322,20 +338,26 @@ exports.getTitle = function () {
 		DB.kkutu[l.lang].find.apply(DB.kkutu[l.lang], titleArgs
 			// '$where', eng+"this._id.length == " + Math.max(2, my.round) + " && this.hit <= " + h
 		).limit(20).on(function ($md) {
+			if (_titleResolved) return;
 			var list;
 
-			if ($md.length) {
+			if ($md && $md.length) {
 				list = shuffle($md);
 				checkTitle(list.shift()._id).then(onChecked);
 
 				function onChecked(v) {
-					if (v) R.go(v);
+					if (_titleResolved) return;
+					if (v) safeGo(v);
 					else if (list.length) checkTitle(list.shift()._id).then(onChecked);
 					else tryTitle(h + 10);
 				}
 			} else {
 				tryTitle(h + 10);
 			}
+		}, null, function () {
+			// DB 오류(커넥션 풀 소진 등) 시 즉시 EXAMPLE로 폴백
+			JLog.warn("[getTitle] DB error in tryTitle for room " + my.id + ", falling back to EXAMPLE");
+			safeGo(EXAMPLE);
 		});
 	}
 
@@ -344,10 +366,6 @@ exports.getTitle = function () {
 		var i, list = [];
 		var len;
 
-		/* 부하가 너무 걸린다면 주석을 풀자.
-		R.go(true);
-		return R;
-		*/
 		if (title == null) {
 			R.go(false);
 			return R;
@@ -355,6 +373,13 @@ exports.getTitle = function () {
 
 		// Unknown Word 규칙: 모든 단어 허용 (검증 건너뜀)
 		if (my.opts.unknown) {
+			R.go(title);
+			return R;
+		}
+
+		// stats 테이블이 아직 로딩 중이면 검증을 건너뛰어 재시도 루프 방지
+		var statsLang = l.lang === 'ko' ? 'ko' : 'en';
+		if (!DB.statsReady || !DB.statsReady[statsLang]) {
 			R.go(title);
 			return R;
 		}
@@ -495,17 +520,11 @@ exports.roundReady = function () {
 	my.game.pendingAttackDefense = null;
 	my.game.pendingFlushDefense = null;
 	my.game.flushDefenseState = {};
-	// 전체 사용 가능 단어 수 카운트 (공격 판정 임계값용, 0.01% 기준)
+	// 전체 사용 가능 단어 수 (공격 판정 임계값용) — 서버 시작 시 캐싱된 값 사용
 	if (my.game.round === 1) {
-		my.game.totalWordCount = 0;
-		var tcFilter = [];
-		if (!my.opts.allpos) {
-			if (my.rule.lang === 'ko') tcFilter.push(['type', Const.KOR_GROUP]);
-			else tcFilter.push(['_id', Const.ENG_ID]);
-		}
-		DB.kkutu[my.rule.lang].count.apply(DB.kkutu[my.rule.lang], tcFilter).on(function(n) {
-			if (typeof n === 'number' && n > 0) my.game.totalWordCount = n;
-		});
+		var _wcLang = my.rule.lang === 'ko' ? 'ko' : 'en';
+		var _wcKey = my.opts.allpos ? 'allpos' : 'normal';
+		my.game.totalWordCount = (DB._cachedWordCount && DB._cachedWordCount[_wcLang] && DB._cachedWordCount[_wcLang][_wcKey]) || 0;
 	}
 	my.game.roundTime = my.time * 1000;
 	// 라운드 시작 시 봇의 선호 글자 거부 상태 초기화
@@ -559,7 +578,7 @@ exports.roundReady = function () {
 			my.game.wordLength = 4;
 		}
 		if (my.opts.fourthree) {
-			my.game.wordLength = 4;
+			my.game.wordLength = 3; // lo값으로 초기화 → 첫 턴 토글 시 hi=4로 시작
 			my.game.samiCount = 0; // Reuse samiCount for alternating
 		}
 
@@ -597,25 +616,9 @@ exports.turnStart = function (force) {
 	my.game.turnAt = (new Date()).getTime();
 	//my.game.turnAt = (new Date()).getTime(); // 이건 콩의 저주야
 	if (my.opts.sami) {
-		var n = my.game.seq.length;
-		if (n % 2 !== 0) {
-			my.game.wordLength = (my.game.wordLength == 3) ? 2 : 3;
-		} else {
-			if (typeof my.game.samiCount === 'undefined') my.game.samiCount = 0;
-			var idx = my.game.samiCount % (n + 1);
-			my.game.wordLength = (idx % 2 === 0) ? 3 : 2;
-			my.game.samiCount++;
-		}
+		applyAlternating(my.game, my.opts, my.game.seq.length, 3, 2);
 	} else if (my.opts.fourthree) {
-		var n = my.game.seq.length;
-		if (n % 2 !== 0) {
-			my.game.wordLength = (my.game.wordLength == 4) ? 3 : 4;
-		} else {
-			if (typeof my.game.samiCount === 'undefined') my.game.samiCount = 0;
-			var idx = my.game.samiCount % (n + 1);
-			my.game.wordLength = (idx % 2 === 0) ? 4 : 3;
-			my.game.samiCount++;
-		}
+		applyAlternating(my.game, my.opts, my.game.seq.length, 4, 3);
 	} else if (my.opts.twotwo) {
 		my.game.wordLength = 2;
 	} else if (my.opts.fourfour) {
@@ -727,26 +730,48 @@ exports.turnStart = function (force) {
 };
 
 
+function applyAlternating(game, opts, n, hi, lo) {
+	if (!opts.change) {
+		game.wordLength = (game.wordLength == hi) ? lo : hi;
+		return;
+	}
+	if (typeof game.samiCount === 'undefined') game.samiCount = 0;
+	if (n % 2 === 0) {
+		var idx = game.samiCount % (n + 1);
+		game.wordLength = (idx % 2 === 0) ? hi : lo;
+	} else {
+		var period = 2 * (n + 1);
+		var bigIdx = game.samiCount % period;
+		var idx2 = (bigIdx < n + 1) ? bigIdx : (period - 1 - bigIdx);
+		game.wordLength = (idx2 % 2 === 0) ? hi : lo;
+	}
+	game.samiCount++;
+}
+
+function predictNextAlternating(game, opts, n, hi, lo) {
+	if (!opts.change) {
+		return (game.wordLength == hi) ? lo : hi;
+	}
+	var cnt = (typeof game.samiCount !== 'undefined') ? game.samiCount : 0;
+	if (n % 2 === 0) {
+		var nextIdx = cnt % (n + 1);
+		return (nextIdx % 2 === 0) ? hi : lo;
+	} else {
+		var period = 2 * (n + 1);
+		var nextBig = cnt % period;
+		var nextIdx2 = (nextBig < n + 1) ? nextBig : (period - 1 - nextBig);
+		return (nextIdx2 % 2 === 0) ? hi : lo;
+	}
+}
+
 function getNextTurnLength() {
 	var my = this;
 	if (!my.game || !my.game.seq) return my.game ? (my.game.wordLength || 0) : 0;
 	if (my.opts.sami) {
-		var n = my.game.seq.length;
-		if (n % 2 !== 0) {
-			return (my.game.wordLength == 3) ? 2 : 3;
-		} else {
-			var nextIdx = (my.game.samiCount + 1) % (n + 1);
-			return (nextIdx % 2 === 0) ? 3 : 2;
-		}
+		return predictNextAlternating(my.game, my.opts, my.game.seq.length, 3, 2);
 	}
 	if (my.opts.fourthree) {
-		var n = my.game.seq.length;
-		if (n % 2 !== 0) {
-			return (my.game.wordLength == 4) ? 3 : 4;
-		} else {
-			var nextIdx = (my.game.samiCount + 1) % (n + 1);
-			return (nextIdx % 2 === 0) ? 4 : 3;
-		}
+		return predictNextAlternating(my.game, my.opts, my.game.seq.length, 4, 3);
 	}
 	if (my.opts.twotwo) return 2;
 	if (my.opts.fourfour) return 4;
@@ -939,9 +964,9 @@ exports.turnEnd = function () {
 						}
 
 						var rand = Math.random();
-						if (rand < prob && !bot.mute) {
+						if (rand < prob && !bot.muteGame) {
 							setTimeout(function () {
-								if (bot._rageQuitting) return;
+								if (bot._rageQuitting || bot._removed) return;
 								var msgs = isTeammate ?
 									Const.ROBOT_TIMEOUT_MESSAGES_SAMETEAM :
 									Const.ROBOT_TIMEOUT_MESSAGES;
@@ -1255,8 +1280,8 @@ exports.submit = function (client, text) {
 					// 최적화: 매너 체크에서 저장된 nextCharWordCount를 재사용하여 중복 쿼리 방지
 					// 매너 모드 활성화 시 한방 단어는 이미 거부되었으므로 isHanbang = false
 
-					if (my.opts.unknown) {
-						// Unknown 모드는 한방 개념이 없음
+					if (my.opts.unknown || gameType === 'KJM') {
+						// Unknown 모드와 KJM(자모이어가기)은 한방 개념이 없음
 						finalizeTurn(false);
 						return;
 					}
@@ -1272,7 +1297,7 @@ exports.submit = function (client, text) {
 						// 봇 승리 메시지
 						if (client.robot && isHanbang) {
 							if (client.adjustAnger) client.adjustAnger(-2);
-							if (!client.mute) {
+							if (!client.muteGame) {
 								setTimeout(function () {
 									client.chat(Const.ROBOT_VICTORY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_VICTORY_MESSAGES.length)]);
 								}, 500);
@@ -1284,6 +1309,22 @@ exports.submit = function (client, text) {
 							var nextPlayer = my.game.seq[nextTurn];
 							if (typeof nextPlayer === 'string') nextPlayer = DIC[nextPlayer];
 							if (nextPlayer && nextPlayer.robot) nextPlayer._pendingAnger = (nextPlayer._pendingAnger || 0) + 2;
+						}
+						// 관전 봇들의 한방 반응 (30% 확률)
+						if (isHanbang && my.game.seq) {
+							var _hObsMsgs = Const.ROBOT_HANBANG_OBSERVE_MESSAGES;
+							for (var _hoi = 0; _hoi < my.game.seq.length; _hoi++) {
+								var _hop = my.game.seq[_hoi];
+								if (typeof _hop === 'string') _hop = DIC[_hop];
+								if (!_hop || !_hop.robot || _hop === client || _hop === nextPlayer) continue;
+								if (_hop.muteGame || _hop._rageQuitting) continue;
+								if (Math.random() > 0.4) continue;
+								(function (_ob) {
+									setTimeout(function () {
+										if (!_ob._rageQuitting && !_ob._removed) _ob.chat(_hObsMsgs[Math.floor(Math.random() * _hObsMsgs.length)]);
+									}, 1000 + Math.floor(Math.random() * 3000));
+								})(_hop);
+							}
 						}
 						return;
 					}
@@ -1334,7 +1375,7 @@ exports.submit = function (client, text) {
 						// 봇 승리 메시지
 						if (client.robot && isHanbang) {
 							if (client.adjustAnger) client.adjustAnger(-2);
-							if (!client.mute) {
+							if (!client.muteGame) {
 								setTimeout(function () {
 									client.chat(Const.ROBOT_VICTORY_MESSAGES[Math.floor(Math.random() * Const.ROBOT_VICTORY_MESSAGES.length)]);
 								}, 500);
@@ -1346,6 +1387,22 @@ exports.submit = function (client, text) {
 							var nextPlayer = my.game.seq[nextTurn];
 							if (typeof nextPlayer === 'string') nextPlayer = DIC[nextPlayer];
 							if (nextPlayer && nextPlayer.robot) nextPlayer._pendingAnger = (nextPlayer._pendingAnger || 0) + 2;
+						}
+						// 관전 봇들의 한방 반응 (30% 확률)
+						if (isHanbang && my.game.seq) {
+							var _hObsMsgs2 = Const.ROBOT_HANBANG_OBSERVE_MESSAGES;
+							for (var _hoi2 = 0; _hoi2 < my.game.seq.length; _hoi2++) {
+								var _hop2 = my.game.seq[_hoi2];
+								if (typeof _hop2 === 'string') _hop2 = DIC[_hop2];
+								if (!_hop2 || !_hop2.robot || _hop2 === client || _hop2 === nextPlayer) continue;
+								if (_hop2.muteGame || _hop2._rageQuitting) continue;
+								if (Math.random() > 0.4) continue;
+								(function (_ob2) {
+									setTimeout(function () {
+										if (!_ob2._rageQuitting && !_ob2._removed) _ob2.chat(_hObsMsgs2[Math.floor(Math.random() * _hObsMsgs2.length)]);
+									}, 1000 + Math.floor(Math.random() * 3000));
+								})(_hop2);
+							}
 						}
 					});
 
@@ -1515,8 +1572,8 @@ exports.submit = function (client, text) {
 								my.game.mission = getMission(my.rule.lang, my.opts, gameType);
 							}
 
-							// 아이템전: 아이템 지급 판정 (서바이벌)
-							if (my.opts.item) {
+							// 아이템전 / 카오스: 아이템 지급 판정 (서바이벌)
+							if (my.opts.item || my.opts.chaos) {
 								var bp = Const.calcItemBonusPoints(itemMissionCount, speedTossBonus > 0, client.game.straightStreak, false);
 								my.checkItemGrant(client.id, bp, true);
 							}
@@ -1621,8 +1678,8 @@ exports.submit = function (client, text) {
 							// 랜덤미션: 달성하지 않아도 매 턴마다 미션 변경
 							my.game.mission = getMission(my.rule.lang, my.opts, gameType);
 						}
-						// 아이템전: 아이템 지급 판정 (일반)
-						if (my.opts.item) {
+						// 아이템전 / 카오스: 아이템 지급 판정 (일반)
+						if (my.opts.item || my.opts.chaos) {
 							var bp = Const.calcItemBonusPoints(itemMissionCount, speedTossBonus > 0, client.game.straightStreak, fullHouseBonus > 0);
 							my.checkItemGrant(client.id, bp, true);
 						}
@@ -3479,7 +3536,7 @@ exports.readyRobot = function (robot) {
 		// If round is late (ended), only send Defeat Message and exit.
 		// Do not send Char Message (spam) or queue any moves (after).
 		if (my.game.late) {
-			if (!robot.mute) {
+			if (!robot.muteGame) {
 				setTimeout(function () {
 					robot.chat(secondMsg);
 				}, 500);
@@ -3509,7 +3566,7 @@ exports.readyRobot = function (robot) {
 		text = firstMsg;
 		after();
 
-		if (!robot.mute) {
+		if (!robot.muteGame) {
 			delay += 200;
 
 			text = secondMsg;
@@ -3884,7 +3941,7 @@ function getAuto(char, subc, type, limit, sort) {
 		var limitValue = (bool && gameType === 'KKU') ? 10000 : ((bool ? 1 : 123) * (limit || 1));
 		raiser.limit(limitValue).on(function ($md) {
 			if (my.game.chain) aft($md.filter(function (item) {
-				return !my.game.chain.includes(item);
+				return !my.game.chain.includes(item._id);
 			}));
 			else aft($md);
 		});

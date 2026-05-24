@@ -277,32 +277,7 @@ exports.submit = function (client, text) {
 
     // Drawer cannot chat or guess (Modified: Drawer can chat but filtered)
     if (client.id === drawerId) {
-        // Filter chat if it contains parts of the answer
-        var ans = my.game.answer ? my.game.answer._id : "";
-        var mask = new Array(text.length).fill(false);
-        var found = false;
-
-        if (ans && ans.length > 0) {
-            for (var i = 0; i < text.length; i++) {
-                for (var len = 2; i + len <= text.length; len++) {
-                    var sub = text.substr(i, len);
-                    if (ans.includes(sub)) {
-                        for (var k = 0; k < len; k++) mask[i + k] = true;
-                        found = true;
-                    }
-                }
-            }
-        }
-
-        if (found) {
-            var censored = "";
-            for (var i = 0; i < text.length; i++) {
-                censored += mask[i] ? "○" : text[i];
-            }
-            client.chat(censored);
-        } else {
-            client.chat(text);
-        }
+        client.chat(maskText(text, my.game.answer ? my.game.answer._id : ""));
         return;
     }
 
@@ -314,7 +289,11 @@ exports.submit = function (client, text) {
 
     // Check if already guessed or given up
     if (my.game.winner.indexOf(client.id) !== -1 || gu) {
-        client.chat(text);
+        if (my.game.winner.indexOf(client.id) !== -1) {
+            client.chat(maskText(text, my.game.answer ? my.game.answer._id : ""));
+        } else {
+            client.chat(text);
+        }
         return;
     }
 
@@ -662,6 +641,33 @@ function getCatchWord() {
     var word = available[Math.floor(Math.random() * available.length)];
     my.game.done.add(word);
     return word;
+}
+
+function maskText(text, answer) {
+    if (!answer || answer.length === 0) return text;
+
+    var mask = new Array(text.length).fill(false);
+    var found = false;
+
+    for (var i = 0; i < text.length; i++) {
+        for (var len = 2; i + len <= text.length; len++) {
+            var sub = text.substr(i, len);
+            if (answer.includes(sub)) {
+                for (var k = 0; k < len; k++) mask[i + k] = true;
+                found = true;
+            }
+        }
+    }
+
+    if (found) {
+        var censored = "";
+        for (var j = 0; j < text.length; j++) {
+            censored += mask[j] ? "○" : text[j];
+        }
+        return censored;
+    } else {
+        return text;
+    }
 }
 
 function getAnswer(theme) {

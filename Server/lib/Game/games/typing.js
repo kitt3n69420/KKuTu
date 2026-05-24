@@ -82,8 +82,11 @@ exports.getTitle = function () {
 		my.game.themeQueue = themeQueue;
 		var themes = themeQueue.slice();
 		var uniqueThemes = themes.filter(function (t, i) { return themes.indexOf(t) === i; });
-		var minLen = my.opts.long ? 9 : 2;
-		var maxLen = my.opts.long ? 14 : 5;
+		var minLen, maxLen;
+		if (my.opts.long) { minLen = 9; maxLen = 14; }
+		else if (my.opts.length2) { minLen = maxLen = 2; }
+		else if (my.opts.length5) { minLen = maxLen = 5; }
+		else { minLen = 2; maxLen = 5; }
 		var themeWords = {};
 		var fallbackWords = [];
 		var pending = uniqueThemes.length + 1;
@@ -146,8 +149,11 @@ exports.getTitle = function () {
 	else {
 		var minLen = 2, maxLen = 5;
 		if (my.opts.long) {
-			minLen = 9;
-			maxLen = 14;
+			minLen = 9; maxLen = 14;
+		} else if (my.opts.length2) {
+			minLen = maxLen = 2;
+		} else if (my.opts.length5) {
+			minLen = maxLen = 5;
 		}
 		DB.kkutu[my.rule.lang].direct(`SELECT _id FROM kkutu_${my.rule.lang} WHERE LENGTH(_id) BETWEEN ${minLen} AND ${maxLen} AND hit >= 1 AND _id NOT LIKE '% %' ORDER BY log(greatest(hit, 2)) + random() * 3 DESC LIMIT 500`, function (err, res) {
 			if (err || !res || !res.rows) return;

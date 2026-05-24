@@ -104,7 +104,8 @@ $(document).ready(function () {
 			notice: $("#NoticeBtn"),
 			replay: $("#ReplayBtn"),
 			leaderboard: $("#LeaderboardBtn"),
-			userList: $("#UserListBtn")
+			userList: $("#UserListBtn"),
+			exchange: $("#ExchangeBtn")
 		},
 		dialog: {
 			setting: $("#SettingDiag"),
@@ -161,6 +162,8 @@ $(document).ready(function () {
 			cfCompose: $("#cf-compose"),
 			craftWorkshop: $("#CraftingDiag"),
 			craftCompose: $("#craft-compose"),
+			exchangeWorkshop: $("#ExchangeDiag"),
+			excCompose: $("#exc-compose"),
 			injPick: $("#InjPickDiag"),
 			injPickAll: $("#injpick-all"),
 			injPickNo: $("#injpick-no"),
@@ -976,7 +979,7 @@ $(document).ready(function () {
 		// Define option groups
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
-		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
+		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg', 'flu', 'jkp', 'dfb'];
 
@@ -1212,6 +1215,14 @@ $(document).ready(function () {
 		if ($(this).is(':checked')) window.RULE_CHECKBOXES['item'].prop('checked', false);
 	});
 
+	// 아이템전-카오스 상호배타
+	window.RULE_CHECKBOXES['item'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['chaos'].prop('checked', false);
+	});
+	window.RULE_CHECKBOXES['chaos'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['item'].prop('checked', false);
+	});
+
 	// 도돌이 금지 - 첫말잇기/랜덤잇기 상호배타
 	window.RULE_CHECKBOXES['nododoli'].on('change', function () {
 		if ($(this).is(':checked')) {
@@ -1241,7 +1252,7 @@ $(document).ready(function () {
 		// Define option groups
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
-		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
+		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg', 'flu', 'jkp', 'dfb'];
 
@@ -1404,7 +1415,8 @@ $(document).ready(function () {
 			$("#PracticeDiag .dialog-title").html(L['practice']);
 			$("#ai-team").val(0).prop('disabled', true);
 			var saved = loadVolumeSettings();
-			$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
+			$("#ai-mute-game").prop('checked', saved.aiMuteGame != null ? !saved.aiMuteGame : false);
+			$("#ai-mute-lobby").prop('checked', saved.aiMuteLobby != null ? !saved.aiMuteLobby : false);
 			$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
 			$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
 			showDialog($stage.dialog.practice);
@@ -1649,11 +1661,13 @@ $(document).ready(function () {
 			$("#ai-team").val(bot.game ? (bot.game.team || 0) : 0);
 			$("#ai-personality").val(bot.personality || 0);
 			$("#ai-preferred-char").val(bot.preferredChar || '');
-			$("#ai-mute").prop('checked', !bot.mute);
+			$("#ai-mute-game").prop('checked', !bot.muteGame);
+			$("#ai-mute-lobby").prop('checked', !bot.muteLobby);
 			$("#ai-rage-quit").prop('checked', bot.canRageQuit || false);
 			$("#ai-fast-mode").prop('checked', bot.fastMode || false);
 		} else {
-			$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
+			$("#ai-mute-game").prop('checked', saved.aiMuteGame != null ? !saved.aiMuteGame : false);
+			$("#ai-mute-lobby").prop('checked', saved.aiMuteLobby != null ? !saved.aiMuteLobby : false);
 			$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
 			$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
 		}
@@ -1662,11 +1676,12 @@ $(document).ready(function () {
 	$stage.dialog.practiceOK.on('click', function (e) {
 		var level = $("#practice-level").val();
 		var team = $("#ai-team").val();
-		var aiMute = !$("#ai-mute").is(':checked');
+		var aiMuteGame = !$("#ai-mute-game").is(':checked');
+		var aiMuteLobby = !$("#ai-mute-lobby").is(':checked');
 		var aiRageQuit = $("#ai-rage-quit").is(':checked');
 		var aiFastMode = $("#ai-fast-mode").is(':checked');
 
-		saveVolumeSettings({ aiMute: aiMute, aiRageQuit: aiRageQuit, aiFastMode: aiFastMode });
+		saveVolumeSettings({ aiMuteGame: aiMuteGame, aiMuteLobby: aiMuteLobby, aiRageQuit: aiRageQuit, aiFastMode: aiFastMode });
 
 		$stage.dialog.practice.hide();
 		if ($("#PracticeDiag .dialog-title").html() == L['robot']) {
@@ -1676,7 +1691,8 @@ $(document).ready(function () {
 				team: team,
 				personality: $("#ai-personality").val(),
 				preferredChar: $("#ai-preferred-char").val(),
-				mute: aiMute,
+				muteGame: aiMuteGame,
+				muteLobby: aiMuteLobby,
 				canRageQuit: aiRageQuit,
 				fastMode: aiFastMode
 			});
@@ -1692,7 +1708,8 @@ $(document).ready(function () {
 				level: level,
 				personality: personality,
 				preferredChar: preferredChar,
-				mute: aiMute,
+				muteGame: aiMuteGame,
+				muteLobby: aiMuteLobby,
 				canRageQuit: aiRageQuit,
 				fastMode: aiFastMode
 			});
@@ -1974,6 +1991,10 @@ $(document).ready(function () {
 		if ($data._gaming) return fail(438);
 		if (showDialog($stage.dialog.craftWorkshop)) drawCraftWorkshop();
 	});
+	$stage.menu.exchange.on('click', function (e) {
+		if ($data._gaming) return fail(438);
+		if (showDialog($stage.dialog.exchangeWorkshop)) drawExchangeWorkshop();
+	});
 	$(".craft-type").on('click', function (e) {
 		var $target = $(e.currentTarget);
 		var type = $target.attr('id').slice(11);
@@ -1986,7 +2007,7 @@ $(document).ready(function () {
 			var craftFilter = [];
 			$(".craft-type").each(function () {
 				var cat = $(this).attr('id').slice(11);
-				if (cat === 'all' || cat === 'spec') return;
+				if (cat === 'all' || cat === 'spec' || cat === 'event') return;
 				var vals = ($(this).attr('value') || "").split(',');
 				for (var v = 0; v < vals.length; v++) {
 					if (vals[v] && craftFilter.indexOf(vals[v]) === -1) craftFilter.push(vals[v]);
@@ -2010,7 +2031,7 @@ $(document).ready(function () {
 			var craftFilter = [];
 			$(".craft-type").each(function () {
 				var cat = $(this).attr('id').slice(11);
-				if (cat === 'all' || cat === 'spec') return;
+				if (cat === 'all' || cat === 'spec' || cat === 'event') return;
 				var vals = ($(this).attr('value') || "").split(',');
 				for (var v = 0; v < vals.length; v++) {
 					if (vals[v] && craftFilter.indexOf(vals[v]) === -1) craftFilter.push(vals[v]);
@@ -2043,6 +2064,28 @@ $(document).ready(function () {
 				drawMyDress($data._avGroup);
 				updateMe();
 				drawCraftWorkshop();
+			});
+		});
+	});
+	$stage.dialog.excCompose.on('click', function (e) {
+		if (!$stage.dialog.excCompose.hasClass("exc-exchangeable")) return fail(458);
+		if (!$data._excResult) return fail(458);
+
+		showConfirm(L['excSureExchange'], function (res) {
+			if (!res) return;
+
+			$.post("/exchange", {
+				items: JSON.stringify($data._excTray)
+			}, function (res) {
+				if (res.error) return fail(res.error);
+				send('refresh');
+				showAlert(L['excExchanged']);
+				$data.box = res.box;
+				queueObtain({ key: res.exchanged, value: 1 });
+
+				drawMyDress($data._avGroup);
+				updateMe();
+				drawExchangeWorkshop();
 			});
 		});
 	});
@@ -2371,8 +2414,8 @@ $(document).ready(function () {
 		}
 	});
 
-	// 4. 글자수 제한 (3-2, 2-2, 4-4, 4-3, 3, 4, 5, 6, 7)
-	var lengthNames = ["sami", "twotwo", "fourfour", "fourthree", "length3", "length4", "length5", "length6", "length7"];
+	// 4. 글자수 제한 (2, 3-2, 2-2, 4-4, 4-3, 3, 4, 5, 6, 7)
+	var lengthNames = ["length2", "sami", "twotwo", "fourfour", "fourthree", "length3", "length4", "length5", "length6", "length7"];
 	var lengthRoomSel = lengthNames.map(function (n) { return "#room-" + n; }).join(", ");
 	var lengthViewAllSel = lengthNames.map(function (n) { return "#view-all-" + n; }).join(", ");
 	var lengthViewAllFlatSel = lengthNames.map(function (n) { return "#view-all-flat-" + n; }).join(", ");

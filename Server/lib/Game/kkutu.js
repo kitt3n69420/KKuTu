@@ -152,6 +152,29 @@ exports.checkSwearWords = checkSwearWords;
 exports.censorSwearWords = censorSwearWords;
 
 exports.NIGHT = false;
+
+var _eventMults = { expmul: 1, mnymul: 1, eventItems: [], itemmul: 0 };
+
+function refreshEventMults() {
+	DB.event.find().on(function ($events) {
+		var expmul = 1, mnymul = 1, itemmul = 0, eventItems = [];
+		($events || []).forEach(function (ev) {
+			if (!Const.isEventActive(ev)) return;
+			if (ev.expmul > 1) expmul = Math.max(expmul, ev.expmul);
+			if (ev.mnymul > 1) mnymul = Math.max(mnymul, ev.mnymul);
+			var eventItemArr = Array.isArray(ev.eventitem) ? ev.eventitem
+				: (typeof ev.eventitem === 'string' ? JSON.parse(ev.eventitem) : null);
+			if (ev.itemmul > 0 && eventItemArr && eventItemArr.length) {
+				itemmul = Math.max(itemmul, ev.itemmul);
+				eventItemArr.forEach(function (id) {
+					if (eventItems.indexOf(id) === -1) eventItems.push(id);
+				});
+			}
+		});
+		_eventMults = { expmul: expmul, mnymul: mnymul, eventItems: eventItems, itemmul: itemmul };
+	});
+}
+
 exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 	var i, k;
 
@@ -161,6 +184,8 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 	GUEST_PERMISSION = _GUEST_PERMISSION;
 	CHAN = _CHAN;
 	_rid = 100;
+	refreshEventMults();
+	setInterval(refreshEventMults, 60000);
 	// 망할 셧다운제 if(Cluster.isMaster) setInterval(exports.processAjae, 60000);
 	DB.kkutu_shop.find().on(function ($shop) {
 		SHOP = {};
@@ -171,18 +196,27 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 	});
 	// stats 테이블 전체 메모리 로드 (서버 실행 중 변하지 않는 정적 데이터)
 	DB.statsData = { ko: {}, en: {} };
+	DB.statsReady = { ko: false, en: false };
 	DB.kkutu_stats_ko.find().on(function ($rows) {
 		if ($rows) {
 			$rows.forEach(function (row) { DB.statsData.ko[row._id] = row; });
 		}
+		DB.statsReady.ko = true;
 		JLog.info("[STATS] kkutu_stats_ko loaded: " + Object.keys(DB.statsData.ko).length + " rows");
 	});
 	DB.kkutu_stats_en.find().on(function ($rows) {
 		if ($rows) {
 			$rows.forEach(function (row) { DB.statsData.en[row._id] = row; });
 		}
+		DB.statsReady.en = true;
 		JLog.info("[STATS] kkutu_stats_en loaded: " + Object.keys(DB.statsData.en).length + " rows");
 	});
+	// roundReady에서 매번 COUNT 쿼리를 날리지 않도록 서버 시작 시 단어 수 캐시
+	DB._cachedWordCount = { ko: { normal: 0, allpos: 0 }, en: { normal: 0, allpos: 0 } };
+	DB.kkutu['ko'].count(['type', Const.KOR_GROUP]).on(function (n) { if (typeof n === 'number' && n > 0) DB._cachedWordCount.ko.normal = n; });
+	DB.kkutu['ko'].count().on(function (n) { if (typeof n === 'number' && n > 0) DB._cachedWordCount.ko.allpos = n; });
+	DB.kkutu['en'].count(['_id', Const.ENG_ID]).on(function (n) { if (typeof n === 'number' && n > 0) DB._cachedWordCount.en.normal = n; });
+	DB.kkutu['en'].count().on(function (n) { if (typeof n === 'number' && n > 0) DB._cachedWordCount.en.allpos = n; });
 	Rule = {};
 	for (i in Const.RULE) {
 		k = Const.RULE[i].rule;
@@ -402,13 +436,15 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 	my.equip = { robot: true };
 	my.personality = personality || 0;
 	my.preferredChar = preferredChar || "";
-	my.mute = true;
+	my.muteGame = true;
+	my.muteLobby = true;
 	my.anger = 0;
 	my.canRageQuit = false;
 	my.fastMode = false;
 	my.data.personality = my.personality;
 	my.data.preferredChar = my.preferredChar;
-	my.data.mute = my.mute;
+	my.data.muteGame = my.muteGame;
+	my.data.muteLobby = my.muteLobby;
 	my.data.canRageQuit = my.canRageQuit;
 	my.data.anger = my.anger;
 	my.data.fastMode = my.fastMode;
@@ -468,7 +504,8 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 			profile: my.profile,
 			personality: my.personality,
 			preferredChar: my.preferredChar,
-			mute: my.mute,
+			muteGame: my.muteGame,
+			muteLobby: my.muteLobby,
 			canRageQuit: my.canRageQuit,
 			anger: my.anger,
 			fastMode: my.fastMode,
@@ -929,6 +966,32 @@ exports.Client = function (socket, profile, sid) {
 			my.flush(my.box, my.equip);
 		}
 	};
+	my.checkEventItems = function () {
+		DB.event.find().on(function ($events) {
+			if (!$events || !$events.length) return;
+			var toRemove = {};
+			var activeProtected = {};
+			($events || []).forEach(function (ev) {
+				if (!ev.eventitem || !ev.eventitem.length) return;
+				if (Const.isEventActive(ev)) {
+					ev.eventitem.forEach(function (id) { activeProtected[id] = true; });
+				} else {
+					ev.eventitem.forEach(function (id) { toRemove[id] = true; });
+				}
+			});
+			var removed = [];
+			Object.keys(toRemove).forEach(function (id) {
+				if (activeProtected[id]) return;
+				if (!my.box[id]) return;
+				delete my.box[id];
+				removed.push(id);
+			});
+			if (removed.length) {
+				my.send('expired', { list: removed });
+				my.flush(my.box, my.equip);
+			}
+		});
+	};
 	my.updateProfile = function (profile) {
 		if (profile.nickname) {
 			my.profile.nickname = my.profile.title = my.profile.name = profile.nickname;
@@ -986,6 +1049,7 @@ exports.Client = function (socket, profile, sid) {
 			if (first) my.flush();
 			else {
 				my.checkExpire();
+				my.checkEventItems();
 				my.okgCount = Math.floor((my.data.playTime || 0) / PER_OKG);
 			}
 			/* Enhanced User Block System [S] */
@@ -1287,7 +1351,7 @@ exports.Client = function (socket, profile, sid) {
 		my.subPlace = my.pracRoom.id;
 		my.pracRoom.come(my);
 		// 연습 중에는 checkJamsu 호출하지 않음 (isPracticing=true 상태)
-		my.pracRoom.start(data.level, data.personality, data.preferredChar, data.mute, data.canRageQuit, data.fastMode);
+		my.pracRoom.start(data.level, data.personality, data.preferredChar, data.muteGame, data.muteLobby, data.canRageQuit, data.fastMode);
 		my.pracRoom.game.hum = 1;
 
 	};
@@ -1887,9 +1951,27 @@ exports.Room = function (room, channel) {
 		}
 
 		function pushRobot(robot) {
+			// 기존 봇들이 새 봇에게 인사 (30% 확률, push 전에 순회)
+			var greetMsgs = Const.ROBOT_GREET_MESSAGES;
+			for (var _pgi = 0; _pgi < my.players.length; _pgi++) {
+				var _pgp = my.players[_pgi];
+				if (!_pgp || !_pgp.robot) continue;
+				if (_pgp.muteLobby || _pgp._rageQuitting) continue;
+				if (Math.random() > 0.5) continue;
+				(function (_bot) {
+					setTimeout(function () {
+						if (!_bot._rageQuitting && !_bot._removed) _bot.chat(greetMsgs[Math.floor(Math.random() * greetMsgs.length)]);
+					}, 800 + Math.floor(Math.random() * 1000));
+				})(_pgp);
+			}
 			my.players.push(robot);
 			my.export();
 			my.checkJamsu();
+			if (!robot.muteLobby && Math.random() < 0.7) {
+				setTimeout(function () {
+					if (!robot._rageQuitting && !robot._removed) robot.chat(greetMsgs[Math.floor(Math.random() * greetMsgs.length)]);
+				}, 500 + Math.floor(Math.random() * 2000));
+			}
 		}
 
 		// 95% chance to use a custom bot name from the dictionary
@@ -1975,7 +2057,7 @@ exports.Room = function (room, channel) {
 		}
 	};
 
-	my.setAI = function (target, level, team, personality, preferredChar, mute, canRageQuit, fastMode) {
+	my.setAI = function (target, level, team, personality, preferredChar, muteGame, muteLobby, canRageQuit, fastMode) {
 		var i;
 
 		for (i in my.players) {
@@ -1987,12 +2069,14 @@ exports.Room = function (room, channel) {
 				if (!my.players[i].data) my.players[i].data = {};
 				my.players[i].personality = personality;
 				my.players[i].preferredChar = preferredChar;
-				my.players[i].mute = !!mute;
+				my.players[i].muteGame = !!muteGame;
+				my.players[i].muteLobby = !!muteLobby;
 				my.players[i].canRageQuit = !!canRageQuit;
 				my.players[i].fastMode = !!fastMode;
 				my.players[i].data.personality = personality;
 				my.players[i].data.preferredChar = preferredChar;
-				my.players[i].data.mute = !!mute;
+				my.players[i].data.muteGame = !!muteGame;
+				my.players[i].data.muteLobby = !!muteLobby;
 				my.players[i].data.canRageQuit = !!canRageQuit;
 				my.players[i].data.fastMode = !!fastMode;
 				my.export();
@@ -2026,8 +2110,29 @@ exports.Room = function (room, channel) {
 				if (my.gaming) {
 					j = my.game.seq.indexOf(removedBot);
 					if (j != -1) my.game.seq.splice(j, 1);
+					// game.robots에서 제거 (roundEnd까지 참조가 남는 누수 방지)
+					if (my.game.robots) {
+						var ri = my.game.robots.indexOf(removedBot);
+						if (ri != -1) my.game.robots.splice(ri, 1);
+					}
+					// 봇 게임 타이머 정리
+					if (removedBot._timer) { clearTimeout(removedBot._timer); removedBot._timer = null; }
+					if (removedBot._timerCatch) { clearTimeout(removedBot._timerCatch); removedBot._timerCatch = null; }
+					if (removedBot._cwTimer) { clearTimeout(removedBot._cwTimer); removedBot._cwTimer = null; }
+					if (removedBot.game && removedBot.game.flipTimer) { clearTimeout(removedBot.game.flipTimer); removedBot.game.flipTimer = null; }
 				}
 				my.players.splice(i, 1);
+				// rageQuit 중인 봇은 이미 disconnRoom을 전송했으므로 제외
+				if (Cluster.isWorker && !removedBot._rageQuitting) {
+					var _dm = JSON.stringify({ type: "disconnRoom", id: removedBot.id, profile: removedBot.profile, robot: true });
+					for (var _di in DIC) {
+						if (DIC[_di].place == my.id && DIC[_di].socket && DIC[_di].socket.readyState == 1) {
+							DIC[_di].socket.send(_dm);
+						}
+					}
+				}
+				removedBot.place = 0;
+				removedBot._removed = true;
 				if (!noEx) {
 					my.export();
 					my.checkJamsu();
@@ -2053,6 +2158,9 @@ exports.Room = function (room, channel) {
 		}
 
 		if (Cluster.isWorker) {
+			// AFK 킥 타이머 정리 (방 입장 시 타이머가 남아있으면 취소)
+			if (client._afkKickTimer) { clearTimeout(client._afkKickTimer); delete client._afkKickTimer; }
+			client._afkWarned = false;
 			client.ready = false;
 			client.team = 0;
 			client.cameWhenGaming = false;
@@ -2069,6 +2177,22 @@ exports.Room = function (room, channel) {
 				});
 			}
 			my.export(client.id);
+		}
+
+		// 기존 봇들이 새로 들어온 플레이어(사람 또는 봇)에게 인사 (30% 확률)
+		if (!my.gaming) {
+			var greetMsgs = Const.ROBOT_GREET_MESSAGES;
+			for (var _gi = 0; _gi < my.players.length; _gi++) {
+				var _gp = my.players[_gi];
+				if (!_gp || !_gp.robot || _gp === client) continue;
+				if (_gp.muteLobby || _gp._rageQuitting) continue;
+				if (Math.random() > 0.3) continue;
+				(function (_bot) {
+					setTimeout(function () {
+						if (!_bot._rageQuitting && !_bot._removed) _bot.chat(greetMsgs[Math.floor(Math.random() * greetMsgs.length)]);
+					}, 500 + Math.floor(Math.random() * 1000));
+				})(_gp);
+			}
 		}
 	};
 	my.spectate = function (client, password) {
@@ -2317,6 +2441,8 @@ exports.Room = function (room, channel) {
 						}
 					} else {
 						// 비서바이벌 모드: 기존 로직
+						// 중퇴 플레이어의 pending item 정리 (stale _itemTurnActive 방지)
+						if (my.game.pendingItems) delete my.game.pendingItems[client.id];
 						if (my.game.seq.length <= 2) {
 							my.game.seq.splice(seqIndex, 1);
 							my.roundEnd();
@@ -2407,6 +2533,8 @@ exports.Room = function (room, channel) {
 			}
 		}
 		// ========== 수정 구간 종료 ==========
+		// 킥 투표 타이머 정리 (disconnect 시 clearTimeout 없이 남는 문제 방지)
+		if (client.kickTimer) { clearTimeout(client.kickTimer); delete client.kickTimer; }
 		if (my.practice) {
 			if (my.gaming) my.interrupt();
 			client.subPlace = 0;
@@ -2562,13 +2690,20 @@ exports.Room = function (room, channel) {
 			my.start();
 		} else DIC[my.master].sendError(412);
 	};
-	my.start = function (pracLevel, personality, preferredChar, pracMute, pracCanRageQuit, pracFastMode) {
+	my.start = function (pracLevel, personality, preferredChar, pracMuteGame, pracMuteLobby, pracCanRageQuit, pracFastMode) {
 		if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 		if (my._jst) { clearTimeout(my._jst); delete my._jst; }
 		if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
 		var i, j, o, hum = 0;
 		var now = (new Date()).getTime();
 
+		// 이전 라운드의 비동기 roundEnd 콜백이 아직 pending일 수 있으므로 플래그 리셋
+		my._roundEnding = false;
+		// 봇 잡담 타이머 정리 (새 게임 시작 시 이전 타이머 제거)
+		if (my._botIdleTimers) {
+			for (var _bti = 0; _bti < my._botIdleTimers.length; _bti++) clearTimeout(my._botIdleTimers[_bti]);
+			my._botIdleTimers = [];
+		}
 		my.gaming = true;
 		//my.kicked = []; //클로드가 추가한 코드인데 얘는 한번 강퇴되면 다시 못들어오는 걸 이해못하나봄
 
@@ -2585,10 +2720,12 @@ exports.Room = function (room, channel) {
 		my.game.robots = [];
 		if (my.practice) {
 			my.game.robots.push(o = new exports.Robot(my.master, my.id, pracLevel, null, personality, preferredChar));
-			o.mute = !!pracMute;
+			o.muteGame = !!pracMuteGame;
+			o.muteLobby = !!pracMuteLobby;
 			o.canRageQuit = !!pracCanRageQuit;
 			o.fastMode = !!pracFastMode;
-			o.data.mute = o.mute;
+			o.data.muteGame = o.muteGame;
+			o.data.muteLobby = o.muteLobby;
 			o.data.canRageQuit = o.canRageQuit;
 			o.data.fastMode = o.fastMode;
 			my.game.seq.push(o, my.master);
@@ -2629,8 +2766,11 @@ exports.Room = function (room, channel) {
 					}
 				}
 
-				// Sort groups by count descending
-				allGroups.sort(function (a, b) { return b.count - a.count; });
+				// Sort groups by count descending; 동점 팀은 랜덤 순서
+				allGroups.sort(function (a, b) {
+					if (b.count !== a.count) return b.count - a.count;
+					return Math.random() < 0.5 ? -1 : 1;
+				});
 
 				// Prepare slots
 				var placement = new Array(totalPlayers);
@@ -2689,7 +2829,14 @@ exports.Room = function (room, channel) {
 			} else {
 				my.game.seq = shuffle(my.game.seq);
 			}
+			// 랜덤 위상 시프트: 배열을 임의 위치만큼 원형 회전
+			if (my.game.seq.length > 1) {
+				var _startShift = Math.floor(Math.random() * my.game.seq.length);
+				my.game.seq = my.game.seq.slice(_startShift).concat(my.game.seq.slice(0, _startShift));
+			}
 		}
+		my.game.turn = 0;
+
 		my.game.mission = null;
 
 		// 아이템전 ↔ 랜덤 턴 상호 배제
@@ -2697,15 +2844,13 @@ exports.Room = function (room, channel) {
 			my.opts.randomturn = false;
 		}
 
-		// 아이템전 초기화
-		if (my.opts.item) {
-			my.game.items = {};
-			my.game.itemGlobalTurnCount = 0;
-			my.game.bonusScore = {};
-			my.game.pendingItems = {};
-			my.game.reversed = false;
-			my.game.linkOverride = null;
-		}
+		// 아이템 상태 초기화 (opts.item 여부와 무관하게 항상)
+		my.game.items = {};
+		my.game.itemGlobalTurnCount = 0;
+		my.game.bonusScore = {};
+		my.game.pendingItems = {};
+		my.game.reversed = false;
+		my.game.linkOverride = null;
 
 		// 랜덤 턴 옵션 활성화 시 턴 순서 배열 초기화
 		if (my.opts.randomturn) {
@@ -2742,15 +2887,13 @@ exports.Room = function (room, channel) {
 			delete o.game.lastWord;
 			delete o.game.lastWordLen;
 			o.game.straightStreak = 0;
-			// 아이템전: 플레이어별 아이템 초기화
-			if (my.opts.item) {
-				var itemObj = { skip: 0, pass: 0, random: 0 };
-				if (my.game.seq.length > 2) itemObj.reverse = 0;
-				if (my.rule.rule === 'Classic') itemObj.linkChange = 0;
-				my.game.items[o.id] = itemObj;
-				my.game.bonusScore[o.id] = 0;
-				if (my.game.pendingItems[o.id]) delete my.game.pendingItems[o.id];
-			}
+			// 플레이어별 아이템 초기화 (항상)
+			var itemObj = { skip: 0, pass: 0, random: 0 };
+			if (my.game.seq.length > 2) itemObj.reverse = 0;
+			if (my.rule.rule === 'Classic') itemObj.linkChange = 0;
+			my.game.items[o.id] = itemObj;
+			my.game.bonusScore[o.id] = 0;
+			if (my.game.pendingItems[o.id]) delete my.game.pendingItems[o.id];
 		}
 		// 서바이벌 모드는 1라운드만 진행
 		if (my.opts.survival) {
@@ -2779,12 +2922,11 @@ exports.Room = function (room, channel) {
 					var itemObj = { skip: 0, pass: 0, random: 0 };
 					if (my.game.seq.length > 2) itemObj.reverse = 0;
 					if (my.rule.rule === 'Classic') itemObj.linkChange = 0;
-					// 아이템 방일 때, 신규 접속자 초기화
 					my.game.items[io.id] = itemObj;
 					my.game.bonusScore[io.id] = 0;
 				}
 			}
-			// 라운드 시작 시 남아있는 큐를 클라이언트에 해제 브로드캐스트
+			// 남아있는 큐를 클라이언트에 해제 브로드캐스트
 			if (my.game.pendingItems) {
 				for (var rpi in my.game.pendingItems) {
 					my.byMaster('item-dequeued', { playerId: rpi }, true);
@@ -2793,6 +2935,88 @@ exports.Room = function (room, channel) {
 			my.game.pendingItems = {};
 			my.game.reversed = false;
 			my.game.linkOverride = null;
+		}
+
+		// 카오스: 2라운드부터 아이템 리셋 + 순서 재배치
+		if (my.opts.chaos && my.game.seq && my.game.round >= 1) {
+			// 재배치 전에 타임아웃 플레이어 ID 기록 (재배치 후 새 위치를 찾기 위해)
+			var _cTimedOutItem = my.game.seq[my.game.turn];
+			var _cTimedOutId = (_cTimedOutItem && _cTimedOutItem.id) ? _cTimedOutItem.id : _cTimedOutItem;
+			// 아이템 리셋 (chaos 아이템은 silent이므로 item-dequeued 브로드캐스트 없음)
+			my.game.pendingItems = {};
+			my.game.reversed = false;
+			my.game.linkOverride = null;
+			for (var ci in my.game.seq) {
+				var co = DIC[my.game.seq[ci]] || my.game.seq[ci];
+				if (co && co.id) {
+					var cItemObj = { skip: 0, pass: 0, random: 0 };
+					if (my.game.seq.length > 2) cItemObj.reverse = 0;
+					if (my.rule.rule === 'Classic') cItemObj.linkChange = 0;
+					my.game.items[co.id] = cItemObj;
+					my.game.bonusScore[co.id] = 0;
+				}
+			}
+
+			// 순서 재배치: 게임 시작과 동일 알고리즘 (스트라이드 → 위상 시프트)
+			var _cTeams = {};
+			for (var _ci = 0; _ci < my.game.seq.length; _ci++) {
+				var _cp = (my.game.seq[_ci] && typeof my.game.seq[_ci] === 'object') ? my.game.seq[_ci] : DIC[my.game.seq[_ci]];
+				var _ct = _cp ? (_cp.robot ? ((_cp.game && _cp.game.team) || 0) : (_cp.team || 0)) : 0;
+				if (!_cTeams[_ct]) _cTeams[_ct] = [];
+				_cTeams[_ct].push(my.game.seq[_ci]);
+			}
+			var _cHasTeams = Object.keys(_cTeams).some(function (t) { return +t > 0; });
+			if (_cHasTeams) {
+				var _cAllGroups = [];
+				for (var _ct2 in _cTeams) {
+					_cTeams[_ct2] = shuffle(_cTeams[_ct2]);
+					_cAllGroups.push({ id: +_ct2, count: _cTeams[_ct2].length });
+				}
+				_cAllGroups.sort(function (a, b) {
+					if (b.count !== a.count) return b.count - a.count;
+					return Math.random() < 0.5 ? -1 : 1;
+				});
+				var _cTotal = my.game.seq.length;
+				var _cAvail = [];
+				for (var _ca = 0; _ca < _cTotal; _ca++) _cAvail.push(_ca);
+				var _cPlacement = new Array(_cTotal);
+				for (var _cg = 0; _cg < _cAllGroups.length; _cg++) {
+					var _cGrp = _cAllGroups[_cg];
+					if (_cGrp.count === 0) continue;
+					var _cStep = _cAvail.length / _cGrp.count;
+					var _cTaken = [];
+					for (var _cpp = 0; _cpp < _cGrp.count; _cpp++) {
+						var _cIdx = Math.floor(_cpp * _cStep);
+						if (_cIdx >= _cAvail.length) _cIdx = _cAvail.length - 1;
+						_cPlacement[_cAvail[_cIdx]] = _cGrp.id;
+						_cTaken.push(_cAvail[_cIdx]);
+					}
+					_cAvail = _cAvail.filter(function (v) { return _cTaken.indexOf(v) === -1; });
+				}
+				var _cNewSeq = [];
+				for (var _cni = 0; _cni < _cTotal; _cni++) {
+					var _cPool = _cTeams[_cPlacement[_cni]];
+					if (_cPool && _cPool.length > 0) _cNewSeq.push(_cPool.shift());
+				}
+				my.game.seq = _cNewSeq;
+			} else {
+				my.game.seq = shuffle(my.game.seq);
+			}
+			// 랜덤 위상 시프트
+			if (my.game.seq.length > 1) {
+				var _cShift = Math.floor(Math.random() * my.game.seq.length);
+				my.game.seq = my.game.seq.slice(_cShift).concat(my.game.seq.slice(0, _cShift));
+			}
+
+			// 재배치 후 타임아웃 플레이어의 새 인덱스로 턴 설정 (없으면 0)
+			my.game.turn = 0;
+			for (var _cfi = 0; _cfi < my.game.seq.length; _cfi++) {
+				var _cfs = my.game.seq[_cfi];
+				var _cfId = (_cfs && _cfs.id) ? _cfs.id : _cfs;
+				if (_cfId === _cTimedOutId) { my.game.turn = _cfi; break; }
+			}
+			var _shuffledSeqIds = my.game.seq.map(function (s) { return (s && s.id) ? s.id : s; });
+			my.byMaster('chaos-notice', { code: 'chaosShuffle', seq: _shuffledSeqIds }, true);
 		}
 
 		return my.route("roundReady");
@@ -2804,6 +3028,10 @@ exports.Room = function (room, channel) {
 		clearTimeout(my.game.hintTimer2);
 		clearTimeout(my.game.qTimer);
 		clearTimeout(my.game.robotTimer);
+		if (my._botIdleTimers) {
+			for (var _bti = 0; _bti < my._botIdleTimers.length; _bti++) clearTimeout(my._botIdleTimers[_bti]);
+			my._botIdleTimers = [];
+		}
 
 		// 봇별 타이머 정리 (typingTimer, flipTimer, _timerCatch, _timer 등)
 		if (my.game.seq) {
@@ -3032,8 +3260,19 @@ exports.Room = function (room, channel) {
 			}
 			if (rw.together) {
 				if (o.game.wpc) o.game.wpc.forEach(function (item) { o.obtain("$WPC" + item, 1); }); // 글자 조각 획득 처리
+				var _wpcCount = o.game.wpc ? o.game.wpc.length : 0;
+				if (_wpcCount > 0 && _eventMults.itemmul > 0 && _eventMults.eventItems.length > 0) {
+					var _rawCount = _wpcCount * _eventMults.itemmul;
+					var _giveCount = Math.floor(_rawCount) + (Math.random() < (_rawCount % 1) ? 1 : 0);
+					for (var _ei = 0; _ei < _giveCount; _ei++) {
+						var _item = _eventMults.eventItems[Math.floor(Math.random() * _eventMults.eventItems.length)];
+						o.obtain(_item, 1);
+					}
+				}
 				o.onOKG(rw.playTime);
 			}
+			rw.score = Math.round((rw.score || 0) * _eventMults.expmul);
+			rw.money = Math.round((rw.money || 0) * _eventMults.mnymul);
 			res[i].reward = rw;
 			if (typeof o.data.score !== 'number' || isNaN(o.data.score)) o.data.score = 0;
 			o.data.score += rw.score || 0;
@@ -3049,6 +3288,14 @@ exports.Room = function (room, channel) {
 
 			suv.push(o.flush(true));
 		}
+		// 봇 결과 참조 캡처 (비동기 콜백 안에서 사용)
+		var botResults = [];
+		for (var _bi in res) {
+			if (!res[_bi].robot) continue;
+			var _bot = my.players.find(function (p) { return p && p.robot && p.id === res[_bi].id; });
+			if (_bot) botResults.push({ bot: _bot, rank: res[_bi].rank, team: res[_bi].team || 0, teamScore: res[_bi].teamScore });
+		}
+
 		Lizard.all(suv).then(function (uds) {
 			var o = {};
 
@@ -3067,6 +3314,67 @@ exports.Room = function (room, channel) {
 				}
 				my.byMaster('roundEnd', { result: res, users: users, ranks: o, data: data }, true);
 				my._roundEnding = false;
+
+				// 봇 게임 결과 반응 (40% 확률)
+				var _isTeamGame = res.length > 0 && res[0].team > 0;
+				var _topScore = res.length > 0 ? (_isTeamGame ? res[0].teamScore : res[0].score) : 0;
+				var _lastScore = res.length > 0 ? (_isTeamGame ? res[res.length - 1].teamScore : res[res.length - 1].score) : 0;
+				var _totalPlayers = res.length;
+				for (var _ri = 0; _ri < botResults.length; _ri++) {
+					(function (_br) {
+						if (_br.bot.muteLobby || _br.bot._rageQuitting) return;
+						if (Math.random() > 0.4) return;
+						var myScore = _isTeamGame ? _br.teamScore : _br.rank;
+						var isWinner = _isTeamGame
+							? (_br.team > 0 && _br.teamScore === _topScore)
+							: _br.rank === 0;
+						var isLoser = _totalPlayers > 2 && (_isTeamGame
+							? (_br.team > 0 && _br.teamScore === _lastScore && _br.teamScore !== _topScore)
+							: (_br.rank === res[res.length - 1].rank && _br.rank !== 0));
+						var msgs = isWinner ? Const.ROBOT_GAME_WIN_MESSAGES
+							: isLoser ? Const.ROBOT_GAME_LOSE_MESSAGES
+							: Const.ROBOT_GAME_MID_MESSAGES;
+						setTimeout(function () {
+							if (!_br.bot._rageQuitting && !_br.bot._removed) _br.bot.chat(msgs[Math.floor(Math.random() * msgs.length)]);
+						}, 1500 + Math.floor(Math.random() * 2000));
+					})(botResults[_ri]);
+				}
+
+				// 봇 대기 중 잡담 "ㄹㄷ/ㄱㄱ" (35% 확률, 게임이 다시 시작 안 됐을 때만)
+				if (!my._botIdleTimers) my._botIdleTimers = [];
+				for (var _ii = 0; _ii < botResults.length; _ii++) {
+					(function (_br) {
+						if (_br.bot.muteLobby || _br.bot._rageQuitting) return;
+						if (Math.random() > 0.6) return;
+						var _t = setTimeout(function () {
+							var idx = my._botIdleTimers ? my._botIdleTimers.indexOf(_t) : -1;
+							if (idx !== -1) my._botIdleTimers.splice(idx, 1);
+							if (!my.gaming && !_br.bot._rageQuitting && !_br.bot._removed) {
+								var msgs = Const.ROBOT_IDLE_MESSAGES;
+								_br.bot.chat(msgs[Math.floor(Math.random() * msgs.length)]);
+							}
+						}, 5000 + Math.floor(Math.random() * 20000));
+						if (my._botIdleTimers) my._botIdleTimers.push(_t);
+					})(botResults[_ii]);
+				}
+
+				// 봇 장기 대기 잡담 (90% 확률, 게임 종료 후 1~5분 사이)
+				for (var _li = 0; _li < botResults.length; _li++) {
+					(function (_br) {
+						if (_br.bot.muteLobby || _br.bot._rageQuitting) return;
+						if (Math.random() > 0.9) return;
+						var delay = 60000 + Math.floor(Math.random() * 240000); // 1~5분
+						var _t2 = setTimeout(function () {
+							var idx = my._botIdleTimers ? my._botIdleTimers.indexOf(_t2) : -1;
+							if (idx !== -1) my._botIdleTimers.splice(idx, 1);
+							if (!my.gaming && !_br.bot._rageQuitting && !_br.bot._removed) {
+								var msgs = Const.ROBOT_IDLE2_MESSAGES;
+								_br.bot.chat(msgs[Math.floor(Math.random() * msgs.length)]);
+							}
+						}, delay);
+						if (my._botIdleTimers) my._botIdleTimers.push(_t2);
+					})(botResults[_li]);
+				}
 			});
 		});
 		my.gaming = false;
@@ -3179,7 +3487,7 @@ exports.Room = function (room, channel) {
 	};
 	// ========== 아이템전 큐/발동/지급 ==========
 	my.queueItem = function (player, itemType) {
-		if (!my.gaming || my._roundEnding || !my.opts.item || !my.game.items) { return; }
+		if (!my.gaming || my._roundEnding || !my.game.items) { return; }
 		var items = my.game.items[player.id];
 		if (!items || (items[itemType] || 0) <= 0) { return; }
 
@@ -3192,12 +3500,13 @@ exports.Room = function (room, channel) {
 		delete my.game.pendingItems[player.id];
 		my.byMaster('item-dequeued', { playerId: player.id }, true);
 	};
-	my.consumeItem = function (playerId, itemType) {
-		var items = my.game.items[playerId];
+	my.consumeItem = function (playerId, itemType, silent) {
+		var id = (playerId && typeof playerId === 'object' && playerId.id) ? playerId.id : playerId;
+		var items = my.game.items[id];
 		if (!items || (items[itemType] || 0) <= 0) return false;
 		items[itemType]--;
-		delete my.game.pendingItems[playerId];
-		my.byMaster('item-used', { playerId: playerId, itemType: itemType }, true);
+		delete my.game.pendingItems[id];
+		if (!silent) my.byMaster('item-used', { playerId: id, itemType: itemType }, true);
 		return true;
 	};
 	my.getAvailableItems = function () {
@@ -3207,23 +3516,26 @@ exports.Room = function (room, channel) {
 		return items;
 	};
 	my.giveRandomItem = function (playerId) {
+		var id = (playerId && typeof playerId === 'object' && playerId.id) ? playerId.id : playerId;
+		var pObj = (playerId && typeof playerId === 'object') ? playerId : DIC[id];
+		if (pObj && pObj.robot) return;
 		var availableItems = my.getAvailableItems();
-		if (!my.game.items[playerId]) {
+		if (!my.game.items[id]) {
 			var itemObj = { skip: 0, pass: 0, random: 0 };
 			if (my.game.seq && my.game.seq.length > 2) itemObj.reverse = 0;
 			if (my.rule && my.rule.rule === 'Classic') itemObj.linkChange = 0;
-			my.game.items[playerId] = itemObj;
+			my.game.items[id] = itemObj;
 		}
-		var items = my.game.items[playerId];
+		var items = my.game.items[id];
 		var candidates = availableItems.filter(function (t) { return (items[t] || 0) < Const.ITEM_MAX_COUNT; });
 		if (candidates.length === 0) { return; }
 		var itemType = candidates[Math.floor(Math.random() * candidates.length)];
 		items[itemType] = (items[itemType] || 0) + 1;
-		var player = DIC[playerId];
+		var player = DIC[id];
 		if (player && player.send) player.send('item-given', { itemType: itemType, count: items[itemType] });
 	};
 	my.checkItemGrant = function (playerId, bonusPoints, success) {
-		if (!my.opts.item || !success) return;
+		if (!success) return;
 
 		my.game.itemGlobalTurnCount = (my.game.itemGlobalTurnCount || 0) + 1;
 		if (my.game.itemGlobalTurnCount % Const.ITEM_GRANT_INTERVAL === 0) {
@@ -3244,46 +3556,89 @@ exports.Room = function (room, channel) {
 				my.game.bonusScore[playerId] = 0;
 			}
 		}
+
+		if (my.opts.chaos) my.checkChaos();
 	};
-	my._defaultNextTurn = function () {
-		var next = (my.game.turn + 1) % my.game.seq.length;
+	my.checkChaos = function () {
+		if (!my.gaming || !my.game.seq || my.game.seq.length === 0) return;
+
+		// pending 없는 플레이어만 후보 (서바이벌: 생존자만)
+		var candidates = my.game.seq.filter(function (seqItem) {
+			var id = seqItem && seqItem.id ? seqItem.id : seqItem;
+			if (my.game.pendingItems[id]) return false;
+			if (my.opts.survival) {
+				var p = DIC[id] || seqItem;
+				if (!p || !p.game || !p.game.alive) return false;
+			}
+			return true;
+		});
+
+		// 10% 확률 reverse
+		if (candidates.length > 0 && Math.random() < Const.CHAOS_REVERSE_CHANCE) {
+			var pick = candidates[Math.floor(Math.random() * candidates.length)];
+			var pickId = pick && pick.id ? pick.id : pick;
+			if (my.game.items[pickId]) {
+				my.game.items[pickId].reverse = (my.game.items[pickId].reverse || 0) + 1;
+			}
+			my.game.pendingItems[pickId] = { itemType: 'reverse', chaos: true };
+			candidates = candidates.filter(function (c) {
+				var id = c && c.id ? c.id : c;
+				return id !== pickId;
+			});
+		}
+
+		// 5% 확률 linkChange (Classic 전용)
+		if (my.rule.rule === 'Classic' && candidates.length > 0 && Math.random() < Const.CHAOS_LINK_CHANCE) {
+			var pick2 = candidates[Math.floor(Math.random() * candidates.length)];
+			var pickId2 = pick2 && pick2.id ? pick2.id : pick2;
+			if (my.game.items[pickId2]) {
+				my.game.items[pickId2].linkChange = (my.game.items[pickId2].linkChange || 0) + 1;
+			}
+			my.game.pendingItems[pickId2] = { itemType: 'linkChange', chaos: true };
+		}
+	};
+	my._defaultNextTurn = function (fromIndex) {
+		var n = my.game.seq.length;
+		var dir = my.game.reversed ? -1 : 1;
+		var start = (fromIndex !== undefined) ? fromIndex : my.game.turn;
+		var next = ((start + dir) % n + n) % n;
 		if (my.opts.survival) {
 			var attempts = 0;
-			while (attempts < my.game.seq.length) {
+			while (attempts < n) {
 				var p = DIC[my.game.seq[next]] || my.game.seq[next];
 				if (p && p.game && p.game.alive) break;
-				next = (next + 1) % my.game.seq.length;
+				next = ((next + dir) % n + n) % n;
 				attempts++;
 			}
 		}
 		return next;
 	};
 	my.calculateNextTurn = function (peek) {
-		if (!my.opts.item) return my._defaultNextTurn();
-
 		var seq = my.game.seq;
 		var n = seq.length;
 		var cur = my.game.turn;
 		var currentId = seq[cur];
 		var pending = my.game.pendingItems;
-		var curPending = pending[currentId];
+		// seq에 봇 객체가 섞여 있을 수 있으므로 ID 문자열로 정규화
+		var sid = function (s) { return (s && typeof s === 'object' && s.id) ? s.id : s; };
+		var curPending = pending[sid(currentId)];
 		var randomJump = false;
 		var isReversed = my.game.reversed;
 
 		// 1. 현재 플레이어의 afterTurn 아이템 처리 (skip, random)
 		if (curPending) {
 			if (curPending.itemType === 'random') {
-				if (!peek) my.consumeItem(currentId, 'random');
+				if (!peek) my.consumeItem(sid(currentId), 'random');
 				var candidates = seq.filter(function (id) {
-					if (my.opts.survival) { var p = DIC[id] || id; return p && p.game && p.game.alive; }
+					if (my.opts.survival) { var p = DIC[sid(id)] || id; return p && p.game && p.game.alive; }
 					return true;
 				});
 				if (candidates.length > 0) {
 					var chosen = candidates[Math.floor(Math.random() * candidates.length)];
 					var chosenIdx = seq.indexOf(chosen);
-					var chosenPending = pending[chosen];
+					var chosenPending = pending[sid(chosen)];
 					if (chosenPending && chosenPending.itemType === 'pass') {
-						if (!peek) my.consumeItem(chosen, 'pass');
+						if (!peek) my.consumeItem(sid(chosen), 'pass');
 						cur = chosenIdx;
 						randomJump = true;
 					} else {
@@ -3296,7 +3651,7 @@ exports.Room = function (room, channel) {
 		var skipLeft = 0;
 		if (!randomJump && curPending && curPending.itemType === 'skip') {
 			skipLeft = 1;
-			if (!peek) my.consumeItem(currentId, 'skip');
+			if (!peek) my.consumeItem(sid(currentId), 'skip');
 		}
 
 		// 2~3. 반복 계산 루프 (reverse, linkChange, pass를 도달 시 처리)
@@ -3309,10 +3664,15 @@ exports.Room = function (room, channel) {
 			next = ((next + dir) % n + n) % n;
 			if (my.opts.survival) {
 				var p = DIC[seq[next]] || seq[next];
-				if (!p || !p.game || !p.game.alive) { visited--; continue; }
+				if (!p || !p.game || !p.game.alive) {
+					// KO된 플레이어의 stale pending item 즉시 정리
+					delete pending[sid(seq[next])];
+					visited--;
+					continue;
+				}
 			}
 			if (skipLeft > 0) { skipLeft--; continue; }
-			var nextPending = pending[seq[next]];
+			var nextPending = pending[sid(seq[next])];
 			if (!nextPending) break;
 
 			// reverse: 해당 플레이어 도달 시 방향 반전, cur 위치로 리셋
@@ -3321,7 +3681,12 @@ exports.Room = function (room, channel) {
 				dir = isReversed ? -1 : 1;
 				if (!peek) {
 					my.game.reversed = isReversed;
-					my.consumeItem(seq[next], 'reverse');
+					my.consumeItem(sid(seq[next]), 'reverse', nextPending.chaos);
+					if (nextPending.chaos) {
+						my.byMaster('chaos-notice', {
+							code: isReversed ? 'chaosReverseLeft' : 'chaosReverseRight'
+						}, true);
+					}
 				}
 				next = cur;
 				continue;
@@ -3330,19 +3695,24 @@ exports.Room = function (room, channel) {
 			if (nextPending.itemType === 'linkChange') {
 				if (!peek) {
 					my.game.linkOverride = Const.getLinkOverrideType(my.opts);
-					my.consumeItem(seq[next], 'linkChange');
+					my.consumeItem(sid(seq[next]), 'linkChange', nextPending.chaos);
+					if (nextPending.chaos) {
+						my.byMaster('chaos-notice', {
+							code: my.game.linkOverride === 'middle' ? 'chaosMidLink' : 'chaosEndLink'
+						}, true);
+					}
 				}
 				break;
 			}
 			// pass: 통과
 			if (nextPending.itemType === 'pass') {
-				if (!peek) my.consumeItem(seq[next], 'pass');
+				if (!peek) my.consumeItem(sid(seq[next]), 'pass');
 				continue;
 			}
 			break;
 		}
 
-		if (visited > n) return (cur + 1) % n;
+		if (visited > n) return my._defaultNextTurn();
 		return next;
 	};
 	// ========== 아이템전 끝 ==========
@@ -3406,8 +3776,10 @@ exports.Room = function (room, channel) {
 			}
 		}
 
-		// 아이템전: calculateNextTurn()으로 통합 처리
-		if (my.opts.item) {
+		// 아이템 효과 발동 조건 (opts.item이 없어도 실제 효과가 있으면 적용)
+		var _itemTurnActive = my.opts.item || my.game.reversed ||
+			(my.game.pendingItems && Object.keys(my.game.pendingItems).length > 0);
+		if (_itemTurnActive) {
 			if (my.game.hasOwnProperty('_survivalCachedTarget')) {
 				// applySurvivalDamage가 이미 커밋한 타겟 — 재계산 없이 그대로 사용
 				var _cachedIdx = my.game._survivalCachedTarget;
@@ -3416,15 +3788,16 @@ exports.Room = function (room, channel) {
 				if (my.opts.survival) {
 					var _cp = DIC[my.game.seq[_cachedIdx]] || my.game.seq[_cachedIdx];
 					if (!_cp || !_cp.game || !_cp.game.alive) {
-						// 데미지로 KO된 경우 선형으로 다음 생존자 탐색
-						my.game.turn = my._defaultNextTurn();
+						// 데미지로 KO된 경우 현재 방향으로 다음 생존자 탐색
+						my.game.turn = my._defaultNextTurn(_cachedIdx);
 					}
 				}
 			} else {
 				// 타임아웃 등 일반 경로
 				var timedOutId = my.game.seq[my.game.turn];
-				if (force && my.game.pendingItems && my.game.pendingItems[timedOutId]) {
-					my.dequeueItem(DIC[timedOutId] || { id: timedOutId });
+				var timedOutIdStr = (timedOutId && typeof timedOutId === 'object' && timedOutId.id) ? timedOutId.id : timedOutId;
+				if (force && my.game.pendingItems && my.game.pendingItems[timedOutIdStr]) {
+					my.dequeueItem(DIC[timedOutIdStr] || { id: timedOutIdStr });
 				}
 				my.game.turn = my.calculateNextTurn();
 			}
@@ -3544,7 +3917,7 @@ exports.Room = function (room, channel) {
 					}
 				}
 				// 깨끗한 후보 없음: denied 동작 (charMsg + defeatMsg)
-				if (!client.mute && !my.game.late) {
+				if (!client.muteGame && !my.game.late) {
 					if (my.game.char) {
 						var char = my.game.char;
 						var charMsgs = [char + char + char, char + "..", char + "??", char + "... T.T"];

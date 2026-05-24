@@ -9,9 +9,16 @@
 
 UPDATE kkutu_ko
 SET hit = CASE
-    WHEN CHAR_LENGTH(_id) >= 24 THEN 1
-    WHEN CHAR_LENGTH(_id) >= 16 THEN 3
-    ELSE 6
+    WHEN CHAR_LENGTH(_id) >= 26 THEN -999
+    WHEN CHAR_LENGTH(_id) >= 24 THEN 0
+    WHEN CHAR_LENGTH(_id) >= 22 THEN 1
+    WHEN CHAR_LENGTH(_id) >= 20 THEN 2
+    WHEN CHAR_LENGTH(_id) >= 18 THEN 3
+    WHEN CHAR_LENGTH(_id) >= 16 THEN 4
+    WHEN CHAR_LENGTH(_id) >= 14 THEN 5
+    WHEN CHAR_LENGTH(_id) >= 12 THEN 6
+    WHEN CHAR_LENGTH(_id) >= 10 THEN 7
+    ELSE 8
 END
 WHERE theme = 'KPT'
   AND CHAR_LENGTH(_id) >= 8;

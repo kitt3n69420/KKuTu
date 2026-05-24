@@ -34,6 +34,10 @@ let _botToken = null;
 let _reconnectTimer = null;
 const RECONNECT_DELAY = 30000; // 30s before manual reconnect attempt
 
+// Proxy callbacks set when running as a separate process
+let _queryOnlineUser = null; // (query) => Promise<{profile, data}|null>
+let _sendRoomMsg = null;     // (roomId, message) => Promise<{exists, sent}>
+
 /**
  * Safe wrapper for async operations
  */
@@ -43,13 +47,6 @@ async function safeExecute(operation, context = 'Unknown') {
     } catch (err) {
         JLog.error(`[Discord Bot] ERROR in ${context}: ${err.message}`);
         console.error(`[Discord Bot] ERROR in ${context}:`, err);
-        try {
-            if (channel && isReady) {
-                await channel.send(`# 오류가 났어요!\n(${context}): ${err.message}`);
-            }
-        } catch (sendErr) {
-            console.error('[Discord Bot] ERROR: Failed to send error message:', sendErr);
-        }
     }
 }
 
@@ -66,7 +63,7 @@ function scheduleReconnect() {
             }
             client = null;
             channel = null;
-            await exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN });
+            await exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN, queryOnlineUser: _queryOnlineUser, sendRoomMsg: _sendRoomMsg });
         } catch (err) {
             JLog.error(`[Discord Bot] 재접속 실패: ${err.message}`);
             scheduleReconnect();
@@ -208,6 +205,8 @@ exports.init = async function (token, db, dic, options = {}) {
     DIC = dic;
     ROOM = options.ROOM || null;
     ADMIN = options.ADMIN || [];
+    _queryOnlineUser = options.queryOnlineUser || null;
+    _sendRoomMsg = options.sendRoomMsg || null;
 
     try {
         client = new Client({
@@ -938,30 +937,26 @@ async function handleRecord(interaction) {
         let displayName;
 
         if (userQuery) {
-            // Argument provided: search online users by nickname or account ID
-            if (!DIC) {
-                await interaction.editReply({ content: '❌ 해당 유저가 없거나 오프라인이에요.' });
-                return;
-            }
-
-            // Try direct ID match first, then nickname match
             let found = null;
-            for (const id in DIC) {
-                const client = DIC[id];
-                if (!client) continue;
 
-                // Match by account ID
-                if (id === userQuery) {
-                    found = client;
-                    break;
-                }
-
-                // Match by nickname (profile.title or profile.name)
-                const title = client.profile && client.profile.title;
-                const name = client.profile && client.profile.name;
-                if ((title && title === userQuery) || (name && name === userQuery)) {
-                    found = client;
-                    break;
+            if (_queryOnlineUser) {
+                // Separate process mode: proxy query to master
+                found = await _queryOnlineUser(userQuery);
+            } else if (DIC) {
+                // Same process mode: direct DIC access
+                for (const id in DIC) {
+                    const client = DIC[id];
+                    if (!client) continue;
+                    if (id === userQuery) {
+                        found = { profile: client.profile, data: client.data };
+                        break;
+                    }
+                    const title = client.profile && client.profile.title;
+                    const name = client.profile && client.profile.name;
+                    if ((title && title === userQuery) || (name && name === userQuery)) {
+                        found = { profile: client.profile, data: client.data };
+                        break;
+                    }
                 }
             }
 
@@ -1274,6 +1269,19 @@ async function handleRoomMsg(interaction) {
     var rid = interaction.options.getInteger('room');
     var message = interaction.options.getString('message');
 
+    if (_sendRoomMsg) {
+        // Separate process mode: proxy to master
+        const result = await _sendRoomMsg(rid, message);
+        if (!result || !result.exists) {
+            await interaction.reply({ content: `❌ ${rid}번 방을 찾을 수 없습니다.`, ephemeral: true });
+            return;
+        }
+        JLog.info(`[Discord Bot] roommsg to room ${rid} by ${discordId}: ${message}`);
+        await interaction.reply({ content: `✅ ${rid}번 방에 메시지를 보냈습니다. (${result.sent}명에게 전달)`, ephemeral: true });
+        return;
+    }
+
+    // Same process mode: direct DIC/ROOM access
     if (!ROOM || !ROOM[rid]) {
         await interaction.reply({ content: `❌ ${rid}번 방을 찾을 수 없습니다.`, ephemeral: true });
         return;

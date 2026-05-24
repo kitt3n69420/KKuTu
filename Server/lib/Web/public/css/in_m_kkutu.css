@@ -191,6 +191,21 @@ body {
 	height: 25px;
 }
 
+.kkutu-menu button:not(.ItemButton):active {
+	margin-top: 5px !important;
+	height: 20px !important;
+	background-color: var(--color-bg-light) !important;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+}
+
+#StartBtn:active,
+#ReadyBtn:active {
+	margin-top: 5px !important;
+	height: 15px !important;
+	background-color: var(--color-primary-dark) !important;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+
 /* Toggled State for Unified Menu Buttons (Spectate, etc.) */
 .kkutu-menu .toggled {
 	margin-top: 5px !important;
@@ -1996,14 +2011,26 @@ body.theme-orange .GameBox::before {
 	overflow-y: auto;
 }
 
+/* Mobile ExchangeDiag */
+#ExchangeDiag {
+	width: calc(100% - 20px) !important;
+	max-width: 340px;
+}
+
+#ExchangeDiag .goods-box {
+	float: left;
+	width: 100%;
+	overflow-y: auto;
+}
+
 .dress-type {
 	float: left;
 	padding: 1px 0px;
 	border: 1px solid #AAAAAA;
 	border-radius: 5px;
 	margin: 1px;
-	width: 40px;
-	font-size: 11px;
+	width: 36px;
+	font-size: 10px;
 	text-align: center;
 	cursor: pointer;
 	background-color: var(--color-border);
@@ -2082,6 +2109,15 @@ body.theme-orange .GameBox::before {
 	border-top: 1px dashed #777777;
 	margin-top: 2px;
 	width: 100%;
+}
+
+.dress-item-ai {
+	float: left;
+	padding-top: 4px;
+	border-top: 1px dashed #777777;
+	margin-top: 2px;
+	width: 100%;
+	color: #88CCFF;
 }
 
 .item-opts-head {

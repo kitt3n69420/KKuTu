@@ -19,6 +19,9 @@ extends layout
 block Subject
 	title *** JJO.KR 관리 페이지 ***
 
+block CSS
+	link(rel='stylesheet', href='/css/in_gwalli.css')
+
 block JS
 	script(type="text/javascript", src="/js/in_admin.min.js")
 	
@@ -50,15 +53,15 @@ block Middle
 			input#shop-word(placeholder='품목 (~ALL)')
 			button#shop-go 조회
 			button#shop-hide 숨기기
-			div
+			div#shop-data-wrap
 				table
 					thead: tr
+						td 선택
 						td #
 						td cost
 						td hit
 						td term
 						td group
-						td updatedAt
 						td options
 						td name_ko_KR
 						td desc_ko_KR
@@ -66,6 +69,7 @@ block Middle
 						td desc_en_US
 					tbody#shop-data
 			button#shop-add 추가
+			button#shop-delete-selected 선택 삭제
 			button#shop-apply 적용
 	fieldset
 		legend 유저 DB 다루기
@@ -108,7 +112,7 @@ block Middle
 			button#db-go 조회
 			div#word-data
 				div#wd-id
-				input#wd-flag
+				div#wd-flag
 				table
 					thead: tr
 						td #
@@ -124,9 +128,13 @@ block Middle
 	fieldset
 		legend 끄투 DB에 단어 추가하기
 		div
-			input#db-theme(placeholder='주제 (~부터 적으면 검색)')
+			input#db-theme(placeholder='주제 ID (~부터 시작하면 검색)', list='db-theme-list')
+			datalist#db-theme-list
+			br
 			textarea#db-list(rows=20, cols=100)
+			br
 			button#db-ok 확인
+			button#db-delete 대량 삭제
 	fieldset
 		legend 끄투에서의 인기 단어
 		button#kpw-query 조회

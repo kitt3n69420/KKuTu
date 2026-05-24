@@ -1,18 +1,101 @@
 /**
  * Rule the words! KKuTu Online
  * Copyright (C) 2017 JJoriping(op@jjo.kr)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* ===== 공통 ===== */
+#Middle fieldset {
+    margin-bottom: 12px;
+    padding: 8px;
+    border: 1px solid #aaa;
+}
+#Middle fieldset legend {
+    font-weight: bold;
+    padding: 0 4px;
+}
+
+/* ===== 상점 DB 다루기 ===== */
+#shop-data-wrap {
+    overflow-x: auto;
+    max-width: 100%;
+}
+#shop-data td {
+    vertical-align: top;
+    padding: 2px 3px;
+    white-space: nowrap;
+}
+#shop-data thead td {
+    background: #e8e8e8;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid #aaa;
+}
+
+/* options 편집기 */
+.opts-editor {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 1px 6px;
+    font-size: 11px;
+    align-items: center;
+}
+.opts-editor .opt-row {
+    display: contents;
+}
+.opts-editor label {
+    white-space: nowrap;
+}
+.opts-editor input[type="number"] {
+    width: 52px;
+}
+.opts-editor .opt-gif-row {
+    grid-column: 1 / span 2;
+    margin-top: 2px;
+}
+
+/* term 입력 */
+.term-wrap input[type="number"] {
+    width: 52px;
+}
+.term-wrap select {
+    width: 52px;
+}
+
+/* 상점 select (group) */
+#shop-data select {
+    max-width: 70px;
+}
+
+/* 상점 체크박스 열 */
+#shop-data .shop-sel {
+    margin: 0 auto;
+    display: block;
+}
+
+/* ===== 끄투 DB 다루기: 플래그 체크박스 ===== */
+#wd-flag {
+    margin: 4px 0;
+}
+#wd-flag label {
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+/* ===== 끄투 DB에 단어 추가하기 ===== */
+#db-theme {
+    width: 200px;
+    margin-right: 4px;
+}
+#db-theme-list option {
+    font-size: 13px;
+}
+#db-list {
+    display: block;
+    margin: 4px 0;
+    font-family: monospace;
+}

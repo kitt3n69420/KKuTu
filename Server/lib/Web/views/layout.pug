@@ -63,7 +63,10 @@ html
 			+Menu()
 			div#global-notice
 				div#gn-content
-					include ../public/global_notice.html
+					if activeEventNotice
+						| !{activeEventNotice}
+					else
+						include ../public/global_notice.html
 				+Expl(L('GLOBAL_NOTICE'))
 			block Top
 		div#Jungle

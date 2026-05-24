@@ -66,8 +66,8 @@ function loading(text) {
 		if ($("#Intro").is(':visible')) {
 			$stage.loading.hide();
 			$("#intro-text").html(text);
-		} else $stage.loading.show().html(text);
-	} else $stage.loading.hide();
+		} else $stage.loading.html(text).fadeIn(200);
+	} else $stage.loading.fadeOut(200);
 }
 function escapeContent(text) {
 	if (typeof text !== 'string') return text;
@@ -205,7 +205,7 @@ function applyOptions(opt) {
 
 function loadVolumeSettings() {
 	try {
-		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null, theme: null };
+		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMuteGame: null, aiMuteLobby: null, aiRageQuit: null, aiFastMode: null, theme: null };
 	} catch (e) {
 		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null, theme: null };
 	}
@@ -866,6 +866,25 @@ function onMessage(data) {
 				$data.pendingItem = null;
 				updateItemUI();
 			}
+			break;
+		case 'chaos-notice':
+			if (data.code === 'chaosShuffle' && data.seq && $data.room && $data.room.game) {
+				$data.room.game.seq = data.seq;
+				var $gameBody = $(".GameBox .game-body");
+				for (var _csi = 0; _csi < data.seq.length; _csi++) {
+					var $csel = $("#game-user-" + data.seq[_csi]);
+					if ($csel.length) $gameBody.append($csel);
+				}
+				if (data.teams) {
+					for (var _tid in data.teams) {
+						var _nt = data.teams[_tid];
+						$("#game-user-" + _tid + " .game-user-score")
+							.removeClass("team-1 team-2 team-3 team-4")
+							.toggleClass("team-" + _nt, _nt > 0);
+					}
+				}
+			}
+			notice(L[data.code + 'Body'], L[data.code]);
 			break;
 		default:
 			break;
@@ -1625,7 +1644,7 @@ function addonNickname($R, o) {
 		var cls = "x-" + o.equip['NIK'];
 		$R.addClass(cls);
 		// For gradient names, also apply to the direct text child for proper text clipping
-		if (o.equip['NIK'].indexOf("gradientname_") === 0) {
+		if (o.equip['NIK'].indexOf("gradientname_") === 0 || o.equip['NIK'].indexOf("kkn_triname") === 0) {
 			var $text = $R.find(".users-name, .room-user-name, .game-user-name, .chat-head").first();
 			if ($text.length) $text.addClass(cls);
 		}
@@ -2100,7 +2119,7 @@ function drawMyDress(avGroup, resetFields) {
 	}
 	drawMyGoods(avGroup || true);
 }
-function renderGoods($target, preId, filter, equip, onClick) {
+function renderGoods($target, preId, filter, equip, onClick, exclude, excludeIds) {
 	var $item;
 	var list = [];
 	var obj, q, g, equipped;
@@ -2128,6 +2147,8 @@ function renderGoods($target, preId, filter, equip, onClick) {
 		};
 		if (!q.hasOwnProperty("value") && !equipped) continue;
 		if (!isAll) if (filter.indexOf(obj.group) == -1) continue;
+		if (exclude && exclude.indexOf(obj.group) !== -1) continue;
+		if (excludeIds && excludeIds.indexOf(list[i].key) !== -1) continue;
 		$target.append($item = $("<div>").addClass("dress-item")
 			.append(getImage(obj.image).addClass("dress-item-image").html("x" + q.value))
 			.append(explainGoods(obj, equipped, q.expire))
@@ -2392,6 +2413,9 @@ function drawCraftWorkshop() {
 
 		$data._craftTray.forEach(function (item, idx) {
 			gd = iGoods(item);
+			var bd = $data.box[item];
+			var cnt = (typeof bd === 'number') ? bd : (bd && bd.value ? bd.value : 0);
+			var $imgWrap = $("<div>").addClass("craft-img-wrap");
 			var $img = $("<div>").addClass("jt-image")
 				.css('background-image', "url(" + gd.image + ")")
 				.attr('id', "craft-tray-" + idx)
@@ -2400,7 +2424,9 @@ function drawCraftWorkshop() {
 					$data._craftTray.splice(idx, 1);
 					drawCraftTray();
 				});
-			var $wrap = $("<div>").css('display', 'inline-block').append($img).append(explainGoods(gd, false));
+			var $label = $("<span>").addClass("craft-count-label").text("x" + cnt);
+			$imgWrap.append($img).append($label);
+			var $wrap = $("<div>").css('display', 'inline-block').append($imgWrap).append(explainGoods(gd, false));
 			$tray.append($wrap);
 			$("#craft-" + item).addClass("craft-tray-selected");
 		});
@@ -2446,6 +2472,107 @@ function drawCraftWorkshop() {
 		} else {
 			$preview.html("<span style='color:#888; font-size:11px;'>" + L['craftSelectSecond'] + "</span>");
 		}
+	}
+}
+function drawExchangeWorkshop() {
+	var $tray = $("#exc-tray");
+	var $goods = $("#exc-goods");
+	var $preview = $("#exc-result-preview");
+
+	$data._excTray = {};
+	$data._excResult = null;
+	$preview.empty();
+	$stage.dialog.excCompose.removeClass("exc-exchangeable");
+
+	var specFilter = ($("#dress-type-spec").attr('value') || "").split(',').filter(Boolean);
+	var excFilter = (specFilter.length ? specFilter : ['PIX', 'PIY', 'PIZ', 'CNS']).filter(function(g) { return g !== 'PIX'; }).concat(['eventcol']);
+	renderGoods($goods, 'exc', excFilter, null, onExcGoodsClick);
+
+	function onExcGoodsClick(e) {
+		var $target = $(e.currentTarget);
+		var id = $target.attr('id').slice(4);
+
+		if ($data._excTray.hasOwnProperty(id)) {
+			delete $data._excTray[id];
+			drawExcTray();
+			return;
+		}
+
+		var bd = $data.box[id];
+		var available = (typeof bd === 'number') ? bd : (bd && bd.value ? bd.value : 0);
+		if (available < 1) return fail(434);
+
+		showPrompt(L['excHowMany'], "1", function (val) {
+			if (val === null) return;
+			var n = parseInt(val, 10);
+			if (isNaN(n) || n < 1) return;
+			if (n > available) n = available;
+			$data._excTray[id] = n;
+			drawExcTray();
+		});
+	}
+
+	function trayEmpty() {
+		$tray.html($("<span>").css({ 'font-size': "11px", 'color': "#999" }).html(L['excTrayHint']));
+		$("#exc-arrow").hide();
+		$("#exc-empty-slot").hide();
+	}
+	trayEmpty();
+
+	function drawExcTray() {
+		$tray.empty();
+		$(".exc-tray-selected").removeClass("exc-tray-selected");
+		$preview.empty();
+		$stage.dialog.excCompose.removeClass("exc-exchangeable");
+		$data._excResult = null;
+
+		var ids = Object.keys($data._excTray);
+		if (ids.length === 0) {
+			trayEmpty();
+			return;
+		}
+
+		ids.forEach(function (itemId) {
+			var gd = iGoods(itemId);
+			var cnt = $data._excTray[itemId];
+			var $wrap = $("<div>").addClass("exc-tray-item");
+			var $imgWrap = $("<div>").addClass("exc-img-wrap");
+			var $img = $("<div>").addClass("jt-image")
+				.css('background-image', "url(" + gd.image + ")")
+				.attr('data-item', itemId);
+			var $label = $("<span>").addClass("exc-count-label").text("x" + cnt);
+			$imgWrap.append($img).append($label);
+			$wrap.append($imgWrap).append(explainGoods(gd, false));
+			$wrap.on('click', function () {
+				delete $data._excTray[itemId];
+				drawExcTray();
+			});
+			$tray.append($wrap);
+			$("#exc-" + itemId).addClass("exc-tray-selected");
+		});
+		global.expl($tray);
+
+		$("#exc-arrow").show();
+		$("#exc-empty-slot").show();
+
+		$preview.html("<span style='color:#888; font-size:11px;'>" + L['searching'] + "</span>");
+		$.get("/exchange-check", { items: JSON.stringify($data._excTray) }, function (res) {
+			if (res.error || !res.result) {
+				$preview.html("<span style='color:#CC3333; font-size:11px;'>" + L['excNoRecipe'] + "</span>");
+				return;
+			}
+			if (!$data.shop[res.result]) {
+				$preview.html("<span style='color:#CC3333; font-size:11px;'>" + L['excNoRecipe'] + "</span>");
+				return;
+			}
+			var resultObj = iGoods(res.result);
+			var $resultImg = getImage(resultObj.image).addClass("exc-result-image");
+			var $resultWrap = $("<div>").css('display', 'inline-block').append($resultImg).append(explainGoods(resultObj, false));
+			$preview.empty().append($resultWrap);
+			global.expl($preview);
+			$data._excResult = res.result;
+			$stage.dialog.excCompose.addClass("exc-exchangeable");
+		});
 	}
 }
 function drawLeaderboard(data) {
@@ -2612,12 +2739,16 @@ function requestProfile(id) {
 
 		// 봇 옵션 표시 (한 줄 3열)
 		var fastText = o.fastMode ? L['aiFastMode_on'] : L['aiFastMode_off'];
-		var muteText = o.mute ? L['aiMute_off'] : L['aiMute_on'];
+		var muteGameText = !o.muteGame ? L['aiMuteGame_on'] : L['aiMuteGame_off'];
+		var muteLobbyText = !o.muteLobby ? L['aiMuteLobby_on'] : L['aiMuteLobby_off'];
 		var rqText = o.canRageQuit ? L['aiRageQuit_on'] : L['aiRageQuit_off'];
 		$rec.append($("<div>").addClass("profile-record-field")
 			.append($("<div>").addClass("profile-field-name").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(fastText))
-			.append($("<div>").addClass("profile-field-record").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(muteText))
-			.append($("<div>").addClass("profile-field-score").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(rqText))
+			.append($("<div>").addClass("profile-field-record").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(muteGameText))
+			.append($("<div>").addClass("profile-field-score").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(muteLobbyText))
+		);
+		$rec.append($("<div>").addClass("profile-record-field")
+			.append($("<div>").addClass("profile-field-name").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(rqText))
 		);
 	} else {
 		$stage.dialog.profileLevel.hide();
@@ -2664,7 +2795,10 @@ function requestInvite(id) {
 
 	if (id != "AI") {
 		nick = $data.users[id].profile.title || $data.users[id].profile.name;
-		if (!confirm(nick + L['sureInvite'])) return;
+		showConfirm(nick + L['sureInvite'], function (res) {
+			if (res) send('invite', { target: id });
+		});
+		return;
 	}
 	send('invite', { target: id });
 }
@@ -3458,7 +3592,7 @@ function explainGoods(item, equipped, expire) {
 	if (item.term) $R.append($("<div>").addClass("dress-item-term").html(Math.floor(item.term / 86400) + L['DATE'] + " " + L['ITEM_TERM']));
 	if (expire) $R.append($("<div>").addClass("dress-item-term").html((new Date(expire * 1000)).toLocaleString() + L['ITEM_TERMED']));
 	for (i in item.options) {
-		if (i == "gif") continue;
+		if (i == "gif" || i == "AI") continue;
 		var k = i.charAt(0);
 
 		txt = item.options[i];
@@ -3470,6 +3604,7 @@ function explainGoods(item, equipped, expire) {
 			.append($("<br>"));
 	}
 	if (txt) $R.append($opts);
+	if (item.options && item.options.AI) $R.append($("<div>").addClass("dress-item-ai").html(L['ITEM_AI_MADE']));
 	return $R;
 }
 function processShop(callback) {

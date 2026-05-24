@@ -95,6 +95,7 @@ block Middle
 		button#ExitBtn.for-master.for-normal.for-gaming(style='display: none; background-color: #FFADAD;')= L('exit')
 		button#ReplayBtn.for-lobby(style='display: none; background-color: #D9FF82;')= L('replay')
 		button#LeaderboardBtn.for-lobby(style='display: none; background-color: #FFADD3;')!= L('leaderboard')
+		button#ExchangeBtn.for-lobby(style='display: none; background-color: #FFE5AA;')= L('excWorkshop')
 		div#facebook-menu.fb-like.for-lobby.for-master.for-normal.for-gaming(data-href='https://kkutu-n.xyz', data-width='300', data-layout='button_count', data-action='like', data-show-faces='true', data-share='true')
 		div.ItemBar.for-gaming(style='display: none;')
 			each slot in [1, 2, 3, 4, 5]
@@ -364,7 +365,7 @@ block Middle
 		div.dialog-bar#room-len-limit-panel(style='display: none;')
 			h4= L('lenLimit')
 			div(style='float: left; width: 300px;')
-				- var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
+				- var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 				- for(var i in locals.OPTIONS)
 					- if(lenOpts.indexOf(i) === -1) continue;
 					+GameOption(i, 'room')
@@ -380,7 +381,7 @@ block Middle
 			div(style='float: left; width: 300px;')
 				- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg', 'flu', 'jkp', 'dfb'];
 				- for(var i in locals.OPTIONS)
-					- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp'].indexOf(i) !== -1) continue;
+					- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp'].indexOf(i) !== -1) continue;
 					- if(bonusOpts.indexOf(i) !== -1) continue;
 					+GameOption(i, 'room')
 				div.dialog-opt#room-injpick-panel(style='width: auto;')
@@ -399,7 +400,7 @@ block Middle
 		div.dialog-bar#room-simple-rules-panel(style='height: auto; display: none;')
 			h4(style='height: 30px;')= L('misc')
 			div(style='float: left; width: 300px;')
-				- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf'];
+				- var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'lng', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'chs', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf'];
 				- for(var i in locals.OPTIONS)
 					- if(keyRules.indexOf(i) === -1) continue;
 					+GameOption(i, 'room-simple')
@@ -474,7 +475,7 @@ block Middle
 			div.dialog-bar#view-all-len-limit-panel(style='display: none;')
 				h4= L('lenLimit')
 				div(style='float: left; width: 300px;')
-					- var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
+					- var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 					- for(var i in locals.OPTIONS)
 						- if(lenOpts.indexOf(i) === -1) continue;
 						+GameOption(i, 'view-all')
@@ -490,7 +491,7 @@ block Middle
 				div(style='float: left; width: 300px;')
 					- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg', 'flu', 'jkp', 'dfb'];
 					- for(var i in locals.OPTIONS)
-						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp'].indexOf(i) !== -1) continue;
+						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp'].indexOf(i) !== -1) continue;
 						- if(bonusOpts.indexOf(i) !== -1) continue;
 						+GameOption(i, 'view-all')
 					div.dialog-opt#view-all-injpick-panel
@@ -509,7 +510,7 @@ block Middle
 		div.dialog-bar.tail-button
 			button#view-all-ok= L('OK')
 			button#view-all-uncheck-all= L('uncheckAllRules')
-	+Dialog('PracticeDiag', 300, 225)
+	+Dialog('PracticeDiag', 300, 245)
 		div.dialog-bar
 			h4= L('selectLevel')
 			select#practice-level
@@ -543,8 +544,12 @@ block Middle
 				input#ai-fast-mode(type='checkbox', style='width: auto; margin-top: 5px;')
 		div.dialog-bar.ai-setting-only
 			div(style='float: left; width: 50%;')
-				h4(style='width: 80px;')= L('aiMute')
-				input#ai-mute(type='checkbox', style='width: auto; margin-top: 5px;')
+				h4(style='width: 80px;')= L('aiMuteGame')
+				input#ai-mute-game(type='checkbox', style='width: auto; margin-top: 5px;')
+			div(style='float: left; width: 50%;')
+				h4(style='width: 80px;')= L('aiMuteLobby')
+				input#ai-mute-lobby(type='checkbox', style='width: auto; margin-top: 5px;')
+		div.dialog-bar.ai-setting-only
 			div(style='float: left; width: 50%;')
 				h4(style='width: 80px;')= L('aiRageQuit')
 				input#ai-rage-quit(type='checkbox', style='width: auto; margin-top: 5px;')
@@ -617,7 +622,7 @@ block Middle
 		div.dialog-bar.tail-button
 			button#kick-vote-no= L('disagree')
 			button#kick-vote-yes= L('agree')
-	+Dialog('AfkWarnDiag', 300, 160, L('afkWarn'))
+	+Dialog('AfkWarnDiag', 300, 160, L('afkWarn'), true)
 		div.dialog-bar#afk-warn-text(style='text-align: center;')
 		div.dialog-bar
 			+GraphBar('afk-warn-time')
@@ -675,7 +680,7 @@ block Middle
 			button#dress-ok= L('OK')
 			button#dress-cf= L('charFactory')
 			button#dress-craft= L('craftWorkshop')
-			button(onclick=`alert("${L("paybackHelp")}");`)= L('payback')
+			button(onclick=`showAlert(${JSON.stringify(L("paybackHelp"))});`)= L('payback')
 	+Dialog('CharFactoryDiag', 500, 410, L('charFactory'))
 		div.dialog-bar(style='width: 300px;')
 			div#cf-tray
@@ -699,10 +704,20 @@ block Middle
 		div.dialog-bar(style='padding: 5px;')
 			div.shop-categories(style='border-bottom: 1px solid #CCCCCC; overflow: hidden; margin-bottom: 3px;')
 				- for(var i in locals.CATEGORIES)
-					- if(locals.CATEGORIES[i] !== 'spec')
+					- if(locals.CATEGORIES[i] !== 'spec' && locals.CATEGORIES[i] !== 'event')
 						- var v = locals.GROUPS[locals.CATEGORIES[i]] || [];
 						div.category-filter.craft-type(id="craft-type-" + locals.CATEGORIES[i], value=v.join(','))= L('category_' + locals.CATEGORIES[i])
 			div#craft-goods.goods-box(style='height: 180px; overflow-y: auto;')
+	+Dialog('ExchangeDiag', 500, 300, L('excWorkshop'))
+		div.dialog-bar#exc-top(style='display: flex; align-items: center; gap: 8px; padding: 5px; border-bottom: 1px solid #CCCCCC; height: 70px; box-sizing: border-box;')
+			div#exc-tray(style='flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;')
+			div(style='display: flex; align-items: center; gap: 5px; flex-shrink: 0;')
+				span#exc-arrow(style='font-size: 18px; color: #999; display: none;') &rArr;
+				div#exc-empty-slot(style='width: 60px; height: 60px; border: 2px dashed #CCC; border-radius: 5px; display: none;')
+					div#exc-result-preview(style='width: 100%; height: 100%;')
+				button#exc-compose(style='white-space: nowrap;')= L('excExchange')
+		div.dialog-bar(style='padding: 5px;')
+			div#exc-goods.goods-box(style='height: 195px; overflow-y: auto;')
 	+Dialog('ChatLogDiag', 350, 500, L('chatLog'))
 		div#chat-log-board(style='height: 475px; font-size: 11px; overflow-y: scroll;')
 	+Dialog('ObtainDiag', 300, 200, L('notice'), true)
@@ -794,5 +809,3 @@ block Middle
 block Bottom
 	div.bottom-legal!= L('dictionarySupport')
 	div.bottom-legal!= L('etcSupport')
-	div.bottom-legal
-		a.bottom-contact(href='/legal/copyright', target='_blank')= '저작권 안내'

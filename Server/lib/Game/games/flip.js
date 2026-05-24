@@ -313,6 +313,7 @@ exports.submit = function (client, text) {
 		owner: client.id,
 		previousOwner: previousOwner
 	}, true);
+	client.invokeWordPiece(text, 1);
 };
 exports.getScore = function () {
 	return 0;

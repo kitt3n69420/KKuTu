@@ -59,6 +59,7 @@ exports.OPTIONS = {
 	'k22': { name: "Twotwo" },        //둘둘, 넷넷, 사삼: 비슷함
 	'k44': { name: "Fourfour" },
 	'k43': { name: "Fourthree" },
+	'kch': { name: "Change" },
 	'no2': { name: "No2" },           //2글자 금지: ㅈㄱㄴ
 	'unk': { name: "Unknown" },       //언노운 워드: 없는 단어만 쓰기
 	'big': { name: "Big" },           //큰 보드: 솎솎 글자수가 2배가 됨
@@ -70,7 +71,8 @@ exports.OPTIONS = {
 	'sch': { name: "Second" },
 	'vow': { name: "Vowel" },
 	'lng': { name: "Long" },
-	'ln3': { name: "Length3" },
+	'ln2': { name: "Length2" }, // 한타대용
+	'ln3': { name: "Length3" }, // 영쿵따, 훈민정음용
 	'ln4': { name: "Length4" },
 	'ln5': { name: "Length5" },
 	'ln6': { name: "Length6" },
@@ -105,6 +107,7 @@ exports.OPTIONS = {
 	'obo': { name: "OnlyOnce" },   // 한번만: 전체 게임에서 한 번 쓴 단어는 재사용 불가
 	'alp': { name: "Allpos" },     // 모든 품사: 품사 제한 없이 모든 단어 사용 가능
 	'itm': { name: "Item" },       // 아이템전: 아이템을 사용할 수 있는 모드
+	'chs': { name: "Chaos" },      // 카오스: 매 턴 랜덤 아이템 효과 (itm과 함께 사용 불가)
 	'nsw': { name: "Noswear" },    // 욕 금지: 욕이 포함된 단어 제출 시 채팅으로 처리
 	'dod': { name: "NoDodoli" },   // 도돌이 금지: 이어지는 글자와 이을 글자가 같은 단어 금지
 	'nyh': { name: "Nyeohweok" },  // 녜힁: 어려운 한글 조합으로 랜덤 생성
@@ -114,9 +117,11 @@ exports.OPTIONS = {
 
 };
 
-// ========== 아이템전 상수 ==========
+// ========== 아이템전 / 카오스 상수 ==========
 
 exports.ITEM_TYPES = ['skip', 'reverse', 'pass', 'random', 'linkChange'];
+exports.CHAOS_REVERSE_CHANCE = 0.10; // 매 턴 reverse 아이템 강제 발동 확률
+exports.CHAOS_LINK_CHANCE    = 0.05; // 매 턴 linkChange 아이템 강제 발동 확률 (Classic 전용)
 exports.ITEM_MAX_COUNT = 10;       // 종류별 최대 보유 개수
 exports.ITEM_GRANT_INTERVAL = 6;  // 글로벌 N턴마다 전체 자동 지급
 exports.ITEM_BONUS_THRESHOLD = 2; // 보너스 수치 N 이상이면 지급
@@ -139,43 +144,78 @@ exports.getLinkOverrideType = function (opts) {
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
 	"저런", "ㅋㅋㅋㅋ", "안타깝네요", "아이고...", "바부", "컷~",
 	"잘가시고~", "ㅋㅋㅋㅋㅋㅋ", "멍충이", "아이고야", "꽤나 따끔할거요",
+	"빠이빠이~", "잘가~", "그럴 수도 있지"
 ];
 exports.ROBOT_TIMEOUT_MESSAGES_SAMETEAM = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
 	"저런", "아이고...", "멍충이", "그럴 수도 있지", "님 뭐함?",
-	"어후", "바부", "정신차려!", "아오", "트롤하지마"
+	"어후", "바부", "정신차려!", "아오", "트롤하지마", "아잇",
+	"좀 제대로 해", "어휴", "에휴", "실수지...?", "하..."
 ];
 exports.ROBOT_DEFEAT_MESSAGES_2 = [ // 남은 단어가 없으면 봇이 보내는 메시지
 	"뭐였더라?", "단어가 생각이 안나", "아 까먹었다", "GG", "모르겠어",
 	"기억이 안 나...", "아 뭐지?", "생각이 안 나네", "단어 더 없나?",
-	"에라이", "으앙", "ㅇㅅㅇ", "ㅁㄴㅇㄹ", "님들 헬프", "???"
+	"에라이", "으앙", "ㅇㅅㅇ", "ㅁㄴㅇㄹ", "님들 헬프", "???", "쌰갈"
 ];
 exports.ROBOT_VICTORY_MESSAGES = [ // 봇이 한방단어를 주고 보내는 메시지
 	"ㄴㅇㅅ", "ㅅㄱ", "ㅂㅂ", "잘가시게", "이거나 먹어라", ":3", ":)", "^-^", "OwO",
 	"ㅋㅋㅋㅋ", "나이스~", "한번 당해봐라!", "바이바이~", "ㅋㅋㅋㅋㅋㅋ", "ㅎㅎ",
 	"즐~", "ㅃㅃ", "ㅋㅋㅋㅋㅋㅋㅋㅋ", "수고~", "안녕은 영원한 헤어짐은 아니겠지요~",
-	"이얍!", "이건 못 참지", "메롱~", "하핫!"
+	"이얍!", "이건 못 참지", "메롱~", "하핫!", "이 맛이야!", "잘가~", "짠~"
 ];
 exports.ROBOT_DEFEAT_MESSAGES = [ // 봇이 한방단어를 받았을 때 보내는 메시지
-	"아니", "살살 좀 해", "짜증나", "이건 너무하잖아...", "으앙", "히잉",
-	"ㅁㄴㅇㄹ", "님아 제발", "아오 진짜", "아놔...", "ㅠㅠ", "너무해",
+	"아니", "살살 좀 해", "짜증나", "이건 너무하잖아...", "으앙", "히잉", "아 매너가 없구나",
+	"ㅁㄴㅇㄹ", "님아 제발", "아오 진짜", "아놔...", "ㅠㅠ", "너무해", "매너 켜",
 	"선넘네", "이렇게 가는구나...", "당했다!", "에라이", "하...", "엣?",
 	"아니 님아", "아 제발", "뿌에엥", "뾄!", "악", "안돼", "ㅠㅠ", "저기요?",
 	"이럴수가", "너 봇이지?", "으아악", "어...?", "???", "무...무슨?", "뭐...뭐야?",
-	"한방 단어는 너무 하잖아... ㅠㅠ", "쌰갈"
+	"한방 단어는 너무 하잖아... ㅠㅠ", "쌰갈", "아잇 진짜", "아", "?", "뭣"
+];
+exports.ROBOT_HANBANG_OBSERVE_MESSAGES = [ //봇이 다른 플레이어가 한방 단어를 맞는 걸 볼 때 보내는 메시지
+	"헉", "헐", "헉헉헉헉", "한방?", "저런", "한방 ㄷㄷ", "어머",
+	"어", "ㄷ", "ㄷㄷ", "어후"
 ];
 exports.ROBOT_ANGRY_MESSAGES = [ //봇이 빡치면 보내는 메시지
-	"이건 불공평해", "억까 제발좀", "아오!!!!!!", "개짜증나", "쌰갈!!!!",
+	"아잇 진짜!", "으아아아아앙", "아오!!!!!!", "개짜증나", "쌰갈!!!!",
 	"ㅁㄴㅇㄹㄹㅇㄴㄹㅇㄴㅁㄹㄴㅇㄹㅇㄴㄹㅇㄴㅁㄴㅇㄹ", "재밌냐?",
 	"야!!!", "치트 쓰지마", "사기치지마", "끄글 꺼라", "더러운짓 하지마",
-	"억까겜", "작작 해라?", "적당히 하자?", "뿌에에에에엥", "엿같네"
+	"억까겜", "작작 해라?", "적당히 하자?", "뿌에에에에엥", "엿같네",
+	 "한방은 싫어!!", "한방단어 멈춰!", "넌 8대가 탈모될거야!",
+	 "바보멍청이똥개해삼멍게말미잘!!", "아 님신고"
 ]
 exports.ROBOT_FINAL_MESSAGES = [ //봇이 중퇴하기 전에 보내는 메시지
-	"나 안해", "망겜", "개노잼", "니들끼리나 잘 해라", "안할거임 ㅅㄱ",
+	"나 안해", "망겜", "개노잼", "니들끼리나 잘 해라", "안할거임 ㅅㄱ", "ㄴㅈ",
 	"내가 너랑 다시 하나 봐라", "안해", "게임 뭣같이하네", "억까겜", "냥냥",
-	"탈주함 ㅂㅂ", "이타치가 왜 짱센지 알아? 탈주닌자라서", "ㅇ", "."
+	"탈주함 ㅂㅂ", "이타치가 왜 짱센지 알아? 탈주닌자라서", "ㅇ", ".", "ㅅㄱ",
+	"이딴겜"
 ]
-exports.MOREMI_PART = ["back", "shoes", "clothes", "head", "eye", "mouth", "lhand", "rhand"];
-exports.CATEGORIES = ["all", "spec", "skin", "badge", "head", "eye", "mouth", "clothes", "hs", "back"];
+exports.ROBOT_GAME_WIN_MESSAGES = [ //봇이 게임 1등으로 끝냈을 때
+	"EZ", "재밌다아~", "나이스~", "나 좀 잘하는듯?", "ㅖㅔㅔㅔ!", "1등이다!", "예스~", "쉽네요",
+	 "굿 게임!", "GG", "ㅈㅈ", "다들 수고하셨어요!", "재밌네요","즐거웠어요~", "한판 더?", "수고하셨어요!"
+]
+exports.ROBOT_GAME_LOSE_MESSAGES = [ //봇이 게임 꼴찌로 끝냈을 때
+	"내가 꼴찌라니", "아잇", "다음엔 꼭 이긴다", "억까겜", "이 판 무효!", "다음판엔 내가 1등할거임 ㅇㅇ",
+	"GG", "ㅈㅈ", "다들 수고하셨어요!", "한판 더?", "수고하셨어요!"
+]
+exports.ROBOT_GAME_MID_MESSAGES = [ //봇이 게임 중간 순위로 끝냈을 때
+	 "아쉽네요", "쩝", "재밌네요", "뭔가 느낌 왔는데", "약간 아쉽", "잘하면 1등할듯?",
+	 "굿 게임!", "GG", "ㅈㅈ", "다들 수고하셨어요!", "재밌네요","즐거웠어요~", "한판 더?", "수고하셨어요!"
+];
+exports.ROBOT_GREET_MESSAGES = [ //봇이 방에 들어올 때 보내는 메시지
+	"ㅎㅇㅎㅇ", "ㅎㅇ", "안녕하세요", "안녕하세요~", "한판 해봐요",
+	"잘 부탁해요", "하이하이~", "반가워요", "하이~"
+];
+exports.ROBOT_IDLE_MESSAGES = [ //봇이 게임 끝난 후 대기 중 보내는 메시지
+	"ㄹㄷㄹㄷ", "ㄱㄱ", "한판 더!", "빨리 시작해요", "고고",
+	"다들 준비됐나요?", "빨리빨리~", "ㄱㄱㄱ", "빨리 ㄱㄱ", "한판해요",
+];
+exports.ROBOT_IDLE2_MESSAGES = [ //봇이 게임 끝난 후 오랫동안 대기 중 보내는 메시지
+	"ㄹㄷㄹㄷㄹㄷㄹㄷㄹㄷㄹㄷ", "ㄱㄱㄱㄱㄱㄱㄱ", "아 심심해", "빨리!!!!!",
+	"빨리빨리", "ㅁㄴㅇㄹ", "잠수 아니지?",  "빨리 고고", "잔수 쳐내",
+	"ㄱㄱㄱㄱㄱㄱㄱㄱㄱㄱㄱㄱㄱ", "빨리 좀 해요", "ㄹㄷㄹㄷ", "님들 뭐함?",
+];
+
+exports.MOREMI_PART = ["back", "shoes", "clothes", "head", "eye", "mouth", "lhand", "rhand", "front"];
+exports.CATEGORIES = ["all", "spec", "event", "skin", "badge", "head", "eye", "mouth", "clothes", "hs", "back"];
 exports.AVAIL_EQUIP = [
 	"NIK", "BDG1", "BDG2", "BDG3", "BDG4",
 	"blackbere", "black_mask", "blue_headphone", "brownbere", "haksamo", "hamster_G", "hamster_O", "miljip", "nekomimi", "orange_headphone", "redbere", "twoeight", "white_mask",
@@ -189,6 +229,7 @@ exports.AVAIL_EQUIP = [
 
 exports.GROUPS = {
 	'spec': ["PIX", "PIY", "PIZ", "CNS"],
+	'event': ["eventshop", "eventcol"],
 	'skin': ["NIK"],
 	'badge': ["BDG1", "BDG2", "BDG3", "BDG4"],
 	'head': ["blackbere", "black_mask", "blue_headphone", "brownbere", "haksamo", "hamster_G", "hamster_O", "miljip", "nekomimi", "orange_headphone", "redbere", "twoeight", "white_mask", "Mhead"],
@@ -213,7 +254,7 @@ exports.RULE = {
 	'EKT': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "fho", "alp", "itm"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "fho", "alp", "itm", "chs"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -222,7 +263,7 @@ exports.RULE = {
 	'ESH': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -231,7 +272,7 @@ exports.RULE = {
 	'KKT': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm", "nsw", "flu", "dfb"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "kch", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm", "chs", "nsw", "flu", "dfb"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -240,7 +281,7 @@ exports.RULE = {
 	'KSH': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "nsw", "flu", "jkp", "dfb"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "nsw", "flu", "jkp", "dfb"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -250,7 +291,7 @@ exports.RULE = {
 		lang: "ko",
 		rule: "Jaqwi",
 		opts: ["ijp", "vow", "unl", "drg"],
-		time: 1,
+		time: 0.5,
 		ai: true,
 		big: false,
 		ewq: false
@@ -267,7 +308,7 @@ exports.RULE = {
 	'KTY': {
 		lang: "ko",
 		rule: "Typing",
-		opts: ["prv", "mir", "one", "lng", "drg"],
+		opts: ["prv", "mir", "one", "lng", "ln2", "ln5", "drg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -285,7 +326,7 @@ exports.RULE = {
 	'KAP': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "nsw", "flu", "jkp", "dfb"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "nsw", "flu", "jkp", "dfb"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -295,7 +336,7 @@ exports.RULE = {
 	'EAP': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm"],
+		opts: ["man", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -306,7 +347,7 @@ exports.RULE = {
 	'HUN': {
 		lang: "ko",
 		rule: "Hunmin",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god", "rnt", "sur", "obo", "fho", "itm", "nsw"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god", "rnt", "sur", "obo", "fho", "itm", "chs", "nsw"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -315,7 +356,7 @@ exports.RULE = {
 	'KDA': {
 		lang: "ko",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm", "nsw"],
+		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm", "chs", "nsw"],
 		time: 1,
 		ai: true,
 		ewq: false
@@ -323,7 +364,7 @@ exports.RULE = {
 	'EDA': {
 		lang: "en",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm"],
+		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm", "chs"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -368,7 +409,7 @@ exports.RULE = {
 	'KFR': {
 		lang: "ko",
 		rule: "Free",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm", "nsw"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm", "chs", "nsw"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -377,7 +418,7 @@ exports.RULE = {
 	'EFR': {
 		lang: "en",
 		rule: "Free",
-		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm"],
+		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm", "chs"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -386,7 +427,7 @@ exports.RULE = {
 	'EKK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "rnt", "sur", "obo", "alp", "itm"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "rnt", "sur", "obo", "alp", "itm", "chs"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -404,7 +445,7 @@ exports.RULE = {
 	'KAK': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm", "nsw", "flu", "dfb"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "kch", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm", "chs", "nsw", "flu", "dfb"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -414,7 +455,7 @@ exports.RULE = {
 	'EAK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "sur", "obo", "alp", "itm"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "sur", "obo", "alp", "itm", "chs"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -424,7 +465,7 @@ exports.RULE = {
 	'KKU': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "mid", "sch", "spd", "drg", "stt", "fir", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "fho", "alp", "itm"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "mid", "sch", "spd", "drg", "stt", "fir", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "fho", "alp", "itm", "chs"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -433,7 +474,7 @@ exports.RULE = {
 	'CRL': {
 		lang: "etc",
 		rule: "Calcrelay",
-		opts: ["spd", "one", "drg", "nar", "god", "rnt", "sur", "itm"],
+		opts: ["spd", "one", "drg", "nar", "god", "rnt", "sur", "itm", "chs"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -488,7 +529,7 @@ exports.RULE = {
 		lang: "en",
 		rule: "Jaqwi",
 		opts: ["ijp", "unl", "drg"],
-		time: 1,
+		time: 0.5,
 		ai: true,
 		big: false,
 		ewq: false
@@ -515,7 +556,7 @@ exports.RULE = {
 		lang: "ko",
 		rule: "Classic",
 		opts: ["ext", "mis", "rdm", "loa", "str", "one", "ret", "spd", "drg",
-			"bbg", "nar", "god", "rnt", "sur", "obo", "itm", "nsw"],
+			"bbg", "nar", "god", "rnt", "sur", "obo", "itm", "chs", "nsw"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -560,7 +601,7 @@ exports.RULE = {
 	'KTT': {
 		lang: "ko",
 		rule: "Typing",
-		opts: ["ijp", "mir", "lng"],
+		opts: ["ijp", "mir", "lng", "ln2", "ln5", "drg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -569,7 +610,7 @@ exports.RULE = {
 	'ETT': {
 		lang: "en",
 		rule: "Typing",
-		opts: ["ijp", "mir", "lng"],
+		opts: ["ijp", "mir", "lng", "drg"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -580,7 +621,7 @@ exports.RULE = {
 		rule: "Free",
 		opts: ["ijp", "mis", "mpl", "eam", "rdm", "one", "ret", "spd", "drg",
 			"stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2",
-			"obo", "itm", "nsw"],
+			"obo", "itm", "chs", "nsw"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -590,7 +631,7 @@ exports.RULE = {
 		lang: "en",
 		rule: "Free",
 		opts: ["ijp", "mis", "rdm", "one", "ret", "spd", "drg", "stt", "bbg",
-			"nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm"],
+			"nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm", "chs"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -903,6 +944,19 @@ exports.getCraftGroup = function (itemId) {
 	return exports.CRAFT_GROUPS[itemId] || null;
 };
 
+exports.isEventActive = function (ev) {
+	var now = new Date();
+	var start = new Date(ev.start);
+	var end = new Date(ev.end);
+	if (start.getFullYear() === 1970) {
+		var nowMD = now.getMonth() * 100 + now.getDate();
+		var startMD = start.getMonth() * 100 + start.getDate();
+		var endMD = end.getMonth() * 100 + end.getDate();
+		return nowMD >= startMD && nowMD <= endMD;
+	}
+	return Date.now() >= ev.start && Date.now() <= ev.end;
+};
+
 exports.BOT_ITEM_WEIGHTS = {
 	// "item_id": weight (default: 10)
 	"nekomimi": 20,
@@ -968,7 +1022,9 @@ exports.applySurvivalDamage = function (my, DIC, damage, currentTurn) {
 
 	var nextTurn;
 	var found = false;
-	if (my.opts.item) {
+	var _itemActive = my.opts.item || my.game.reversed ||
+		(my.game.pendingItems && Object.keys(my.game.pendingItems).length > 0);
+	if (_itemActive) {
 		// peek=false: 아이템 소비 등 부작용을 여기서 한 번만 커밋 (turnNext 재계산 방지)
 		nextTurn = my.calculateNextTurn(false);
 		var p = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];

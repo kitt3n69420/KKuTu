@@ -52,6 +52,8 @@ var ROUTES = ["major", "consume", "admin", "login"];
 //볕뉘 수정 끝
 var page = WebInit.page;
 var gameServers = [];
+var _noticeCache = { text: null, at: 0 };
+var NOTICE_CACHE_TTL = 60000;
 
 WebInit.MOBILE_AVAILABLE = ["portal", "main", "kkutu"];
 
@@ -71,6 +73,27 @@ Server.use(function (req, res, next) {
   next();
 });
 Server.use(Parser.urlencoded({ extended: true }));
+Server.use(function (req, res, next) {
+  res.locals.activeEventNotice = _noticeCache.text;
+  var now = Date.now();
+  if (now - _noticeCache.at >= NOTICE_CACHE_TTL) {
+    _noticeCache.at = now;
+    DB.event.find().on(function ($events) {
+      var active = ($events || []).filter(function (ev) { return Const.isEventActive(ev); });
+      if (!active.length) {
+        _noticeCache.text = null;
+      } else {
+        active.sort(function (a, b) {
+          if (b.start !== a.start) return b.start - a.start;
+          return (a.end - a.start) - (b.end - b.start);
+        });
+        var n = active[0].notice;
+        _noticeCache.text = (n && n.trim()) ? n : null;
+      }
+    });
+  }
+  next();
+});
 Server.use(
   Exession({
     store: new RedisStore({

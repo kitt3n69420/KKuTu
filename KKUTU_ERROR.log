@@ -2619,3 +2619,25 @@ TypeError: o.getData is not a function
     at Timeout._onTimeout (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:2290:13)
     at listOnTimeout (node:internal/timers:588:17)
     at process.processTimers (node:internal/timers:523:7)
+:2083 [2026. 5. 15. 오후 5:34:53] MASTER_ERROR: TypeError: Cannot read properties of undefined (reading '2')
+TypeError: Cannot read properties of undefined (reading '2')
+    at selectWordForLen (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\raingame.js:144:29)
+    at tryPushFromQueue (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\raingame.js:169:13)
+    at exports.submit (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\raingame.js:543:2)
+    at my.route.my.routeSync (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:3610:13)
+    at my.submit (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:3567:13)
+    at Timeout._onTimeout (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\raingame.js:610:7)
+    at listOnTimeout (node:internal/timers:588:17)
+    at process.processTimers (node:internal/timers:523:7)
+:2083 [2026. 5. 17. 오후 11:59:09] MASTER_ERROR: TypeError: my.publish is not a function
+TypeError: my.publish is not a function
+    at my.calculateNextTurn (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:3434:10)
+    at my.turnNext [as _onTimeout] (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:3549:23)
+    at listOnTimeout (node:internal/timers:588:17)
+    at process.processTimers (node:internal/timers:523:7)
+:2083 [2026. 5. 18. 오전 12:00:36] MASTER_ERROR: TypeError: my.publish is not a function
+TypeError: my.publish is not a function
+    at my.calculateNextTurn (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:3434:10)
+    at my.turnNext [as _onTimeout] (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:3549:23)
+    at listOnTimeout (node:internal/timers:588:17)
+    at process.processTimers (node:internal/timers:523:7)

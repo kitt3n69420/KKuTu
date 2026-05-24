@@ -246,7 +246,8 @@ $(document).ready(function () {
 			notice: $("#NoticeBtn"),
 			replay: $("#ReplayBtn"),
 			leaderboard: $("#LeaderboardBtn"),
-			userList: $("#UserListBtn")
+			userList: $("#UserListBtn"),
+			exchange: $("#ExchangeBtn")
 		},
 		dialog: {
 			setting: $("#SettingDiag"),
@@ -303,6 +304,8 @@ $(document).ready(function () {
 			cfCompose: $("#cf-compose"),
 			craftWorkshop: $("#CraftingDiag"),
 			craftCompose: $("#craft-compose"),
+			exchangeWorkshop: $("#ExchangeDiag"),
+			excCompose: $("#exc-compose"),
 			injPick: $("#InjPickDiag"),
 			injPickAll: $("#injpick-all"),
 			injPickNo: $("#injpick-no"),
@@ -1118,7 +1121,7 @@ $(document).ready(function () {
 		// Define option groups
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
-		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
+		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg', 'flu', 'jkp', 'dfb'];
 
@@ -1354,6 +1357,14 @@ $(document).ready(function () {
 		if ($(this).is(':checked')) window.RULE_CHECKBOXES['item'].prop('checked', false);
 	});
 
+	// 아이템전-카오스 상호배타
+	window.RULE_CHECKBOXES['item'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['chaos'].prop('checked', false);
+	});
+	window.RULE_CHECKBOXES['chaos'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['item'].prop('checked', false);
+	});
+
 	// 도돌이 금지 - 첫말잇기/랜덤잇기 상호배타
 	window.RULE_CHECKBOXES['nododoli'].on('change', function () {
 		if ($(this).is(':checked')) {
@@ -1383,7 +1394,7 @@ $(document).ready(function () {
 		// Define option groups
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
-		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
+		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg', 'flu', 'jkp', 'dfb'];
 
@@ -1546,7 +1557,8 @@ $(document).ready(function () {
 			$("#PracticeDiag .dialog-title").html(L['practice']);
 			$("#ai-team").val(0).prop('disabled', true);
 			var saved = loadVolumeSettings();
-			$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
+			$("#ai-mute-game").prop('checked', saved.aiMuteGame != null ? !saved.aiMuteGame : false);
+			$("#ai-mute-lobby").prop('checked', saved.aiMuteLobby != null ? !saved.aiMuteLobby : false);
 			$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
 			$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
 			showDialog($stage.dialog.practice);
@@ -1791,11 +1803,13 @@ $(document).ready(function () {
 			$("#ai-team").val(bot.game ? (bot.game.team || 0) : 0);
 			$("#ai-personality").val(bot.personality || 0);
 			$("#ai-preferred-char").val(bot.preferredChar || '');
-			$("#ai-mute").prop('checked', !bot.mute);
+			$("#ai-mute-game").prop('checked', !bot.muteGame);
+			$("#ai-mute-lobby").prop('checked', !bot.muteLobby);
 			$("#ai-rage-quit").prop('checked', bot.canRageQuit || false);
 			$("#ai-fast-mode").prop('checked', bot.fastMode || false);
 		} else {
-			$("#ai-mute").prop('checked', saved.aiMute != null ? !saved.aiMute : false);
+			$("#ai-mute-game").prop('checked', saved.aiMuteGame != null ? !saved.aiMuteGame : false);
+			$("#ai-mute-lobby").prop('checked', saved.aiMuteLobby != null ? !saved.aiMuteLobby : false);
 			$("#ai-rage-quit").prop('checked', saved.aiRageQuit != null ? saved.aiRageQuit : false);
 			$("#ai-fast-mode").prop('checked', saved.aiFastMode != null ? saved.aiFastMode : false);
 		}
@@ -1804,11 +1818,12 @@ $(document).ready(function () {
 	$stage.dialog.practiceOK.on('click', function (e) {
 		var level = $("#practice-level").val();
 		var team = $("#ai-team").val();
-		var aiMute = !$("#ai-mute").is(':checked');
+		var aiMuteGame = !$("#ai-mute-game").is(':checked');
+		var aiMuteLobby = !$("#ai-mute-lobby").is(':checked');
 		var aiRageQuit = $("#ai-rage-quit").is(':checked');
 		var aiFastMode = $("#ai-fast-mode").is(':checked');
 
-		saveVolumeSettings({ aiMute: aiMute, aiRageQuit: aiRageQuit, aiFastMode: aiFastMode });
+		saveVolumeSettings({ aiMuteGame: aiMuteGame, aiMuteLobby: aiMuteLobby, aiRageQuit: aiRageQuit, aiFastMode: aiFastMode });
 
 		$stage.dialog.practice.hide();
 		if ($("#PracticeDiag .dialog-title").html() == L['robot']) {
@@ -1818,7 +1833,8 @@ $(document).ready(function () {
 				team: team,
 				personality: $("#ai-personality").val(),
 				preferredChar: $("#ai-preferred-char").val(),
-				mute: aiMute,
+				muteGame: aiMuteGame,
+				muteLobby: aiMuteLobby,
 				canRageQuit: aiRageQuit,
 				fastMode: aiFastMode
 			});
@@ -1834,7 +1850,8 @@ $(document).ready(function () {
 				level: level,
 				personality: personality,
 				preferredChar: preferredChar,
-				mute: aiMute,
+				muteGame: aiMuteGame,
+				muteLobby: aiMuteLobby,
 				canRageQuit: aiRageQuit,
 				fastMode: aiFastMode
 			});
@@ -2116,6 +2133,10 @@ $(document).ready(function () {
 		if ($data._gaming) return fail(438);
 		if (showDialog($stage.dialog.craftWorkshop)) drawCraftWorkshop();
 	});
+	$stage.menu.exchange.on('click', function (e) {
+		if ($data._gaming) return fail(438);
+		if (showDialog($stage.dialog.exchangeWorkshop)) drawExchangeWorkshop();
+	});
 	$(".craft-type").on('click', function (e) {
 		var $target = $(e.currentTarget);
 		var type = $target.attr('id').slice(11);
@@ -2128,7 +2149,7 @@ $(document).ready(function () {
 			var craftFilter = [];
 			$(".craft-type").each(function () {
 				var cat = $(this).attr('id').slice(11);
-				if (cat === 'all' || cat === 'spec') return;
+				if (cat === 'all' || cat === 'spec' || cat === 'event') return;
 				var vals = ($(this).attr('value') || "").split(',');
 				for (var v = 0; v < vals.length; v++) {
 					if (vals[v] && craftFilter.indexOf(vals[v]) === -1) craftFilter.push(vals[v]);
@@ -2152,7 +2173,7 @@ $(document).ready(function () {
 			var craftFilter = [];
 			$(".craft-type").each(function () {
 				var cat = $(this).attr('id').slice(11);
-				if (cat === 'all' || cat === 'spec') return;
+				if (cat === 'all' || cat === 'spec' || cat === 'event') return;
 				var vals = ($(this).attr('value') || "").split(',');
 				for (var v = 0; v < vals.length; v++) {
 					if (vals[v] && craftFilter.indexOf(vals[v]) === -1) craftFilter.push(vals[v]);
@@ -2185,6 +2206,28 @@ $(document).ready(function () {
 				drawMyDress($data._avGroup);
 				updateMe();
 				drawCraftWorkshop();
+			});
+		});
+	});
+	$stage.dialog.excCompose.on('click', function (e) {
+		if (!$stage.dialog.excCompose.hasClass("exc-exchangeable")) return fail(458);
+		if (!$data._excResult) return fail(458);
+
+		showConfirm(L['excSureExchange'], function (res) {
+			if (!res) return;
+
+			$.post("/exchange", {
+				items: JSON.stringify($data._excTray)
+			}, function (res) {
+				if (res.error) return fail(res.error);
+				send('refresh');
+				showAlert(L['excExchanged']);
+				$data.box = res.box;
+				queueObtain({ key: res.exchanged, value: 1 });
+
+				drawMyDress($data._avGroup);
+				updateMe();
+				drawExchangeWorkshop();
 			});
 		});
 	});
@@ -2513,8 +2556,8 @@ $(document).ready(function () {
 		}
 	});
 
-	// 4. 글자수 제한 (3-2, 2-2, 4-4, 4-3, 3, 4, 5, 6, 7)
-	var lengthNames = ["sami", "twotwo", "fourfour", "fourthree", "length3", "length4", "length5", "length6", "length7"];
+	// 4. 글자수 제한 (2, 3-2, 2-2, 4-4, 4-3, 3, 4, 5, 6, 7)
+	var lengthNames = ["length2", "sami", "twotwo", "fourfour", "fourthree", "length3", "length4", "length5", "length6", "length7"];
 	var lengthRoomSel = lengthNames.map(function (n) { return "#room-" + n; }).join(", ");
 	var lengthViewAllSel = lengthNames.map(function (n) { return "#view-all-" + n; }).join(", ");
 	var lengthViewAllFlatSel = lengthNames.map(function (n) { return "#view-all-flat-" + n; }).join(", ");
@@ -6546,8 +6589,8 @@ function loading(text) {
 		if ($("#Intro").is(':visible')) {
 			$stage.loading.hide();
 			$("#intro-text").html(text);
-		} else $stage.loading.show().html(text);
-	} else $stage.loading.hide();
+		} else $stage.loading.html(text).fadeIn(200);
+	} else $stage.loading.fadeOut(200);
 }
 function escapeContent(text) {
 	if (typeof text !== 'string') return text;
@@ -6685,7 +6728,7 @@ function applyOptions(opt) {
 
 function loadVolumeSettings() {
 	try {
-		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null, theme: null };
+		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMuteGame: null, aiMuteLobby: null, aiRageQuit: null, aiFastMode: null, theme: null };
 	} catch (e) {
 		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null, theme: null };
 	}
@@ -7346,6 +7389,25 @@ function onMessage(data) {
 				$data.pendingItem = null;
 				updateItemUI();
 			}
+			break;
+		case 'chaos-notice':
+			if (data.code === 'chaosShuffle' && data.seq && $data.room && $data.room.game) {
+				$data.room.game.seq = data.seq;
+				var $gameBody = $(".GameBox .game-body");
+				for (var _csi = 0; _csi < data.seq.length; _csi++) {
+					var $csel = $("#game-user-" + data.seq[_csi]);
+					if ($csel.length) $gameBody.append($csel);
+				}
+				if (data.teams) {
+					for (var _tid in data.teams) {
+						var _nt = data.teams[_tid];
+						$("#game-user-" + _tid + " .game-user-score")
+							.removeClass("team-1 team-2 team-3 team-4")
+							.toggleClass("team-" + _nt, _nt > 0);
+					}
+				}
+			}
+			notice(L[data.code + 'Body'], L[data.code]);
 			break;
 		default:
 			break;
@@ -8105,7 +8167,7 @@ function addonNickname($R, o) {
 		var cls = "x-" + o.equip['NIK'];
 		$R.addClass(cls);
 		// For gradient names, also apply to the direct text child for proper text clipping
-		if (o.equip['NIK'].indexOf("gradientname_") === 0) {
+		if (o.equip['NIK'].indexOf("gradientname_") === 0 || o.equip['NIK'].indexOf("kkn_triname") === 0) {
 			var $text = $R.find(".users-name, .room-user-name, .game-user-name, .chat-head").first();
 			if ($text.length) $text.addClass(cls);
 		}
@@ -8580,7 +8642,7 @@ function drawMyDress(avGroup, resetFields) {
 	}
 	drawMyGoods(avGroup || true);
 }
-function renderGoods($target, preId, filter, equip, onClick) {
+function renderGoods($target, preId, filter, equip, onClick, exclude, excludeIds) {
 	var $item;
 	var list = [];
 	var obj, q, g, equipped;
@@ -8608,6 +8670,8 @@ function renderGoods($target, preId, filter, equip, onClick) {
 		};
 		if (!q.hasOwnProperty("value") && !equipped) continue;
 		if (!isAll) if (filter.indexOf(obj.group) == -1) continue;
+		if (exclude && exclude.indexOf(obj.group) !== -1) continue;
+		if (excludeIds && excludeIds.indexOf(list[i].key) !== -1) continue;
 		$target.append($item = $("<div>").addClass("dress-item")
 			.append(getImage(obj.image).addClass("dress-item-image").html("x" + q.value))
 			.append(explainGoods(obj, equipped, q.expire))
@@ -8872,6 +8936,9 @@ function drawCraftWorkshop() {
 
 		$data._craftTray.forEach(function (item, idx) {
 			gd = iGoods(item);
+			var bd = $data.box[item];
+			var cnt = (typeof bd === 'number') ? bd : (bd && bd.value ? bd.value : 0);
+			var $imgWrap = $("<div>").addClass("craft-img-wrap");
 			var $img = $("<div>").addClass("jt-image")
 				.css('background-image', "url(" + gd.image + ")")
 				.attr('id', "craft-tray-" + idx)
@@ -8880,7 +8947,9 @@ function drawCraftWorkshop() {
 					$data._craftTray.splice(idx, 1);
 					drawCraftTray();
 				});
-			var $wrap = $("<div>").css('display', 'inline-block').append($img).append(explainGoods(gd, false));
+			var $label = $("<span>").addClass("craft-count-label").text("x" + cnt);
+			$imgWrap.append($img).append($label);
+			var $wrap = $("<div>").css('display', 'inline-block').append($imgWrap).append(explainGoods(gd, false));
 			$tray.append($wrap);
 			$("#craft-" + item).addClass("craft-tray-selected");
 		});
@@ -8926,6 +8995,107 @@ function drawCraftWorkshop() {
 		} else {
 			$preview.html("<span style='color:#888; font-size:11px;'>" + L['craftSelectSecond'] + "</span>");
 		}
+	}
+}
+function drawExchangeWorkshop() {
+	var $tray = $("#exc-tray");
+	var $goods = $("#exc-goods");
+	var $preview = $("#exc-result-preview");
+
+	$data._excTray = {};
+	$data._excResult = null;
+	$preview.empty();
+	$stage.dialog.excCompose.removeClass("exc-exchangeable");
+
+	var specFilter = ($("#dress-type-spec").attr('value') || "").split(',').filter(Boolean);
+	var excFilter = (specFilter.length ? specFilter : ['PIX', 'PIY', 'PIZ', 'CNS']).filter(function(g) { return g !== 'PIX'; }).concat(['eventcol']);
+	renderGoods($goods, 'exc', excFilter, null, onExcGoodsClick);
+
+	function onExcGoodsClick(e) {
+		var $target = $(e.currentTarget);
+		var id = $target.attr('id').slice(4);
+
+		if ($data._excTray.hasOwnProperty(id)) {
+			delete $data._excTray[id];
+			drawExcTray();
+			return;
+		}
+
+		var bd = $data.box[id];
+		var available = (typeof bd === 'number') ? bd : (bd && bd.value ? bd.value : 0);
+		if (available < 1) return fail(434);
+
+		showPrompt(L['excHowMany'], "1", function (val) {
+			if (val === null) return;
+			var n = parseInt(val, 10);
+			if (isNaN(n) || n < 1) return;
+			if (n > available) n = available;
+			$data._excTray[id] = n;
+			drawExcTray();
+		});
+	}
+
+	function trayEmpty() {
+		$tray.html($("<span>").css({ 'font-size': "11px", 'color': "#999" }).html(L['excTrayHint']));
+		$("#exc-arrow").hide();
+		$("#exc-empty-slot").hide();
+	}
+	trayEmpty();
+
+	function drawExcTray() {
+		$tray.empty();
+		$(".exc-tray-selected").removeClass("exc-tray-selected");
+		$preview.empty();
+		$stage.dialog.excCompose.removeClass("exc-exchangeable");
+		$data._excResult = null;
+
+		var ids = Object.keys($data._excTray);
+		if (ids.length === 0) {
+			trayEmpty();
+			return;
+		}
+
+		ids.forEach(function (itemId) {
+			var gd = iGoods(itemId);
+			var cnt = $data._excTray[itemId];
+			var $wrap = $("<div>").addClass("exc-tray-item");
+			var $imgWrap = $("<div>").addClass("exc-img-wrap");
+			var $img = $("<div>").addClass("jt-image")
+				.css('background-image', "url(" + gd.image + ")")
+				.attr('data-item', itemId);
+			var $label = $("<span>").addClass("exc-count-label").text("x" + cnt);
+			$imgWrap.append($img).append($label);
+			$wrap.append($imgWrap).append(explainGoods(gd, false));
+			$wrap.on('click', function () {
+				delete $data._excTray[itemId];
+				drawExcTray();
+			});
+			$tray.append($wrap);
+			$("#exc-" + itemId).addClass("exc-tray-selected");
+		});
+		global.expl($tray);
+
+		$("#exc-arrow").show();
+		$("#exc-empty-slot").show();
+
+		$preview.html("<span style='color:#888; font-size:11px;'>" + L['searching'] + "</span>");
+		$.get("/exchange-check", { items: JSON.stringify($data._excTray) }, function (res) {
+			if (res.error || !res.result) {
+				$preview.html("<span style='color:#CC3333; font-size:11px;'>" + L['excNoRecipe'] + "</span>");
+				return;
+			}
+			if (!$data.shop[res.result]) {
+				$preview.html("<span style='color:#CC3333; font-size:11px;'>" + L['excNoRecipe'] + "</span>");
+				return;
+			}
+			var resultObj = iGoods(res.result);
+			var $resultImg = getImage(resultObj.image).addClass("exc-result-image");
+			var $resultWrap = $("<div>").css('display', 'inline-block').append($resultImg).append(explainGoods(resultObj, false));
+			$preview.empty().append($resultWrap);
+			global.expl($preview);
+			$data._excResult = res.result;
+			$stage.dialog.excCompose.addClass("exc-exchangeable");
+		});
 	}
 }
 function drawLeaderboard(data) {
@@ -9092,12 +9262,16 @@ function requestProfile(id) {
 
 		// 봇 옵션 표시 (한 줄 3열)
 		var fastText = o.fastMode ? L['aiFastMode_on'] : L['aiFastMode_off'];
-		var muteText = o.mute ? L['aiMute_off'] : L['aiMute_on'];
+		var muteGameText = !o.muteGame ? L['aiMuteGame_on'] : L['aiMuteGame_off'];
+		var muteLobbyText = !o.muteLobby ? L['aiMuteLobby_on'] : L['aiMuteLobby_off'];
 		var rqText = o.canRageQuit ? L['aiRageQuit_on'] : L['aiRageQuit_off'];
 		$rec.append($("<div>").addClass("profile-record-field")
 			.append($("<div>").addClass("profile-field-name").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(fastText))
-			.append($("<div>").addClass("profile-field-record").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(muteText))
-			.append($("<div>").addClass("profile-field-score").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(rqText))
+			.append($("<div>").addClass("profile-field-record").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(muteGameText))
+			.append($("<div>").addClass("profile-field-score").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(muteLobbyText))
+		);
+		$rec.append($("<div>").addClass("profile-record-field")
+			.append($("<div>").addClass("profile-field-name").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(rqText))
 		);
 	} else {
 		$stage.dialog.profileLevel.hide();
@@ -9144,7 +9318,10 @@ function requestInvite(id) {
 
 	if (id != "AI") {
 		nick = $data.users[id].profile.title || $data.users[id].profile.name;
-		if (!confirm(nick + L['sureInvite'])) return;
+		showConfirm(nick + L['sureInvite'], function (res) {
+			if (res) send('invite', { target: id });
+		});
+		return;
 	}
 	send('invite', { target: id });
 }
@@ -9938,7 +10115,7 @@ function explainGoods(item, equipped, expire) {
 	if (item.term) $R.append($("<div>").addClass("dress-item-term").html(Math.floor(item.term / 86400) + L['DATE'] + " " + L['ITEM_TERM']));
 	if (expire) $R.append($("<div>").addClass("dress-item-term").html((new Date(expire * 1000)).toLocaleString() + L['ITEM_TERMED']));
 	for (i in item.options) {
-		if (i == "gif") continue;
+		if (i == "gif" || i == "AI") continue;
 		var k = i.charAt(0);
 
 		txt = item.options[i];
@@ -9950,6 +10127,7 @@ function explainGoods(item, equipped, expire) {
 			.append($("<br>"));
 	}
 	if (txt) $R.append($opts);
+	if (item.options && item.options.AI) $R.append($("<div>").addClass("dress-item-ai").html(L['ITEM_AI_MADE']));
 	return $R;
 }
 function processShop(callback) {
