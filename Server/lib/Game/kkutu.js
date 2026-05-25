@@ -4085,7 +4085,7 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 			rw.score += score * 1.37;
 			break;
 		case 'EDA':
-			rw.score += score * 1.45;
+			rw.score += score * 1.25;
 			break;
 		case 'KSS':
 			rw.score += score * 1.1;
