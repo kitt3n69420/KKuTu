@@ -2111,6 +2111,14 @@ exports.submit = function (client, text) {
 			var decomposed = Const.decomposeToJamo(text);
 			if (decomposed.length <= 1) return false;
 			if (my.game.wordLength && text.length != my.game.wordLength) return false;
+			if (my.opts.middle) {
+				var jamoLen = decomposed.length;
+				var midIdx = (jamoLen % 2 !== 0)
+					? Math.floor(jamoLen / 2)
+					: (my.opts.second ? (jamoLen / 2 - 1) : (jamoLen / 2));
+				if (midIdx < 0 || midIdx >= jamoLen) return false;
+				return decomposed[midIdx] === char || subChars.indexOf(decomposed[midIdx]) !== -1;
+			}
 			return Const.kjmStartsWith(decomposed, my.game.char);
 		}
 
@@ -2729,8 +2737,20 @@ exports.readyRobot = function (robot) {
 					}
 					list = list.filter(function (w) {
 						if (my.game.wordLength > 0 && w._id.length !== my.game.wordLength) return false;
-						var wLen = (Const.GAME_TYPE[my.mode] === 'KJM') ? Const.decomposeToJamo(w._id).length : w._id.length;
-						if (wLen < minLen || wLen > maxLen) return false;
+						var wLen = w._id.length;
+						if (Const.GAME_TYPE[my.mode] === 'KJM') {
+							// KJM: ROBOT_LENGTH_LIMIT은 원 문자열 기준
+							if (wLen > ROBOT_LENGTH_LIMIT[level]) return false;
+							// nolong/noshort/no2는 자모 길이 기준 (submit 검증과 일치)
+							if (my.opts.nolong || my.opts.noshort || my.opts.no2) {
+								var _jl = Const.decomposeToJamo(w._id).length;
+								if (my.opts.nolong && _jl >= 9) return false;
+								if (my.opts.noshort && _jl <= 8) return false;
+								if (my.opts.no2 && _jl <= 2) return false;
+							}
+						} else {
+							if (wLen < minLen || wLen > maxLen) return false;
+						}
 						if (robot._done.has(w._id)) return false;
 						// JS 위치 검증: getChar()로 실제 연결 글자를 구해서 preferredChar와 비교
 						if (needJSCheck) {
@@ -2914,8 +2934,20 @@ exports.readyRobot = function (robot) {
 				}
 				list = list.filter(function (w) {
 					if (my.game.wordLength > 0 && w._id.length !== my.game.wordLength) return false;
-					var wLen = (Const.GAME_TYPE[my.mode] === 'KJM') ? Const.decomposeToJamo(w._id).length : w._id.length;
-					if (wLen < minLen || wLen > maxLen) return false;
+					var wLen = w._id.length;
+					if (Const.GAME_TYPE[my.mode] === 'KJM') {
+						// KJM: ROBOT_LENGTH_LIMIT은 원 문자열 기준
+						if (wLen > ROBOT_LENGTH_LIMIT[level]) return false;
+						// nolong/noshort/no2는 자모 길이 기준 (submit 검증과 일치)
+						if (my.opts.nolong || my.opts.noshort || my.opts.no2) {
+							var _jl = Const.decomposeToJamo(w._id).length;
+							if (my.opts.nolong && _jl >= 9) return false;
+							if (my.opts.noshort && _jl <= 8) return false;
+							if (my.opts.no2 && _jl <= 2) return false;
+						}
+					} else {
+						if (wLen < minLen || wLen > maxLen) return false;
+					}
 					if (robot._done.has(w._id)) return false;
 					if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
 					if (my.opts.noswear && checkSwearWords && checkSwearWords(w._id).length > 0) return false;
@@ -3598,9 +3630,6 @@ exports.readyRobot = function (robot) {
 	function after() {
 		if (my.game.late) return; // Prevent scheduling after round end
 		delay += text.length * ROBOT_TYPE_COEF[level];
-		if (Const.GAME_TYPE[my.mode] === 'KJM') {
-			delay += 30 + Math.random() * 70; // KJM: 추가 30~100ms 랜덤 딜레이
-		}
 		robot._done.add(text);
 		my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
 	}
@@ -4006,6 +4035,17 @@ function getChar(text) {
 			}
 		}
 
+		// KJM: 자모 분해 후 중간 자모 반환
+		if (type === 'KJM') {
+			var jamoStr = Const.decomposeToJamo(text);
+			var jamoLen = jamoStr.length;
+			var midIdx = (jamoLen % 2 !== 0)
+				? Math.floor(jamoLen / 2)
+				: (my.opts.second ? (jamoLen / 2 - 1) : (jamoLen / 2));
+			if (midIdx >= 0 && midIdx < jamoLen) return jamoStr[midIdx];
+			return jamoStr.slice(-1);
+		}
+
 		// Generic Middle (1글자 연결, 비-EKT 모드)
 		// 홀수: 정확한 가운데 글자
 		// 짝수 + 끝말: 뒤쪽 가운데 (len / 2)
@@ -4114,6 +4154,16 @@ function getLinkIndex(text) {
 				}
 				return idx - 1; // 짝수: 가운데 3글자 시작
 			}
+		}
+
+		// KJM: 자모 분해 후 중간 자모의 인덱스 반환
+		if (type === 'KJM') {
+			var jamoStr = Const.decomposeToJamo(text);
+			var jamoLen = jamoStr.length;
+			var midIdx = (jamoLen % 2 !== 0)
+				? Math.floor(jamoLen / 2)
+				: (my.opts.second ? (jamoLen / 2 - 1) : (jamoLen / 2));
+			return midIdx >= 0 ? midIdx : jamoLen - 1;
 		}
 
 		// Generic Middle (1글자)
