@@ -3258,6 +3258,10 @@ exports.Room = function (room, channel) {
 				if (rw.score > 100) rw.score = 100;
 				if (rw.money > 10) rw.money = 10;
 			}
+			if (my.opts.big) {
+				rw.score = Math.round(rw.score / 3);
+				rw.money = Math.round(rw.money / 3);
+			}
 			if (rw.together) {
 				if (o.game.wpc) o.game.wpc.forEach(function (item) { o.obtain("$WPC" + item, 1); }); // 글자 조각 획득 처리
 				var _wpcCount = o.game.wpc ? o.game.wpc.length : 0;
