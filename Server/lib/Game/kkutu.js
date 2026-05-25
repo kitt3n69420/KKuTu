@@ -3104,7 +3104,7 @@ exports.Room = function (room, channel) {
 				`survival=${!!my.opts.survival} seqLen=${my.game && my.game.seq && my.game.seq.length} ` +
 				`playersLen=${my.players && my.players.length} ` +
 				`hasData=${!!data}`);
-		} catch (_) {}
+		} catch (_) { }
 
 		var i, o, rw;
 		var res = [];
@@ -3333,7 +3333,7 @@ exports.Room = function (room, channel) {
 							: (_br.rank === res[res.length - 1].rank && _br.rank !== 0));
 						var msgs = isWinner ? Const.ROBOT_GAME_WIN_MESSAGES
 							: isLoser ? Const.ROBOT_GAME_LOSE_MESSAGES
-							: Const.ROBOT_GAME_MID_MESSAGES;
+								: Const.ROBOT_GAME_MID_MESSAGES;
 						setTimeout(function () {
 							if (!_br.bot._rageQuitting && !_br.bot._removed) _br.bot.chat(msgs[Math.floor(Math.random() * msgs.length)]);
 						}, 1500 + Math.floor(Math.random() * 2000));
@@ -3764,7 +3764,7 @@ exports.Room = function (room, channel) {
 					`aliveCount=${aliveCount} indiv=${individualCount} teams=${aliveTeams.size} ` +
 					`totalEntities=${totalEntities} gameOver=${gameOver} turn=${my.game.turn} ` +
 					`seqLen=${my.game.seq.length}`);
-			} catch (_) {}
+			} catch (_) { }
 			if (gameOver) {
 				try {
 					my.roundEnd();
@@ -4046,58 +4046,58 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 	// rank는 0~7
 	switch (Const.GAME_TYPE[mode]) {
 		case "EKT":
-			rw.score += score * 1.9;
+			rw.score += score * 1.8;
 			break;
 		case "ESH":
-			rw.score += score * 1.5;
+			rw.score += score * 1;
 			break;
 		case "EKK":
-			rw.score += score * 1.89;
+			rw.score += score * 1.77;
 			break;
 		case "KKT":
-			rw.score += score * 1.82;
+			rw.score += score * 1.64;
 			break;
 		case "KSH":
-			rw.score += score * 1.55;
-			break;
-		case "CSQ":
 			rw.score += score * 1.4;
 			break;
+		case "CSQ":
+			rw.score += score * 1.2;
+			break;
 		case "KSC":
-			rw.score += score * 1.52;
+			rw.score += score * 1.32;
 			break;
 		case 'KCW':
 			rw.score += score * 2.0;
 			break;
 		case 'KTY':
-			rw.score += score * 1.3;
+			rw.score += score * 1.2;
 			break;
 		case 'ETY':
-			rw.score += score * 1.37;
+			rw.score += score * 1.17;
 			break;
 		case 'KAP':
-			rw.score += score * 1.8;
+			rw.score += score * 1.9;
 			break;
 		case 'HUN':
 			rw.score += score * 1.5;
 			break;
 		case 'KDA':
-			rw.score += score * 1.57;
+			rw.score += score * 1.37;
 			break;
 		case 'EDA':
-			rw.score += score * 1.65;
+			rw.score += score * 1.45;
 			break;
 		case 'KSS':
-			rw.score += score * 1.5;
+			rw.score += score * 1.1;
 			break;
 		case 'ESS':
-			rw.score += score * 1.22;
+			rw.score += score * 0.5;
 			break;
 		case 'KFR':
-			rw.score += score * 1.15;
+			rw.score += score * 0.9;
 			break;
 		case 'EFR':
-			rw.score += score * 1.15;
+			rw.score += score * 0.75;
 			break;
 		case "KPQ":
 			rw.score += score * 2.72;
