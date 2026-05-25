@@ -394,8 +394,9 @@ exports.submit = function (client, text, data) {
 };
 exports.getScore = function (text, delay) {
 	var my = this;
+	var len = (my.rule && my.rule.lang === "en") ? Math.round(text.length / 2) : text.length;
 
-	return Math.round(Math.pow(text.length - 1, 1.6) * 8);
+	return Math.round(Math.pow(len - 1, 1.6) * 8);
 };
 function getBoard(words, len) {
 	var str = words.join("").split("");
