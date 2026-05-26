@@ -47,6 +47,20 @@ body.theme-gray {
 	--color-bg-medium: #BDBDBD;
 	--color-border: #E0E0E0;
 }
+body.theme-yellow {
+	--color-primary: #F9A825;
+	--color-primary-dark: #F57F17;
+	--color-bg-light: #FFFDE7;
+	--color-bg-medium: #FFE082;
+	--color-border: #FFF9C4;
+}
+body.theme-green {
+	--color-primary: #558B2F;
+	--color-primary-dark: #33691E;
+	--color-bg-light: #F1F8E9;
+	--color-bg-medium: #AED581;
+	--color-border: #DCEDC8;
+}
 
 html,
 body {
@@ -143,6 +157,11 @@ span {
 
 #menu-item-DB:hover {
 	height: auto;
+}
+
+#menu-item-GAMES {
+	position: relative;
+	z-index: 10001;
 }
 
 #menu-item-GAMES:hover {
@@ -257,7 +276,8 @@ span {
 	text-align: center;
 	font-weight: bold;
 	background-color: #EEBB33;
-	z-index: 5;
+	position: relative;
+	z-index: 10000;
 }
 
 .searching {
@@ -424,7 +444,9 @@ span {
 
 body.theme-red #Top,
 body.theme-orange #Top,
-body.theme-gray #Top {
+body.theme-gray #Top,
+body.theme-yellow #Top,
+body.theme-green #Top {
 	background-image: none;
 	background-color: var(--color-primary);
 }

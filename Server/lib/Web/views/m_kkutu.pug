@@ -180,8 +180,10 @@ block Middle
 			h4= L('theme')
 			select#theme-setting(style="width: 150px;")
 				option(value="blue")= L('themeBlue')
-				option(value="red")= L('themeRed')
+				option(value="green")= L('themeGreen')
+				option(value="yellow")= L('themeYellow')
 				option(value="orange")= L('themeOrange')
+				option(value="red")= L('themeRed')
 				option(value="gray")= L('themeGray')
 		div.dialog-bar
 			h4= L('levelPack')
@@ -508,7 +510,7 @@ block Middle
 		div.dialog-bar.tail-button
 			button#view-all-ok= L('OK')
 			button#view-all-uncheck-all= L('uncheckAllRules')
-	+Dialog('PracticeDiag', 300, 245)
+	+Dialog('PracticeDiag', 300, 255)
 		div.dialog-bar
 			h4= L('selectLevel')
 			select#practice-level
@@ -535,17 +537,21 @@ block Middle
 				input#ai-personality(type='range', min='-1', max='1', step='0.2', value='0', style='width: 100%; padding: 0; border: none;')
 		div.dialog-bar.ai-setting-only
 			div(style='float: left; width: 50%;')
-				h4(style='width: 70px;')= L('aiPreferredChar')
+				h4(style='width: 80px;')= L('aiPreferredChar')
 				input#ai-preferred-char(type='text', maxlength='1', style='width: 40px; text-align: center;')
 			div(style='float: left; width: 50%;')
-				h4(style='width: 70px;')= L('aiFastMode')
+				h4(style='width: 80px;')= L('aiFastMode')
 				input#ai-fast-mode(type='checkbox', style='width: auto; margin-top: 5px;')
 		div.dialog-bar.ai-setting-only
 			div(style='float: left; width: 50%;')
-				h4(style='width: 70px;')= L('aiMute')
-				input#ai-mute(type='checkbox', style='width: auto; margin-top: 5px;')
+				h4(style='width: 80px;')= L('aiMuteGame')
+				input#ai-mute-game(type='checkbox', style='width: auto; margin-top: 5px;')
 			div(style='float: left; width: 50%;')
-				h4(style='width: 70px;')= L('aiRageQuit')
+				h4(style='width: 80px;')= L('aiMuteLobby')
+				input#ai-mute-lobby(type='checkbox', style='width: auto; margin-top: 5px;')
+		div.dialog-bar.ai-setting-only
+			div(style='float: left; width: 50%;')
+				h4(style='width: 80px;')= L('aiRageQuit')
 				input#ai-rage-quit(type='checkbox', style='width: auto; margin-top: 5px;')
 		div.dialog-bar.tail-button
 			button#practice-ok= L('OK')

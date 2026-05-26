@@ -141,10 +141,12 @@ function showPrompt(msg, value, callback) {
 	});
 }
 function applyTheme(theme) {
-	document.body.classList.remove('theme-red', 'theme-orange', 'theme-gray');
+	document.body.classList.remove('theme-red', 'theme-orange', 'theme-gray', 'theme-yellow', 'theme-green');
 	if (theme === 'red') document.body.classList.add('theme-red');
 	else if (theme === 'orange') document.body.classList.add('theme-orange');
 	else if (theme === 'gray') document.body.classList.add('theme-gray');
+	else if (theme === 'yellow') document.body.classList.add('theme-yellow');
+	else if (theme === 'green') document.body.classList.add('theme-green');
 }
 
 function applyOptions(opt) {
@@ -3678,6 +3680,8 @@ Object.defineProperty(BONUS_COLORS, 'linking', {
 		if (document.body.classList.contains('theme-red')) return 'rgb(239, 154, 154)';
 		if (document.body.classList.contains('theme-orange')) return 'rgb(255, 204, 128)';
 		if (document.body.classList.contains('theme-gray')) return 'rgb(189, 189, 189)';
+		if (document.body.classList.contains('theme-yellow')) return 'rgb(255, 224, 130)';
+		if (document.body.classList.contains('theme-green')) return 'rgb(174, 213, 129)';
 		return 'rgb(146, 203, 250)';
 	},
 	enumerable: true,

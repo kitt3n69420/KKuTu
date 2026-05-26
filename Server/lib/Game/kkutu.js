@@ -581,6 +581,7 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 						// 서바이벌 모드: KO 처리
 						my.game.alive = false;
 						my.game.score = 0;
+						Const.recordSurvivalKO(room, my);
 						room.byMaster('survivalKO', { target: my.id }, true);
 						var isTurn = room.game.turn == seqIndex;
 						clearTimeout(room.game.turnTimer);
@@ -2844,6 +2845,10 @@ exports.Room = function (room, channel) {
 			my.opts.randomturn = false;
 		}
 
+		// 서바이벌 추적 필드 초기화
+		my.game.survivalKOCounter = 0;
+		my.game.survivalDamageTracking = false;
+
 		// 아이템 상태 초기화 (opts.item 여부와 무관하게 항상)
 		my.game.items = {};
 		my.game.itemGlobalTurnCount = 0;
@@ -2882,6 +2887,8 @@ exports.Room = function (room, channel) {
 				o.game.score = 0;
 			}
 			o.game.bonus = 0;
+			o.game.survivalKOOrder = 0;
+			o.game.survivalDamageDealt = 0;
 			o.game.item = [/*0, 0, 0, 0, 0, 0*/];
 			o.game.wpc = [];
 			delete o.game.lastWord;
@@ -3155,7 +3162,10 @@ exports.Room = function (room, channel) {
 			if (!o.game) continue; // Fix: o.game이 없으면 스킵
 
 			// Fix: null/undefined/NaN 점수를 0으로 처리 (typeof NaN === 'number'이므로 isNaN도 체크)
-			var playerScore = (typeof o.game.score === 'number' && !isNaN(o.game.score)) ? o.game.score : 0;
+			var rawScore = (my.opts.survival && my.game.survivalDamageTracking)
+				? o.game.survivalDamageDealt
+				: o.game.score;
+			var playerScore = (typeof rawScore === 'number' && !isNaN(rawScore)) ? rawScore : 0;
 			sumScore += playerScore;
 
 			var actualTeam = o.robot ? o.game.team : o.team;
@@ -3166,24 +3176,27 @@ exports.Room = function (room, channel) {
 
 			res.push({
 				id: o.id,
-				score: playerScore, // Display Score: Individual
-				teamScore: teamScoreVal, // Sorting Score: Team Total
+				score: playerScore,
+				teamScore: teamScoreVal,
 				dim: (actualTeam && Array.isArray(teams[actualTeam]) && teams[actualTeam].length === 2) ? teams[actualTeam][0] : 1,
 				robot: o.robot,
 				team: actualTeam,
-				alive: o.game.alive  // 서바이벌 모드: 생존 상태
+				alive: o.game.alive,
+				koOrder: o.game.survivalKOOrder || 0
 			});
 		}
 
-		// Sort: 1. Team Score (Desc), 2. Team ID (Group ties), 3. Individual Score (Desc)
-		// 서바이벌 모드: alive 상태 기준으로 정렬 (생존자가 위)
 		res.sort(function (a, b) {
-			// 서바이벌 모드: 생존자가 먼저
+			// 서바이벌 모드: KO 순서 기준 (먼저 KO = 낮은 순위, 생존자 우선)
 			if (my.opts.survival) {
-				if (a.alive !== b.alive) return b.alive ? 1 : -1;
+				var aAlive = a.koOrder === 0;
+				var bAlive = b.koOrder === 0;
+				if (aAlive !== bAlive) return bAlive ? 1 : -1;
+				if (!aAlive && !bAlive) return b.koOrder - a.koOrder; // 늦게 KO = 높은 순위
+				// 둘 다 생존: 데미지(또는 남은 HP) 내림차순 tiebreak
+				return (b.score || 0) - (a.score || 0);
 			}
 
-			// Ensure scores are numbers to prevent undefined comparison issues
 			var aTeamScore = typeof a.teamScore === 'number' ? a.teamScore : 0;
 			var bTeamScore = typeof b.teamScore === 'number' ? b.teamScore : 0;
 			var aScore = typeof a.score === 'number' ? a.score : 0;
@@ -3249,7 +3262,7 @@ exports.Room = function (room, channel) {
 				rw = { score: 0, money: 0, _score: 0, _money: 0, _blog: [] };
 				noReward = true;
 			} else {
-				rw = getRewards(my.mode, o.game.score / res[i].dim, o.game.bonus, myHumanRank, humanCount, sumScore);
+				rw = getRewards(my.mode, res[i].score / res[i].dim, o.game.bonus, myHumanRank, humanCount, sumScore);
 			}
 
 			rw.playTime = now - o.playAt;
@@ -4118,6 +4131,16 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 			break;
 		case "EWR":
 			rw.score += score * 1.8;
+			break;
+		case 'KPF':
+		case 'EPF':
+			rw.score += score * 1.3;
+			break;
+		case 'KQZ':
+			rw.score += score * 1.0;
+			break;
+		case 'EQZ':
+			rw.score += score * 1.12;
 			break;
 		default:
 			rw.score += score * 1.25;

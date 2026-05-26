@@ -45,6 +45,20 @@ body.theme-gray {
 	--color-bg-medium: #BDBDBD;
 	--color-border: #E0E0E0;
 }
+body.theme-yellow {
+	--color-primary: #F9A825;
+	--color-primary-dark: #F57F17;
+	--color-bg-light: #FFFDE7;
+	--color-bg-medium: #FFE082;
+	--color-border: #FFF9C4;
+}
+body.theme-green {
+	--color-primary: #558B2F;
+	--color-primary-dark: #33691E;
+	--color-bg-light: #F1F8E9;
+	--color-bg-medium: #AED581;
+	--color-border: #DCEDC8;
+}
 
 equ {
 	font-family: consolas;
@@ -71,6 +85,14 @@ body.theme-orange #Intro img {
 
 body.theme-gray #Intro img {
 	filter: saturate(0);
+}
+
+body.theme-yellow #Intro img {
+	filter:  hue-rotate(-167deg) saturate(130%) brightness(130%);
+}
+
+body.theme-green #Intro img {
+	filter: hue-rotate(-120deg) saturate(80%);
 }
 
 #version {
@@ -1132,6 +1154,14 @@ body.theme-orange .GameBox::before {
 
 body.theme-gray .GameBox::before {
 	filter: saturate(0);
+}
+
+body.theme-yellow .GameBox::before {
+	filter: hue-rotate(-170deg) saturate(130%) brightness(130%);
+}
+
+body.theme-green .GameBox::before {
+	filter: hue-rotate(-120deg);
 }
 
 .GameBox .product-title {
@@ -2957,4 +2987,14 @@ body.theme-gray .GameBox::before {
 /* WordStack */
 .jjo-turn-time .graph-bar.overflow {
 	background-color: #ff4444 !important;
+}
+
+#menu-item-GAMES {
+	position: relative;
+	z-index: 10001;
+}
+
+#global-notice {
+	position: relative;
+	z-index: 10000;
 }

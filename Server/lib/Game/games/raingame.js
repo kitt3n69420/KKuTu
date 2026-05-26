@@ -4,6 +4,7 @@
  */
 
 var Lizard = require('../../sub/lizard');
+var Const = require('../../const');
 var DB;
 var DIC;
 
@@ -317,7 +318,7 @@ function scanWords(my) {
 			var damage = calcDamage(elapsed, T, w.len);
 			o.game.score -= damage;
 			var ko = o.game.score <= 0;
-			if (ko) { o.game.score = 0; o.game.alive = false; }
+			if (ko) { o.game.score = 0; o.game.alive = false; Const.recordSurvivalKO(my, o); }
 
 			my.byMaster('turnEnd', {
 				ok: false,

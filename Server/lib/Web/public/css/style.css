@@ -45,6 +45,20 @@ body.theme-gray {
 	--color-bg-medium: #BDBDBD;
 	--color-border: #E0E0E0;
 }
+body.theme-yellow {
+	--color-primary: #F9A825;
+	--color-primary-dark: #F57F17;
+	--color-bg-light: #FFFDE7;
+	--color-bg-medium: #FFE082;
+	--color-border: #FFF9C4;
+}
+body.theme-green {
+	--color-primary: #558B2F;
+	--color-primary-dark: #33691E;
+	--color-bg-light: #F1F8E9;
+	--color-bg-medium: #AED581;
+	--color-border: #DCEDC8;
+}
 
 @font-face {
 	font-family: 'NBGothic';
@@ -134,6 +148,11 @@ span {
 .Menu .menu-btn:active {
 	color: #FFFFFF;
 	background-color: #CD9E45;
+}
+
+#menu-item-GAMES {
+	position: relative;
+	z-index: 10001;
 }
 
 .Menu .menu-btn .menu-sub-separator {
@@ -243,7 +262,8 @@ span {
 	text-align: center;
 	font-weight: bold;
 	cursor: pointer;
-	z-index: 5;
+	position: relative;
+	z-index: 10000;
 }
 
 #gn-content {
@@ -418,7 +438,9 @@ span {
 
 body.theme-red #Top,
 body.theme-orange #Top,
-body.theme-gray #Top {
+body.theme-gray #Top,
+body.theme-yellow #Top,
+body.theme-green #Top {
 	background-image: none;
 	background-color: var(--color-primary);
 }

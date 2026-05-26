@@ -194,11 +194,11 @@ exports.ROBOT_GAME_WIN_MESSAGES = [ //봇이 게임 1등으로 끝냈을 때
 ]
 exports.ROBOT_GAME_LOSE_MESSAGES = [ //봇이 게임 꼴찌로 끝냈을 때
 	"아잇", "다음엔 꼭 이긴다", "억까겜", "이 판 무효!", "다음판엔 내가 1등할거임 ㅇㅇ",
-	"GG", "ㅈㅈ", "한판 더?"
+	"GG", "ㅈㅈ", "한판 더?", "뿌에엥", "살살 좀 해"
 ]
 exports.ROBOT_GAME_MID_MESSAGES = [ //봇이 게임 중간 순위로 끝냈을 때
 	 "아쉽네요", "쩝", "재밌네요", "뭔가 느낌 왔는데", "약간 아쉽", "잘하면 1등할듯?",
-	 "굿 게임!", "GG", "ㅈㅈ", "재밌네요", "즐거웠어요~", "한판 더?"
+	 "굿 게임!", "GG", "ㅈㅈ", "재밌네요", "재밌었어요~", "한판 더?"
 ];
 exports.ROBOT_GREET_MESSAGES = [ //봇이 방에 들어올 때 보내는 메시지
 	"ㅎㅇㅎㅇ", "ㅎㅇ", "안녕하세요", "안녕하세요~", "한판 해봐요",
@@ -206,7 +206,7 @@ exports.ROBOT_GREET_MESSAGES = [ //봇이 방에 들어올 때 보내는 메시�
 ];
 exports.ROBOT_IDLE_MESSAGES = [ //봇이 게임 끝난 후 대기 중 보내는 메시지
 	"ㄹㄷㄹㄷ", "ㄱㄱ", "한판 더!", "빨리 시작해요", "고고",
-	"다들 준비됐나요?", "빨리빨리~", "ㄱㄱㄱ", "빨리 ㄱㄱ", "한판해요",
+	"시작!", "빨리빨리~", "ㄱㄱㄱ", "빨리 ㄱㄱ", "한판해요",
 ];
 exports.ROBOT_IDLE2_MESSAGES = [ //봇이 게임 끝난 후 오랫동안 대기 중 보내는 메시지
 	"ㄹㄷㄹㄷㄹㄷㄹㄷㄹㄷㄹㄷ", "ㄱㄱㄱㄱㄱㄱㄱ", "아 심심해", "빨리!!!!!",
@@ -1062,20 +1062,29 @@ exports.applySurvivalDamage = function (my, DIC, damage, currentTurn) {
 	if (!found) return null;
 	var targetPlayer = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
 	if (targetPlayer && targetPlayer.game && targetPlayer.game.alive) {
-		// Apply damage
+		var preHP = targetPlayer.game.score;
 		targetPlayer.game.score -= damage;
 		var newHP = targetPlayer.game.score;
 		var ko = newHP <= 0;
+		var actualDamage = ko ? preHP : damage;
 
 		if (ko) {
 			targetPlayer.game.alive = false;
 			targetPlayer.game.score = 0;
+			exports.recordSurvivalKO(my, targetPlayer);
 		}
 
-		// return the target Id and damage info
+		// 공격자 데미지 누적
+		my.game.survivalDamageTracking = true;
+		var attackerEntry = my.game.seq[currentTurn];
+		var attacker = (typeof attackerEntry === 'string') ? DIC[attackerEntry] : attackerEntry;
+		if (attacker && attacker.game) {
+			attacker.game.survivalDamageDealt = (attacker.game.survivalDamageDealt || 0) + actualDamage;
+		}
+
 		return {
 			targetId: targetPlayer.id,
-			targetIndex: nextTurn,  // Pass the target index so turnNext can jump there directly
+			targetIndex: nextTurn,
 			damage: damage,
 			newHP: ko ? 0 : newHP,
 			ko: ko
@@ -1093,6 +1102,11 @@ exports.applySurvivalDamage = function (my, DIC, damage, currentTurn) {
  * @param {Object} extraData - turnEnd에 추가할 데이터 (optional)
  * @returns {boolean} 게임이 종료되었으면 true
  */
+exports.recordSurvivalKO = function (my, player) {
+	if (!my.game || !player.game) return;
+	player.game.survivalKOOrder = ++(my.game.survivalKOCounter);
+};
+
 exports.handleSurvivalTimeout = function (my, DIC, target, extraData) {
 	if (!my.opts.survival || !target || !target.game || !target.game.alive) {
 		return false;
@@ -1100,6 +1114,7 @@ exports.handleSurvivalTimeout = function (my, DIC, target, extraData) {
 
 	target.game.alive = false;
 	target.game.score = 0;
+	exports.recordSurvivalKO(my, target);
 
 	var status = exports.checkSurvivalStatus(my, DIC);
 

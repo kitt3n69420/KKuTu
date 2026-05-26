@@ -203,7 +203,7 @@ exports.turnEnd = function () {
 	var cellCounts = {};
 	var teamCells = {};
 	var teamMembers = {};
-	var totalPool = my.game.seq.length * 500;
+	var totalPool = my.game.seq.length * 250;
 	var i;
 
 	my.game.late = true;

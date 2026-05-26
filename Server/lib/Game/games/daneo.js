@@ -203,6 +203,7 @@ exports.turnEnd = function () {
 	if (my.opts.survival && target && target.game && target.game.alive) {
 		target.game.alive = false;
 		target.game.score = 0;
+		Const.recordSurvivalKO(my, target);
 		my.logChainEvent(target, 'ko');
 
 		// 봇 분노: 타임아웃된 봇의 분노 조정

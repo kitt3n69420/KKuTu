@@ -2665,3 +2665,13 @@ body.theme-orange .GameBox::before {
 .jjo-turn-time .graph-bar.overflow {
 	background-color: #ff4444 !important;
 }
+
+#menu-item-GAMES {
+	position: relative;
+	z-index: 10001;
+}
+
+#global-notice {
+	position: relative;
+	z-index: 10000;
+}

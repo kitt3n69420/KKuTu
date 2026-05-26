@@ -49,6 +49,22 @@ body.theme-gray #logo {
 body.theme-gray #Background {
 	filter: saturate(0);
 }
+
+body.theme-yellow #logo {
+	filter: hue-rotate(-167deg) saturate(130%) brightness(130%);
+}
+
+body.theme-yellow #Background {
+	filter: hue-rotate(-167deg) saturate(130%) brightness(130%);
+}
+
+body.theme-green #logo {
+	filter: hue-rotate(-120deg) saturate(80%);
+}
+
+body.theme-green #Background {
+	filter: hue-rotate(-120deg) saturate(80%);
+}
 #kkutu-bulletin{
 	border: 0px;
 	margin-bottom: 5px;

@@ -33,9 +33,9 @@ var DIFFICULTY_CHAIN = {
 
 // 난이도별 점수 배수
 var DIFFICULTY_BONUS = {
-	'qz1': 10,  // 쉬움
+	'qz1': 20,  // 쉬움
 	'qz2': 30,  // 보통
-	'qz3': 50   // 어려움
+	'qz3': 40   // 어려움
 };
 
 exports.init = function (_DB, _DIC) {

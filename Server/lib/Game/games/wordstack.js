@@ -252,7 +252,7 @@ function scanHP(my) {
 		var dmg = Math.round(overflow * x);
 		o.game.score -= dmg;
 		var ko = o.game.score <= 0;
-		if (ko) { o.game.score = 0; o.game.alive = false; }
+		if (ko) { o.game.score = 0; o.game.alive = false; Const.recordSurvivalKO(my, o); }
 
 		my.byMaster('turnEnd', {
 			ok: false,
