@@ -711,7 +711,7 @@ code {
 	overflow: hidden !important;
 }
 
-.psychedelic-bg::before {
+.GameBox.psychedelic-bg::before {
 	/* Layer 1: Radial Gradient + Checkerboard Image + Filters */
 	content: "";
 	position: absolute;
@@ -744,7 +744,7 @@ code {
 		color-cycle-psychedelic 1s linear infinite;
 }
 
-.psychedelic-bg::after {
+.GameBox.psychedelic-bg::after {
 	/* Top Layer: Strong Primary Spiral Overlay */
 	content: "";
 	position: absolute;
