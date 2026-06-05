@@ -18,6 +18,7 @@
 
 var MODE;
 var ALWAYS_SURVIVAL_MODES = ['KWR', 'EWR', 'KWS', 'EWS'];
+var PACK_TOOLTIP = { '키뮤': 'Kimu-Nowchira 제공 · CC BY-NC 4.0' };
 var BEAT = [null,
 	"10000000",
 	"10001000",
@@ -28,17 +29,7 @@ var BEAT = [null,
 	"11111110",
 	"11111111"
 ];
-var BEAT_Back = [null,
-	"10000000",
-	"10000010",
-	"10000011",
-	"10010011",
-	"10011011",
-	"11011011",
-	"11011111",
-	"11111111"
-];
-var BEAT_TK = [null,
+var BEAT_KM = [null,
 	"10000000",
 	"10000010",
 	"10000011",
@@ -58,6 +49,7 @@ var BEAT_Mid = [null,
 	"11011111",
 	"11111111"
 ];
+var ACTIVE_BEAT = null;
 var NULL_USER = {
 	profile: { title: L['null'] },
 	data: { score: 0 }
@@ -379,6 +371,10 @@ $(document).ready(function () {
 		var $sel = $("#sound-pack");
 		packs.forEach(function (pack) {
 			$sel.append($("<option>").val(pack.name).text(pack.name));
+		});
+		$sel.on('change', function() {
+			var tip = PACK_TOOLTIP[$(this).val()];
+			$('#sound-pack-info').toggle(!!tip).text(tip || '');
 		});
 
 		var cookieVal = $.cookie('kks');
@@ -822,6 +818,8 @@ $(document).ready(function () {
 
 		// 사운드팩 선택 설정
 		$("#sound-pack").val(savedSettings.soundPack || "");
+		var _spTip = PACK_TOOLTIP[$("#sound-pack").val()];
+		$('#sound-pack-info').toggle(!!_spTip).text(_spTip || '');
 
 		// 레벨 아이콘 팩 선택 설정
 		$("#level-pack").val(savedSettings.levelPack || "");
@@ -867,6 +865,12 @@ $(document).ready(function () {
 
 		// 테마 설정
 		$("#theme-setting").val(savedSettings.theme || 'blue');
+
+		// 다크 모드 설정
+		$("#dark-mode-setting").val(savedSettings.darkMode || 'light');
+
+		// 비트 모드 설정
+		$("#beat-setting").val(savedSettings.beatMode || 'auto');
 
 		showDialog($stage.dialog.setting);
 	});
@@ -1493,6 +1497,8 @@ $(document).ready(function () {
 	});
 	// View All Quiz Pick 버튼 (category mode)
 	$("#view-all-quiz-pick").on('click', function () {
+		var rule = $data.room ? RULE[MODE[$data.room.mode]] : null;
+		applyQuizTopicLang(rule ? rule.lang : 'ko');
 		showDialog($stage.dialog.quizPick);
 	});
 	// View All Injeong Pick 버튼 (flat mode)
@@ -1501,6 +1507,8 @@ $(document).ready(function () {
 	});
 	// View All Quiz Pick 버튼 (flat mode)
 	$("#view-all-flat-quiz-pick").on('click', function () {
+		var rule = $data.room ? RULE[MODE[$data.room.mode]] : null;
+		applyQuizTopicLang(rule ? rule.lang : 'ko');
 		showDialog($stage.dialog.quizPick);
 	});
 	$stage.menu.spectate.on('click', function (e) {
@@ -1658,6 +1666,8 @@ $(document).ready(function () {
 		};
 
 		// localStorage에 볼륨 설정 저장
+		var newDarkMode = $("#dark-mode-setting").val() || 'light';
+		var newBeatMode = $("#beat-setting").val() || 'auto';
 		saveVolumeSettings({
 			bgmVolume: $data.BGMVolume,
 			effectVolume: $data.EffectVolume,
@@ -1668,8 +1678,11 @@ $(document).ready(function () {
 			lobbyBGM: newLobbyBGM,
 			noEasterEgg: $("#no-easter-egg").is(":checked"),
 			aiAutoApply: $("#ai-auto-apply").is(":checked"),
-			theme: newTheme
+			theme: newTheme,
+			darkMode: newDarkMode,
+			beatMode: newBeatMode
 		});
+		ACTIVE_BEAT = resolveActiveBeat(newBeatMode, newSoundPack);
 
 		// 언어 설정 저장
 		if (newLang) {
@@ -1697,6 +1710,7 @@ $(document).ready(function () {
 		}
 
 		applyTheme(newTheme);
+		applyDarkMode(newDarkMode);
 		$stage.dialog.setting.hide();
 
 		var updateLobbyBGM = function (bgmName, packName) {
@@ -2286,10 +2300,20 @@ $(document).ready(function () {
 		$data._injpick = list;
 		$stage.dialog.injPick.hide();
 	});
+	function applyQuizTopicLang(lang) {
+		if (lang === 'en') {
+			$("#quizpick-list div[data-ko-only='true']").hide().find('input').prop('checked', false);
+		} else {
+			$("#quizpick-list div[data-ko-only='true']").show();
+		}
+	}
+
 	// Quiz topic pick handlers
 	$("#room-quiz-pick, #room-quiz-pick-flat").on('click', function (e) {
 		var i;
+		var rule = RULE[MODE[$("#room-mode").val()]];
 
+		applyQuizTopicLang(rule ? rule.lang : 'ko');
 		$("#quizpick-no").trigger('click');
 		for (i in $data._quizpick) {
 			$("#quiz-pick-" + $data._quizpick[i]).prop('checked', true);
@@ -2297,7 +2321,7 @@ $(document).ready(function () {
 		showDialog($stage.dialog.quizPick);
 	});
 	$stage.dialog.quizPickAll.on('click', function (e) {
-		$("#quizpick-list input").prop('checked', true);
+		$("#quizpick-list div:visible input").prop('checked', true);
 	});
 	$stage.dialog.quizPickNo.on('click', function (e) {
 		$("#quizpick-list input").prop('checked', false);
@@ -2335,7 +2359,9 @@ $(document).ready(function () {
 	});
 	$("#room-simple-quiz-pick").on('click', function (e) {
 		var i;
+		var rule = RULE[MODE[$("#room-mode").val()]];
 
+		applyQuizTopicLang(rule ? rule.lang : 'ko');
 		$("#quizpick-no").trigger('click');
 		for (i in $data._quizpick) {
 			$("#quiz-pick-" + $data._quizpick[i]).prop('checked', true);
@@ -2798,11 +2824,16 @@ $(document).ready(function () {
 		};
 		ws.onclose = function (e) {
 			if (heartbeatInterval) clearInterval(heartbeatInterval);
-			var ct = L['closed'] + " (#" + e.code + ")";
 
 			if (rws) rws.close();
 			stopAllSounds();
 
+			if ($data._bannedClose) {
+				$.get("/kkutu_notice.html", function (res) { loading(res); });
+				return;
+			}
+
+			var ct = L['closed'] + " (#" + e.code + ")";
 			// 1004, 1005, 1006 에러 코드는 일반적인 연결 끊김이므로 alert 대신 오버레이로 표시
 			if (e.code === 1004 || e.code === 1005 || e.code === 1006) {
 				loading(ct);
@@ -5662,7 +5693,7 @@ function fitQuizDisplay() {
 }
 
 $lib.Quiz.roundReady = function (data) {
-	var tv = L['quiz_' + data.topic];
+	var tv = L['quiz_' + data.topic] + (data.isFallback ? '(!)' : '');
 	var dv = "(" + L['quiz_' + data.difficulty] + ")";
 
 	clearBoard();
@@ -5772,30 +5803,56 @@ $lib.Quiz.turnEnd = function (id, data) {
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// 플레이어 배경색 (인덱스 0 = 미소유)
+// 플레이어 배경색 (인덱스 0 = 미소유) — 라이트 모드
 $lib.Flip._PLAYER_COLORS = [
-	'#42341a',  // 0: 미소유 (회색)
-	'#fffea4',  // 1P: 연빨강
-	'#b7f3f1',  // 9P: 연두색
-	'#feb482',  // 3P: 연노랑
-	'#8ce7a1',  // 4P: 연초록
-	'#fda09b',  // 5P: 연보라
-	'#d0bcfe',  // 6P: 연주황
-	'#dfbb9c',  // 7P: 하늘색
-	'#F7b1e6',  // 8P: 연분홍
-	'#a1cafe',  // 2P: 남색 계열
-	'#cfcfcf',  // 10P: 탁한 연빨강
-	'#e178c2',  // 11P: 탁한 연노랑
-	'#11bdce'   // 12P: 탁한 연파랑
+	'#42341a',  // 0: 미소유
+	'#fffea4',  // 1P
+	'#b7f3f1',  // 2P
+	'#fda09b',  // 5P
+	'#d0bcfe',  // 6P
+	'#cfcfcf',  // 10P
+	'#dfbb9c',  // 7P
+	'#8ce7a1',  // 4P
+	'#F7b1e6',  // 8P
+	'#feb482',  // 3P
+	'#a1cafe',  // 9P
+	'#e178c2',  // 11P
+	'#11bdce'   // 12P
 ];
 
-// 팀 테두리색
+// 플레이어 배경색 — 다크 모드 (HSL L-inversion 후 S×0.8, L×1.5)
+$lib.Flip._PLAYER_COLORS_DARK = [
+	'#000000',  // 0: 미소유  H39  S34  L100(cap)
+	'#979516',  // 1P        H59  S80  L27
+	'#2ca09a',  // 2P        H178 S58  L24
+	'#b72018',  // 5P        H3   S77  L30
+	'#592ac6',  // 6P        H258 S78  L20
+	'#808080',  // 10P       H0   S0   L29
+	'#957a4d',  // 7P        H28  S41  L39
+	'#2fa54b',  // 4P        H134 S53  L41
+	'#a131a3',  // 8P        H315 S66  L26
+	'#d1741d',  // 3P        H24  S78  L38
+	'#2265be',  // 9P        H214 S78  L29
+	'#cd678c',  // 11P       H318 S51  L48
+	'#93c757'   // 12P       H185 S68  L84
+];
+
+// 팀 배경색 — 라이트 모드
 $lib.Flip._TEAM_COLORS = [
 	'',         // 0: 팀 없음
 	'#8CA6FF',  // 팀 1
 	'#9575CD',  // 팀 2
 	'#F06292',  // 팀 3
 	'#FFCA28'   // 팀 4
+];
+
+// 팀 배경색 — 다크 모드 (HSL L-inversion 후 S×0.8, L×1.5)
+$lib.Flip._TEAM_COLORS_DARK = [
+	'',         // 0: 팀 없음
+	'#11319b',  // 팀 1  H226 S80  L34
+	'#8263b8',  // 팀 2  H262 S37  L55
+	'#d42e66',  // 팀 3  H340 S66  L51
+	'#ecc756'   // 팀 4  H45  S80  L63
 ];
 
 $lib.Flip._getPlayerIndex = function (ownerId) {
@@ -5840,14 +5897,16 @@ $lib.Flip._buildColorMap = function () {
 };
 
 $lib.Flip._getPlayerColor = function (ownerId) {
-	if (!ownerId || !$data._flipColorMap || !$data._flipColorMap[ownerId]) return $lib.Flip._PLAYER_COLORS[0];
-	return $lib.Flip._PLAYER_COLORS[$data._flipColorMap[ownerId]];
+	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK : $lib.Flip._PLAYER_COLORS;
+	if (!ownerId || !$data._flipColorMap || !$data._flipColorMap[ownerId]) return colors[0];
+	return colors[$data._flipColorMap[ownerId]];
 };
 
 $lib.Flip._applyUserCardColors = function () {
 	if (!$data._flipColorMap) return;
+	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK : $lib.Flip._PLAYER_COLORS;
 	for (var id in $data._flipColorMap) {
-		var color = $lib.Flip._PLAYER_COLORS[$data._flipColorMap[id]];
+		var color = colors[$data._flipColorMap[id]];
 		$("#game-user-" + id).css('background-color', color);
 	}
 };
@@ -5871,7 +5930,7 @@ $lib.Flip.roundReady = function (data, spec) {
 	clearBoard();
 	$data._relay = true;
 	$(".jjoriping,.rounds,.game-body").addClass("cw");
-	$(".jjoriping").addClass("flip");
+	$(".jjoriping,.game-body").addClass("flip");
 	$data._board = data.board;
 	$data._owners = data.owners;
 	$data._roundTime = $data.room.time * 1000;
@@ -5962,12 +6021,15 @@ $lib.Flip.drawDisplay = function () {
 		owner = $data._owners[i];
 		playerColor = $lib.Flip._getPlayerColor(owner);
 
+		var isDark = document.body.classList.contains('dark-mode');
+		var teamColors = isDark ? $lib.Flip._TEAM_COLORS_DARK : $lib.Flip._TEAM_COLORS;
+
 		borderColor = '';
 		bgColor = playerColor;
 		if (owner) {
 			teamId = $lib.Flip._getOwnerTeam(owner);
 			if (teamId) {
-				bgColor = $lib.Flip._TEAM_COLORS[teamId] || playerColor;
+				bgColor = teamColors[teamId] || playerColor;
 				borderColor = playerColor;
 			}
 		}
@@ -5980,7 +6042,7 @@ $lib.Flip.drawDisplay = function () {
 				height: CELL_H + "%",
 				'background-color': bgColor,
 				'border': borderColor ? ('3px solid ' + borderColor) : '1px solid #999',
-				'color': (owner ? '#000' : '#FFF'),
+				'color': isDark ? ('#FFF') : (owner ? '#000' : '#FFF'),
 				'font-weight': (isNyh || isEnFlip) ? 'normal' : 'bold',
 				'font-size': isEnFlip ? '80%' : ''
 			})
@@ -6671,6 +6733,11 @@ function applyTheme(theme) {
 	else if (theme === 'yellow') document.body.classList.add('theme-yellow');
 	else if (theme === 'green') document.body.classList.add('theme-green');
 }
+function applyDarkMode(setting) {
+	var isDark = setting === 'dark' || (setting === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+	if (isDark) document.body.classList.add('dark-mode');
+	else document.body.classList.remove('dark-mode');
+}
 
 function applyOptions(opt) {
 	$data.opts = opt;
@@ -6726,13 +6793,25 @@ function applyOptions(opt) {
 
 	// 테마 적용
 	applyTheme(savedSettings.theme || 'blue');
+	applyDarkMode(savedSettings.darkMode || 'light');
+	ACTIVE_BEAT = resolveActiveBeat(savedSettings.beatMode || 'auto', savedSettings.soundPack || ($data.opts && $data.opts.sp) || '');
+}
+
+function resolveActiveBeat(beatMode, packName) {
+	if (beatMode === 'km') return BEAT_KM;
+	if (beatMode === 'mid') return BEAT_Mid;
+	if (beatMode === 'default') return BEAT;
+	// auto: 팩 이름 기반 자동 선택
+	if (packName === '키뮤') return BEAT_KM;
+	if (packName === '오리지널' || packName === '테크노' || packName === '병맛') return BEAT_Mid;
+	return BEAT;
 }
 
 function loadVolumeSettings() {
 	try {
-		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMuteGame: null, aiMuteLobby: null, aiRageQuit: null, aiFastMode: null, theme: null };
+		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMuteGame: null, aiMuteLobby: null, aiRageQuit: null, aiFastMode: null, theme: null, darkMode: null, beatMode: null };
 	} catch (e) {
-		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null, theme: null };
+		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null, theme: null, darkMode: null };
 	}
 }
 
@@ -7344,25 +7423,39 @@ function onMessage(data) {
 					break;
 				}
 				/* Enhanced User Block System [S] */
-				if (!data.blockedUntil) break;
-
-				var blockedUntil = new Date(parseInt(data.blockedUntil));
-				var block = "\n제한 시점: " + blockedUntil.getFullYear() + "년 " + blockedUntil.getMonth() + 1 + "월 " +
-					blockedUntil.getDate() + "일 " + blockedUntil.getHours() + "시 " + blockedUntil.getMinutes() + "분까지";
-
-				showAlert("[#444] " + L['error_444'] + i + block);
+				$data._bannedClose = true;
+				var block444 = data.blockedUntil ? (function() {
+					var d = new Date(parseInt(data.blockedUntil));
+					return "\n제한 기한: " + d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " +
+						d.getDate() + "일 " + d.getHours() + "시 " + d.getMinutes() + "분까지";
+				})() : "\n제한 기한: 영구 제한";
+				showAlert("[#444] " + L['error_444'] + i + block444);
 				break;
 			} else if (data.code == 446) {
 				i = data.reasonBlocked;
-				if (!data.ipBlockedUntil) break;
-
-				var blockedUntil = new Date(parseInt(data.ipBlockedUntil));
-				var block = "\n제한 시점: " + blockedUntil.getFullYear() + "년 " + blockedUntil.getMonth() + 1 + "월 " +
-					blockedUntil.getDate() + "일 " + blockedUntil.getHours() + "시 " + blockedUntil.getMinutes() + "분까지";
-
-				showAlert("[#446] " + L['error_446'] + i + block);
+				$data._bannedClose = true;
+				var block446 = data.ipBlockedUntil ? (function() {
+					var d = new Date(parseInt(data.ipBlockedUntil));
+					return "\n제한 기한: " + d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " +
+						d.getDate() + "일 " + d.getHours() + "시 " + d.getMinutes() + "분까지";
+				})() : "\n제한 기한: 영구 제한";
+				showAlert("[#446] " + L['error_446'] + i + block446);
 				break;
 				/* Enhanced User Block System [E] */
+			} else if (data.code == 410) {
+				if (i) {
+					$data._bannedClose = true;
+					var msg410 = "[#410] " + L['error_410'] + "\n차단 사유: " + i;
+					if (data.blockedUntil) {
+						var bu410 = new Date(parseInt(data.blockedUntil));
+						msg410 += "\n제한 기한: " + bu410.getFullYear() + "년 " + (bu410.getMonth() + 1) + "월 " +
+							bu410.getDate() + "일 " + bu410.getHours() + "시 " + bu410.getMinutes() + "분까지";
+					} else {
+						msg410 += "\n제한 기한: 영구 제한";
+					}
+					showAlert(msg410);
+					break;
+				}
 			} else if (data.code === 447) {
 				showAlert(L['security_bot_check_fail']);
 				break;
@@ -9661,7 +9754,7 @@ function clearBoard() {
 	$stage.dialog.dress.hide();
 	$stage.dialog.charFactory.hide();
 	$(".jjoriping,.rounds,.game-body").removeClass("cw");
-	$(".jjoriping").removeClass("flip");
+	$(".jjoriping,.game-body").removeClass("flip");
 	$(".jjoriping").css({ "float": "", "margin": "" });
 	// Small-mode class is managed by updateRoom() based on player count, don't remove it here
 	$stage.game.display.removeClass("raingame-board").empty();
@@ -10200,12 +10293,13 @@ var BONUS_COLORS = {
 };
 Object.defineProperty(BONUS_COLORS, 'linking', {
 	get: function() {
-		if (document.body.classList.contains('theme-red')) return 'rgb(239, 154, 154)';
-		if (document.body.classList.contains('theme-orange')) return 'rgb(255, 204, 128)';
-		if (document.body.classList.contains('theme-gray')) return 'rgb(189, 189, 189)';
-		if (document.body.classList.contains('theme-yellow')) return 'rgb(255, 224, 130)';
-		if (document.body.classList.contains('theme-green')) return 'rgb(174, 213, 129)';
-		return 'rgb(146, 203, 250)';
+		var dark = document.body.classList.contains('dark-mode');
+		if (document.body.classList.contains('theme-red')) return dark ? 'rgb(239, 154, 154)' : 'rgb(239, 154, 154)';
+		if (document.body.classList.contains('theme-orange')) return dark ? 'rgb(255, 204, 128)' : 'rgb(255, 204, 128)';
+		if (document.body.classList.contains('theme-gray')) return dark ? 'rgb(189, 189, 189)' : 'rgb(189, 189, 189)';
+		if (document.body.classList.contains('theme-yellow')) return dark ? 'rgb(255, 224, 130)' : 'rgb(255, 224, 130)';
+		if (document.body.classList.contains('theme-green')) return dark ? 'rgb(174, 213, 129)' : 'rgb(174, 213, 129)';
+		return dark ? 'rgb(144, 202, 249)' : 'rgb(146, 203, 250)';
 	},
 	enumerable: true,
 	configurable: true
@@ -10215,7 +10309,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 	var mode = MODE[$data.room.mode];
 	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK";
 	var isRev = (mode == "KAP" || mode == "KAK" || mode == "EAP" || mode == "EAK");
-	var beat = BEAT[len = text.length];
+	var beat = (ACTIVE_BEAT || BEAT)[len = text.length];
 	var ta, kkt;
 	var i, j = 0;
 	var $l;

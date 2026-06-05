@@ -33,7 +33,7 @@ function fitQuizDisplay() {
 }
 
 $lib.Quiz.roundReady = function (data) {
-	var tv = L['quiz_' + data.topic];
+	var tv = L['quiz_' + data.topic] + (data.isFallback ? '(!)' : '');
 	var dv = "(" + L['quiz_' + data.difficulty] + ")";
 
 	clearBoard();

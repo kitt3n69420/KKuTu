@@ -66,6 +66,9 @@ exports.roundReady = function () {
 		var problem = generateProblem(0);
 		my.game.question = problem.question;
 		my.game.answer = problem.answer;
+		my.game.calcOp = problem.op;
+		my.game.calcA = problem.a;
+		my.game.calcB = problem.b;
 		my.byMaster('roundReady', {
 			round: my.game.round,
 			question: my.game.question
@@ -309,7 +312,7 @@ exports.submit = function (client, text, data) {
 		clearTimeout(my.game.turnTimer);
 		t = tv - my.game.turnAt;
 
-		score = my.getScore(my.game.answer, t);
+		score = my.getScore(my.game.chain.length, t);
 		my.logChainWord(inputAnswer, client);
 		my.game.roundTime -= t;
 
@@ -317,6 +320,9 @@ exports.submit = function (client, text, data) {
 		var problem = generateProblem(my.game.chain.length);
 		my.game.question = problem.question;
 		my.game.answer = problem.answer;
+		my.game.calcOp = problem.op;
+		my.game.calcA = problem.a;
+		my.game.calcB = problem.b;
 
 		// ========== 서바이벌 모드: 득점 = 다음 사람 데미지 ==========
 		if (my.opts.survival) {
@@ -388,10 +394,10 @@ exports.submit = function (client, text, data) {
 	}
 };
 
-exports.getScore = function (answer, delay) {
+exports.getScore = function (chainLength, delay) {
 	var my = this;
 	var tr = 1 - delay / my.game.turnTime;
-	var score = Const.getCalcScore(answer, tr);
+	var score = Const.getCalcScore(chainLength, my.game.calcOp, my.game.calcA, my.game.calcB, tr);
 	return Math.round(score);
 };
 

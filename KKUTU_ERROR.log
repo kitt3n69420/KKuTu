@@ -2641,3 +2641,27 @@ TypeError: my.publish is not a function
     at my.turnNext [as _onTimeout] (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:3549:23)
     at listOnTimeout (node:internal/timers:588:17)
     at process.processTimers (node:internal/timers:523:7)
+:2083 [2026. 6. 5. 오전 12:41:57] MASTER_ERROR: TypeError: Cannot read properties of undefined (reading 'push')
+TypeError: Cannot read properties of undefined (reading 'push')
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:89:34
+    at Array.forEach (<anonymous>)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:84:12
+    at Query.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-pool\index.js:389:18)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12)
+    at Client._handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\client.js:290:19)
+    at Connection.emit (node:events:518:28)
+    at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12
+    at Parser.parse (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\parser.js:40:17)
+    at Socket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\index.js:11:42)
+:2053 [2026. 6. 5. 오전 12:41:58] MASTER_ERROR: TypeError: Cannot read properties of undefined (reading 'push')
+TypeError: Cannot read properties of undefined (reading 'push')
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:89:34
+    at Array.forEach (<anonymous>)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic.js:84:12
+    at Query.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-pool\index.js:389:18)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12)
+    at Client._handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\client.js:290:19)
+    at Connection.emit (node:events:518:28)
+    at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12
+    at Parser.parse (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\parser.js:40:17)
+    at Socket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\index.js:11:42)

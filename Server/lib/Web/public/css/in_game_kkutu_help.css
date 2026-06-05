@@ -91,3 +91,39 @@ word{
 	text-decoration: underline;
 	font-weight: bold;
 }
+
+/* ===== Dark Mode ===== */
+body.dark-mode {
+	background-color: #1a1a1a;
+	color: #e0e0e0;
+}
+body.dark-mode a {
+	color: #90CAF9;
+}
+body.dark-mode blockquote {
+	border-left-color: #555;
+}
+body.dark-mode thead {
+	background-color: rgba(255, 255, 255, 0.1);
+}
+body.dark-mode word {
+	background-color: rgba(255, 255, 255, 0.1);
+}
+body.dark-mode #contents {
+	border-left-color: #444;
+}
+body.dark-mode #page-head {
+	border-bottom-color: #444;
+}
+body.dark-mode ::-webkit-scrollbar-thumb {
+	background-color: #555;
+}
+body.dark-mode ::-webkit-scrollbar-track {
+	background-color: #2c2c2c;
+}
+
+body.dark-mode.theme-red a { color: #EF9A9A; }
+body.dark-mode.theme-orange a { color: #FFCC80; }
+body.dark-mode.theme-gray a { color: #BDBDBD; }
+body.dark-mode.theme-yellow a { color: #FFE082; }
+body.dark-mode.theme-green a { color: #AED581; }

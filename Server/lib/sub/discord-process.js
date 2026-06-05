@@ -70,6 +70,9 @@ process.on('message', function (msg) {
         case 'notify-round-end':
             DiscordBot.notifyRoundEnd(msg.roomId, msg.chainLog, msg.round, msg.totalRounds);
             break;
+        case 'notify-quiz-round-end':
+            DiscordBot.notifyQuizRoundEnd(msg.roomId, msg.data);
+            break;
         case 'notify-game-over':
             DiscordBot.notifyGameOver(msg.roomId, msg.rankings);
             break;

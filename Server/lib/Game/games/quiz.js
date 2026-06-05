@@ -24,6 +24,16 @@ var DIC;
 var ROBOT_CATCH_RATE = [0.1, 0.3, 0.5, 0.7, 0.99];
 var ROBOT_TYPE_COEF = [2000, 1200, 800, 300, 0];
 
+var DIFFICULTY_CATCH_MOD = { 'qz1': 1.2, 'qz2': 0.8, 'qz3': 0.4 };
+var DIFFICULTY_TYPE_MOD  = { 'qz1': 0.5, 'qz2': 1.0, 'qz3': 2.0 };
+
+function getDiffMod(difficulty) {
+	return {
+		catchRate: DIFFICULTY_CATCH_MOD[difficulty] || 1.0,
+		typeCoef:  DIFFICULTY_TYPE_MOD[difficulty]  || 1.0
+	};
+}
+
 // 난이도별 MATH chain 값
 var DIFFICULTY_CHAIN = {
 	'qz1': 0,   // 쉬움
@@ -117,29 +127,7 @@ exports.roundReady = function () {
 			? my.game.themeQueue.shift()
 			: topics[Math.floor(Math.random() * ijl)];
 
-		getQuestion.call(my, my.game.topic, my.game.difficulty).then(function ($q) {
-			if (!my.game.done) return;
-
-			if (!$q) {
-				// done 목록 무시하고 재시도
-				getQuestion.call(my, my.game.topic, my.game.difficulty, true).then(function ($q2) {
-					if (!my.game.done) return;
-
-					if (!$q2) {
-						console.error("[QUIZ] Retry also returned null! No questions available for topic: " + my.game.topic);
-						my.game.late = true;
-						my.byMaster('turnEnd', { answer: "", error: "NO_QUESTION_FOUND" });
-						my.game._rrt = setTimeout(my.roundReady, 2500);
-						return;
-					}
-
-					processQuestion.call(my, $q2);
-				});
-				return;
-			}
-
-			processQuestion.call(my, $q);
-		});
+		tryQuizTopic.call(my, [my.game.topic], topics, 3);
 	} else {
 		my.roundEnd();
 	}
@@ -187,6 +175,15 @@ exports.turnEnd = function () {
 		my.byMaster('turnEnd', {
 			answer: my.game.answer || ""
 		});
+		if (typeof my.sendQuizRoundEnd === 'function') {
+			var _ans = my.game.answer || "";
+			var _winners = (my.game.winner || []).slice();
+			var _giveup = (my.game.giveup || []).slice();
+			var _missed = (my.game.seq || []).filter(function (id) {
+				return _winners.indexOf(id) === -1 && _giveup.indexOf(id) === -1;
+			});
+			my.sendQuizRoundEnd(_ans, _winners, _missed, _giveup, my.game.round);
+		}
 	}
 
 	// 봇 타이머 정리 (라운드 종료 시 봇이 답을 제출하지 않도록)
@@ -218,9 +215,14 @@ exports.submit = function (client, text) {
 			for (i in my.game.robots) {
 				if (my.game.roundTime > my.game.robots[i]._delay) {
 					clearTimeout(my.game.robots[i]._timer);
-					if (client != my.game.robots[i]) if (Math.random() < ROBOT_CATCH_RATE[my.game.robots[i].level]) {
-						var randomDelay = Math.floor(Math.random() * 90) + 10;
-						my.game.robots[i]._timer = setTimeout(my.turnRobot, ROBOT_TYPE_COEF[my.game.robots[i].level] + randomDelay, my.game.robots[i], my.game.answer);
+					if (client != my.game.robots[i]) {
+						var mod = getDiffMod(my.game.difficulty);
+						var catchRate = Math.min(1.0, ROBOT_CATCH_RATE[my.game.robots[i].level] * mod.catchRate);
+						if (Math.random() < catchRate) {
+							var randomDelay = Math.floor(Math.random() * 90) + 10;
+							var typeDelay = Math.round(ROBOT_TYPE_COEF[my.game.robots[i].level] * mod.typeCoef);
+							my.game.robots[i]._timer = setTimeout(my.turnRobot, typeDelay + randomDelay, my.game.robots[i], my.game.answer);
+						}
 					}
 				}
 			}
@@ -300,10 +302,13 @@ exports.readyRobot = function (robot) {
 	if (!my.game.answer) return;
 	clearTimeout(robot._timer);
 	robot._delay = 99999999;
+	var mod = getDiffMod(my.game.difficulty);
+	var catchRate = Math.min(1.0, ROBOT_CATCH_RATE[level] * mod.catchRate);
+	var typeCoef = Math.round(ROBOT_TYPE_COEF[level] * mod.typeCoef);
 	for (i = 0; i < 2; i++) {
-		if (Math.random() < ROBOT_CATCH_RATE[level]) {
+		if (Math.random() < catchRate) {
 			var randomDelay = Math.floor(Math.random() * 90) + 10;
-			delay = my.game.roundTime / 3 * i + my.game.answer.length * ROBOT_TYPE_COEF[level] + randomDelay;
+			delay = my.game.roundTime / 3 * i + my.game.answer.length * typeCoef + randomDelay;
 			robot._timer = setTimeout(my.turnRobot, delay, robot, my.game.answer);
 			robot._delay = delay;
 			break;
@@ -390,8 +395,40 @@ function getQuestion(topic, difficulty, ignoreDone) {
 	return R;
 }
 
+// 주제별 문제 조회 재시도 — 최대 attemptsLeft번 시도 후 MATH 폴백
+function tryQuizTopic(triedTopics, candidates, attemptsLeft) {
+	var my = this;
+	var topic = my.game.topic;
+
+	getQuestion.call(my, topic, my.game.difficulty).then(function($q) {
+		if (!my.game.done) return;
+		if ($q) { processQuestion.call(my, $q, false); return; }
+
+		getQuestion.call(my, topic, my.game.difficulty, true).then(function($q2) {
+			if (!my.game.done) return;
+			if ($q2) { processQuestion.call(my, $q2, false); return; }
+
+			var remaining = candidates.filter(function(t) { return triedTopics.indexOf(t) === -1; });
+			if (attemptsLeft > 1 && remaining.length > 0) {
+				var next = remaining[Math.floor(Math.random() * remaining.length)];
+				triedTopics.push(next);
+				my.game.topic = next;
+				tryQuizTopic.call(my, triedTopics, candidates, attemptsLeft - 1);
+				return;
+			}
+
+			// MATH 폴백
+			my.game.topic = 'MATH';
+			getQuestion.call(my, 'MATH', my.game.difficulty).then(function($qm) {
+				if (!my.game.done) return;
+				if ($qm) processQuestion.call(my, $qm, true);
+			});
+		});
+	});
+}
+
 // 문제 처리 함수
-function processQuestion($q) {
+function processQuestion($q, isFallback) {
 	var my = this;
 	var lang = my.rule.lang;
 
@@ -407,7 +444,8 @@ function processQuestion($q) {
 	my.byMaster('roundReady', {
 		round: my.game.round,
 		topic: my.game.topic,
-		difficulty: my.game.difficulty
+		difficulty: my.game.difficulty,
+		isFallback: !!isFallback
 	}, true);
 	setTimeout(my.turnStart, 2400);
 }

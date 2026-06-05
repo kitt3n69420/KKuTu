@@ -286,6 +286,7 @@ function checkGameOver(my) {
 		var scores = {};
 		traverse(my, function(o) { scores[o.id] = o.game.score; });
 		my.byMaster('turnEnd', { ok: false, timeUp: true, scores: scores }, true);
+		traverse(my, function(o) { o.game.score = o.game.attackScore || 0; });
 		my.game._rrt = setTimeout(function() { my.roundEnd(); }, 2000);
 	}
 }
@@ -378,6 +379,7 @@ exports.roundReady = function() {
 		o.game.attacksSent    = {};
 		o.game.lastAttacker   = null;
 		o.game.botRetryCount  = 0;
+		o.game.attackScore    = 0;
 		var p = (o.robot && o.data) ? (o.data.personality || 0) : 0;
 		o.game.attackStrategy = (p >= 0.6) ? 1 : (p <= -0.6) ? 2 : 0;
 	});
@@ -418,6 +420,7 @@ exports.turnEnd = function() {
 	traverse(my, function(o) { scores[o.id] = o.game.score; });
 
 	my.byMaster('turnEnd', { ok: false, timeUp: true, scores: scores }, true);
+	traverse(my, function(o) { o.game.score = o.game.attackScore || 0; });
 	my.game._rrt = setTimeout(my.roundEnd, 3000);
 };
 
@@ -518,6 +521,7 @@ exports.submit = function(client, text, data) {
 		releasePending();
 		var recovered = isKo ? queryText.length : Math.ceil(queryText.length / 2);
 		client.game.score = Math.min(surHP, client.game.score + recovered);
+		client.game.attackScore = (client.game.attackScore || 0) + recovered * 3;
 
 		var aliveCount = 0;
 		traverse(my, function(o) { if (o.game.alive) aliveCount++; });

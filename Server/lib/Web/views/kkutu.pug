@@ -160,23 +160,31 @@ block Middle
 				option(value="nya") ???
 		div.dialog-bar
 			h4= L('theme')
-			select#theme-setting(style="width: 150px;")
+			select#theme-setting(style="width:70px")
 				option(value="blue")= L('themeBlue')
 				option(value="green")= L('themeGreen')
 				option(value="yellow")= L('themeYellow')
 				option(value="orange")= L('themeOrange')
 				option(value="red")= L('themeRed')
 				option(value="gray")= L('themeGray')
-
-
+			select#dark-mode-setting(style="width:70px")
+				option(value="light")= L('darkModeLight')
+				option(value="dark")= L('darkModeDark')
+				option(value="system")= L('darkModeSystem')
 		div.dialog-bar
 			h4= L('levelPack')
 			select#level-pack(style="width: 150px;")
 				option(value="")= L('default')
 		div.dialog-bar
 			h4= L('soundPack')
-			select#sound-pack(style="width: 150px;")
+			select#sound-pack(style="width:70px")
 				option(value="")= L('default')
+			select#beat-setting(style="width:70px")
+				option(value="auto")= L('beatModeAuto')
+				option(value="default")= L('beatModeDefault')
+				option(value="km")= L('beatModeKM')
+				option(value="mid")= L('beatModeMid')
+			span#sound-pack-info(style="display:none")
 		div.dialog-bar
 			h4= L('lobbyBgm')
 			select#lobby-bgm(style="width: 150px;")
@@ -445,9 +453,11 @@ block Middle
 			button#quizpick-all= L('injpickAll')
 			button#quizpick-no= L('injpickNo')
 		div.dialog-bar#quizpick-list(style='height: 180px; overflow-y: scroll;')
+			- var koOnlyTopics = ['MATH', 'NUMG', 'DAJK'];
 			- locals.QUIZ_TOPIC.forEach(function(item){
 				- var name = "quiz-pick-" + item;
-				div(style='float: left; width: 100%;')
+				- var koOnly = koOnlyTopics.indexOf(item) !== -1;
+				div(style='float: left; width: 100%;', data-ko-only=(koOnly ? 'true' : null))
 					input(id=name, type='checkbox', style='width: auto;')
 					label(for=name)= LANG['quiz_' + item]
 			- });

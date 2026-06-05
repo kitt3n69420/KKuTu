@@ -96,12 +96,14 @@ exports.roundReady = function () {
 				// oneback 모드: 현재 답은 problem1, 표시는 problem2
 				o.game.question = problem2.question;
 				o.game.answer = problem1.answer;
+				o.game.calcOp = problem1.op; o.game.calcA = problem1.a; o.game.calcB = problem1.b;
 				o.game.displayQuestion = problem2.question;
 				o.game.pendingAnswer = problem2.answer;
 				// 다다음 문제 생성
 				var problem3 = Const.generateCalcProblem(0);
 				o.game.nextQuestion = problem3.question;
 				o.game.nextAnswer = problem3.answer;
+				o.game.nextCalcOp = problem3.op; o.game.nextCalcA = problem3.a; o.game.nextCalcB = problem3.b;
 				playerProblems[o.id] = {
 					first: problem1.question,
 					display: problem2.question,
@@ -111,10 +113,12 @@ exports.roundReady = function () {
 				// 일반 모드
 				o.game.question = problem1.question;
 				o.game.answer = problem1.answer;
+				o.game.calcOp = problem1.op; o.game.calcA = problem1.a; o.game.calcB = problem1.b;
 				playerProblems[o.id] = problem1.question;
 				playerNextProblems[o.id] = problem2.question;
 				o.game.nextQuestion = problem2.question;
 				o.game.nextAnswer = problem2.answer;
+				o.game.nextCalcOp = problem2.op; o.game.nextCalcA = problem2.a; o.game.nextCalcB = problem2.b;
 			}
 		});
 
@@ -182,7 +186,7 @@ exports.submit = function (client, text) {
 
 	// 포기 처리 (gg, ㅈㅈ)
 	if (text === 'gg' || text === 'ㅈㅈ') {
-		var penaltyScore = Const.getCalcBattleScore(client.game.answer) * 2;
+		var penaltyScore = Const.getCalcBattleScore(client.game.chain, client.game.calcOp, client.game.calcA, client.game.calcB) * 2;
 		client.game.score -= penaltyScore;
 		if (client.game.score < -9999) client.game.score = -9999;
 
@@ -209,11 +213,13 @@ exports.submit = function (client, text) {
 		if (my.opts.oneback) {
 			// oneback 모드: 문제 시프트
 			client.game.answer = client.game.pendingAnswer;
+			client.game.calcOp = client.game.nextCalcOp; client.game.calcA = client.game.nextCalcA; client.game.calcB = client.game.nextCalcB;
 			client.game.displayQuestion = client.game.nextQuestion;
 			client.game.pendingAnswer = client.game.nextAnswer;
 			var newProblem = Const.generateCalcProblem(client.game.chain);
 			client.game.nextQuestion = newProblem.question;
 			client.game.nextAnswer = newProblem.answer;
+			client.game.nextCalcOp = newProblem.op; client.game.nextCalcA = newProblem.a; client.game.nextCalcB = newProblem.b;
 
 			client.publish('turnEnd', {
 				target: client.id,
@@ -230,9 +236,11 @@ exports.submit = function (client, text) {
 			// 일반 모드
 			client.game.question = client.game.nextQuestion;
 			client.game.answer = client.game.nextAnswer;
+			client.game.calcOp = client.game.nextCalcOp; client.game.calcA = client.game.nextCalcA; client.game.calcB = client.game.nextCalcB;
 			var newProblem = Const.generateCalcProblem(client.game.chain);
 			client.game.nextQuestion = newProblem.question;
 			client.game.nextAnswer = newProblem.answer;
+			client.game.nextCalcOp = newProblem.op; client.game.nextCalcA = newProblem.a; client.game.nextCalcB = newProblem.b;
 
 			client.publish('turnEnd', {
 				target: client.id,
@@ -258,21 +266,21 @@ exports.submit = function (client, text) {
 
 	if (inputAnswer === client.game.answer) {
 		// 정답 처리
-		score = Const.getCalcBattleScore(client.game.answer);
+		score = Const.getCalcBattleScore(client.game.chain, client.game.calcOp, client.game.calcA, client.game.calcB);
 		client.game.chain++;
 		client.game.score += score;
 
 		if (my.opts.oneback) {
 			// oneback 모드: 문제 시프트
-			// 현재 표시 문제의 답이 다음 정답이 됨
 			client.game.answer = client.game.pendingAnswer;
-			// 다음 표시 문제가 현재 표시 문제가 됨
+			client.game.calcOp = client.game.nextCalcOp; client.game.calcA = client.game.nextCalcA; client.game.calcB = client.game.nextCalcB;
 			client.game.displayQuestion = client.game.nextQuestion;
 			client.game.pendingAnswer = client.game.nextAnswer;
 			// 새 문제 생성 (다다음 문제)
 			var newProblem = Const.generateCalcProblem(client.game.chain);
 			client.game.nextQuestion = newProblem.question;
 			client.game.nextAnswer = newProblem.answer;
+			client.game.nextCalcOp = newProblem.op; client.game.nextCalcA = newProblem.a; client.game.nextCalcB = newProblem.b;
 
 			client.publish('turnEnd', {
 				target: client.id,
@@ -288,10 +296,12 @@ exports.submit = function (client, text) {
 			// 일반 모드: 다음 문제가 현재 문제가 됨
 			client.game.question = client.game.nextQuestion;
 			client.game.answer = client.game.nextAnswer;
+			client.game.calcOp = client.game.nextCalcOp; client.game.calcA = client.game.nextCalcA; client.game.calcB = client.game.nextCalcB;
 			// 새 문제 생성 (다다음 문제)
 			var newProblem = Const.generateCalcProblem(client.game.chain);
 			client.game.nextQuestion = newProblem.question;
 			client.game.nextAnswer = newProblem.answer;
+			client.game.nextCalcOp = newProblem.op; client.game.nextCalcA = newProblem.a; client.game.nextCalcB = newProblem.b;
 
 			client.publish('turnEnd', {
 				target: client.id,
@@ -339,8 +349,8 @@ exports.submit = function (client, text) {
 	}
 };
 
-exports.getScore = function (answer) {
-	return Const.getCalcBattleScore(answer);
+exports.getScore = function (chainLength, op, a, b) {
+	return Const.getCalcBattleScore(chainLength, op, a, b);
 };
 
 exports.playRobot = function (robot) {

@@ -2671,6 +2671,149 @@ body.theme-orange .GameBox::before {
 	z-index: 10001;
 }
 
+/* ===== Dark Mode ===== */
+
+body.dark-mode {
+	--color-primary: #90CAF9;
+	--color-primary-dark: #64B5F6;
+	--color-bg-light: #0f1a25;
+	--color-bg-medium: #090f18;
+	--color-border: #1a2e42;
+}
+body.dark-mode.theme-red {
+	--color-primary: #EF9A9A;
+	--color-primary-dark: #E57373;
+	--color-bg-light: #250f0f;
+	--color-bg-medium: #180909;
+	--color-border: #3a1414;
+}
+body.dark-mode.theme-orange {
+	--color-primary: #FFCC80;
+	--color-primary-dark: #FFB74D;
+	--color-bg-light: #251a0a;
+	--color-bg-medium: #180f05;
+	--color-border: #3a2510;
+}
+body.dark-mode.theme-gray {
+	--color-primary: #BDBDBD;
+	--color-primary-dark: #9E9E9E;
+	--color-bg-light: #1c1c1c;
+	--color-bg-medium: #111111;
+	--color-border: #2e2e2e;
+}
+body.dark-mode.theme-yellow {
+	--color-primary: #FFE082;
+	--color-primary-dark: #FFD54F;
+	--color-bg-light: #221e0a;
+	--color-bg-medium: #161206;
+	--color-border: #362e10;
+}
+body.dark-mode.theme-green {
+	--color-primary: #AED581;
+	--color-primary-dark: #9CCC65;
+	--color-bg-light: #0f1e0a;
+	--color-bg-medium: #0a1206;
+	--color-border: #182e10;
+}
+
+body.dark-mode .GameBox::before {
+	filter: invert(1) saturate(0%) brightness(0.45);
+}
+body.dark-mode .game-body.flip .GameBox::before {
+	filter: none !important;
+	background-image: none !important;
+	background-color: #000 !important;
+}
+
+body.dark-mode .dialog {
+	background-color: #1E1E1E !important;
+	color: #E0E0E0 !important;
+}
+body.dark-mode .Product {
+	background-color: #1E1E1E !important;
+	color: #E0E0E0 !important;
+}
+body.dark-mode .rooms-item {
+	background-color: #1E1E1E !important;
+}
+body.dark-mode .dress-type:hover {
+	background-color: rgba(255, 255, 255, 0.1) !important;
+}
+body.dark-mode .MobileItemOverlay {
+	background: #2C2C2C !important;
+	color: #E0E0E0 !important;
+	border-color: #666 !important;
+}
+body.dark-mode .kkutu-menu button:not(.ItemButton) {
+	background-color: rgba(50, 50, 50, 0.9) !important;
+}
+body.dark-mode .kkutu-menu .ItemButton.item-available {
+	background-color: rgba(50, 50, 50, 0.9) !important;
+}
+body.dark-mode #ExitBtn {
+	background-color: #2C2C2C !important;
+}
+body.dark-mode input:not([type='checkbox']):not([type='radio']):not([type='range']) {
+	background-color: #2C2C2C !important;
+	color: #E0E0E0 !important;
+	box-shadow: inset 0 0 0 1px #555 !important;
+}
+body.dark-mode select {
+	background-color: #2C2C2C !important;
+	color: #E0E0E0 !important;
+	box-shadow: inset 0 0 0 1px #555 !important;
+}
+body.dark-mode button:not(.closeBtn) {
+	background-color: #2C2C2C !important;
+	color: #E0E0E0 !important;
+	box-shadow: inset 0 0 0 1px #555 !important;
+}
+body.dark-mode ::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.25) !important;
+}
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+	background: rgba(255, 255, 255, 0.4) !important;
+}
+body.dark-mode ::-webkit-scrollbar-track {
+	background: rgba(255, 255, 255, 0.05) !important;
+}
+body.dark-mode .product-title i {
+	color: #E0E0E0 !important;
+}
+body.dark-mode .rooms-number {
+	border-right-color: #444 !important;
+}
+body.dark-mode .kkutu-menu button {
+	border: none !important;
+}
+body.dark-mode .cw-bar {
+	background-color: #555555 !important;
+}
+body.dark-mode .cw-bar.cw-open {
+	background-color: #AAAAAA !important;
+}
+body.dark-mode .cw-bar.cw-my-open {
+	background-color: #00A55A !important;
+}
+body.dark-mode #Top .menu-btn,
+body.dark-mode #Top button {
+	border: none !important;
+	outline: none !important;
+	box-shadow: none !important;
+}
+body.dark-mode .team-1 {
+	background-color: #11319b !important;
+}
+body.dark-mode .team-2 {
+	background-color: #8263b8 !important;
+}
+body.dark-mode .team-3 {
+	background-color: #d42e66 !important;
+}
+body.dark-mode .team-4 {
+	background-color: #ecc756 !important;
+}
+
 #global-notice {
 	position: relative;
 	z-index: 10000;

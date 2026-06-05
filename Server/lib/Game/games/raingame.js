@@ -286,6 +286,7 @@ function checkGameOver(my) {
 		var scores = {};
 		traverse(my, function(o) { scores[o.id] = o.game.alive ? o.game.score : 0; });
 		my.byMaster('turnEnd', { ok: false, timeUp: true, scores: scores }, true);
+		traverse(my, function(o) { o.game.score = o.game.attackScore || 0; });
 		my.game._rrt = setTimeout(function() { my.roundEnd(); }, 2000);
 	}
 }
@@ -445,6 +446,7 @@ exports.roundReady = function() {
 		o.game.nextWordTime    = 0;
 		o.game.missCount       = 0;
 		o.game.wordSeqIdx      = 0;
+		o.game.attackScore     = 0;
 		for (var i = 0; i < initialCount; i++) addToQueue(my, o);
 	});
 
@@ -488,6 +490,7 @@ exports.turnEnd = function() {
 	});
 
 	my.byMaster('turnEnd', { ok: false, timeUp: true, scores: scores }, true);
+	traverse(my, function(o) { o.game.score = o.game.attackScore || 0; });
 	my.game._rrt = setTimeout(my.roundEnd, 3000);
 };
 
@@ -526,6 +529,7 @@ exports.submit = function(client, text, data) {
 	}
 
 	client.game.activeWords = client.game.activeWords.filter(function(a) { return a.id !== found.id; });
+	client.game.attackScore = (client.game.attackScore || 0) + found.len * 3;
 	tryPushFromQueue(my, client);
 
 	var targetId = selectTarget(my, client);

@@ -238,6 +238,10 @@ $(document).ready(function () {
 		packs.forEach(function (pack) {
 			$sel.append($("<option>").val(pack.name).text(pack.name));
 		});
+		$sel.on('change', function() {
+			var tip = PACK_TOOLTIP[$(this).val()];
+			$('#sound-pack-info').toggle(!!tip).text(tip || '');
+		});
 
 		var cookieVal = $.cookie('kks');
 		try {
@@ -680,6 +684,8 @@ $(document).ready(function () {
 
 		// 사운드팩 선택 설정
 		$("#sound-pack").val(savedSettings.soundPack || "");
+		var _spTip = PACK_TOOLTIP[$("#sound-pack").val()];
+		$('#sound-pack-info').toggle(!!_spTip).text(_spTip || '');
 
 		// 레벨 아이콘 팩 선택 설정
 		$("#level-pack").val(savedSettings.levelPack || "");
@@ -725,6 +731,12 @@ $(document).ready(function () {
 
 		// 테마 설정
 		$("#theme-setting").val(savedSettings.theme || 'blue');
+
+		// 다크 모드 설정
+		$("#dark-mode-setting").val(savedSettings.darkMode || 'light');
+
+		// 비트 모드 설정
+		$("#beat-setting").val(savedSettings.beatMode || 'auto');
 
 		showDialog($stage.dialog.setting);
 	});
@@ -1351,6 +1363,8 @@ $(document).ready(function () {
 	});
 	// View All Quiz Pick 버튼 (category mode)
 	$("#view-all-quiz-pick").on('click', function () {
+		var rule = $data.room ? RULE[MODE[$data.room.mode]] : null;
+		applyQuizTopicLang(rule ? rule.lang : 'ko');
 		showDialog($stage.dialog.quizPick);
 	});
 	// View All Injeong Pick 버튼 (flat mode)
@@ -1359,6 +1373,8 @@ $(document).ready(function () {
 	});
 	// View All Quiz Pick 버튼 (flat mode)
 	$("#view-all-flat-quiz-pick").on('click', function () {
+		var rule = $data.room ? RULE[MODE[$data.room.mode]] : null;
+		applyQuizTopicLang(rule ? rule.lang : 'ko');
 		showDialog($stage.dialog.quizPick);
 	});
 	$stage.menu.spectate.on('click', function (e) {
@@ -1516,6 +1532,8 @@ $(document).ready(function () {
 		};
 
 		// localStorage에 볼륨 설정 저장
+		var newDarkMode = $("#dark-mode-setting").val() || 'light';
+		var newBeatMode = $("#beat-setting").val() || 'auto';
 		saveVolumeSettings({
 			bgmVolume: $data.BGMVolume,
 			effectVolume: $data.EffectVolume,
@@ -1526,8 +1544,11 @@ $(document).ready(function () {
 			lobbyBGM: newLobbyBGM,
 			noEasterEgg: $("#no-easter-egg").is(":checked"),
 			aiAutoApply: $("#ai-auto-apply").is(":checked"),
-			theme: newTheme
+			theme: newTheme,
+			darkMode: newDarkMode,
+			beatMode: newBeatMode
 		});
+		ACTIVE_BEAT = resolveActiveBeat(newBeatMode, newSoundPack);
 
 		// 언어 설정 저장
 		if (newLang) {
@@ -1555,6 +1576,7 @@ $(document).ready(function () {
 		}
 
 		applyTheme(newTheme);
+		applyDarkMode(newDarkMode);
 		$stage.dialog.setting.hide();
 
 		var updateLobbyBGM = function (bgmName, packName) {
@@ -2144,10 +2166,20 @@ $(document).ready(function () {
 		$data._injpick = list;
 		$stage.dialog.injPick.hide();
 	});
+	function applyQuizTopicLang(lang) {
+		if (lang === 'en') {
+			$("#quizpick-list div[data-ko-only='true']").hide().find('input').prop('checked', false);
+		} else {
+			$("#quizpick-list div[data-ko-only='true']").show();
+		}
+	}
+
 	// Quiz topic pick handlers
 	$("#room-quiz-pick, #room-quiz-pick-flat").on('click', function (e) {
 		var i;
+		var rule = RULE[MODE[$("#room-mode").val()]];
 
+		applyQuizTopicLang(rule ? rule.lang : 'ko');
 		$("#quizpick-no").trigger('click');
 		for (i in $data._quizpick) {
 			$("#quiz-pick-" + $data._quizpick[i]).prop('checked', true);
@@ -2155,7 +2187,7 @@ $(document).ready(function () {
 		showDialog($stage.dialog.quizPick);
 	});
 	$stage.dialog.quizPickAll.on('click', function (e) {
-		$("#quizpick-list input").prop('checked', true);
+		$("#quizpick-list div:visible input").prop('checked', true);
 	});
 	$stage.dialog.quizPickNo.on('click', function (e) {
 		$("#quizpick-list input").prop('checked', false);
@@ -2193,7 +2225,9 @@ $(document).ready(function () {
 	});
 	$("#room-simple-quiz-pick").on('click', function (e) {
 		var i;
+		var rule = RULE[MODE[$("#room-mode").val()]];
 
+		applyQuizTopicLang(rule ? rule.lang : 'ko');
 		$("#quizpick-no").trigger('click');
 		for (i in $data._quizpick) {
 			$("#quiz-pick-" + $data._quizpick[i]).prop('checked', true);
@@ -2656,11 +2690,16 @@ $(document).ready(function () {
 		};
 		ws.onclose = function (e) {
 			if (heartbeatInterval) clearInterval(heartbeatInterval);
-			var ct = L['closed'] + " (#" + e.code + ")";
 
 			if (rws) rws.close();
 			stopAllSounds();
 
+			if ($data._bannedClose) {
+				$.get("/kkutu_notice.html", function (res) { loading(res); });
+				return;
+			}
+
+			var ct = L['closed'] + " (#" + e.code + ")";
 			// 1004, 1005, 1006 에러 코드는 일반적인 연결 끊김이므로 alert 대신 오버레이로 표시
 			if (e.code === 1004 || e.code === 1005 || e.code === 1006) {
 				loading(ct);

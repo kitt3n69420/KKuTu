@@ -163,8 +163,8 @@ exports.ROBOT_VICTORY_MESSAGES = [ // 봇이 한방단어를 주고 보내는 �
 	"이얍!", "이건 못 참지", "메롱~", "하핫!", "이 맛이야!", "잘가~", "짠~"
 ];
 exports.ROBOT_DEFEAT_MESSAGES = [ // 봇이 한방단어를 받았을 때 보내는 메시지
-	"아니", "살살 좀 해", "짜증나", "이건 너무하잖아...", "으앙", "히잉", "아 매너가 없구나",
-	"ㅁㄴㅇㄹ", "님아 제발", "아오 진짜", "아놔...", "ㅠㅠ", "너무해", "매너 켜",
+	"아니", "살살 좀 해", "짜증나", "이건 너무하잖아...", "으앙", "히잉",  
+	"ㅁㄴㅇㄹ", "님아 제발", "아오 진짜", "아놔...", "ㅠㅠ", "너무해",
 	"선넘네", "이렇게 가는구나...", "당했다!", "에라이", "하...", "엣?",
 	"아니 님아", "아 제발", "뿌에엥", "뾄!", "악", "안돼", "ㅠㅠ", "저기요?",
 	"이럴수가", "너 봇이지?", "으아악", "어...?", "???", "무...무슨?", "뭐...뭐야?",
@@ -503,7 +503,7 @@ exports.RULE = {
 		lang: "etc",
 		rule: "Calcbattle",
 		opts: ["one", "drg", "obk"],
-		time: 2,
+		time: 1,
 		ai: true,
 		big: false,
 		ewq: false
@@ -661,15 +661,29 @@ exports.GAME_CATEGORIES = {
 exports.getPreScore = function (text, chain, tr) {
 	return 2 * (Math.pow(5 + 7 * (text || "").length, 0.74) + 1.18 * (chain || []).length) * (0.5 + 0.5 * tr);
 };
-exports.getCalcScore = function (answer, tr) {
-	return 2 * Math.pow(5 + 2800 * Math.atan(answer / 2000), 0.74) * (0.5 + 0.5 * tr);
+exports.getCalcScore = function (chainLength, op, a, b, tr) {
+	// raw: 체인 길이에 선형 비례 (chain=100에서 soft clip 상한 근접)
+	var raw = 30 * (1 + chainLength);
+	// soft clip: 1000점을 상한으로 천천히 수렴 (1-exp 곡선)
+	var base = 1000 * (1 - Math.exp(-raw / 1200));
+	var digA = String(Math.abs(a || 1)).length;
+	var digB = String(Math.abs(b || 1)).length;
+	var opBonus = (op === 2)
+		? Math.min(1.4, 1.0 + 0.1 * (digA + digB - 2))
+		: Math.min(1.2, 1.0 + 0.04 * (Math.max(digA, digB) - 1));
+	return base * opBonus * (0.5 + 0.5 * tr);
 };
 exports.getPenalty = function (chain, score) {
 	return -1 * Math.round(Math.max(50, 10 + (chain || []).length * 3 + score * 0.2));
 };
-// 계산 대결 점수 계산 (정답 기반)
-exports.getCalcBattleScore = function (answer) {
-	return Math.round(500 * Math.atan(answer / 1000) + 10);
+exports.getCalcBattleScore = function (chainLength, op, a, b) {
+	var base = 20 + 10 * Math.pow(1 + chainLength, 0.6);
+	var digA = String(Math.abs(a || 1)).length;
+	var digB = String(Math.abs(b || 1)).length;
+	var opBonus = (op === 2)
+		? Math.min(1.4, 1.0 + 0.1 * (digA + digB - 2))
+		: Math.min(1.2, 1.0 + 0.04 * (Math.max(digA, digB) - 1));
+	return Math.round(base * opBonus);
 };
 // 수학 문제 생성 헬퍼 함수 (calcrelay, calcbattle 공용)
 exports.generateCalcProblem = function (chainLength) {
@@ -698,7 +712,7 @@ exports.generateCalcProblem = function (chainLength) {
 		question = a + " × " + b + " = ?";
 		answer = (a * b) | 0;
 	}
-	return { question: question, answer: answer };
+	return { question: question, answer: answer, op: op, a: a, b: b };
 };
 // 봇 오답 생성 함수
 exports.generateWrongAnswer = function (correct) {
@@ -852,10 +866,10 @@ exports.IJP_EXCEPT = [
 	"OIJ", "TPW", "40", "MMM", "MKK", "1001", "HRH", "MNG", "LVL", "KGR", "KRR", "DOT"
 ];
 exports.QUIZ_TOPIC = [
-	"MATH", "CAPI", "CHEM", "UNIT", "NUMG", "ASTR", "ARTS", "ANML", "GAME", "LITR" /*, "CNTR" */
+	"MATH", "CAPI", "CHEM", "UNIT", "NUMG", "ASTR", "ARTS", "ANML", "GAME", "LITR", "DAJK", "CHTR", "FDCK", "SBTR" /*, "CNTR" */
 ];
 exports.QUIZ_TOPIC_EN = [
-	"MATH", "CAPI", "CHEM", "UNIT", "NUMG", "ASTR", "ARTS", "ANML", "GAME", "LITR" /*, "CNTR" */
+	"CAPI", "CHEM", "UNIT", "ASTR", "ARTS", "ANML", "GAME", "LITR", "CHTR", "FDCK", "SBTR" /*, "CNTR" */
 ];
 exports.KO_IJP = exports.KO_THEME.concat(exports.KO_INJEONG).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });
 exports.EN_IJP = exports.EN_INJEONG.concat(exports.EN_THEME).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });

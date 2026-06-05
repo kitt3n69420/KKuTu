@@ -154,7 +154,78 @@
 	<div id="updates" class="tab-content" style="display: block;">
 
 		<div class="update-card">
-			<h3 class="version-title">N0.6.2 [260527] <span class="tag">New</span></h3>
+			<h3 class="version-title">N0.6.3 [260605] <span class="tag">New</span></h3>
+			<ul>
+				<li>이제 워드스택과 단어비에서는 공격을 보낸 양에 비례해서 보상이 주어집니다.</li>
+				<li>영어 스피드퀴즈에서 숫자 맞추기, 수학 계산 주제가 빠졌습니다.</li>
+				<li>스피드퀴즈에서 문제 데이터베이스에 오류가 생긴 경우에도 보호 로직을 추가했습니다.</li>
+				<li>계산 대결, 계산 릴레이의 점수 공식이 변경되었습니다. 이제 체인의 길이와 문제의 난이도를 모두 고려해서 점수를 계산합니다.</li>
+				<li>다크 모드 설정이 추가되었습니다. 테마에서 라이트, 다크, 시스템 중 하나를 선택할 수 있습니다.</li>
+				<li>아재 개그(한국어 전용), 화학 상식, 음식과 요리, 철도 지식 퀴즈 주제가 추가되었습니다.</li>
+				<li><a href="https://github.com/Kimu-Nowchira/TuKKu-Public" target="_blank">트꾸 레포지토리</a>에서 <a href="https://github.com/Kimu-Nowchira" target="_blank">Kimu-Nowchira</a>님의 사운드 팩을 받아 추가하였습니다.</li>
+				<li>사운드팩에 박자 설정이 추가되었습니다. 각 사운드팩마다 적절한 단어 박자를 고르거나, 원하는 박자를 적용시킬 수 있습니다.</li>
+				<li>개인전 모드들의 경험치가 하향 조정되었습니다.</li>
+			</ul>
+			<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:10px;">
+				<thead>
+					<tr style="background:var(--accent-color);">
+						<th style="padding:6px 10px;text-align:left;border-bottom:2px solid var(--primary-color);color:var(--primary-dark);">게임모드</th>
+						<th style="padding:6px 10px;text-align:center;border-bottom:2px solid var(--primary-color);color:var(--primary-dark);">이전 배율</th>
+						<th style="padding:6px 10px;text-align:center;border-bottom:2px solid var(--primary-color);color:var(--primary-dark);">변경 배율</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr style="border-bottom:1px solid #f0f0f0;">
+						<td style="padding:5px 10px;">계산 대결</td>
+						<td style="text-align:center;padding:5px;">1.25</td>
+						<td style="text-align:center;padding:5px;color:#e53935;font-weight:bold;">0.75 ▼</td>
+					</tr>
+					<tr style="border-bottom:1px solid #f0f0f0;background:#fafafa;">
+						<td style="padding:5px 10px;">한국어 타자 대결</td>
+						<td style="text-align:center;padding:5px;">1.2</td>
+						<td style="text-align:center;padding:5px;color:#e53935;">0.96 ▼</td>
+					</tr>
+					<tr style="border-bottom:1px solid #f0f0f0;">
+						<td style="padding:5px 10px;">영어 타자 대결</td>
+						<td style="text-align:center;padding:5px;">1.17</td>
+						<td style="text-align:center;padding:5px;color:#e53935;">0.936 ▼</td>
+					</tr>
+					<tr style="border-bottom:1px solid #f0f0f0;background:#fafafa;">
+						<td style="padding:5px 10px;">한국어 잇기 대결</td>
+						<td style="text-align:center;padding:5px;">2.0</td>
+						<td style="text-align:center;padding:5px;color:#e53935;">1.6 ▼</td>
+					</tr>
+					<tr style="border-bottom:1px solid #f0f0f0;">
+						<td style="padding:5px 10px;">영어 잇기 대결</td>
+						<td style="text-align:center;padding:5px;">1.8</td>
+						<td style="text-align:center;padding:5px;color:#e53935;">1.44 ▼</td>
+					</tr>
+					<tr style="border-bottom:1px solid #f0f0f0;background:#fafafa;">
+						<td style="padding:5px 10px;">한국어 워드스택</td>
+						<td style="text-align:center;padding:5px;">1.25</td>
+						<td style="text-align:center;padding:5px;color:#e53935;">1.0 ▼</td>
+					</tr>
+					<tr style="border-bottom:1px solid #f0f0f0;">
+						<td style="padding:5px 10px;">한국어 주제 타자 대결</td>
+						<td style="text-align:center;padding:5px;">1.25</td>
+						<td style="text-align:center;padding:5px;color:#e53935;">1.0 ▼</td>
+					</tr>
+					<tr style="border-bottom:1px solid #f0f0f0;background:#fafafa;">
+						<td style="padding:5px 10px;">영어 워드스택</td>
+						<td style="text-align:center;padding:5px;">1.25</td>
+						<td style="text-align:center;padding:5px;color:#e53935;">1.0 ▼</td>
+					</tr>
+					<tr>
+						<td style="padding:5px 10px;">영어 주제 타자 대결</td>
+						<td style="text-align:center;padding:5px;">1.25</td>
+						<td style="text-align:center;padding:5px;color:#e53935;">1.0 ▼</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<div class="update-card">
+			<h3 class="version-title">N0.6.2 [260527]</h3>
 			<ul>
 				
 				<li>N0.0.5 버전에 있었던 다음의 변경사항이 롤백되었습니다.: "쿵쿵따의 3232 규칙이 좀 더 공평하게 변경되었습니다. 짝수인 경우 참가자 수+1의 주기로 3과 2가 반복되게 됩니다."</li>

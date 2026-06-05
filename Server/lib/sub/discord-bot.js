@@ -1630,6 +1630,50 @@ exports.notifyRoundEnd = function (roomId, chainLog, round, totalRounds) {
 };
 
 /**
+ * Notify quiz/jaqwi round end with answer and player results
+ * @param {number} roomId - Room ID
+ * @param {object} data - { answer, winners, missed, giveup, round, totalRounds }
+ */
+exports.notifyQuizRoundEnd = function (roomId, data) {
+    if (!isEnabled || !isReady || !channel) return;
+    if (!data) return;
+
+    safeExecute(async () => {
+        const { answer, winners, missed, giveup, round, totalRounds } = data;
+        const roundText = (round && totalRounds) ? ` (${round}/${totalRounds})` : '';
+
+        const lines = [];
+        lines.push(`**정답: ${answer}**`);
+
+        if (winners && winners.length > 0) {
+            lines.push('');
+            lines.push('✅ **맞힌 사람**');
+            winners.forEach(function (name, i) { lines.push(`${i + 1}. ${name}`); });
+        }
+
+        if (missed && missed.length > 0) {
+            lines.push('');
+            lines.push('❌ **맞히지 못한 사람**');
+            missed.forEach(function (name) { lines.push(`• ${name}`); });
+        }
+
+        if (giveup && giveup.length > 0) {
+            lines.push('');
+            lines.push('🏳️ **포기한 사람**');
+            giveup.forEach(function (name) { lines.push(`• ${name}`); });
+        }
+
+        const embed = new EmbedBuilder()
+            .setColor(0x3498DB)
+            .setTitle(`📝 ${roomId}번 방 라운드 종료${roundText}`)
+            .setDescription(lines.join('\n'))
+            .setTimestamp();
+
+        await channel.send({ embeds: [embed] });
+    }, 'notifyQuizRoundEnd');
+};
+
+/**
  * Notify game over with score rankings
  * @param {number} roomId - Room ID
  * @param {Array} rankings - Array of {name, score, rank, robot} sorted by score

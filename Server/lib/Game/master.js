@@ -82,18 +82,21 @@ function handleDiscordProcessMessage(msg) {
   switch (msg.type) {
     case "query-online-user": {
       var foundUser = null;
-      for (var uid in DIC) {
-        var $u = DIC[uid];
-        if (!$u) continue;
-        if (uid === msg.query) {
-          foundUser = { profile: $u.profile, data: $u.data };
-          break;
-        }
-        var uTitle = $u.profile && $u.profile.title;
-        var uName = $u.profile && $u.profile.name;
-        if ((uTitle && uTitle === msg.query) || (uName && uName === msg.query)) {
-          foundUser = { profile: $u.profile, data: $u.data };
-          break;
+      // O(1) 직접 ID 조회
+      if (DIC[msg.query]) {
+        var $du = DIC[msg.query];
+        foundUser = { profile: $du.profile, data: $du.data };
+      } else {
+        // 닉네임/칭호 검색 fallback
+        for (var uid in DIC) {
+          var $u = DIC[uid];
+          if (!$u) continue;
+          var uTitle = $u.profile && $u.profile.title;
+          var uName = $u.profile && $u.profile.name;
+          if ((uTitle && uTitle === msg.query) || (uName && uName === msg.query)) {
+            foundUser = { profile: $u.profile, data: $u.data };
+            break;
+          }
         }
       }
       try {
@@ -103,13 +106,17 @@ function handleDiscordProcessMessage(msg) {
     }
     case "send-roommsg": {
       var rid = msg.roomId;
-      var rmExists = !!(ROOM && ROOM[rid]);
+      var rmRoom = ROOM && ROOM[rid];
+      var rmExists = !!rmRoom;
       var rmSent = 0;
       if (rmExists) {
         var rmData = JSON.stringify({ type: "chat", value: msg.message, notice: true, profile: { title: "관리자" } });
-        for (var k in DIC) {
-          if (DIC[k].place == rid && DIC[k].socket && DIC[k].socket.readyState == 1) {
-            DIC[k].socket.send(rmData);
+        // players 배열 직접 순회 (전체 DIC 순회 대신) - O(n_room) vs O(n_total)
+        var rmPlayers = rmRoom.players || [];
+        for (var pi = 0; pi < rmPlayers.length; pi++) {
+          var $p = DIC[rmPlayers[pi]];
+          if ($p && $p.socket && $p.socket.readyState == 1) {
+            $p.socket.send(rmData);
             rmSent++;
           }
         }
@@ -273,19 +280,23 @@ function processAdmin(id, value) {
     case "ban":
       try {
         var args = value.split(",");
+        var banUntil = 0;
+        var banUntilStr = "";
         if (args.length == 2) {
-          MainDB.users.update(["_id", args[0].trim()]).set(["black", args[1].trim()]).on();
+          MainDB.users.update(["_id", args[0].trim()]).set(["black", args[1].trim()], ["blockeduntil", ""]).on();
         } else if (args.length == 3) {
+          banUntil = addDate(parseInt(args[2].trim())) || 0;
+          banUntilStr = banUntil ? String(banUntil) : "";
           MainDB.users
             .update(["_id", args[0].trim()])
-            .set(["black", args[1].trim()], ["blockedUntil", addDate(parseInt(args[2].trim()))])
+            .set(["black", args[1].trim()], ["blockeduntil", banUntilStr])
             .on();
         } else return null;
 
         JLog.info(`[Block] 사용자 #${args[0].trim()}(이)가 이용제한 처리되었습니다.`);
 
         if ((temp = DIC[args[0].trim()])) {
-          temp.socket.send('{"type":"error","code":410}');
+          temp.send("error", { code: 410, message: args[1].trim(), blockedUntil: banUntilStr });
           temp.socket.close();
         }
       } catch (e) {
@@ -311,7 +322,7 @@ function processAdmin(id, value) {
       return null;
     case "unban":
       try {
-        MainDB.users.update(["_id", value]).set(["black", null], ["blockedUntil", 0]).on();
+        MainDB.users.update(["_id", value]).set(["black", null], ["blockeduntil", ""]).on();
         JLog.info(`[Block] 사용자 #${value}(이)가 이용제한 해제 처리되었습니다.`);
       } catch (e) {
         processAdminErrorCallback(e, id);
@@ -430,8 +441,12 @@ Cluster.on("message", function (worker, msg) {
       } else {
         ROOM[msg.room.id] = new KKuTu.Room(msg.room, msg.room.channel);
         JLog.info(`[IPC] room-new: Room ${msg.room.id} created on master (channel: ${msg.room.channel})`);
-        // Discord notification
-        discordSend("notify-room-create", { roomId: msg.room.id, room: msg.room, realPassword: msg.realPassword });
+        // Discord notification - readies/players/game 등 불필요한 필드 제외하고 Discord가 실제 쓰는 필드만 전송
+        discordSend("notify-room-create", {
+          roomId: msg.room.id,
+          room: { title: msg.room.title, mode: msg.room.mode, limit: msg.room.limit, round: msg.room.round, time: msg.room.time, opts: msg.room.opts },
+          realPassword: msg.realPassword
+        });
       }
       break;
     case "room-come":
@@ -598,6 +613,9 @@ Cluster.on("message", function (worker, msg) {
       break;
     case "round-end":
       discordSend("notify-round-end", { roomId: msg.room, chainLog: msg.chainLog, round: msg.round, totalRounds: msg.totalRounds });
+      break;
+    case "quiz-round-end":
+      discordSend("notify-quiz-round-end", { roomId: msg.room, data: msg.data });
       break;
     case "game-over":
       discordSend("notify-game-over", { roomId: msg.room, rankings: msg.rankings });
@@ -772,7 +790,7 @@ exports.init = function (_SID, CHAN) {
 
             if (ref.blockedUntil < Date.now()) {
               DIC[$c.id] = $c;
-              MainDB.users.update(["_id", $c.id]).set(["blockedUntil", 0], ["black", null]).on();
+              MainDB.users.update(["_id", $c.id]).set(["blockeduntil", ""], ["black", null]).on();
               JLog.info(`사용자 #${$c.id}의 이용제한이 해제되었습니다.`);
               isBlockRelease = true;
             }
@@ -799,17 +817,11 @@ exports.init = function (_SID, CHAN) {
               }
             } else {
               /* Enhanced User Block System [S] */
-              if (ref.blockedUntil)
-                $c.send("error", {
-                  code: ref.result,
-                  message: ref.black,
-                  blockedUntil: ref.blockedUntil,
-                });
-              else
-                $c.send("error", {
-                  code: ref.result,
-                  message: ref.black,
-                });
+              $c.send("error", {
+                code: ref.result,
+                message: ref.black,
+                blockedUntil: ref.blockedUntil || 0,
+              });
               /* Enhanced User Block System [E] */
 
               $c._error = ref.result;

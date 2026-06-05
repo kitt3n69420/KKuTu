@@ -148,6 +148,11 @@ function applyTheme(theme) {
 	else if (theme === 'yellow') document.body.classList.add('theme-yellow');
 	else if (theme === 'green') document.body.classList.add('theme-green');
 }
+function applyDarkMode(setting) {
+	var isDark = setting === 'dark' || (setting === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+	if (isDark) document.body.classList.add('dark-mode');
+	else document.body.classList.remove('dark-mode');
+}
 
 function applyOptions(opt) {
 	$data.opts = opt;
@@ -203,13 +208,25 @@ function applyOptions(opt) {
 
 	// 테마 적용
 	applyTheme(savedSettings.theme || 'blue');
+	applyDarkMode(savedSettings.darkMode || 'light');
+	ACTIVE_BEAT = resolveActiveBeat(savedSettings.beatMode || 'auto', savedSettings.soundPack || ($data.opts && $data.opts.sp) || '');
+}
+
+function resolveActiveBeat(beatMode, packName) {
+	if (beatMode === 'km') return BEAT_KM;
+	if (beatMode === 'mid') return BEAT_Mid;
+	if (beatMode === 'default') return BEAT;
+	// auto: 팩 이름 기반 자동 선택
+	if (packName === '키뮤') return BEAT_KM;
+	if (packName === '오리지널' || packName === '테크노' || packName === '병맛') return BEAT_Mid;
+	return BEAT;
 }
 
 function loadVolumeSettings() {
 	try {
-		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMuteGame: null, aiMuteLobby: null, aiRageQuit: null, aiFastMode: null, theme: null };
+		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMuteGame: null, aiMuteLobby: null, aiRageQuit: null, aiFastMode: null, theme: null, darkMode: null, beatMode: null };
 	} catch (e) {
-		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null, theme: null };
+		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null, theme: null, darkMode: null };
 	}
 }
 
@@ -821,25 +838,39 @@ function onMessage(data) {
 					break;
 				}
 				/* Enhanced User Block System [S] */
-				if (!data.blockedUntil) break;
-
-				var blockedUntil = new Date(parseInt(data.blockedUntil));
-				var block = "\n제한 시점: " + blockedUntil.getFullYear() + "년 " + blockedUntil.getMonth() + 1 + "월 " +
-					blockedUntil.getDate() + "일 " + blockedUntil.getHours() + "시 " + blockedUntil.getMinutes() + "분까지";
-
-				showAlert("[#444] " + L['error_444'] + i + block);
+				$data._bannedClose = true;
+				var block444 = data.blockedUntil ? (function() {
+					var d = new Date(parseInt(data.blockedUntil));
+					return "\n제한 기한: " + d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " +
+						d.getDate() + "일 " + d.getHours() + "시 " + d.getMinutes() + "분까지";
+				})() : "\n제한 기한: 영구 제한";
+				showAlert("[#444] " + L['error_444'] + i + block444);
 				break;
 			} else if (data.code == 446) {
 				i = data.reasonBlocked;
-				if (!data.ipBlockedUntil) break;
-
-				var blockedUntil = new Date(parseInt(data.ipBlockedUntil));
-				var block = "\n제한 시점: " + blockedUntil.getFullYear() + "년 " + blockedUntil.getMonth() + 1 + "월 " +
-					blockedUntil.getDate() + "일 " + blockedUntil.getHours() + "시 " + blockedUntil.getMinutes() + "분까지";
-
-				showAlert("[#446] " + L['error_446'] + i + block);
+				$data._bannedClose = true;
+				var block446 = data.ipBlockedUntil ? (function() {
+					var d = new Date(parseInt(data.ipBlockedUntil));
+					return "\n제한 기한: " + d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " +
+						d.getDate() + "일 " + d.getHours() + "시 " + d.getMinutes() + "분까지";
+				})() : "\n제한 기한: 영구 제한";
+				showAlert("[#446] " + L['error_446'] + i + block446);
 				break;
 				/* Enhanced User Block System [E] */
+			} else if (data.code == 410) {
+				if (i) {
+					$data._bannedClose = true;
+					var msg410 = "[#410] " + L['error_410'] + "\n차단 사유: " + i;
+					if (data.blockedUntil) {
+						var bu410 = new Date(parseInt(data.blockedUntil));
+						msg410 += "\n제한 기한: " + bu410.getFullYear() + "년 " + (bu410.getMonth() + 1) + "월 " +
+							bu410.getDate() + "일 " + bu410.getHours() + "시 " + bu410.getMinutes() + "분까지";
+					} else {
+						msg410 += "\n제한 기한: 영구 제한";
+					}
+					showAlert(msg410);
+					break;
+				}
 			} else if (data.code === 447) {
 				showAlert(L['security_bot_check_fail']);
 				break;
@@ -3138,7 +3169,7 @@ function clearBoard() {
 	$stage.dialog.dress.hide();
 	$stage.dialog.charFactory.hide();
 	$(".jjoriping,.rounds,.game-body").removeClass("cw");
-	$(".jjoriping").removeClass("flip");
+	$(".jjoriping,.game-body").removeClass("flip");
 	$(".jjoriping").css({ "float": "", "margin": "" });
 	// Small-mode class is managed by updateRoom() based on player count, don't remove it here
 	$stage.game.display.removeClass("raingame-board").empty();
@@ -3677,12 +3708,13 @@ var BONUS_COLORS = {
 };
 Object.defineProperty(BONUS_COLORS, 'linking', {
 	get: function() {
-		if (document.body.classList.contains('theme-red')) return 'rgb(239, 154, 154)';
-		if (document.body.classList.contains('theme-orange')) return 'rgb(255, 204, 128)';
-		if (document.body.classList.contains('theme-gray')) return 'rgb(189, 189, 189)';
-		if (document.body.classList.contains('theme-yellow')) return 'rgb(255, 224, 130)';
-		if (document.body.classList.contains('theme-green')) return 'rgb(174, 213, 129)';
-		return 'rgb(146, 203, 250)';
+		var dark = document.body.classList.contains('dark-mode');
+		if (document.body.classList.contains('theme-red')) return dark ? 'rgb(239, 154, 154)' : 'rgb(239, 154, 154)';
+		if (document.body.classList.contains('theme-orange')) return dark ? 'rgb(255, 204, 128)' : 'rgb(255, 204, 128)';
+		if (document.body.classList.contains('theme-gray')) return dark ? 'rgb(189, 189, 189)' : 'rgb(189, 189, 189)';
+		if (document.body.classList.contains('theme-yellow')) return dark ? 'rgb(255, 224, 130)' : 'rgb(255, 224, 130)';
+		if (document.body.classList.contains('theme-green')) return dark ? 'rgb(174, 213, 129)' : 'rgb(174, 213, 129)';
+		return dark ? 'rgb(144, 202, 249)' : 'rgb(146, 203, 250)';
 	},
 	enumerable: true,
 	configurable: true
@@ -3692,7 +3724,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 	var mode = MODE[$data.room.mode];
 	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK";
 	var isRev = (mode == "KAP" || mode == "KAK" || mode == "EAP" || mode == "EAK");
-	var beat = BEAT[len = text.length];
+	var beat = (ACTIVE_BEAT || BEAT)[len = text.length];
 	var ta, kkt;
 	var i, j = 0;
 	var $l;

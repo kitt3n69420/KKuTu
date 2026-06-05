@@ -18,6 +18,7 @@
 
 var MODE;
 var ALWAYS_SURVIVAL_MODES = ['KWR', 'EWR', 'KWS', 'EWS'];
+var PACK_TOOLTIP = { '키뮤': 'Kimu-Nowchira 제공 · CC BY-NC 4.0' };
 var BEAT = [null,
 	"10000000",
 	"10001000",
@@ -28,17 +29,7 @@ var BEAT = [null,
 	"11111110",
 	"11111111"
 ];
-var BEAT_Back = [null,
-	"10000000",
-	"10000010",
-	"10000011",
-	"10010011",
-	"10011011",
-	"11011011",
-	"11011111",
-	"11111111"
-];
-var BEAT_TK = [null,
+var BEAT_KM = [null,
 	"10000000",
 	"10000010",
 	"10000011",
@@ -58,6 +49,7 @@ var BEAT_Mid = [null,
 	"11011111",
 	"11111111"
 ];
+var ACTIVE_BEAT = null;
 var NULL_USER = {
 	profile: { title: L['null'] },
 	data: { score: 0 }

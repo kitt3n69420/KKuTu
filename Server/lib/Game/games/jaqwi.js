@@ -157,6 +157,15 @@ exports.turnEnd = function () {
 		my.byMaster('turnEnd', {
 			answer: my.game.answer ? my.game.answer._id : ""
 		});
+		if (typeof my.sendQuizRoundEnd === 'function') {
+			var _ans = my.game.answer._id;
+			var _winners = (my.game.winner || []).slice();
+			var _giveup = (my.game.giveup || []).slice();
+			var _missed = (my.game.seq || []).filter(function (id) {
+				return _winners.indexOf(id) === -1 && _giveup.indexOf(id) === -1;
+			});
+			my.sendQuizRoundEnd(_ans, _winners, _missed, _giveup, my.game.round);
+		}
 	}
 	// 기존 타이머가 있으면 취소 후 새로 등록
 	clearTimeout(my.game._rrt);

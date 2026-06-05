@@ -16,30 +16,56 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// 플레이어 배경색 (인덱스 0 = 미소유)
+// 플레이어 배경색 (인덱스 0 = 미소유) — 라이트 모드
 $lib.Flip._PLAYER_COLORS = [
-	'#42341a',  // 0: 미소유 (회색)
-	'#fffea4',  // 1P: 연빨강
-	'#b7f3f1',  // 9P: 연두색
-	'#feb482',  // 3P: 연노랑
-	'#8ce7a1',  // 4P: 연초록
-	'#fda09b',  // 5P: 연보라
-	'#d0bcfe',  // 6P: 연주황
-	'#dfbb9c',  // 7P: 하늘색
-	'#F7b1e6',  // 8P: 연분홍
-	'#a1cafe',  // 2P: 남색 계열
-	'#cfcfcf',  // 10P: 탁한 연빨강
-	'#e178c2',  // 11P: 탁한 연노랑
-	'#11bdce'   // 12P: 탁한 연파랑
+	'#42341a',  // 0: 미소유
+	'#fffea4',  // 1P
+	'#b7f3f1',  // 2P
+	'#fda09b',  // 5P
+	'#d0bcfe',  // 6P
+	'#cfcfcf',  // 10P
+	'#dfbb9c',  // 7P
+	'#8ce7a1',  // 4P
+	'#F7b1e6',  // 8P
+	'#feb482',  // 3P
+	'#a1cafe',  // 9P
+	'#e178c2',  // 11P
+	'#11bdce'   // 12P
 ];
 
-// 팀 테두리색
+// 플레이어 배경색 — 다크 모드 (HSL L-inversion 후 S×0.8, L×1.5)
+$lib.Flip._PLAYER_COLORS_DARK = [
+	'#000000',  // 0: 미소유  H39  S34  L100(cap)
+	'#979516',  // 1P        H59  S80  L27
+	'#2ca09a',  // 2P        H178 S58  L24
+	'#b72018',  // 5P        H3   S77  L30
+	'#592ac6',  // 6P        H258 S78  L20
+	'#808080',  // 10P       H0   S0   L29
+	'#957a4d',  // 7P        H28  S41  L39
+	'#2fa54b',  // 4P        H134 S53  L41
+	'#a131a3',  // 8P        H315 S66  L26
+	'#d1741d',  // 3P        H24  S78  L38
+	'#2265be',  // 9P        H214 S78  L29
+	'#cd678c',  // 11P       H318 S51  L48
+	'#93c757'   // 12P       H185 S68  L84
+];
+
+// 팀 배경색 — 라이트 모드
 $lib.Flip._TEAM_COLORS = [
 	'',         // 0: 팀 없음
 	'#8CA6FF',  // 팀 1
 	'#9575CD',  // 팀 2
 	'#F06292',  // 팀 3
 	'#FFCA28'   // 팀 4
+];
+
+// 팀 배경색 — 다크 모드 (HSL L-inversion 후 S×0.8, L×1.5)
+$lib.Flip._TEAM_COLORS_DARK = [
+	'',         // 0: 팀 없음
+	'#11319b',  // 팀 1  H226 S80  L34
+	'#8263b8',  // 팀 2  H262 S37  L55
+	'#d42e66',  // 팀 3  H340 S66  L51
+	'#ecc756'   // 팀 4  H45  S80  L63
 ];
 
 $lib.Flip._getPlayerIndex = function (ownerId) {
@@ -84,14 +110,16 @@ $lib.Flip._buildColorMap = function () {
 };
 
 $lib.Flip._getPlayerColor = function (ownerId) {
-	if (!ownerId || !$data._flipColorMap || !$data._flipColorMap[ownerId]) return $lib.Flip._PLAYER_COLORS[0];
-	return $lib.Flip._PLAYER_COLORS[$data._flipColorMap[ownerId]];
+	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK : $lib.Flip._PLAYER_COLORS;
+	if (!ownerId || !$data._flipColorMap || !$data._flipColorMap[ownerId]) return colors[0];
+	return colors[$data._flipColorMap[ownerId]];
 };
 
 $lib.Flip._applyUserCardColors = function () {
 	if (!$data._flipColorMap) return;
+	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK : $lib.Flip._PLAYER_COLORS;
 	for (var id in $data._flipColorMap) {
-		var color = $lib.Flip._PLAYER_COLORS[$data._flipColorMap[id]];
+		var color = colors[$data._flipColorMap[id]];
 		$("#game-user-" + id).css('background-color', color);
 	}
 };
@@ -115,7 +143,7 @@ $lib.Flip.roundReady = function (data, spec) {
 	clearBoard();
 	$data._relay = true;
 	$(".jjoriping,.rounds,.game-body").addClass("cw");
-	$(".jjoriping").addClass("flip");
+	$(".jjoriping,.game-body").addClass("flip");
 	$data._board = data.board;
 	$data._owners = data.owners;
 	$data._roundTime = $data.room.time * 1000;
@@ -206,12 +234,15 @@ $lib.Flip.drawDisplay = function () {
 		owner = $data._owners[i];
 		playerColor = $lib.Flip._getPlayerColor(owner);
 
+		var isDark = document.body.classList.contains('dark-mode');
+		var teamColors = isDark ? $lib.Flip._TEAM_COLORS_DARK : $lib.Flip._TEAM_COLORS;
+
 		borderColor = '';
 		bgColor = playerColor;
 		if (owner) {
 			teamId = $lib.Flip._getOwnerTeam(owner);
 			if (teamId) {
-				bgColor = $lib.Flip._TEAM_COLORS[teamId] || playerColor;
+				bgColor = teamColors[teamId] || playerColor;
 				borderColor = playerColor;
 			}
 		}
@@ -224,7 +255,7 @@ $lib.Flip.drawDisplay = function () {
 				height: CELL_H + "%",
 				'background-color': bgColor,
 				'border': borderColor ? ('3px solid ' + borderColor) : '1px solid #999',
-				'color': (owner ? '#000' : '#FFF'),
+				'color': isDark ? ('#FFF') : (owner ? '#000' : '#FFF'),
 				'font-weight': (isNyh || isEnFlip) ? 'normal' : 'bold',
 				'font-size': isEnFlip ? '80%' : ''
 			})

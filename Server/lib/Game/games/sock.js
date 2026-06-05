@@ -179,8 +179,11 @@ function robotSubmitOne(my, robot) {
 
 	robot._sockTimer = setTimeout(function () {
 		if (my.game.late || !my.gaming) return;
-		robot._sockSubmitted = (robot._sockSubmitted || 0) + 1;
+		var prevLen = my.game.words ? my.game.words.length : 0;
 		my.turnRobot(robot, picked);
+		if (my.game.words && my.game.words.length > prevLen) {
+			robot._sockSubmitted = (robot._sockSubmitted || 0) + 1;
+		}
 		robotSubmitOne(my, robot);
 	}, typingTime);
 }
@@ -233,7 +236,11 @@ exports.roundReady = function () {
 		sql += " ORDER BY log(greatest(hit, 2)) + random() * 3 DESC LIMIT 1500";
 
 		DB.kkutu[my.rule.lang].direct(sql, function (err, res) {
-			if (err || !res) return;
+			if (err || !res) {
+				my.game.round--;
+				my.game.turnTimer = setTimeout(my.roundReady, 3000);
+				return;
+			}
 			var $docs = res.rows.slice();
 			for (var si = $docs.length - 1; si > 0; si--) {
 				var sj = Math.floor(Math.random() * (si + 1));

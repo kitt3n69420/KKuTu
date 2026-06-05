@@ -1,4 +1,4 @@
-/*
+ /*
  * KKuTu Quiz Adder (Multi-file TSV support)
  * 
  * Usage: node add_quiz_multi.js
@@ -145,21 +145,18 @@ async function processTsvFile(filename) {
             }
 
             try {
-                // Check for duplicate (simple check on question+topic)
+                // PK is (question, answer_ko)
                 var checkRes = await client.query(
-                    "SELECT 1 FROM quiz WHERE topic = $1 AND question = $2",
-                    [topicPrefix, question]
+                    "SELECT 1 FROM quiz WHERE question = $1 AND answer_ko = $2",
+                    [question, ansKo]
                 );
 
                 if (checkRes.rowCount > 0) {
-                    // Update? Or skip? Let's skip duplicates for now to be safe, or update if explicitly requested.
-                    // Let's update in case of correction.
                     await client.query(
-                        "UPDATE quiz SET answer_ko = $3, answer_en = $4, aliases_ko = $5, aliases_en = $6, difficulty = $7 WHERE topic = $1 AND question = $2",
-                        [topicPrefix, question, ansKo, ansEn, aliasKo, aliasEn, diff]
+                        "UPDATE quiz SET topic = $3, answer_en = $4, aliases_ko = $5, aliases_en = $6, difficulty = $7 WHERE question = $1 AND answer_ko = $2",
+                        [question, ansKo, topicPrefix, ansEn, aliasKo, aliasEn, diff]
                     );
-                    // console.log("    Updated: " + question);
-                    insertedCount++; // Count as processed
+                    insertedCount++;
                 } else {
                     await client.query(
                         "INSERT INTO quiz (topic, question, answer_ko, answer_en, aliases_ko, aliases_en, difficulty) VALUES ($1, $2, $3, $4, $5, $6, $7)",

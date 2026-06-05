@@ -54,12 +54,52 @@ const VOWEL_INV_MAP = {
 var AttackCache = {};
 var AttackCacheSize = 0;
 var ATTACK_CACHE_MAX_BYTES = 1024 * 1024; // 1MB
+// 매너 체크 DB 쿼리 결과 캐시 (5분 TTL, DB 부하 감소)
+var MannerCache = {};
+var MANNER_CACHE_TTL = 5 * 60 * 1000;
+// 제시어 후보 풀: key="f:ko:3" or "r:ko:3" → 18개 버킷 배열 (음절 그룹별)
+var titlePool = {};
+var titlePoolRefilling = {};
+var TITLE_POOL_MIN = 8;
+
+function _koSyllableGroup(code) {
+	var c = code - 44032;
+	return (c >= 0 && c < 11172) ? Math.floor(c / 588) : -1;
+}
+
+function _fillTitlePool(isReverse, lang, wordLen) {
+	var key = (isReverse ? 'r' : 'f') + ':' + lang + ':' + wordLen;
+	if (titlePoolRefilling[key]) return;
+	titlePoolRefilling[key] = true;
+	var q = (lang === 'ko')
+		? ('SELECT _id FROM kkutu_ko TABLESAMPLE BERNOULLI(10) WHERE LENGTH(_id) = ' + wordLen + ' AND type IS NOT NULL LIMIT 200')
+		: ('SELECT _id FROM kkutu_en TABLESAMPLE BERNOULLI(10) WHERE LENGTH(_id) = ' + wordLen + ' LIMIT 200');
+	DB.kkutu[lang].direct(q, function(err, res) {
+		titlePoolRefilling[key] = false;
+		if (err || !res || !res.rows) return;
+		if (!titlePool[key]) {
+			titlePool[key] = [];
+			for (var _i = 0; _i < 19; _i++) titlePool[key].push([]);
+		}
+		res.rows.forEach(function(r) {
+			var w = r._id;
+			var refChar = isReverse ? w[w.length - 1] : w[0];
+			if (!refChar) return;
+			var g = _koSyllableGroup(refChar.charCodeAt(0));
+			if (g >= 0) titlePool[key][g].push(w);
+		});
+	});
+}
 // stats 테이블 인메모리 조회 헬퍼
 function getStatsDoc(lang, id) {
 	return (DB.statsData && DB.statsData[lang] && DB.statsData[lang][id]) || null;
 }
+var _statsDocsCache = {};
 function getAllStatsDocs(lang) {
-	return (DB.statsData && DB.statsData[lang]) ? Object.values(DB.statsData[lang]) : [];
+	if (_statsDocsCache[lang]) return _statsDocsCache[lang];
+	var docs = (DB.statsData && DB.statsData[lang]) ? Object.values(DB.statsData[lang]) : [];
+	if (docs.length > 0) _statsDocsCache[lang] = docs;
+	return docs;
 }
 
 // Helper function to get player ID (supports both robot objects and player ID strings)
@@ -236,6 +276,11 @@ exports.init = function (_DB, _DIC, _checkSwear) {
 	DB = _DB;
 	DIC = _DIC;
 	checkSwearWords = _checkSwear;
+	// 서버 시작 시 제시어 풀 백그라운드 워밍업 (라운드 전환 시 DB 쿼리 방지)
+	[2, 3, 4, 5].forEach(function(len) {
+		_fillTitlePool(false, 'ko', len);
+		_fillTitlePool(true,  'ko', len);
+	});
 };
 exports.getTitle = function () {
 	var R = new Lizard.Tail();
@@ -331,6 +376,27 @@ exports.getTitle = function () {
 				ja = 44032 + 588 * Math.floor(Math.random() * 18);
 				eng = "[\\u" + ja.toString(16) + "-\\u" + (ja + 587).toString(16) + "]$";
 			}
+		}
+		// 제시어 풀에서 먼저 시도 (KSH/KAP 한국어, DB 쿼리 없음)
+		if (l.lang === 'ko' && ja && h < 8) {
+			var _gl = Math.floor((ja - 44032) / 588);
+			var _wl = 1 + Math.max(1, my.round - 1);
+			var _rgt = Const.GAME_TYPE[my.mode];
+			var _rev = (_rgt === 'KAP' || _rgt === 'KAK');
+			var _pk = (_rev ? 'r' : 'f') + ':ko:' + _wl;
+			var _bk = titlePool[_pk] && titlePool[_pk][_gl];
+			if (_bk && _bk.length > 0) {
+				var _ci = Math.floor(Math.random() * _bk.length);
+				var _cw = _bk.splice(_ci, 1)[0];
+				if (_bk.length < TITLE_POOL_MIN) _fillTitlePool(_rev, 'ko', _wl);
+				checkTitle(_cw).then(function(v) {
+					if (_titleResolved) return;
+					if (v) safeGo(v);
+					else tryTitle(h + 1);
+				});
+				return;
+			}
+			_fillTitlePool(_rev, 'ko', _wl);
 		}
 		var titleTypeFilter = (l.lang == "ko") ? (my.opts.allpos ? null : ['type', Const.KOR_GROUP]) : ['_id', Const.ENG_ID];
 		var titleArgs = [['_id', new RegExp(eng + ".{" + Math.max(1, my.round - 1) + "}$")]];
@@ -3965,11 +4031,30 @@ function getAuto(char, subc, type, limit, sort) {
 				};
 				break;
 		}
+		// MannerCache: type=2 (매너 체크) 결과를 5분간 캐시하여 반복 DB 쿼리 방지
+		var _mck = null;
+		if (type === 2) {
+			_mck = adv + ':' + my.rule.lang + ':' + (my.opts.injeong ? 1 : 0) + ':' + (my.opts.loanword ? 1 : 0) + ':' + (my.opts.allpos ? 1 : 0) + ':' + (my.opts.strict ? 1 : 0);
+			if (MannerCache[_mck] && MannerCache[_mck].t > Date.now() - MANNER_CACHE_TTL) {
+				var _mc = MannerCache[_mck].d;
+				aft(my.game.chain ? _mc.filter(function(item) { return !my.game.chain.includes(item._id); }) : _mc);
+				return;
+			}
+		}
 		var raiser = DB.kkutu[my.rule.lang].find.apply(this, aqs);
 		if (sort) raiser.sort(sort);
 		// KKU 모드에서는 매너 체크를 위해 실제 단어 개수를 세어야 하므로 limit을 크게 설정
 		var limitValue = (bool && gameType === 'KKU') ? 10000 : ((bool ? 1 : 123) * (limit || 1));
 		raiser.limit(limitValue).on(function ($md) {
+			if (_mck) {
+				var _now = Date.now();
+				if (Object.keys(MannerCache).length > 500) {
+					for (var _k in MannerCache) {
+						if (MannerCache[_k].t < _now - MANNER_CACHE_TTL) delete MannerCache[_k];
+					}
+				}
+				MannerCache[_mck] = { t: _now, d: $md };
+			}
 			if (my.game.chain) aft($md.filter(function (item) {
 				return !my.game.chain.includes(item._id);
 			}));

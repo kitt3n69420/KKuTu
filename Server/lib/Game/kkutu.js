@@ -45,7 +45,7 @@ var aiNameCacheSingle = []; // 단일 단어용 (2~7글자)
 var aiNameCacheFirst = [];  // 두 단어 조합용 첫 번째 (2~5글자)
 var aiNameCacheSecond = []; // 두 단어 조합용 두 번째 (2~5글자)
 var aiNameCacheRefilling = false; // 리필 중 플래그
-const AI_NAME_CACHE_SIZE = 100;  // 한 번에 가져올 단어 수
+const AI_NAME_CACHE_SIZE = 300;  // 한 번에 가져올 단어 수
 const AI_NAME_CACHE_THRESHOLD = 20; // 리필 시작 임계값
 
 // ========== Aho-Corasick 욕설 필터 ==========
@@ -238,21 +238,25 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 			var elapsed = now - c._lastHeartbeat;
 			if (elapsed > 100000) {
 				JLog.warn('Heartbeat timeout #' + c.id + ' (' + Math.round(elapsed / 1000) + 's)');
-				// terminate() 전에 직접 cleanup (close 이벤트가 안 올 수 있으므로)
-				try {
-					if (ROOM[c.place]) ROOM[c.place].go(c, null, "timeout");
-					if (c.subPlace && c.pracRoom) {
-						if (c.pracRoom.gaming) c.pracRoom.interrupt();
-						c.pracRoom.go(c);
-						c.pracRoom = null;
-						c.subPlace = 0;
-					}
-				} catch (e) {
-					JLog.error('Heartbeat cleanup error #' + c.id + ': ' + e.toString());
-				}
 				c._ghostCleaned = true;
-				exports.onClientClosed(c, 4000);
 				c.socket.terminate();
+				// 방 정리는 다음 틱에 실행하여 heartbeat 루프 블로킹 방지
+				(function(_c) {
+					setImmediate(function() {
+						try {
+							if (ROOM[_c.place]) ROOM[_c.place].go(_c, null, "timeout");
+							if (_c.subPlace && _c.pracRoom) {
+								if (_c.pracRoom.gaming) _c.pracRoom.interrupt();
+								_c.pracRoom.go(_c);
+								_c.pracRoom = null;
+								_c.subPlace = 0;
+							}
+						} catch (e) {
+							JLog.error('Heartbeat cleanup error #' + _c.id + ': ' + e.toString());
+						}
+						exports.onClientClosed(_c, 4000);
+					});
+				})(c);
 				continue;
 			}
 			if (c.socket.readyState === 1) {
@@ -1017,7 +1021,7 @@ exports.Client = function (socket, profile, sid) {
 			var first = !$user;
 			var black = first ? "" : $user.black;
 			/* Enhanced User Block System [S] */
-			const blockedUntil = (first || !$user.blockedUntil) ? null : $user.blockedUntil;
+			const blockedUntil = (first || !$user.blockeduntil) ? null : $user.blockeduntil;
 			/* Enhanced User Block System [E] */
 
 			if (first) $user = { money: 0 };
@@ -2599,7 +2603,8 @@ exports.Room = function (room, channel) {
 			} else my.opts.injpick = [];
 			if (my.rule.opts.includes("qij")) {
 				var rawQuizpick = Array.isArray(room.opts.quizpick) ? room.opts.quizpick : [];
-				my.opts.quizpick = rawQuizpick.filter(function (item) { return typeof item === 'string'; });
+				var allowedQuizTopics = my.rule.lang === 'en' ? Const.QUIZ_TOPIC_EN : Const.QUIZ_TOPIC;
+				my.opts.quizpick = rawQuizpick.filter(function (item) { return typeof item === 'string' && allowedQuizTopics.indexOf(item) !== -1; });
 			} else my.opts.quizpick = [];
 			// 서바이벌 HP 옵션 처리 (허용 값만 사용)
 			var ALLOWED_SUR_HP = [200, 500, 1000, 2000];
@@ -3060,6 +3065,7 @@ exports.Room = function (room, channel) {
 					if (r.game && r.game.flipTimer) { clearTimeout(r.game.flipTimer); r.game.flipTimer = null; }
 					if (r._timerCatch) clearTimeout(r._timerCatch);
 					if (r._timer) clearTimeout(r._timer);
+					if (r._sockTimer) { clearTimeout(r._sockTimer); r._sockTimer = null; }
 				}
 			}
 		}
@@ -3079,6 +3085,32 @@ exports.Room = function (room, channel) {
 			DiscordBot.notifyRoundEnd(my.id, logCopy, r, totalRounds);
 		} else if (Cluster.isWorker) {
 			process.send({ type: "round-end", room: my.id, chainLog: logCopy, round: r, totalRounds: totalRounds });
+		}
+	};
+	my.sendQuizRoundEnd = function (answer, winnerIds, missedIds, giveupIds, round) {
+		var r = round || my.game.round || 0;
+		var totalRounds = my.round || 0;
+		function resolveId(id) {
+			if (DIC[id]) return my.getPlayerName(DIC[id]);
+			if (my.game.robots) {
+				for (var k in my.game.robots) {
+					if (my.game.robots[k] && my.game.robots[k].id === id) return my.getPlayerName(my.game.robots[k]);
+				}
+			}
+			return String(id);
+		}
+		var data = {
+			answer: answer,
+			winners: (winnerIds || []).map(resolveId),
+			missed: (missedIds || []).map(resolveId),
+			giveup: (giveupIds || []).map(resolveId),
+			round: r,
+			totalRounds: totalRounds
+		};
+		if (Cluster.isMaster && DiscordBot) {
+			DiscordBot.notifyQuizRoundEnd(my.id, data);
+		} else if (Cluster.isWorker) {
+			process.send({ type: "quiz-round-end", room: my.id, data: data });
 		}
 	};
 	// Helper: 라운드 전환 시 알림 전송 후 chainLog 초기화
@@ -4087,10 +4119,10 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 			rw.score += score * 2.0;
 			break;
 		case 'KTY':
-			rw.score += score * 1.2;
+			rw.score += score * 0.96;
 			break;
 		case 'ETY':
-			rw.score += score * 1.17;
+			rw.score += score * 0.936;
 			break;
 		case 'KAP':
 			rw.score += score * 1.9;
@@ -4127,10 +4159,10 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 			rw.score += score * 0.5;
 			break;
 		case "KWR":
-			rw.score += score * 2.0;
+			rw.score += score * 1.6;
 			break;
 		case "EWR":
-			rw.score += score * 1.8;
+			rw.score += score * 1.44;
 			break;
 		case 'KPF':
 		case 'EPF':
@@ -4141,6 +4173,15 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 			break;
 		case 'EQZ':
 			rw.score += score * 1.12;
+			break;
+		case 'CAL':
+			rw.score += score * 0.75;
+			break;
+		case 'KWS':
+		case 'EWS':
+		case 'KTT':
+		case 'ETT':
+			rw.score += score * 1.0;
 			break;
 		default:
 			rw.score += score * 1.25;
