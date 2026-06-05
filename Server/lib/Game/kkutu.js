@@ -291,7 +291,15 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 			}
 		}
 	}, 60000);
+// ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+	setInterval(function() {
+    var m = process.memoryUsage();
+    JLog.info('[MEM] rss=' + Math.round(m.rss/1024/1024) + 'MB heap=' + 
+              Math.round(m.heapUsed/1024/1024) + '/' + 
+              Math.round(m.heapTotal/1024/1024) + 'MB');
+}, 30000);
 };
+// ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
 
 // AI 이름 캐시 리필 함수
 function refillAiNameCache() {
@@ -3707,9 +3715,11 @@ exports.Room = function (room, channel) {
 		var dir = isReversed ? -1 : 1;
 		var next = cur;
 		var visited = 0;
+		var totalIter = 0; // 절대 카운터: visited--로 인한 무한 루프 방지
 
-		while (visited <= n) {
+		while (visited <= n && totalIter <= n * 2 + n) {
 			visited++;
+			totalIter++;
 			next = ((next + dir) % n + n) % n;
 			if (my.opts.survival) {
 				var p = DIC[seq[next]] || seq[next];
