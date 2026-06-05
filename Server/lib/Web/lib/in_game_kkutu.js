@@ -178,7 +178,6 @@ $(document).ready(function () {
 			return;
 		}
 	} catch (e) {
-		console.error("Language redirect error:", e);
 	}
 
 	var i;
@@ -367,7 +366,6 @@ $(document).ready(function () {
 	});
 
 	$.get("/soundpacks", function (packs) {
-		console.log("Loaded sound packs:", packs);
 		var $sel = $("#sound-pack");
 		packs.forEach(function (pack) {
 			$sel.append($("<option>").val(pack.name).text(pack.name));
@@ -415,7 +413,6 @@ $(document).ready(function () {
 
 		// 로비 BGM 설정 가져오기
 		$.get("/bgm", function (bgms) {
-			console.log("Loaded bgms:", bgms);
 			var $bgmSel = $("#lobby-bgm");
 			bgms.forEach(function (bgm) {
 				$bgmSel.append($("<option>").val(bgm).text(bgm.replace(".mp3", "")));
@@ -1082,7 +1079,6 @@ $(document).ready(function () {
 			var modeName = MODE[modeIndex];
 			var shouldShow = !allowedModes || !modeName || (allowedModes.indexOf(modeName) !== -1);
 
-			console.log("[Category Debug] Option:", modeIndex, modeName, shouldShow);
 			$(this).toggle(shouldShow);
 		});
 
@@ -1233,16 +1229,13 @@ $(document).ready(function () {
 			$("#view-all-rules-btn").show();
 
 			// Show/hide topic selection buttons in simple view
-			console.log("[Simple Room] rule.opts:", rule.opts, "ijp:", rule.opts.indexOf("ijp"), "qij:", rule.opts.indexOf("qij"));
 			if (rule.opts.indexOf("ijp") != -1) {
-				console.log("[Simple Room] Showing ijp panel");
 				$("#room-simple-injpick-panel").show();
 			} else {
 				$("#room-simple-injpick-panel").hide();
 			}
 
 			if (rule.opts.indexOf("qij") != -1) {
-				console.log("[Simple Room] Showing qij panel");
 				$("#room-simple-quizpick-panel").show();
 			} else {
 				$("#room-simple-quizpick-panel").hide();
@@ -1855,11 +1848,6 @@ $(document).ready(function () {
 		} else {
 			var personality = $("#ai-personality").val();
 			var preferredChar = $("#ai-preferred-char").val();
-			console.log("Practice Mode Settings (Captured):", {
-				level: level,
-				personality: personality,
-				preferredChar: preferredChar
-			});
 			send('practice', {
 				level: level,
 				personality: personality,

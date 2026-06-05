@@ -30,11 +30,9 @@ var DIC;
 var CATCH_WORDS = [];
 File.readFile(`${__dirname}/../../data/pquiz_catch.txt`, 'utf8', function (err, res) {
     if (err) {
-        console.warn('[Picture] pquiz_catch.txt not found or unreadable:', err.message);
         return;
     }
     CATCH_WORDS = res.split(/\r?\n/).map(function (w) { return w.trim(); }).filter(function (w) { return w.length > 0 && w[0] !== '#'; });
-    console.log('[Picture] Loaded', CATCH_WORDS.length, 'catch words.');
 });
 
 // Canvas size
@@ -510,17 +508,12 @@ exports.handlePass = function (client) {
     var my = this;
     var ijl = (my.opts.injpick && my.opts.injpick.length) ? my.opts.injpick.length : 0;
 
-    console.log('[Picture] handlePass called by:', client.id);
-
     // Get drawer id
     var drawerId = my.game.drawer;
     if (drawerId && drawerId.id) drawerId = drawerId.id;
 
-    console.log('[Picture] drawer:', drawerId, 'roundAt:', my.game.roundAt, 'passCount:', my.game.passCount);
-
     // Only drawer can pass
     if (client.id !== drawerId) {
-        console.log('[Picture] Pass rejected: not drawer');
         return;
     }
 
@@ -529,21 +522,17 @@ exports.handlePass = function (client) {
         var now = (new Date()).getTime();
         var timeSinceStart = now - my.game.roundAt;
         if (timeSinceStart > 5000) {
-            console.log('[Picture] Pass rejected: grace period (5s) expired');
             return;
         }
-        console.log('[Picture] Pass accepted within grace period:', timeSinceStart, 'ms');
     }
 
     // Check pass count limit (3 passes per round)
     if (my.game.passCount >= 3) {
-        console.log('[Picture] Pass rejected: max passes reached');
         return;
     }
 
     // Increment pass count
     my.game.passCount++;
-    console.log('[Picture] Pass accepted! New passCount:', my.game.passCount);
 
     // Reset round state for fresh start
     my.game.roundAt = null; // Allow pass button for new drawer

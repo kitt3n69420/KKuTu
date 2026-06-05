@@ -50,7 +50,6 @@ function send(type, data, toMaster) {
 
 	// WebSocket이 연결되지 않은 경우 전송하지 않음
 	if (subj.readyState !== _WebSocket.OPEN) {
-		console.warn("WebSocket is not open. readyState:", subj.readyState);
 		return;
 	}
 
@@ -362,11 +361,9 @@ function connectToRoom(chan, rid) {
 		if (rws) rws.close();
 	});
 	rws.onopen = function (e) {
-		console.log("room-conn", chan, rid);
 	};
 	rws.onmessage = _onMessage;
 	rws.onclose = function (e) {
-		console.log("room-disc", chan, rid);
 		rws = undefined;
 		clearInterval($data._tTime);
 		clearBoard();
@@ -378,7 +375,6 @@ function connectToRoom(chan, rid) {
 		}
 	};
 	rws.onerror = function (e) {
-		console.warn(L['error'], e);
 	};
 }
 function checkAge() {
@@ -936,8 +932,8 @@ function welcome() {
 		$("#Intro").hide();
 	}, 2000);
 
-	if ($data.admin) console.log("관리자 모드");
 }
+
 /* Item Mode */
 var ITEM_SLOTS = {
 	skip: { slot: 1, nameKey: 'itemSkip', icon: 'fa-forward' },
@@ -2686,7 +2682,6 @@ function requestRoomInfo(id) {
 
 	$data._roominfo = id;
 	$("#RoomInfoDiag .dialog-title").html(id + L['sRoomInfo']);
-	console.log("Room Info Title:", o.title, "BadWords:", badWords(o.title));
 	$("#ri-title").empty();
 	if (o.password) $("#ri-title").append($("<i>").addClass("fa fa-lock")).append("&nbsp;");
 	$("#ri-title").append(document.createTextNode(badWords(o.title)));
@@ -4596,7 +4591,6 @@ function notice(msg, head) {
 		.append($("<div>").addClass("chat-stamp").text(time.toLocaleTimeString()))
 	);
 	$stage.chat.scrollTop(999999999);
-	if (head == "tail") console.warn(time.toLocaleString(), msg);
 }
 function stackChat() {
 	var $v = $("#Chat .chat-item");

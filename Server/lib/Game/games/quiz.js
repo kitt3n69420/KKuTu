@@ -102,7 +102,6 @@ exports.roundReady = function () {
 
 	// 주제가 선택되지 않았거나 빈 배열이면 에러 처리
 	if (!topics || !Array.isArray(topics) || topics.length === 0) {
-		console.error("[QUIZ] No topic selected! Game cannot start without topic selection.");
 		return;
 	}
 
@@ -324,20 +323,15 @@ function getDifficulty(opts) {
 	if (opts.quiznormal) selected.push('qz2');
 	if (opts.quizhard) selected.push('qz3');
 
-	console.log('[QUIZ] getDifficulty - opts:', JSON.stringify(opts));
-	console.log('[QUIZ] getDifficulty - selected difficulties:', selected);
-
 	// 선택된 난이도가 있으면 그 중에서 랜덤 선택
 	if (selected.length > 0) {
 		var chosen = selected[Math.floor(Math.random() * selected.length)];
-		console.log('[QUIZ] getDifficulty - chosen:', chosen);
 		return chosen;
 	}
 
 	// 아무것도 선택 안 됐으면 랜덤
 	var difficulties = ['qz1', 'qz2', 'qz3'];
 	var random = difficulties[Math.floor(Math.random() * difficulties.length)];
-	console.log('[QUIZ] getDifficulty - random (none selected):', random);
 	return random;
 }
 
