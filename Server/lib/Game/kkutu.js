@@ -291,16 +291,7 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 			}
 		}
 	}, 60000);
-// ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
-	setInterval(function() {
-    var m = process.memoryUsage();
-    JLog.info('[MEM] rss=' + Math.round(m.rss/1024/1024) + 'MB heap=' + 
-              Math.round(m.heapUsed/1024/1024) + '/' + 
-              Math.round(m.heapTotal/1024/1024) + 'MB');
-}, 30000);
 };
-// ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
-
 // AI 이름 캐시 리필 함수
 function refillAiNameCache() {
 	if (aiNameCacheRefilling) return;
