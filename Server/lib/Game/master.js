@@ -682,6 +682,14 @@ exports.cleanupDeadWorkerUsers = function (deadChannel) {
   }
 };
 
+// ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+var _lastLoopCheck = Date.now();
+setInterval(function() {
+    var lag = Date.now() - _lastLoopCheck - 1000;
+    if (lag > 200) JLog.warn('[LOOP_LAG] Event loop lag: ' + lag + 'ms');
+    _lastLoopCheck = Date.now();
+}, 1000);
+// ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
 exports.init = function (_SID, CHAN) {
   SID = _SID;
   CHAN_DIC = CHAN;

@@ -3771,7 +3771,7 @@ exports.Room = function (room, channel) {
 			break;
 		}
 
-		if (visited > n) return my._defaultNextTurn();
+		if (visited > n || totalIter > n * 2 + n) return my._defaultNextTurn();
 		return next;
 	};
 	// ========== 아이템전 끝 ==========
