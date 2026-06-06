@@ -3160,7 +3160,10 @@ body.dark-mode #Top button {
 	outline: none !important;
 	box-shadow: none !important;
 }
-
+body.dark-mode #Top .menu-btn,
+body.dark-mode #Top .menu-btn i.fa {
+	color: #111111 !important;
+}
 /* 어두운 하드코딩 텍스트 → 밝게 */
 body.dark-mode #Top .menu-sub-btn {
 	color: #E0E0E0;

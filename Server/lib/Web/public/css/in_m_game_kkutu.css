@@ -136,18 +136,29 @@ iframe {
 }
 
 .kkutu-menu {
-	float: left;
-	width: 100%;
+	display: flex;
+	flex-wrap: nowrap;
+	max-width: 95%;
+	overflow: hidden;
 	height: 30px;
 }
 
-.kkutu-menu button {
-	float: left;
+.kkutu-menu button:not(.ItemButton) {
+	flex: 0 1 35px;
+	min-width: 20px;
 	border: none;
 	border-bottom-left-radius: 0px;
 	border-bottom-right-radius: 0px;
-	width: 25px;
-	height: 20px;
+	width: 35px;
+	height: 30px;
+	box-sizing: border-box;
+	overflow: hidden;
+	container-type: inline-size;
+}
+
+.kkutu-menu button:not(.ItemButton) i.fa {
+	font-size: clamp(10px, 40cqi, 15px);
+	line-height: 1;
 }
 
 .kkutu-menu button:hover {
@@ -1824,6 +1835,7 @@ body.theme-orange .GameBox::before {
 /* Item Mode */
 .ItemBar {
 	float: right;
+	margin-left: auto;
 }
 
 .kkutu-menu .ItemButton {
@@ -1925,3 +1937,4 @@ body.theme-orange .GameBox::before {
 	visibility: visible;
 	transform: scaleX(0);
 }
+

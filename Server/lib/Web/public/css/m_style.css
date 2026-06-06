@@ -74,7 +74,7 @@ body {
 	height: calc(var(--vh, 1vh) * 100);
 	overflow: hidden;
 	overscroll-behavior: none;
-	min-width: 360px;
+	min-width: 340px;
 	font-family: 맑은 고딕, 돋움;
 }
 
@@ -121,29 +121,44 @@ span {
 }
 
 .Menu {
-	min-width: 360px;
+	display: flex;
+	align-items: flex-start;
+	max-width: 95%;
+	overflow: hidden;
 }
 
 .Menu .menu-btn {
 	float: left;
-	padding: 7px 5px 5px 5px;
+	padding: 0;
 	border: none;
 	border-top-left-radius: 0px;
 	border-top-right-radius: 0px;
 	border-bottom-left-radius: 5px;
 	border-bottom-right-radius: 5px;
-	width: 100px;
-	height: 18px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 1 45px;
+	min-width: 28px;
+	width: 45px;
+	height: 30px;
 	font-size: 15px;
 	text-align: center;
 	color: #47330D;
 	background-image: url('/img/topbg.png');
 	background-color: #DEAF56;
 	transition: all 200ms ease;
+	box-sizing: border-box;
+	overflow: hidden;
+	container-type: inline-size;
+}
+
+.Menu .menu-btn i.fa {
+	font-size: clamp(11px, 36cqi, 16px);
 }
 
 .Menu .menu-btn:hover {
-	padding-top: 12px;
+	padding-top: 0;
 	box-shadow: 0px 2px 2px #141414;
 	background-image: none;
 	background-color: #EFC067;
@@ -243,10 +258,11 @@ span {
 }
 
 #account {
-	float: right;
-	margin: 1px;
+	float: none;
+	margin: 1px 1px 1px auto;
 	font-size: 11px;
 	color: #444444;
+	flex-shrink: 0;
 }
 
 #account-setting {
@@ -439,7 +455,7 @@ span {
 	height: 30px;
 	box-shadow: 0px 2px 2px #111111;
 	background-image: url('/img/topbg.png');
-	z-index: 1;
+	z-index: 5;
 }
 
 body.theme-red #Top,

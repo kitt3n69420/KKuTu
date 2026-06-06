@@ -66,13 +66,16 @@ mixin Menu()
 
 mixin MMenu()
 	div.Menu
-		div.menu-btn(id='menu-item-GAMES')
-			+FA('bars')
-			+separator(10)
-			div.menu-sub-btn(onclick='location.href = "/";', style='margin: 7px 0px; height: 25px;')!= L('HOME')
-			div.menu-sub-btn(onclick='location.href = "/0";', style='margin: 7px 0px; height: 25px;')!= L('GAMES')
-			div.menu-sub-btn(onclick='window.open("https://discord.gg/z6TZgyTZUj", "_blank");', style='margin: 7px 0px; height: 25px;')!= L('DISCORD')
-			div.menu-sub-btn(onclick='window.open("https://github.com/kitt3n69420/KKuTu", "_blank");', style='margin: 7px 0px; height: 25px;')!= L('REPOSITORY')
+		a.menu-btn(href='/', title=L('HOME'))
+			+FA('home')
+		a.menu-btn(href='/?server=0', title=L('GAMES'))
+			+FA('gamepad')
+		a.menu-btn(href='https://kkutu.site', target='_blank', title=L('SERVERLIST'))
+			+FA('server')
+		a.menu-btn(href='https://discord.gg/z6TZgyTZUj', target='_blank', title=L('DISCORD'))
+			+FA('comments')
+		a.menu-btn(href='https://github.com/kitt3n69420/KKuTu', target='_blank', title=L('REPOSITORY'))
+			+FA('github')
 		div#account
 			span#profile= SESSION.profile ? JSON.stringify(SESSION.profile) : '{}'
 			div#account-info
