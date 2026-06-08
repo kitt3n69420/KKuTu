@@ -63,7 +63,10 @@ function scheduleReconnect() {
             }
             client = null;
             channel = null;
-            await exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN, queryOnlineUser: _queryOnlineUser, sendRoomMsg: _sendRoomMsg });
+            await Promise.race([
+                exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN, queryOnlineUser: _queryOnlineUser, sendRoomMsg: _sendRoomMsg }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Reconnect timeout (35s)')), 35000))
+            ]);
         } catch (err) {
             JLog.error(`[Discord Bot] 재접속 실패: ${err.message}`);
             scheduleReconnect();
@@ -278,7 +281,10 @@ exports.init = async function (token, db, dic, options = {}) {
             }, `Command: ${interaction.commandName}`);
         });
 
-        await client.login(token);
+        await Promise.race([
+            client.login(token),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Login timeout (30s)')), 30000))
+        ]);
     } catch (err) {
         JLog.error(`[Discord Bot] Failed to initialize: ${err.message}`);
     }
