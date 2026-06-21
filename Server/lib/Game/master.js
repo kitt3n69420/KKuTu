@@ -708,6 +708,7 @@ exports.init = function (_SID, CHAN) {
       });
     }
     Server.on("connection", function (socket, info) {
+      var _connStart = Date.now();
       var key = info.url.slice(1);
       var $c;
 
@@ -739,7 +740,10 @@ exports.init = function (_SID, CHAN) {
         .findOne(["_id", key])
         .limit(["profile", true])
         .on(function ($body) {
+          var _sessionMs = Date.now() - _connStart;
+          if (_sessionMs >= 300) JLog.alert('[ConnDiag] session.findOne ' + _sessionMs + 'ms key=' + key.slice(0, 8) + '…');
           $c = new KKuTu.Client(socket, $body ? $body.profile : null, key);
+          $c._connStart = _connStart;
           $c.admin = GLOBAL.ADMIN.indexOf($c.id) != -1;
           /* Enhanced User Block System [S] */
           $c.remoteAddress = GLOBAL.USER_BLOCK_OPTIONS.USE_X_FORWARDED_FOR
@@ -903,6 +907,11 @@ setInterval(function () {
 }, 60000);
 
 function joinNewUser($c) {
+  if ($c._connStart) {
+    var _totalMs = Date.now() - $c._connStart;
+    var _tag = _totalMs >= 1000 ? ' [SLOW]' : '';
+    JLog.info('[ConnDiag] #' + $c.id + ' total=' + _totalMs + 'ms' + _tag);
+  }
   $c._lastActivity = Date.now();
   $c.send("welcome", {
     id: $c.id,
