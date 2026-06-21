@@ -23,6 +23,7 @@ var https = require("https");
 var Secure = require("../sub/secure");
 var ProfanityFilter = require("../sub/profanity-filter");
 var { validateInput, checkPrototypePollution } = require("../Web/validators");
+var Monitor = require("../sub/monitor");
 var Server;
 var HTTPS_Server;
 
@@ -72,6 +73,10 @@ const ENABLE_FORM = Master.ENABLE_FORM;
 const MODE_LENGTH = Master.MODE_LENGTH;
 
 JLog.info(`<< KKuTu Server:${Server.options.port} >>`);
+
+Monitor.start('slave:' + process.env['KKUTU_PORT'], function() {
+  return 'users=' + Object.keys(DIC).length + ' rooms=' + Object.keys(ROOM).length;
+});
 
 process.on("uncaughtException", function (err) {
   var text = `:${process.env["KKUTU_PORT"]} [${new Date().toLocaleString()}] ERROR: ${err.toString()}\n${err.stack}`;

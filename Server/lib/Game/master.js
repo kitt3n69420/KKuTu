@@ -31,6 +31,7 @@ var JLog = require("../sub/jjlog");
 var Secure = require("../sub/secure");
 var Recaptcha = require("../sub/recaptcha");
 var { validateInput, checkPrototypePollution } = require("../Web/validators");
+var Monitor = require("../sub/monitor");
 
 var MainDB;
 
@@ -685,6 +686,9 @@ exports.cleanupDeadWorkerUsers = function (deadChannel) {
 exports.init = function (_SID, CHAN) {
   SID = _SID;
   CHAN_DIC = CHAN;
+  Monitor.start('master:' + _SID, function() {
+    return 'users=' + Object.keys(DIC).length + ' rooms=' + Object.keys(ROOM).length;
+  });
   MainDB = require("../Web/db");
   MainDB.ready = function () {
     JLog.success("Master DB is ready.");
