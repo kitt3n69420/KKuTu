@@ -23,7 +23,6 @@ var https = require("https");
 var Secure = require("../sub/secure");
 var ProfanityFilter = require("../sub/profanity-filter");
 var { validateInput, checkPrototypePollution } = require("../Web/validators");
-var Monitor = require("../sub/monitor");
 var Server;
 var HTTPS_Server;
 
@@ -73,10 +72,6 @@ const ENABLE_FORM = Master.ENABLE_FORM;
 const MODE_LENGTH = Master.MODE_LENGTH;
 
 JLog.info(`<< KKuTu Server:${Server.options.port} >>`);
-
-Monitor.start('slave:' + process.env['KKUTU_PORT'], function() {
-  return 'users=' + Object.keys(DIC).length + ' rooms=' + Object.keys(ROOM).length;
-});
 
 process.on("uncaughtException", function (err) {
   var text = `:${process.env["KKUTU_PORT"]} [${new Date().toLocaleString()}] ERROR: ${err.toString()}\n${err.stack}`;
@@ -181,7 +176,6 @@ MainDB.ready = function () {
   KKuTu.init(MainDB, DIC, ROOM, GUEST_PERMISSION);
 };
 Server.on("connection", function (socket, info) {
-  var _connStart = Date.now();
   var chunk = info.url.slice(1).split("&");
   var key = chunk[0];
   var reserve = RESERVED[key] || {},
@@ -221,10 +215,7 @@ Server.on("connection", function (socket, info) {
     .findOne(["_id", key])
     .limit(["profile", true])
     .on(function ($body) {
-      var _sessionMs = Date.now() - _connStart;
-      if (_sessionMs >= 300) JLog.alert('[ConnDiag] slave session.findOne ' + _sessionMs + 'ms key=' + key.slice(0, 8) + '…');
       $c = new KKuTu.Client(socket, $body ? $body.profile : null, key);
-      $c._connStart = _connStart;
       $c.admin = GLOBAL.ADMIN.indexOf($c.id) != -1;
 
       /* Enhanced User Block System [S] */
@@ -261,10 +252,6 @@ Server.on("connection", function (socket, info) {
             $c.enter(room, reserve.spec, reserve.pass);
             if ($c.place == room.id) {
               $c.publish("connRoom", { user: $c.getData() });
-              if ($c._connStart) {
-                var _totalMs = Date.now() - $c._connStart;
-                JLog.info('[ConnDiag] slave #' + $c.id + ' total=' + _totalMs + 'ms' + (_totalMs >= 1000 ? ' [SLOW]' : ''));
-              }
             } else {
               // 입장 실패
               $c.socket.close();

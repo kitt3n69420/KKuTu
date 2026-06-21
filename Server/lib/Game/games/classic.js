@@ -57,6 +57,9 @@ var ATTACK_CACHE_MAX_BYTES = 1024 * 1024; // 1MB
 // 매너 체크 DB 쿼리 결과 캐시 (5분 TTL, DB 부하 감소)
 var MannerCache = {};
 var MANNER_CACHE_TTL = 5 * 60 * 1000;
+// getAuto(type=2) 결과 캐시: 봇 턴마다 같은 char로 반복 쿼리 방지 (TTL: 10초)
+var _autoListCache = {};
+var AUTO_LIST_CACHE_TTL = 10000;
 // 제시어 후보 풀: key="f:ko:3" or "r:ko:3" → 18개 버킷 배열 (음절 그룹별)
 var titlePool = {};
 var titlePoolRefilling = {};
@@ -4031,10 +4034,13 @@ function getAuto(char, subc, type, limit, sort) {
 				};
 				break;
 		}
-		// MannerCache: type=2 (매너 체크) 결과를 5분간 캐시하여 반복 DB 쿼리 방지
+		// KKU 모드에서는 매너 체크를 위해 실제 단어 개수를 세어야 하므로 limit을 크게 설정
+		var limitValue = (bool && gameType === 'KKU') ? 10000 : ((bool ? 1 : 123) * (limit || 1));
+		// MannerCache: type=2 결과를 5분간 캐시하여 반복 DB 쿼리 방지
+		// 캐시 키에 limitValue와 sort 포함 — limit이 다르면 결과 크기가 달라서 별도 캐싱 필요
 		var _mck = null;
 		if (type === 2) {
-			_mck = adv + ':' + my.rule.lang + ':' + (my.opts.injeong ? 1 : 0) + ':' + (my.opts.loanword ? 1 : 0) + ':' + (my.opts.allpos ? 1 : 0) + ':' + (my.opts.strict ? 1 : 0);
+			_mck = adv + ':' + my.rule.lang + ':' + (my.opts.injeong ? 1 : 0) + ':' + (my.opts.loanword ? 1 : 0) + ':' + (my.opts.allpos ? 1 : 0) + ':' + (my.opts.strict ? 1 : 0) + ':' + limitValue + (sort ? ':s' : '');
 			if (MannerCache[_mck] && MannerCache[_mck].t > Date.now() - MANNER_CACHE_TTL) {
 				var _mc = MannerCache[_mck].d;
 				aft(my.game.chain ? _mc.filter(function(item) { return !my.game.chain.includes(item._id); }) : _mc);
@@ -4043,8 +4049,6 @@ function getAuto(char, subc, type, limit, sort) {
 		}
 		var raiser = DB.kkutu[my.rule.lang].find.apply(this, aqs);
 		if (sort) raiser.sort(sort);
-		// KKU 모드에서는 매너 체크를 위해 실제 단어 개수를 세어야 하므로 limit을 크게 설정
-		var limitValue = (bool && gameType === 'KKU') ? 10000 : ((bool ? 1 : 123) * (limit || 1));
 		raiser.limit(limitValue).on(function ($md) {
 			if (_mck) {
 				var _now = Date.now();

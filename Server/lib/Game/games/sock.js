@@ -21,6 +21,10 @@ var Lizard = require('../../sub/lizard');
 var DB;
 var DIC;
 
+// 보드 문자 집합별 단어 목록 캐시 (TTL: 3분)
+var _sockWordCache = {};
+var SOCK_CACHE_TTL = 3 * 60 * 1000;
+
 const ROBOT_SOCK_START_DELAY = [5000, 3000, 1800, 900, 300];
 const ROBOT_SOCK_MAX_WORDS = [10, 20, 30, 50, 999];
 const BOT_SOCK_CPM = [30, 60, 120, 300, 800];
@@ -55,30 +59,48 @@ function fetchRobotWords(my) {
 
 	var conf = LANG_STATS[my.rule.lang];
 	var freq = my.game.robotBoardFreq;
-	var uniqueChars = Object.keys(freq).filter(function (ch) { return freq[ch] > 0; }).join('');
+	var sortedChars = Object.keys(freq).filter(function (ch) { return freq[ch] > 0; }).sort().join('');
 	var lenMatch = conf.reg.source.match(/\{(\d+),(\d+)\}/);
 	var minLen = lenMatch ? parseInt(lenMatch[1]) : 2;
 	var maxLen = Math.max.apply(null, my.rule.lang === 'ko' ? ROBOT_SOCK_MAX_LEN_KO : ROBOT_SOCK_MAX_LEN_EN);
 	if (my.opts.no2 && minLen < 3) minLen = 3;
 
+	var cacheKey = my.rule.lang + ':' + minLen + ':' + maxLen + ':' + sortedChars;
+	var now = Date.now();
+	var cached = _sockWordCache[cacheKey];
+	if (cached && now - cached.time < SOCK_CACHE_TTL) {
+		var submitted = my.game.words || [];
+		var submittedSet = new Set(submitted);
+		var list = cached.words
+			.filter(function (w) { return !submittedSet.has(w) && canMakeWord(my.game.robotBoardFreq, w); });
+		for (var ii = list.length - 1; ii > 0; ii--) {
+			var jj = Math.floor(Math.random() * (ii + 1));
+			var tt = list[ii]; list[ii] = list[jj]; list[jj] = tt;
+		}
+		my.game.robotWords = list;
+		my.game.robotClaimed = new Set();
+		my.game.robotWordsLoading = false;
+		return;
+	}
+
+	// uniqueChars (삽입 순서 유지, SQL용)
+	var uniqueChars = Object.keys(freq).filter(function (ch) { return freq[ch] > 0; }).join('');
 	var botSql = "SELECT _id FROM kkutu_" + my.rule.lang
 		+ " WHERE _id ~ '^[" + uniqueChars + "]{" + minLen + "," + maxLen + "}$' AND hit >= 1";
 	if (conf.add) botSql += " AND " + conf.add[0] + " ~ '" + conf.add[1].source + "'";
-
-	var submitted = my.game.words;
-	if (submitted && submitted.length > 0) {
-		var escaped = submitted.map(function (w) { return "'" + w.replace(/'/g, "''") + "'"; }).join(',');
-		botSql += " AND _id NOT IN (" + escaped + ")";
-	}
-
 	botSql += " ORDER BY hit DESC LIMIT 2500";
 
 	DB.kkutu[my.rule.lang].direct(botSql, function (err, res) {
 		my.game.robotWordsLoading = false;
 		if (err || !res || !my.game.robotBoardFreq) return;
-		var list = res.rows
-			.map(function (r) { return r._id; })
-			.filter(function (w) { return canMakeWord(my.game.robotBoardFreq, w); });
+
+		var rawList = res.rows.map(function (r) { return r._id; });
+		_sockWordCache[cacheKey] = { time: Date.now(), words: rawList };
+
+		var submitted = my.game.words || [];
+		var submittedSet = new Set(submitted);
+		var list = rawList.filter(function (w) { return !submittedSet.has(w) && canMakeWord(my.game.robotBoardFreq, w); });
+
 		if (list.length === 0) {
 			my.game.robotEmptyCount = (my.game.robotEmptyCount || 0) + 1;
 			if (my.game.robotEmptyCount >= 10) my.game.robotFetchExhausted = true;
@@ -104,25 +126,39 @@ function fetchRobotWordsFallback(my) {
 
 	var conf = LANG_STATS[my.rule.lang];
 	var freq = my.game.robotBoardFreq;
-	var uniqueChars = Object.keys(freq).filter(function (ch) { return freq[ch] > 0; }).join('');
 	var exactLen = my.opts.no2 ? 3 : 2;
+	var sortedChars = Object.keys(freq).filter(function (ch) { return freq[ch] > 0; }).sort().join('');
+	var cacheKey = my.rule.lang + ':' + exactLen + ':' + exactLen + ':' + sortedChars;
+	var now = Date.now();
+	var cached = _sockWordCache[cacheKey];
+	if (cached && now - cached.time < SOCK_CACHE_TTL) {
+		var submitted = my.game.words || [];
+		var submittedSet = new Set(submitted);
+		var list = cached.words
+			.filter(function (w) { return !submittedSet.has(w) && canMakeWord(my.game.robotBoardFreq, w); });
+		for (var ii = list.length - 1; ii > 0; ii--) {
+			var jj = Math.floor(Math.random() * (ii + 1));
+			var tt = list[ii]; list[ii] = list[jj]; list[jj] = tt;
+		}
+		my.game.robotWords = list;
+		my.game.robotClaimed = new Set();
+		my.game.robotWordsLoading = false;
+		return;
+	}
 
+	var uniqueChars = Object.keys(freq).filter(function (ch) { return freq[ch] > 0; }).join('');
 	var botSql = "SELECT _id FROM kkutu_" + my.rule.lang
 		+ " WHERE _id ~ '^[" + uniqueChars + "]{" + exactLen + "," + exactLen + "}$' AND hit >= 1";
 	if (conf.add) botSql += " AND " + conf.add[0] + " ~ '" + conf.add[1].source + "'";
 
-	var submitted = my.game.words;
-	if (submitted && submitted.length > 0) {
-		var escaped = submitted.map(function (w) { return "'" + w.replace(/'/g, "''") + "'"; }).join(',');
-		botSql += " AND _id NOT IN (" + escaped + ")";
-	}
-
 	DB.kkutu[my.rule.lang].direct(botSql, function (err, res) {
 		my.game.robotWordsLoading = false;
 		if (err || !res || !my.game.robotBoardFreq) return;
-		var list = res.rows
-			.map(function (r) { return r._id; })
-			.filter(function (w) { return canMakeWord(my.game.robotBoardFreq, w); });
+		var rawList = res.rows.map(function (r) { return r._id; });
+		_sockWordCache[cacheKey] = { time: Date.now(), words: rawList };
+		var submitted = my.game.words || [];
+		var submittedSet = new Set(submitted);
+		var list = rawList.filter(function (w) { return !submittedSet.has(w) && canMakeWord(my.game.robotBoardFreq, w); });
 		for (var i = list.length - 1; i > 0; i--) {
 			var j = Math.floor(Math.random() * (i + 1));
 			var t = list[i]; list[i] = list[j]; list[j] = t;

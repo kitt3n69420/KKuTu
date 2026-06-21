@@ -363,12 +363,7 @@ exports.Agent = function(type, origin){
 				}
 				if(!sql) return JLog.warn("SQL is undefined. This call will be ignored.");
 				// JLog.log("Query: " + sql.slice(0, 100));
-				var _qt = Date.now();
-				origin.query(sql, function(err, res){
-					var _qe = Date.now() - _qt;
-					if(_qe >= 500) JLog.warn('[SlowQuery] ' + _qe + 'ms | ' + sql.slice(0, 200));
-					preCB(err, res);
-				});
+				origin.query(sql, preCB);
 				/*if(_my.findLimit){
 					
 					c = my.source[mode](q, flag, { limit: _my.findLimit }, preCB);

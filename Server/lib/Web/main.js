@@ -53,7 +53,7 @@ var ROUTES = ["major", "consume", "admin", "login"];
 var page = WebInit.page;
 var gameServers = [];
 var _noticeCache = { text: null, at: 0 };
-var NOTICE_CACHE_TTL = 60000;
+var NOTICE_CACHE_TTL = 300000; // 5분 (이벤트는 자주 바뀌지 않음)
 
 WebInit.MOBILE_AVAILABLE = ["portal", "main", "kkutu"];
 

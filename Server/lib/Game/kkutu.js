@@ -154,11 +154,13 @@ exports.censorSwearWords = censorSwearWords;
 exports.NIGHT = false;
 
 var _eventMults = { expmul: 1, mnymul: 1, eventItems: [], itemmul: 0 };
+var _cachedEventList = [];
 
 function refreshEventMults() {
 	DB.event.find().on(function ($events) {
+		_cachedEventList = $events || [];
 		var expmul = 1, mnymul = 1, itemmul = 0, eventItems = [];
-		($events || []).forEach(function (ev) {
+		(_cachedEventList).forEach(function (ev) {
 			if (!Const.isEventActive(ev)) return;
 			if (ev.expmul > 1) expmul = Math.max(expmul, ev.expmul);
 			if (ev.mnymul > 1) mnymul = Math.max(mnymul, ev.mnymul);
@@ -185,7 +187,7 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 	CHAN = _CHAN;
 	_rid = 100;
 	refreshEventMults();
-	setInterval(refreshEventMults, 60000);
+	setInterval(refreshEventMults, 300000); // 5분마다 갱신 (이벤트는 자주 바뀌지 않음)
 	// 망할 셧다운제 if(Cluster.isMaster) setInterval(exports.processAjae, 60000);
 	DB.kkutu_shop.find().on(function ($shop) {
 		SHOP = {};
@@ -971,30 +973,29 @@ exports.Client = function (socket, profile, sid) {
 		}
 	};
 	my.checkEventItems = function () {
-		DB.event.find().on(function ($events) {
-			if (!$events || !$events.length) return;
-			var toRemove = {};
-			var activeProtected = {};
-			($events || []).forEach(function (ev) {
-				if (!ev.eventitem || !ev.eventitem.length) return;
-				if (Const.isEventActive(ev)) {
-					ev.eventitem.forEach(function (id) { activeProtected[id] = true; });
-				} else {
-					ev.eventitem.forEach(function (id) { toRemove[id] = true; });
-				}
-			});
-			var removed = [];
-			Object.keys(toRemove).forEach(function (id) {
-				if (activeProtected[id]) return;
-				if (!my.box[id]) return;
-				delete my.box[id];
-				removed.push(id);
-			});
-			if (removed.length) {
-				my.send('expired', { list: removed });
-				my.flush(my.box, my.equip);
+		var $events = _cachedEventList;
+		if (!$events || !$events.length) return;
+		var toRemove = {};
+		var activeProtected = {};
+		$events.forEach(function (ev) {
+			if (!ev.eventitem || !ev.eventitem.length) return;
+			if (Const.isEventActive(ev)) {
+				ev.eventitem.forEach(function (id) { activeProtected[id] = true; });
+			} else {
+				ev.eventitem.forEach(function (id) { toRemove[id] = true; });
 			}
 		});
+		var removed = [];
+		Object.keys(toRemove).forEach(function (id) {
+			if (activeProtected[id]) return;
+			if (!my.box[id]) return;
+			delete my.box[id];
+			removed.push(id);
+		});
+		if (removed.length) {
+			my.send('expired', { list: removed });
+			my.flush(my.box, my.equip);
+		}
 	};
 	my.updateProfile = function (profile) {
 		if (profile.nickname) {
