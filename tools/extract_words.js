@@ -82,7 +82,9 @@ async function main() {
 
             // 주제가 없는 어인정 단어 중 뜻이 비어있는 단어 (stray)
             const isInjeong = type.split(',').map(t => t.trim()).includes('INJEONG');
-            if (isPlayable && isInjeong && !theme && !mean) {
+            const themeTokens = theme.split(',').map(t => t.trim()).filter(Boolean);
+            const themeIsEmpty = themeTokens.length === 0 || themeTokens.every(t => t === '0');
+            if (isPlayable && isInjeong && themeIsEmpty && !mean) {
                 strayWords.push(word);
             }
 
