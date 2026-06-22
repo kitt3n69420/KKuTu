@@ -222,13 +222,16 @@ async function addWord(word, theme) {
             if (existingThemes.includes(theme)) {
                 console.log('  [건너뜀] "' + word + '" 이미 테마 ' + theme + '로 등록되어 있습니다.');
             } else {
+                var newN = existingThemes.length + 1;
                 var newTheme = existingThemes.concat([theme]).join(',');
                 var existingTypes = (row.type || '').split(',').filter(function(t) { return t; });
                 var newType = existingTypes.includes(WORD_TYPE) ? row.type : (row.type ? row.type + ',' + WORD_TYPE : WORD_TYPE);
+                var baseMean = (row.mean && !/^＂\d+＂/.test(row.mean)) ? '＂1＂' + row.mean : (row.mean || '');
+                var newMean = baseMean ? baseMean + ' ＂' + newN + '＂' : '＂' + newN + '＂';
 
                 await client.query(
-                    'UPDATE kkutu_ko SET type = $1, theme = $2 WHERE _id = $3',
-                    [newType, newTheme, word]
+                    'UPDATE kkutu_ko SET type = $1, theme = $2, mean = $3 WHERE _id = $4',
+                    [newType, newTheme, newMean, word]
                 );
                 console.log('  [업데이트됨] "' + word + '" 테마 추가: ' + theme + ' (기존: ' + row.theme + ')');
                 // 기존 단어는 stats 변화 없음 (이미 카운트되어 있음)

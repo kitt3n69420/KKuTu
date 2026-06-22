@@ -837,16 +837,19 @@ exports.getPreScoreJamo = function (text, chain, tr) {
 };
 
 exports.KO_INJEONG = [
-	"KRR", "KDI", "KTV", "KBS", "KPT", "KHJ", "KSC", "TPW",
-	"BTC", "KOT", "DOT", "DGM", "RAG",
+	"KRR", "KDI", "KTV", "KBS", 
+	"KPT", "KHJ", "KSC", "TPW",
+	"BTC", "KOT", "DOT", "ANC", "DGM", "RAG",
 	"JLN", "LVL", "LOL", "MAM", "MMM",
 	"MCJ", "JAN", "MAP", "MKK", "MNG",
-	"MOB", "VAL", "BRS", "BLA", "NEX", "INC",
+	"MOB", "VAL", "HNK", "BRS", "BLA", "NEX", "INC",
 	"COL", "SAO", "HRH", "STA", "OIJ",
 	"KGR", "ESB", "ELW", "KMV", "OVW",
-	"WEB", "KPO", "VOC", "JAT", "ZEL",
-	"CKR", "FUR", "POK", "FRC", "HSS",
-	"HAI", "HDC", "HAR", "HOS", "IMS"
+	"GNS", "WEB", "UNE", "KPO", 
+	"VOC", "ETR", "JAT", "ZEL",
+	"CKR", "FUR", "POK", "FRC", "PSK", "HSS",
+	"HAI", "KPM", "HDC", "HAR", "HOS", "IMS"
+	
 ];
 exports.EN_INJEONG = [
 	"LOL", "MCJ"

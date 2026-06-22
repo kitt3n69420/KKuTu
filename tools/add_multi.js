@@ -382,17 +382,20 @@ async function updateDatabaseSimple(table, theme, words) {
                         stats.overwritten++;
                     } else {
                         var existingTheme = row.theme || "";
-                        var existingThemes = existingTheme.split(',');
+                        var existingThemes = existingTheme ? existingTheme.split(',') : [];
 
                         if (existingThemes.includes(theme)) {
                             stats.skipped++;
                         } else {
                             var newTheme = existingTheme ? existingTheme + "," + theme : theme;
                             var newType = row.type ? row.type + ",INJEONG" : "INJEONG";
+                            var newN = existingThemes.length + 1;
+                            var baseMean = (row.mean && !/^＂\d+＂/.test(row.mean)) ? "＂1＂" + row.mean : (row.mean || "");
+                            var newMean = baseMean ? baseMean + " ＂" + newN + "＂" : "＂" + newN + "＂";
 
                             await client.query(
-                                "UPDATE " + table + " SET type = $1, theme = $2 WHERE _id = $3",
-                                [newType, newTheme, word]
+                                "UPDATE " + table + " SET type = $1, theme = $2, mean = $3 WHERE _id = $4",
+                                [newType, newTheme, newMean, word]
                             );
                             stats.updated++;
                         }
