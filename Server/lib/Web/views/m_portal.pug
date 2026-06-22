@@ -39,9 +39,11 @@ block Middle
 			img.jjoObj.jjoEyeR(src='/img/jjoeyeR.png', style='top: 40px; left: -70px;')
 			div.jjoDisplayBar(style='float: left; margin-top: -30px; width: 325px; height: 85px;')
 				button#game-start.jjo-display= L('gameStart')
-	div#menu-bar(style='float: left; margin: 10px 0px 10px calc(50% - 136px); width: 100%;')
-		a(target='_blank', href='//cafe.naver.com/sdbx', style='background-color: #63A95B;')= L('sandbox')
-		a(target='_blank', href='https://discord.gg/z6TZgyTZUj', style='background-color: #5865F2;')= '디스코드'
+	div#menu-bar(style='float: left; width: 252px; margin: 10px 0px 10px calc(50% - 126px); display: flex; flex-wrap: wrap;')
+		a(href='/legal/privacy', target='_blank', style='background-color: #3E7BC4; width: calc(50% - 16px);')= L('privacy')
+		a(href='/legal/terms', target='_blank', style='background-color: #3E9C5C; width: calc(50% - 16px);')= L('terms')
+		a(href='/legal/copyright', target='_blank', style='background-color: #7B5FC4; width: calc(50% - 16px);')= L('copyright')
+		a(href='/legal/punishment', target='_blank', style='background-color: #C43E3E; width: calc(50% - 16px);')= L('punishment')
 	div(style='float: left; margin-left: calc(50% - 160px);')
 		div.server-list-box
 			h3.server-list-title

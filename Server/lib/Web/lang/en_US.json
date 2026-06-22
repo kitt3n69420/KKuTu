@@ -1,6 +1,6 @@
 {
   "GLOBAL": {
-    "GPL": "<div style='color: #666;'>Rule the words! KKuTuN Copyright (C) 2025 냐옹이(kitt3n69420@gmail.com)<br>This program comes with ABSOLUTELY NO WARRANTY.<br>This is free software, and you are welcome to redistribute it under certain conditions.<br>For details visit the repository of this software: <a target='_blank' href='https://github.com/kitt3n69420/KKuTu'>https://github.com/kitt3n69420/KKuTu</a></div>",
+    "GPL": "<div style='color: #666;'>Rule the words! KKuTuN Copyright (C) 2025~2026 야옹이(kitt3n69420@gmail.com)<br>This program comes with ABSOLUTELY NO WARRANTY.<br>This is free software, and you are welcome to redistribute it under certain conditions.<br>For details visit the repository of this software: <a target='_blank' href='https://github.com/kitt3n69420/KKuTu'>https://github.com/kitt3n69420/KKuTu</a></div>",
     "CREATOR": "Developer Blog",
     "HOME": "Home",
     "GAMES": "Games",
@@ -160,6 +160,10 @@
     "websocketUnsupport": "This game supports Internet Explorer (10+), Chrome (16+), Firefox (11+), Opera (12.1+), Safari (6+)!\nPlease update your browser.",
     "dictionarySupport": "Dictionary Data Provided by: <a href='http://stdweb2.korean.go.kr/' target='_blank'>Standard Korean Language Dictionary</a>, <a href='http://wordnet.princeton.edu' target='_blank'>WordNet</a><br><label style='color: #777777;'>WordNet 3.0 Copyright 2006 by Princeton University. All rights reserved.</label>",
     "sandbox": "Sandbox :: SDBX",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "copyright": "Copyright",
+    "punishment": "Punishments",
     "etcSupport": "Help: <a href='http://cafe.naver.com/sdbx' target='_blank'>Sandbox :: SDBX</a>",
     "welcome": "Welcome.",
     "welcomeTestServer": "You have connected to the Test Server. This server may explode or close without special notice.",

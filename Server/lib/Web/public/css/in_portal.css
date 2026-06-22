@@ -75,11 +75,14 @@ body.theme-green #Background {
 	float: left;
 	padding: 10px 5px;
 	border-radius: 5px;
-	margin: 0px 3px;
-	width: 120px;
-	font-size: 15px;
+	margin: 3px;
+	width: 110px;
+	font-size: 13px;
 	text-align: center;
 	box-shadow: 0px 1px 1px #333;
+	white-space: nowrap;
+	color: #fff;
+	text-decoration: none;
 }
 
 #game-start{

@@ -1,6 +1,6 @@
 {
   "GLOBAL": {
-    "GPL": "<div style='color: #666;'>글자로 놀자! 끄투냥 Copyright (C) 2025 냐옹이(kitt3n69420@gmail.com)<br>이 프로그램은 제품에 대한 어떠한 형태의 보증도 제공하지 않는다냥.<br>이 소프트웨어는 자유 소프트웨어이며 배포 규정을 만족시키는 조건 아래 자유롭게 재배포할 수 있다냥.<br>더 자세한 건 다음 레포지토리에서 확인해라냥: <a target='_blank' href='https://github.com/kitt3n69420/KKuTu'>https://github.com/kitt3n69420/KKuTu</a></div>",
+    "GPL": "<div style='color: #666;'>글자로 놀자! 끄투냥 Copyright (C) 2025~2026 야옹이(kitt3n69420@gmail.com)<br>이 프로그램은 제품에 대한 어떠한 형태의 보증도 제공하지 않는다냥.<br>이 소프트웨어는 자유 소프트웨어이며 배포 규정을 만족시키는 조건 아래 자유롭게 재배포할 수 있다냥.<br>더 자세한 건 다음 레포지토리에서 확인해라냥: <a target='_blank' href='https://github.com/kitt3n69420/KKuTu'>https://github.com/kitt3n69420/KKuTu</a></div>",
     "CREATOR": "냥발자 블로그",
     "HOME": "집",
     "GAMES": "놀이터",
@@ -160,6 +160,10 @@
     "websocketUnsupport": "이 게임은 똥컴에선 안된다냥! 익스플로러(10), 크롬(16), 파폭(11), 오페라(12.1), 사파리(6) 이상에서 해라냥.\n브라우저 업데이트 좀 해라냥.",
     "dictionarySupport": "사전 정보 제공:<a href='http://wordnet.princeton.edu' target='_blank'>WordNet</a><br><label style='color: #777777;'>WordNet 3.0 Copyright 2006 by Princeton University. All rights reserved.</label><br>사전 정보 제공:<a href='https://stdict.korean.go.kr' target='_blank'>국립국어원 표준국어대사전</a>, <a href='https://opendict.korean.go.kr' target='_blank'>국립국어원 우리말샘</a><br><label style='color: #777777;'>뜻 풀이 정보는 <a href='https://creativecommons.org/licenses/by-sa/2.0/kr/' target='_blank'>크리에이티브 커먼즈 저작자표시-동일조건변경허락 2.0 대한민국 라이선스</a>에 따라 쓸 수 있다냥.</label>",
     "sandbox": "샌드박스 :: SDBX",
+    "privacy": "개인정보처리방침",
+    "terms": "이용약관",
+    "copyright": "저작권 안내",
+    "punishment": "처벌 내역",
     "etcSupport": "도움:<a href='http://cafe.naver.com/sdbx' target='_blank'>샌드박스 :: SDBX</a>",
     "welcome": "어서와라냥!",
     "welcomeTestServer": "테스트 서버다냥. 여기는 예고 없이 폭발할 수도 있다냥.",

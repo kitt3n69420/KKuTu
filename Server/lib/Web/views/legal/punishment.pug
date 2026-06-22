@@ -1,0 +1,42 @@
+extends ../layout
+
+block CSS
+	style.
+		.legal-box { line-height: 1.8; word-break: keep-all; }
+		.legal-box h1 { margin-bottom: 30px; border-bottom: 2px solid #fff; padding-bottom: 10px; }
+		.legal-box h3 { margin-top: 40px; margin-bottom: 15px; font-size: 1.3em; font-weight: bold; color: #81D4FA; }
+		.legal-box ul { margin-bottom: 15px; list-style-type: none; padding-left: 10px; }
+		.legal-box li { margin-bottom: 8px; color: #ddd; }
+		.legal-box a { color: #B3E5FC; }
+		.legal-box a:hover { color: #fff; }
+		.punishment-card { background: rgba(255,255,255,0.05); border-left: 4px solid #ef5350; border-radius: 6px; padding: 16px 20px; margin-bottom: 16px; }
+		.punishment-card .p-date { font-size: 0.85em; color: #aaa; margin-bottom: 10px; }
+		.punishment-card .p-user { font-size: 1.05em; font-weight: bold; color: #fff; margin-bottom: 6px; }
+		.punishment-card .p-type { display: inline-block; background: #ef5350; color: #fff; border-radius: 4px; padding: 2px 10px; font-size: 0.85em; margin-bottom: 10px; }
+		.punishment-card .p-reason { color: #ddd; margin-top: 8px; }
+		.punishment-card .p-note { color: #aaa; font-size: 0.9em; font-style: italic; margin-top: 6px; }
+
+block Subject
+	title 처벌 내역 - 끄투엔
+
+block Middle
+	div.legal-box(style='padding: 20px; color: white; overflow-y: scroll; height: 100%;')
+		h1 처벌 내역
+
+		div.punishment-card
+			div.p-date 2026-06-20 23:21
+			div.p-user 나****투 (101054477049982057464)
+			span.p-type 게임 영구 차단
+			div.p-reason #[strong 사유:] 비인가 프로그램의 사용 (복사 붙여넣기)
+
+		div.punishment-card
+			div.p-date 2026-06-05 20:18
+			div.p-user 스****함 (106918281277734572679)
+			span.p-type 게임 영구 차단
+			div.p-reason #[strong 사유:] 비인가 프로그램의 사용 (복사 붙여넣기)
+
+		div.punishment-card
+			div.p-date 2026-03-19 23:19
+			div.p-user 고** (discord-1153229325420740628)
+			span.p-type 스탯 초기화
+			div.p-reason #[strong 사유:] 보안 취약점을 사용해 비정상적으로 많은 경험치를 얻음
