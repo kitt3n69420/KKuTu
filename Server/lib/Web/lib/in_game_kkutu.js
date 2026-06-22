@@ -6924,7 +6924,7 @@ function route(func, a0, a1, a2, a3, a4) {
 }
 function connectToRoom(chan, rid) {
 	var url = $data.URL.replace(/:(\d+)/, function (v, p1) {
-		return ":" + ($data.ROOM_PORT || (Number(p1) + Number(chan)));
+		return ":" + ($data.ROOM_PORT ? Number($data.ROOM_PORT) + Number(chan) - 1 : Number(p1) + Number(chan));
 	}) + "&" + chan + "&" + rid;
 
 	if (rws) return;
