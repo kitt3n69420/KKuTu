@@ -59,21 +59,36 @@ async function main() {
 
     try {
         console.log("Fetching all words from kkutu_ko...");
-        const res = await client.query("SELECT _id, type, theme FROM kkutu_ko");
+        const res = await client.query("SELECT _id, type, theme, mean FROM kkutu_ko");
 
         const allWords = [];
         const playableWords = [];
+        const strayWords = [];   // 플레이 가능하지만 주제 없는 단어
+        const specialNeg1 = [];  // 품사(type)가 -1인 특수 단어
         const themeMap = {}; // theme code -> Set of words
 
         for (const row of res.rows) {
             const word = row._id;
             const type = row.type || "";
             const theme = row.theme || "";
+            const mean = row.mean || "";
 
             allWords.push(word);
 
-            if (word.length >= 2 && KOR_GROUP.test(type)) {
+            const isPlayable = word.length >= 2 && KOR_GROUP.test(type);
+            if (isPlayable) {
                 playableWords.push(word);
+            }
+
+            // 주제가 없는 어인정 단어 중 뜻이 비어있는 단어 (stray)
+            const isInjeong = type.split(',').map(t => t.trim()).includes('INJEONG');
+            if (isPlayable && isInjeong && !theme && !mean) {
+                strayWords.push(word);
+            }
+
+            // 품사 -1 특수 단어: type 토큰 중 하나가 정확히 "-1"인 경우
+            if (type.split(',').map(t => t.trim()).includes('-1')) {
+                specialNeg1.push(word);
             }
 
             // Group by theme codes found in the theme column
@@ -89,15 +104,23 @@ async function main() {
 
         console.log(`Extracted ${allWords.length} total words.`);
         console.log(`Extracted ${playableWords.length} playable words.`);
+        console.log(`Extracted ${strayWords.length} stray words (playable, no theme).`);
+        console.log(`Extracted ${specialNeg1.length} special words (type -1).`);
 
         const allWordsPath = path.join(__dirname, 'all_words.txt');
         const playableWordsPath = path.join(__dirname, 'kkutu_playable_words.txt');
+        const strayWordsPath = path.join(__dirname, 'stray_words.txt');
+        const specialNeg1Path = path.join(__dirname, 'special_type_neg1.txt');
 
         fs.writeFileSync(allWordsPath, korSort(allWords).join('\n'), 'utf8');
         fs.writeFileSync(playableWordsPath, korSort(playableWords).join('\n'), 'utf8');
+        fs.writeFileSync(strayWordsPath, korSort(strayWords).join('\n'), 'utf8');
+        fs.writeFileSync(specialNeg1Path, korSort(specialNeg1).join('\n'), 'utf8');
 
         console.log(`Saved all words to: ${allWordsPath}`);
         console.log(`Saved playable words to: ${playableWordsPath}`);
+        console.log(`Saved stray words to: ${strayWordsPath}`);
+        console.log(`Saved special type -1 words to: ${specialNeg1Path}`);
 
         // Create 주제 folder and write per-theme files sorted alphabetically
         const themeDirPath = path.join(__dirname, '주제');
