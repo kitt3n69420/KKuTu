@@ -1,6 +1,8 @@
 {
 	"server-name": "끄투엔",
 	"web-num-cpu": 1,
-	"game-num-cpu": 3,
-	"game-num-inst": 1
+	"game-num-cpu": 1,
+	"game-num-inst": 1,
+	"web-cpu-core": 0,
+	"game-cpu-core": 1
 }

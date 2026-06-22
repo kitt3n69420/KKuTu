@@ -17,6 +17,7 @@
  */
 
 const Spawn = require("child_process").spawn;
+const Exec = require("child_process").exec;
 const JLog = require("./lib/sub/jjlog");
 const PKG = require("./package.json");
 const LANG = require("../language.json");
@@ -116,15 +117,28 @@ class ChildProcess {
 }
 let webServer, gameServers;
 
+function setCpuAffinity(pid, core) {
+	if (core === undefined || core === null) return;
+	var mask = 1 << core;
+	if (process.platform === 'win32') {
+		Exec('powershell -Command "(Get-Process -Id ' + pid + ').ProcessorAffinity = ' + mask + '"');
+	} else {
+		Exec('taskset -cp ' + core + ' ' + pid);
+	}
+}
+
 function startServer() {
 	stopServer();
 	if (SETTINGS['server-name']) process.env['KKT_SV_NAME'] = SETTINGS['server-name'];
 
 	webServer = new ChildProcess('W', "node", `${__dirname}/lib/Web/cluster.js`, SETTINGS['web-num-cpu']);
+	setCpuAffinity(webServer.process.pid, SETTINGS['web-cpu-core']);
 	gameServers = [];
 
 	for (let i = 0; i < SETTINGS['game-num-inst']; i++) {
-		gameServers.push(new ChildProcess('G', "node", `${__dirname}/lib/Game/cluster.js`, i, SETTINGS['game-num-cpu']));
+		let gs = new ChildProcess('G', "node", `${__dirname}/lib/Game/cluster.js`, i, SETTINGS['game-num-cpu']);
+		setCpuAffinity(gs.process.pid, SETTINGS['game-cpu-core']);
+		gameServers.push(gs);
 	}
 	exports.send('server-status', getServerStatus());
 }

@@ -130,6 +130,28 @@ function handleDiscordProcessMessage(msg) {
   }
 }
 
+function setDiscordCpuAffinity(pid) {
+  var core = (GLOBAL.DISCORD_CPU_CORE !== undefined) ? GLOBAL.DISCORD_CPU_CORE : 0;
+  var mask = 1 << core;
+  if (process.platform === 'win32') {
+    ChildProcess.exec(
+      'powershell -Command "(Get-Process -Id ' + pid + ').ProcessorAffinity = ' + mask + '"',
+      function (err) {
+        if (err) JLog.warn('[Discord Process] CPU 어피니티 설정 실패: ' + err.message);
+        else JLog.info('[Discord Process] CPU 코어 ' + core + '번에 고정됨 (PID ' + pid + ')');
+      }
+    );
+  } else {
+    ChildProcess.exec(
+      'taskset -cp ' + core + ' ' + pid,
+      function (err) {
+        if (err) JLog.warn('[Discord Process] CPU 어피니티 설정 실패: ' + err.message);
+        else JLog.info('[Discord Process] CPU 코어 ' + core + '번에 고정됨 (PID ' + pid + ')');
+      }
+    );
+  }
+}
+
 function spawnDiscordProcess() {
   if (!GLOBAL.BOT_ENABLED || !GLOBAL.DISCORD_TOKEN) return;
 
@@ -137,6 +159,10 @@ function spawnDiscordProcess() {
     Path.join(__dirname, "../sub/discord-process.js"),
     { silent: false }
   );
+
+  if (GLOBAL.DISCORD_CPU_CORE !== undefined) {
+    setDiscordCpuAffinity(discordProcess.pid);
+  }
 
   discordProcess.on("message", handleDiscordProcessMessage);
 
