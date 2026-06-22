@@ -84,7 +84,8 @@ async function main() {
             const isInjeong = type.split(',').map(t => t.trim()).includes('INJEONG');
             const themeTokens = theme.split(',').map(t => t.trim()).filter(Boolean);
             const themeIsEmpty = themeTokens.length === 0 || themeTokens.every(t => t === '0');
-            if (isPlayable && isInjeong && themeIsEmpty && !mean) {
+            const meanIsEmpty = !mean || mean === '＂1＂';
+            if (isPlayable && isInjeong && themeIsEmpty && meanIsEmpty) {
                 strayWords.push(word);
             }
 
