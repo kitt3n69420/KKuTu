@@ -2665,3 +2665,8 @@ TypeError: Cannot read properties of undefined (reading 'push')
     at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12
     at Parser.parse (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\parser.js:40:17)
     at Socket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\index.js:11:42)
+:2053 [2026. 6. 24. 오후 8:31:27] MASTER_ERROR: TypeError: _bot.chat is not a function
+TypeError: _bot.chat is not a function
+    at Timeout._onTimeout (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:2197:55)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7)
