@@ -29,6 +29,39 @@
 	.goods-image{ margin: 2px; width: 50px; height: 50px; }
 	.goods-title{ margin: 2px 0px; width: 186px; font-size: 15px; font-weight: bold; }
 	.goods-cost{ margin: 2px 0px; width: 186px; color: #3333FF; }
+/* Shop search bar layout */
+.shop-header-row, .m-shop-header-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 5%;
+	margin-bottom: 5px;
+}
+.shop-header-row .shop-categories {
+	width: 20%;
+	margin: 0;
+	overflow-y: auto;
+	flex-shrink: 0;
+}
+.m-shop-header-row .m-shop-category {
+	width: 20%;
+	flex-shrink: 0;
+	box-sizing: border-box;
+}
+#shop-search {
+	width: 75%;
+	padding: 4px 6px;
+	border: 1px solid #AAAAAA;
+	border-radius: 5px;
+	font-size: 13px;
+	box-sizing: border-box;
+	flex-shrink: 0;
+}
+#shop-search-empty {
+	text-align: center;
+	color: #999999;
+	padding: 20px;
+	width: 100%;
+}
 .shop-categories{ margin: -3px 0px 5px 0px; }
 	.shop-type{
 		padding: 5px 0px;

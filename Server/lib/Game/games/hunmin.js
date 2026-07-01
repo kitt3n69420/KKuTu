@@ -56,6 +56,7 @@ exports.roundReady = function () {
 	my.game.round++;
 	my.game.roundTime = my.time * 1000;
 	if (!my.opts.onlyonce || my.game.round === 1) my.resetChain();
+	my.game.roundChainBase = my.game.chain.length;
 	if (my.game.round <= my.round) {
 		if (my.opts.length3) my.game.theme = getTheme3(my.game.done);
 		else my.game.theme = getTheme(2, my.game.done);
@@ -77,7 +78,7 @@ exports.turnStart = function (force) {
 	var si;
 
 	if (!my.game.chain) return;
-	my.game.roundTime = Math.min(my.game.roundTime, Math.max(10000, 150000 - my.game.chain.length * 1500));
+	my.game.roundTime = Math.min(my.game.roundTime, Math.max(10000, 150000 - (my.game.chain.length - my.game.roundChainBase) * 1500));
 	speed = my.getTurnSpeed(my.opts.speed ? my.game.roundTime / 2 : my.game.roundTime);
 	clearTimeout(my.game.turnTimer);
 	clearTimeout(my.game.robotTimer);

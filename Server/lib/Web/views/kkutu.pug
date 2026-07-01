@@ -762,10 +762,12 @@ block Middle
 	+Product('UserList')
 	+Product('RoomList')
 	+Product('Shop')
-		div.shop-categories
-			- for(var i in locals.CATEGORIES)
-				- var v = locals.GROUPS[locals.CATEGORIES[i]] || [];
-				div.category-filter.shop-type(id="shop-type-" + locals.CATEGORIES[i], value=v.join(','))= L('category_' + locals.CATEGORIES[i])
+		div.shop-header-row
+			div.shop-categories
+				- for(var i in locals.CATEGORIES)
+					- var v = locals.GROUPS[locals.CATEGORIES[i]] || [];
+					div.category-filter.shop-type(id="shop-type-" + locals.CATEGORIES[i], value=v.join(','))= L('category_' + locals.CATEGORIES[i])
+			input#shop-search(type='text', placeholder=L('shopSearchPlaceholder'))
 		div#shop-shelf(style='width: 100%; height: 305px; overflow-y: scroll;')
 	+Product('Room')
 		div.team-selector

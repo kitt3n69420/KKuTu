@@ -785,10 +785,12 @@ block Middle
 	+Product('RoomList')
 		div 불러오는 중...
 	+Product('Shop')
-		select#m-shop-category.m-shop-category
-			- for(var i in locals.CATEGORIES)
-				- var v = locals.GROUPS[locals.CATEGORIES[i]] || [];
-				option(value=v.join(','), data-type=locals.CATEGORIES[i])= L('category_' + locals.CATEGORIES[i])
+		div.m-shop-header-row
+			select#m-shop-category.m-shop-category
+				- for(var i in locals.CATEGORIES)
+					- var v = locals.GROUPS[locals.CATEGORIES[i]] || [];
+					option(value=v.join(','), data-type=locals.CATEGORIES[i])= L('category_' + locals.CATEGORIES[i])
+			input#shop-search(type='text', placeholder=L('shopSearchPlaceholder'))
 		div#shop-shelf
 	+Product('Room')
 		div.team-selector

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Rule the words! KKuTu Online
  * Copyright (C) 2017 JJoriping(op@jjo.kr)
  * 
@@ -81,6 +81,7 @@ exports.OPTIONS = {
 	'sur': { name: "Survival" },
 	'fdu': { name: "FreeDueum" },
 	'ndu': { name: "NoDueum" },
+	'rdu': { name: "RobloxDuum" },
 	'spd': { name: "Speed" },
 	'drg': { name: "Drg" },
 	'spt': { name: "SpeedToss" },
@@ -126,21 +127,6 @@ exports.ITEM_MAX_COUNT = 10;       // 종류별 최대 보유 개수
 exports.ITEM_GRANT_INTERVAL = 6;  // 글로벌 N턴마다 전체 자동 지급
 exports.ITEM_BONUS_THRESHOLD = 2; // 보너스 수치 N 이상이면 지급
 
-// 보너스 수치 계산 (각 게임 모드의 submit 처리 후 호출)
-exports.calcItemBonusPoints = function (missionCount, toss, straightStreak, fullhouse) {
-	var points = 0;
-	points += missionCount;
-	if (toss) points += 1;
-	if (straightStreak >= 1) points += Math.min(straightStreak, 3);
-	if (fullhouse) points += 3;
-	return points;
-};
-
-// 가온잇기/끝말잇기 아이템 종류 결정 (방 옵션 기준)
-exports.getLinkOverrideType = function (opts) {
-	if (opts.middle || opts.random) return 'end';
-	return 'middle';
-};
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
 	"저런", "ㅋㅋㅋㅋ", "안타깝네요", "아이고...", "바부", "컷~",
 	"잘가시고~", "ㅋㅋㅋㅋㅋㅋ", "멍충이", "아이고야", "꽤나 따끔할거요",
@@ -273,7 +259,7 @@ exports.RULE = {
 	'KKT': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "kch", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm", "chs", "nsw", "flu", "dfb"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "kch", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "rdu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm", "chs", "nsw", "flu", "dfb"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -282,7 +268,7 @@ exports.RULE = {
 	'KSH': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "nsw", "flu", "jkp", "dfb"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "rdu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "nsw", "flu", "jkp", "dfb"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -327,7 +313,7 @@ exports.RULE = {
 	'KAP': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "nsw", "flu", "jkp", "dfb"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "rdu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "nsw", "flu", "jkp", "dfb"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -446,7 +432,7 @@ exports.RULE = {
 	'KAK': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "kch", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm", "chs", "nsw", "flu", "dfb"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "kch", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "rdu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm", "chs", "nsw", "flu", "dfb"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -658,78 +644,6 @@ exports.GAME_CATEGORIES = {
 		modes: ['CRL']
 	}
 };
-exports.getPreScore = function (text, chain, tr) {
-	return 2 * (Math.pow(5 + 7 * (text || "").length, 0.74) + 1.18 * (chain || []).length) * (0.5 + 0.5 * tr);
-};
-exports.getCalcScore = function (chainLength, op, a, b, tr) {
-	// raw: 체인 길이에 선형 비례 (chain=100에서 soft clip 상한 근접)
-	var raw = 30 * (1 + chainLength);
-	// soft clip: 1000점을 상한으로 천천히 수렴 (1-exp 곡선)
-	var base = 1000 * (1 - Math.exp(-raw / 1200));
-	var digA = String(Math.abs(a || 1)).length;
-	var digB = String(Math.abs(b || 1)).length;
-	var opBonus = (op === 2)
-		? Math.min(1.4, 1.0 + 0.1 * (digA + digB - 2))
-		: Math.min(1.2, 1.0 + 0.04 * (Math.max(digA, digB) - 1));
-	return base * opBonus * (0.5 + 0.5 * tr);
-};
-exports.getPenalty = function (chain, score) {
-	return -1 * Math.round(Math.max(50, 10 + (chain || []).length * 3 + score * 0.2));
-};
-exports.getCalcBattleScore = function (chainLength, op, a, b) {
-	var base = 20 + 10 * Math.pow(1 + chainLength, 0.6);
-	var digA = String(Math.abs(a || 1)).length;
-	var digB = String(Math.abs(b || 1)).length;
-	var opBonus = (op === 2)
-		? Math.min(1.4, 1.0 + 0.1 * (digA + digB - 2))
-		: Math.min(1.2, 1.0 + 0.04 * (Math.max(digA, digB) - 1));
-	return Math.round(base * opBonus);
-};
-// 수학 문제 생성 헬퍼 함수 (calcrelay, calcbattle 공용)
-exports.generateCalcProblem = function (chainLength) {
-	var c = chainLength || 0;
-	var m = Math.min(10000000, Math.floor(15 * Math.pow(2, c / 8)));
-	var op = Math.floor(Math.random() * 3);
-	var a, b, question, answer;
-
-	if (op === 0) { // 덧셈: a + b = ?
-		var minVal = Math.floor(m / 10);
-		a = Math.max(1, Math.floor(Math.random() * (m - minVal) + minVal));
-		b = Math.max(1, Math.floor(Math.random() * (m - minVal) + minVal));
-		question = a + " + " + b + " = ?";
-		answer = (a + b) | 0;
-	} else if (op === 1) { // 뺄셈: (a+b) - a = ?
-		var minVal = Math.floor(m / 10);
-		a = Math.max(1, Math.floor(Math.random() * (m - minVal) + minVal));
-		b = Math.max(1, Math.floor(Math.random() * (m - minVal) + minVal));
-		question = (a + b) + " - " + a + " = ?";
-		answer = b | 0;
-	} else { // 곱셈: a × b = ?
-		var sqrtM = 2 * Math.min(Math.max(5, Math.floor(Math.pow(m, 0.6))), 10000);
-		var minVal = Math.max(2, Math.floor(sqrtM / 10));
-		a = Math.max(2, Math.floor(Math.random() * (sqrtM - minVal) + minVal));
-		b = Math.max(2, Math.floor(Math.random() * (sqrtM - minVal) + minVal));
-		question = a + " × " + b + " = ?";
-		answer = (a * b) | 0;
-	}
-	return { question: question, answer: answer, op: op, a: a, b: b };
-};
-// 봇 오답 생성 함수
-exports.generateWrongAnswer = function (correct) {
-	var digits = String(correct).split('');
-	if (digits.length === 0) return "0";
-	var idx = Math.floor(Math.random() * digits.length);
-	var newDigit;
-	do {
-		newDigit = String(Math.floor(Math.random() * 10));
-	} while (newDigit === digits[idx]);
-	digits[idx] = newDigit;
-	// 첫 자리가 0이 되면 안됨 (단, 한 자리 수는 0 가능)
-	if (digits.length > 1 && digits[0] === '0') {
-		digits[0] = String(Math.floor(Math.random() * 9) + 1);
-	}
-	return digits.join('');
-};
 exports.GAME_TYPE = Object.keys(exports.RULE);
 exports.EXAMPLE_TITLE = {
 	'ko': "이기자도지사리스트법",
@@ -748,93 +662,6 @@ exports.VOWEL_SOUNDS = ["ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", 
 exports.MISSION_ko = ["가", "나", "다", "라", "마", "바", "사", "아", "자", "차", "카", "타", "파", "하"];
 exports.MISSION_en = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 exports.MISSION_jamo = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅅ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ', 'ㅏ', 'ㅐ', 'ㅓ', 'ㅔ', 'ㅗ', 'ㅜ', 'ㅡ', 'ㅣ', 'ㅑ', 'ㅕ', 'ㅛ', 'ㅠ'];
-
-// KJM 자모 분해 테이블 (ㅐ·ㅔ 기본 자모 도입, ㅙ=ㅗ+ㅐ, ㅞ=ㅜ+ㅔ, ㅒ=ㅑ+ㅣ, ㅖ=ㅕ+ㅣ)
-var _JAMO_INITIALS = ['ㄱ', 'ㄱㄱ', 'ㄴ', 'ㄷ', 'ㄷㄷ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅂㅂ', 'ㅅ', 'ㅅㅅ', 'ㅇ', 'ㅈ', 'ㅈㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
-var _JAMO_MEDIALS = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅑㅣ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅕㅣ', 'ㅗ', 'ㅗㅏ', 'ㅗㅐ', 'ㅗㅣ', 'ㅛ', 'ㅜ', 'ㅜㅓ', 'ㅜㅔ', 'ㅜㅣ', 'ㅠ', 'ㅡ', 'ㅡㅣ', 'ㅣ'];
-var _JAMO_FINALS = ['', 'ㄱ', 'ㄱㄱ', 'ㄱㅅ', 'ㄴ', 'ㄴㅈ', 'ㄴㅎ', 'ㄷ', 'ㄹ', 'ㄹㄱ', 'ㄹㅁ', 'ㄹㅂ', 'ㄹㅅ', 'ㄹㅌ', 'ㄹㅍ', 'ㄹㅎ', 'ㅁ', 'ㅂ', 'ㅂㅅ', 'ㅅ', 'ㅅㅅ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
-// 숫자 → 한국어 이름 변환표 (자모 분해 전 치환용)
-var _NUM_KO = { '0': '영', '1': '일', '2': '이', '3': '삼', '4': '사', '5': '오', '6': '육', '7': '칠', '8': '팔', '9': '구' };
-
-exports.decomposeToJamo = function (text) {
-	// 숫자를 한국어 이름으로 치환 후 자모 분해 (0→영, 1→일, ..., 9→구)
-	text = text.replace(/[0-9]/g, function (d) { return _NUM_KO[d]; });
-	var result = '';
-	for (var i = 0; i < text.length; i++) {
-		var code = text.charCodeAt(i) - 0xAC00;
-		if (code < 0 || code > 11171) { result += text[i]; continue; }
-		result += _JAMO_INITIALS[Math.floor(code / 588)]
-			+ _JAMO_MEDIALS[Math.floor((code % 588) / 28)]
-			+ _JAMO_FINALS[code % 28];
-	}
-	return result;
-};
-
-// 자모 1개 → 해당 자모로 시작하는 한국어 음절 범위 RegExp 반환
-// 자음: 쌍자음 포함 초성 전체 / 모음: ㅇ 초성 + 해당 중성(복합모음 포함)
-var _JAMO_RANGES = {
-	'ㄱ': '\uAC00-\uB097', 'ㄴ': '\uB098-\uB2E3', 'ㄷ': '\uB2E4-\uB77B',
-	'ㄹ': '\uB77C-\uB9C7', 'ㅁ': '\uB9C8-\uBC13', 'ㅂ': '\uBC14-\uC0AB',
-	'ㅅ': '\uC0AC-\uC543', 'ㅇ': '\uC544-\uC78F', 'ㅈ': '\uC790-\uCC27',
-	'ㅊ': '\uCC28-\uCE73', 'ㅋ': '\uCE74-\uD0BF', 'ㅌ': '\uD0C0-\uD30B',
-	'ㅍ': '\uD30C-\uD557', 'ㅎ': '\uD558-\uD7A3',
-	// 모음 (ㅇ 초성 고정)
-	'ㅏ': '\uC544-\uC55F', 'ㅐ': '\uC560-\uC57B',
-	'ㅑ': '\uC57C-\uC5B3', 'ㅓ': '\uC5B4-\uC5CF',
-	'ㅔ': '\uC5D0-\uC5EB', 'ㅕ': '\uC5EC-\uC623',
-	'ㅗ': '\uC624-\uC693', 'ㅛ': '\uC694-\uC6AF',
-	'ㅜ': '\uC6B0-\uC71F',
-	'ㅠ': '\uC720-\uC73B', 'ㅡ': '\uC73C-\uC773',
-	'ㅣ': '\uC774-\uC78F'
-};
-exports.getJamoRegex = function (jamo) {
-	var range = _JAMO_RANGES[jamo];
-	if (!range) return /(?!)/;
-	return new RegExp('^[' + range + ']');
-};
-
-// KJM: 낱자 포함 + 모음 연결 시 모든 초성 허용
-// decomposed: decomposeToJamo() 결과, jamo: 연결 자모 1개
-exports.kjmStartsWith = function (decomposed, jamo) {
-	if (!decomposed || !jamo) return false;
-	// U+314F~ 이상이면 모음 (ㅏ~ㅣ), 미만이면 자음
-	var isVowel = jamo.charCodeAt(0) >= 0x314F;
-	if (isVowel) {
-		// 모음 연결: 첫 번째 모음 자모가 일치하면 초성 무관
-		for (var i = 0; i < decomposed.length; i++) {
-			if (decomposed.charCodeAt(i) >= 0x314F) return decomposed[i] === jamo;
-		}
-		return false;
-	}
-	// 자음 연결: 첫 자모가 일치 (낱자 포함)
-	return decomposed[0] === jamo;
-};
-
-// KJM DB 쿼리용 regex: 낱자 + 모음이면 모든 초성 허용
-exports.getKjmStartRegex = function (jamo) {
-	var jamoCode = jamo.charCodeAt(0);
-	var isVowel = jamoCode >= 0x314F && jamoCode <= 0x3163;
-	if (!isVowel) {
-		var range = _JAMO_RANGES[jamo];
-		if (!range) return /(?!)/;
-		// 낱자 자음 + 기존 음절 범위
-		return new RegExp('^[' + jamo + range + ']');
-	}
-	var medialIndex = _JAMO_MEDIALS.indexOf(jamo);
-	if (medialIndex === -1) return /(?!)/;
-	// 낱자 모음 + 모든 초성(0~18) × 해당 중성 × 모든 종성
-	var chars = jamo;
-	for (var i = 0; i < 19; i++) {
-		var start = 0xAC00 + i * 588 + medialIndex * 28;
-		chars += String.fromCharCode(start) + '-' + String.fromCharCode(start + 27);
-	}
-	return new RegExp('^[' + chars + ']');
-};
-
-exports.getPreScoreJamo = function (text, chain, tr) {
-	var jamoLen = exports.decomposeToJamo(text || '').length;
-	return 2 * (Math.pow(5 + 7 * jamoLen, 0.74) + 1.18 * (chain || []).length) * (0.5 + 0.5 * tr);
-};
 
 exports.KO_INJEONG = [
 	"KRR", "KDI", "KTV", "KBS", 
@@ -903,21 +730,39 @@ exports.getRule = function (mode) {
 };
 
 exports.BOT_NAME_TEMPLATES = [
-	"나는 {0}다", "{0} 끄돌이", "{0} 끄순이", "{0} 끄투 봇",
-	"끄투잘하고싶어요", "완전 물렙", "모레미귀여워", "모레미는 세계최강",
-	"유기농 감자", "평범한 끄투러", "끄투가좋아", "한판해요", "나는야끄투봇",
-	"빛과부", "궁민연금", "아침마담", "휴지필름", "태조샷건", "콩쥐들쥐",
-	"구타500", "브레드피토", "동생방신기", "피구왕한무", "피부암통키",
-	"산드라불독", "뇌출혈씨티", "존트럭불타", "백마탄환자", "EF손아파",
-	"추잡60분", "메뚜기쉰라면", "탈모엔안제모", "내자랑4가지", "추적60인분",
-	"니콜키크드만", "낙동강효리알", "모르는개산책", "축구왕숯갈비",
-	"옷삶아빛나데", "믹서기육천원", "투다리스머프", "이웃집또털어",
-	"아기공룡둘째", "집수리오형제", "카드값줘체리", "독수리오년째",
-	"출산드라블록", "명륜진샤오미", "브라운타이즈", "클레오파트너",
-	"인사없음트롤", "배숙희나빈손", "말죽거리잠옷사",
-	"백마타고온환자", "더블에스오지명", "그리움만싸인회", "노스트라단무지",
-	"소리없는정우성", "소년탐정김정일", "반지의제왕절개", "발리에서쌩깐일",
-	"태정태세문단속", "오른쪽이스웨인", "18K반지의제왕"
+	"나는 {0}다", "{0} 끄돌이", "{0} 끄순이", "{0} 끄투 봇", "끄투잘하고싶어요",
+	"완전 물렙", "모레미귀여워", "모레미는세계최강", "유기농 감자", "평범한 끄투러",
+	"끄투가좋아", "한판해요", "나는야끄투봇", "일 동안 끄투중", "년 동안 초보",
+	"우리집강아지는몹쓸강아지", "내이름은가난돈이없죠", "내이름은고난시련이죠",
+	"너는내운명하셨습니다", "레몬나르고빚갚으리오", "슈크림도어가열립니다",
+	"우리아이가갈라졌어요", "플란다스의개팥들었슈", "하울의무빙이오지는성",
+	"헬리콥터와마법사의똥", "6백만달라는사나이", "꿔바로우많이두개더",
+	"내이름은조난당했죠", "넌내게목욕값을줬어", "대추나무사람걸렸네",
+	"맨체스터유나의비듬", "미녀는석유를좋아해", "외대맘을홍대는건대",
+	"이상한나라의김정은", "잠자는숲속의이봉주", "지키는박사와하인들",
+	"18K반지의제왕", "넌정말극악무도회", "누구나비닐은있다", "바른먹거리풀먹어",
+	"부릅뜨니숲이었어", "아프리카청춘이다", "잠오는숲속의마녀", "조선왕조씰룩쌜룩",
+	"킴가산디지털단지", "팁있는다방을싣고", "귀신이고칼로리", "그놈은맛있었다",
+	"그리움만싸인회", "남녀칠세부동산", "노스트라단무지", "닥터전자레인지",
+	"더블에스오지명", "많이화나그런데", "말죽거리잠옷사", "박수칠때손아파",
+	"반지의제왕절개", "발리에서쌩깐일", "백마타고온환자", "버뮤다삼각팬티",
+	"소년탐정김정일", "소리없는정우성", "오른쪽이스웨인", "은하철도구부려",
+	"이태원큰일나쓰", "전이만갑오개혁", "태정태세문단속", "태정태세비욘세",
+	"매관MAGIC", "낙동강효리알", "난닝구머스마", "내자랑4가지","뇌송송계념탁",
+	"니콜키크드만", "독수리오년째", "띵호와의증인", "메뚜기쉰라면", "명륜진샤오미",
+	"모르는개산책", "미션이빨썩을", "믹서기육천원", "배숙희나빈손", "봉구스박보검",
+	"브라운타이즈", "빨간망또라이", "소주소년아톰", "숙취엔견디셔", "신밧드의보험",
+	"쌓이면돈이니", "아기공룡둘째", "아줌마가대왕", "안졸리냐졸려", "양들의메밀묵",
+	"옥다방고양이", "옷삶아빛나데", "이웃집또털어", "인사없음트롤", "장클로드분당",
+	"집수리오형제", "짱구는옷말려", "추적60인분", "축구왕숯갈비", "출산드라블록",
+	"카드값줘체리", "클레오빡돌아", "클레오파트너", "탈모엔안제모", "투다리스머프",
+	"티끌모아파산", "피자헛둘셋넷", "하도깝쳐체리", "한방쓰면던짐", "헨젤와그랬대",
+	"가불의위기", "구타500", "뇌출혈씨티", "달려야하니", "동생방신기", "명란젓코난",
+	"바람의점심", "반지하재앙", "발광머리앤", "밥이브라운", "백마탄환자", "브레드피토",
+	"비긴이계인", "산드라불독", "이쑤신장군", "쟤시켜알바", "제시간알바", "존트럭불타",
+	"초록불고기", "추잡60분", "털민웨이터", "폭행몬스터", "피구왕한무", "피부암통키", 
+	"호나우당뇨", "EF손아파", "SG원넓이", "공익인간", "궁민연금", "비달삼순", 
+	"순데될라", "아침마담", "콩쥐들쥐", "태조샷건", "휴지필름", "빛과부",
 ];
 
 exports.BOT_LEVEL_NAMES = {
@@ -983,185 +828,4 @@ exports.BOT_ITEM_WEIGHTS = {
 	"white_mask": 3
 
 };
-
-// ========== 서바이벌 모드 공통 유틸리티 ==========
-
-/**
- * 서바이벌 모드에서 생존자 수와 팀 수를 확인
- * @param {Object} my - Room 객체
- * @param {Object} DIC - 플레이어 사전
- * @returns {Object} { aliveCount, aliveTeams, hasTeams, gameOver }
- */
-exports.checkSurvivalStatus = function (my, DIC) {
-	var aliveCount = 0;
-	var aliveTeams = new Set();
-	var hasTeams = false;
-	var individualCount = 0;
-
-	for (var i in my.game.seq) {
-		var p = DIC[my.game.seq[i]] || my.game.seq[i];
-		if (p && p.game && p.game.alive) {
-			aliveCount++;
-			var team = p.robot ? p.game.team : p.team;
-			// team이 1~4이면 팀전, 0이거나 undefined/null이면 개인전
-			if (team && team >= 1 && team <= 4) {
-				aliveTeams.add(team);
-				hasTeams = true;
-			} else {
-				individualCount++;
-			}
-		}
-	}
-
-	// 게임 종료 조건: 팀 + 개인전 합쳐서 1개체만 남을 때
-	// 팀은 같은 팀원끼리 1개체, 개인은 각자 1개체
-	var totalEntities = aliveTeams.size + individualCount;
-	var gameOver = totalEntities <= 1;
-
-	return {
-		aliveCount: aliveCount,
-		aliveTeams: aliveTeams,
-		hasTeams: hasTeams,
-		gameOver: gameOver
-	};
-};
-
-/**
- * 서바이벌 모드에서 다음 살아있는 플레이어에게 데미지 적용
- * @param {Object} my - Room 객체
- * @param {Object} DIC - 플레이어 사전
- * @param {number} damage - 가할 데미지
- * @param {number} currentTurn - 현재 턴 인덱스
- * @returns {Object|null} { targetId, damage, newHP, ko } 또는 null (대상 없음)
- */
-exports.applySurvivalDamage = function (my, DIC, damage, currentTurn) {
-	if (damage <= 0) return null;
-	if (!my.game.seq || my.game.seq.length === 0) return null;
-
-	var nextTurn;
-	var found = false;
-	var _itemActive = my.opts.item || my.game.reversed ||
-		(my.game.pendingItems && Object.keys(my.game.pendingItems).length > 0);
-	if (_itemActive) {
-		// peek=false: 아이템 소비 등 부작용을 여기서 한 번만 커밋 (turnNext 재계산 방지)
-		nextTurn = my.calculateNextTurn(false);
-		var p = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
-		found = p && p.game && p.game.alive;
-		if (found) my.game._survivalCachedTarget = nextTurn;
-	} else if (my.opts.randomturn) {
-		var orderLen = my.game.randomTurnOrder.length;
-		var startIdx = (my.game.randomTurnIndex + 1) % orderLen;
-		for (var ri = 0; ri < orderLen; ri++) {
-			var candidateIdx = (startIdx + ri) % orderLen;
-			var candidateTurn = my.game.randomTurnOrder[candidateIdx];
-			var rp = DIC[my.game.seq[candidateTurn]] || my.game.seq[candidateTurn];
-			if (rp && rp.game && rp.game.alive) {
-				nextTurn = candidateTurn;
-				found = true;
-				break;
-			}
-		}
-		// turnNext가 재셔플 후 다른 사람을 선택하는 문제 방지 — 미리 확정한 타겟을 캐싱
-		if (found) my.game._survivalCachedTarget = nextTurn;
-	} else {
-		nextTurn = currentTurn;
-		for (var attempts = 0; attempts < my.game.seq.length; attempts++) {
-			nextTurn = (nextTurn + 1) % my.game.seq.length;
-			if (nextTurn === currentTurn) continue;
-			var nextPlayer = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
-			if (nextPlayer && nextPlayer.game && nextPlayer.game.alive) {
-				found = true;
-				break;
-			}
-		}
-	}
-
-	if (!found) return null;
-	var targetPlayer = DIC[my.game.seq[nextTurn]] || my.game.seq[nextTurn];
-	if (targetPlayer && targetPlayer.game && targetPlayer.game.alive) {
-		var preHP = targetPlayer.game.score;
-		targetPlayer.game.score -= damage;
-		var newHP = targetPlayer.game.score;
-		var ko = newHP <= 0;
-		var actualDamage = ko ? preHP : damage;
-
-		if (ko) {
-			targetPlayer.game.alive = false;
-			targetPlayer.game.score = 0;
-			exports.recordSurvivalKO(my, targetPlayer);
-		}
-
-		// 공격자 데미지 누적
-		my.game.survivalDamageTracking = true;
-		var attackerEntry = my.game.seq[currentTurn];
-		var attacker = (typeof attackerEntry === 'string') ? DIC[attackerEntry] : attackerEntry;
-		if (attacker && attacker.game) {
-			attacker.game.survivalDamageDealt = (attacker.game.survivalDamageDealt || 0) + actualDamage;
-		}
-
-		return {
-			targetId: targetPlayer.id,
-			targetIndex: nextTurn,
-			damage: damage,
-			newHP: ko ? 0 : newHP,
-			ko: ko
-		};
-	}
-
-	return null;
-};
-
-/**
- * 서바이벌 모드에서 타임아웃으로 인한 KO 처리
- * @param {Object} my - Room 객체
- * @param {Object} DIC - 플레이어 사전
- * @param {Object} target - 타임아웃된 플레이어
- * @param {Object} extraData - turnEnd에 추가할 데이터 (optional)
- * @returns {boolean} 게임이 종료되었으면 true
- */
-exports.recordSurvivalKO = function (my, player) {
-	if (!my.game || !player.game) return;
-	player.game.survivalKOOrder = ++(my.game.survivalKOCounter);
-};
-
-exports.handleSurvivalTimeout = function (my, DIC, target, extraData) {
-	if (!my.opts.survival || !target || !target.game || !target.game.alive) {
-		return false;
-	}
-
-	target.game.alive = false;
-	target.game.score = 0;
-	exports.recordSurvivalKO(my, target);
-
-	var status = exports.checkSurvivalStatus(my, DIC);
-
-	var turnEndData = {
-		ok: false,
-		target: target.id,
-		score: 0,
-		totalScore: 0,
-		survival: true,
-		ko: true,
-		koReason: 'timeout'
-	};
-
-	// 추가 데이터 병합
-	if (extraData) {
-		for (var key in extraData) {
-			turnEndData[key] = extraData[key];
-		}
-	}
-
-	my.byMaster('turnEnd', turnEndData, true);
-
-	if (status.gameOver) {
-		clearTimeout(my.game.robotTimer);
-		clearTimeout(my.game._rrt); // 중복 roundEnd 방지 (버그 #4 수정)
-		my.game._rrt = setTimeout(function () {
-			my.roundEnd();
-		}, 2000);
-		return true;
-	}
-
-	return false;
-};
+Object.assign(exports, require('./game-utils'));

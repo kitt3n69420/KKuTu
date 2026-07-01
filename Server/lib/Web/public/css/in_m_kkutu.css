@@ -963,6 +963,18 @@ body.theme-orange .GameBox::before {
 	filter: hue-rotate(-180deg) saturate(130%) brightness(110%);
 }
 
+body.theme-gray .GameBox::before {
+	filter: saturate(0);
+}
+
+body.theme-yellow .GameBox::before {
+	filter: hue-rotate(-170deg) saturate(130%) brightness(130%);
+}
+
+body.theme-green .GameBox::before {
+	filter: hue-rotate(-120deg);
+}
+
 .GameBox .product-title {
 	height: auto;
 	display: flex;

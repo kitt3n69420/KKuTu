@@ -1407,7 +1407,19 @@ $(document).ready(function () {
 		var $opt = $(this).find(':selected');
 		var type = $opt.data('type');
 
-		filterShop(type == 'all' || $opt.attr('value'));
+		filterShop(type == 'all' ? true : $opt.attr('value'));
+	});
+	$("#shop-search").on('input', function () {
+		var $mCat = $("#m-shop-category");
+		if ($mCat.length) {
+			var $opt = $mCat.find(':selected');
+			var type = $opt.data('type');
+			filterShop(type == 'all' ? true : $opt.attr('value'));
+		} else {
+			var $cat = $(".shop-type.selected");
+			var type = $cat.attr('id').slice(10);
+			filterShop(type == 'all' ? true : $cat.attr('value'));
+		}
 	});
 	$stage.menu.dict.on('click', function (e) {
 		showDialog($stage.dialog.dict);
@@ -2530,13 +2542,17 @@ $(document).ready(function () {
 		}
 	});
 
-	// 7. 자유두음 vs 두음 없음 (상호 배제)
+	// 7. 자유두음 vs 두음 없음 vs 로블두음 (상호 배제)
 	$("#room-freedueum, #view-all-freedueum, #view-all-flat-freedueum").on('change', function () {
 		if ($(this).is(':checked')) {
 			$("#room-nodueum").prop('checked', false);
 			$("#room-flat-nodueum").prop('checked', false);
 			$("#room-simple-nodueum").prop('checked', false);
 			$("#view-all-nodueum, #view-all-flat-nodueum").prop('checked', false);
+			$("#room-robloxduum").prop('checked', false);
+			$("#room-flat-robloxduum").prop('checked', false);
+			$("#room-simple-robloxduum").prop('checked', false);
+			$("#view-all-robloxduum, #view-all-flat-robloxduum").prop('checked', false);
 		}
 	});
 	$("#room-nodueum, #view-all-nodueum, #view-all-flat-nodueum").on('change', function () {
@@ -2545,6 +2561,22 @@ $(document).ready(function () {
 			$("#room-flat-freedueum").prop('checked', false);
 			$("#room-simple-freedueum").prop('checked', false);
 			$("#view-all-freedueum, #view-all-flat-freedueum").prop('checked', false);
+			$("#room-robloxduum").prop('checked', false);
+			$("#room-flat-robloxduum").prop('checked', false);
+			$("#room-simple-robloxduum").prop('checked', false);
+			$("#view-all-robloxduum, #view-all-flat-robloxduum").prop('checked', false);
+		}
+	});
+	$("#room-robloxduum, #view-all-robloxduum, #view-all-flat-robloxduum").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-freedueum").prop('checked', false);
+			$("#room-flat-freedueum").prop('checked', false);
+			$("#room-simple-freedueum").prop('checked', false);
+			$("#view-all-freedueum, #view-all-flat-freedueum").prop('checked', false);
+			$("#room-nodueum").prop('checked', false);
+			$("#room-flat-nodueum").prop('checked', false);
+			$("#room-simple-nodueum").prop('checked', false);
+			$("#view-all-nodueum, #view-all-flat-nodueum").prop('checked', false);
 		}
 	});
 
