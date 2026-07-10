@@ -2789,3 +2789,39 @@ Error: write EMFILE
     at Worker.onmessage (node:internal/cluster/primary:254:5)
     at ChildProcess.onInternalMessage (node:internal/cluster/utils:49:5)
     at ChildProcess.emit (node:events:530:35)
+:2083 [2026. 7. 8. 오후 2:21:22] MASTER_ERROR: TypeError: Cannot read properties of undefined (reading 'add')
+TypeError: Cannot read properties of undefined (reading 'add')
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\picture.js:689:30
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:318:13)
+    at preCB (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:300:6)
+    at Query.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-pool\index.js:389:18)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12)
+    at Client._handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\client.js:290:19)
+    at Connection.emit (node:events:508:28)
+    at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\connection.js:114:12
+    at Parser.parse (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\parser.js:40:17)
+    at Socket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-protocol\dist\index.js:11:42)
+:2083 [2026. 7. 10. 오후 5:21:42] MASTER_ERROR: ReferenceError: checkSwearWords is not defined
+ReferenceError: checkSwearWords is not defined
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic-bot.js:781:29
+    at Array.filter (<anonymous>)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic-bot.js:763:17
+    at exports.Tail.go (C:\myKKuTu\KKuTu-master\Server\lib\sub\lizard.js:43:16)
+    at aft (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic-util.js:635:8)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\games\classic-util.js:664:23
+    at callback (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:318:13)
+    at preCB (C:\myKKuTu\KKuTu-master\Server\lib\sub\collection.js:300:6)
+    at Query.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg-pool\index.js:389:18)
+    at Query.handleReadyForQuery (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\pg\lib\query.js:138:12)
+:2083 [2026. 7. 10. 오후 9:53:19] MASTER_ERROR: ReferenceError: censorSwearWords is not defined
+ReferenceError: censorSwearWords is not defined
+    at Room.my.submit (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:2489:11)
+    at KKuTu.onClientMessage (C:\myKKuTu\KKuTu-master\Server\lib\Game\slave.js:357:16)
+    at WebSocket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:780:11)
+    at WebSocket.emit (node:events:508:28)
+    at _receiver.onmessage (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\WebSocket.js:141:47)
+    at Receiver.dataMessage (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\Receiver.js:389:14)
+    at Receiver.getData (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\Receiver.js:330:12)
+    at Receiver.startLoop (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\Receiver.js:165:16)
+    at Receiver.add (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\Receiver.js:139:10)
+    at TLSSocket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\WebSocket.js:138:22)
