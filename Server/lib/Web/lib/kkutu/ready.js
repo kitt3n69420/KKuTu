@@ -2019,6 +2019,7 @@ $(document).ready(function () {
 	});
 	$stage.menu.exchange.on('click', function (e) {
 		if ($data._gaming) return fail(438);
+		if ($data.guest) return fail(459);
 		if (showDialog($stage.dialog.exchangeWorkshop)) drawExchangeWorkshop();
 	});
 	$(".craft-type").on('click', function (e) {

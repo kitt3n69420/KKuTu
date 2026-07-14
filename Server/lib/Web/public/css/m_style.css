@@ -34,8 +34,8 @@ body.theme-red {
 	--color-border: #FFCDD2;
 }
 body.theme-orange {
-	--color-primary: #E65100;
-	--color-primary-dark: #BF360C;
+	--color-primary: #e67300;
+	--color-primary-dark: #bf510c;
 	--color-bg-light: #FFF3E0;
 	--color-bg-medium: #FFCC80;
 	--color-border: #FFE0B2;
@@ -158,8 +158,6 @@ span {
 }
 
 .Menu .menu-btn:hover {
-	padding-top: 0;
-	box-shadow: 0px 2px 2px #141414;
 	background-image: none;
 	background-color: #EFC067;
 }
@@ -177,10 +175,6 @@ span {
 #menu-item-GAMES {
 	position: relative;
 	z-index: 10001;
-}
-
-#menu-item-GAMES:hover {
-	height: auto;
 }
 
 .Menu .menu-btn .menu-sub-separator {

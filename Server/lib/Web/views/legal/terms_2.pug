@@ -1,0 +1,204 @@
+extends ../layout
+
+block CSS
+	style.
+		.legal-box { line-height: 1.8; word-break: keep-all; }
+		.legal-box h1 { margin-bottom: 20px; border-bottom: 2px solid #fff; padding-bottom: 10px; }
+		.legal-box h3 { margin-top: 40px; margin-bottom: 15px; font-size: 1.3em; font-weight: bold; color: #81D4FA; }
+		.legal-box p { margin-bottom: 12px; font-size: 1.05em; color: #eee; }
+		.legal-box ul { margin-bottom: 12px; list-style-type: none; padding-left: 10px; }
+		.legal-box li { margin-bottom: 8px; color: #ddd; }
+
+		.change-notice {
+			background: rgba(255, 193, 7, 0.12);
+			border: 1px solid #FFC107;
+			border-radius: 8px;
+			padding: 16px 20px;
+			margin-bottom: 30px;
+		}
+		.change-notice h2 { color: #FFC107; font-size: 1.1em; margin: 0 0 10px 0; }
+		.change-notice ul { margin: 0; padding-left: 10px; }
+		.change-notice li { color: #FFE082; margin-bottom: 5px; font-size: 0.95em; }
+		.change-notice a { color: #90CAF9; }
+
+		.badge {
+			display: inline-block;
+			font-size: 0.78em;
+			font-weight: bold;
+			padding: 2px 10px;
+			border-radius: 10px;
+			vertical-align: middle;
+			margin-right: 8px;
+			line-height: 1.9;
+			letter-spacing: 0.03em;
+		}
+		.badge-new  { background: #1B5E20; color: #A5D6A7; border: 1px solid #388E3C; }
+		.badge-changed { background: #BF360C; color: #FFCCBC; border: 1px solid #E64A19; }
+
+		.section-new {
+			background: rgba(27, 94, 32, 0.18);
+			border-left: 3px solid #4CAF50;
+			padding: 10px 16px;
+			margin: 4px 0 10px 0;
+			border-radius: 0 6px 6px 0;
+		}
+		.section-changed {
+			background: rgba(191, 54, 12, 0.18);
+			border-left: 3px solid #FF7043;
+			padding: 10px 16px;
+			margin: 4px 0 10px 0;
+			border-radius: 0 6px 6px 0;
+		}
+		.section-new p, .section-new li { color: #ddd; }
+		.section-changed p, .section-changed li { color: #ddd; }
+		.section-new ul, .section-changed ul { margin-bottom: 0; }
+		.section-new p:last-child, .section-changed p:last-child { margin-bottom: 0; }
+		.section-new .sub-list, .section-changed .sub-list { padding-left: 20px; }
+
+		h3.h3-new {
+			color: #81D4FA;
+			padding-left: 14px;
+			border-left: 4px solid #4CAF50;
+			background: rgba(27, 94, 32, 0.18);
+			border-radius: 0 6px 6px 0;
+		}
+		h3.h3-changed {
+			color: #81D4FA;
+			padding-left: 14px;
+			border-left: 4px solid #FF7043;
+			background: rgba(191, 54, 12, 0.18);
+			border-radius: 0 6px 6px 0;
+		}
+
+block Subject
+	title 이용약관 - 끄투엔
+
+block Middle
+	div.legal-box(style='padding: 20px; color: white; overflow-y: scroll; height: 100%;')
+		h1 끄투엔 서비스 이용 약관
+
+		div.change-notice
+			h2 📋 2026년 6월 1일 약관 개정 안내
+			p(style='color:#FFE082; margin-bottom:10px; font-size:0.95em;') 이전 약관 대비 아래 항목이 변경되었습니다. 이전 약관은 #[a(href='/legal/terms_1' target='_blank') 여기]에서 확인할 수 있습니다.
+			ul
+				li • [제2조] "비인가 프로그램" 정의 구체화 — 매크로·패킷 조작·메모리 편집 도구 등 예시 추가
+				li • [제2조] "버그" 신규 정의 — 관리자가 공지한 오류 또는 정상 플레이로 불가능한 명백한 기술적 결함에 한정. 게임 규칙 내 고효율 플레이는 버그로 보지 않습니다.
+				li • [제2조] "버그 악용" 신규 정의 — 관리자가 오류임을 공지한 이후에도 계속 이용하는 경우에 한합니다. 공지 이전의 플레이는 버그 악용에 해당하지 않습니다.
+				li • [제2조] "비정상적 이득" 신규 정의 — 공지 없이 정상 플레이로 얻은 보상은 해당하지 않습니다.
+				li • [제9조] 서버 운영 오류 처리 기준 신규 추가
+				li &nbsp;&nbsp;— 관리자의 설정 오류(배율 잘못 설정 등)는 전적으로 관리자 귀책이며, 이용자에게 제재를 가하지 않습니다.
+				li &nbsp;&nbsp;— 오류 기간 과다 지급분에 한해 비례 차감만 적용하며, 조정 후 공지를 통해 이의를 제기할 수 있습니다.
+				li &nbsp;&nbsp;— 관리자가 공지한 버그를 공지 이후에도 계속 이용한 경우에만 버그 악용으로 처리합니다.
+
+		h3 제1조 (목적)
+		p 본 약관은 냐옹이(이하 "관리자")가 운영하는 끄투엔(https://kkutu-n.xyz)(이하 "사이트")에서 제공하는 모든 게임 및 제반 서비스(이하 "서비스")를 이용함에 있어 관리자와 이용자의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.
+
+		h3 제2조 (용어의 정의)
+		p 1. "이용자"란 사이트에 접속하여 본 약관에 따라 서비스를 이용하는 회원 및 비회원을 말합니다.
+		p 2. "회원"이란 서비스에 접속하여 이 약관에 동의하고 아이디(ID)와 비밀번호를 발급받아 서비스를 이용하는 자를 말합니다.
+		div.section-changed
+			p #[span.badge.badge-changed 변경] 3. "비인가 프로그램"이란 관리자가 공식적으로 제공하거나 승인하지 않은 모든 소프트웨어, 도구, 스크립트로서, 게임 결과나 서비스 이용에 영향을 미치거나 미칠 가능성이 있는 것을 말합니다. 구체적으로는 다음을 포함하되, 이에 한정되지 않습니다.
+			ul
+				li - 자동으로 단어를 입력하거나 게임 내 행동을 수행하는 매크로(Macro) 및 자동화 봇(단, 관리자가 공식 제공하는 게임 봇은 제외)
+				li - 게임 클라이언트 또는 서버 간 통신 패킷을 가로채거나 위·변조하는 프로그램 및 도구
+				li - 게임 메모리 값을 임의로 읽거나 수정하는 메모리 편집 도구(치트 엔진 등)
+				li - 서버에 과도한 부하를 유발하거나 타인의 게임 이용을 방해하기 위한 프로그램
+				li - 관리자 권한 없이 서버 데이터(경험치, 핑, 아이템, 전적 등)를 직접 조작하거나 변조하는 모든 수단
+				li - 정상적인 게임 클라이언트를 우회하여 서비스에 접속하거나 이용하는 비정상적인 수단 일체
+		div.section-new
+			p #[span.badge.badge-new 신규] 4. "버그"란 다음 각 목의 어느 하나에 해당하는 객관적이고 명백한 기술적 오류 또는 결함을 말합니다. 이용자가 공개된 게임 규칙의 범위 안에서 효율적인 플레이 방법을 연구하거나 활용하는 것은 이에 해당하지 않습니다.
+			ul
+				li 가. 관리자가 공지사항을 통해 오류임을 명시적으로 고지한 사항
+				li 나. 정상적인 게임 플레이로는 발생할 수 없는 명백한 기술적 결함 (예: 아무런 입력 없이 보상이 지급되는 경우, 수치가 정상 플레이로는 불가능한 규모로 변동되는 경우 등)
+				li 다. 비인가 프로그램(제3호) 등 게임 시스템을 우회하는 수단을 통해서만 발생 가능한 오류
+		div.section-new
+			p #[span.badge.badge-new 신규] 5. "버그 악용"이란 다음 각 목의 행위를 말합니다. 관리자가 공지하기 이전에 이용자가 인지하지 못한 채 발생한 플레이는 버그 악용에 해당하지 않습니다.
+			ul
+				li 가. 관리자가 공지사항을 통해 오류임을 명시적으로 고지한 이후에도 해당 오류를 지속적으로 이용하는 행위
+				li 나. 비인가 프로그램(제3호)을 이용해 게임 시스템을 기술적으로 우회하거나 서버 데이터를 조작하는 행위
+				li 다. 위 가·나목에 해당하는 방법을 타인에게 알리거나 공유하는 행위
+		div.section-new
+			p #[span.badge.badge-new 신규] 6. "비정상적 이득"이란 버그 악용(제5호) 또는 비인가 프로그램(제3호) 사용으로 인해 획득된 경험치, 핑, 아이템, 게임 화폐, 전적 등을 말합니다. 관리자가 별도로 공지하지 않은 상태에서 서비스를 정상적으로 이용하여 얻은 보상은 비정상적 이득에 해당하지 않습니다.
+
+		h3 제3조 (약관의 효력 및 변경)
+		p 1. 본 약관은 사이트를 통해 온라인으로 공시함으로써 효력이 발생합니다.
+		p 2. 관리자는 합리적인 사유가 발생할 경우 관련 법령에 위배되지 않는 범위 안에서 약관을 변경할 수 있습니다.
+		p 3. 변경된 약관은 공지사항 등을 통해 사전에 공지하며, 이용자가 변경된 약관 시행일 이후에도 서비스를 계속 이용하는 경우 약관 변경에 동의한 것으로 간주합니다.
+
+		h3 제4조 (서비스의 제공 및 변경)
+		p 1. 서비스는 연중무휴, 1일 24시간 제공을 원칙으로 합니다. 단, 시스템 정기점검, 증설 및 교체 등 운영상 필요하다고 판단되는 경우 일정 기간 동안 서비스를 일시 중지할 수 있습니다.
+		p 2. 본 서비스는 관리자가 개인적으로 운영하는 #[strong 비영리] 프리서버(사설 서버)로서, 운영상의 어려움 등 불가피한 사정이 있는 경우 사전 고지 후 서비스를 영구적으로 종료할 수 있습니다.
+		p 3. 관리자는 서비스의 내용(게임 모드, UI, 밸런스 등)을 운영상, 기술상 필요에 따라 수정하거나 변경할 수 있습니다.
+
+		h3 제5조 (개인정보의 보호)
+		p 1. 관리자는 이용자의 개인정보를 보호하기 위해 노력하며, 관련 법령 및 사이트의 '개인정보처리방침'을 준수합니다.
+		p 2. 수집된 개인정보는 원칙적으로 제3자에게 제공되지 않으나, 법령에 의한 요구가 있는 경우에는 예외로 합니다.
+
+		h3 제6조 (관리자의 의무)
+		p 1. 관리자는 본 약관이 정하는 바에 따라 지속적이고 안정적인 서비스를 제공하기 위해 노력합니다.
+		p 2. 관리자는 이용자로부터 제기되는 의견이나 불만이 정당하다고 인정할 경우에는 이를 처리하여야 합니다.
+		p 3. 관리자는 이용자의 개인정보 보호를 위한 보안 시스템을 구축하고 운영합니다.
+
+		h3.h3-changed 제7조 (이용자의 의무) #[span.badge.badge-changed 변경]
+		p 이용자는 다음 각 호의 행위를 하여서는 안 됩니다.
+		ul
+			li 1. 타인의 정보 도용 및 관리자 사칭
+			li 2. 서비스 이용 중 얻은 정보를 관리자의 사전 승낙 없이 상업적으로 이용하거나 출판, 방송 등에 활용하는 행위
+			li 3. 비인가 프로그램(제2조 제3호)의 제작, 배포, 사용 또는 타인에게 사용을 권유하거나 그 방법을 공유하는 행위
+			li 4. 닉네임, 채팅 등 서비스 내 모든 표현 수단을 통해 욕설, 비방, 음란한 내용, 도배 등 공서양속에 위반되는 내용을 사용·게시·유포하거나, 부적절한 닉네임을 설정하는 행위
+			li
+				div.section-changed
+					p #[span.badge.badge-changed 변경] 5. 버그 악용(제2조 제5호) 행위. 구체적으로는 다음 행위를 포함합니다.
+					ul.sub-list
+						li - 관리자가 공지한 버그를 공지 이후에도 계속하여 이용하는 행위
+						li - 비인가 프로그램으로 게임 시스템을 우회해 보상을 취하는 행위
+						li - 위 방법을 타인에게 알리거나 공유하는 행위
+			li 6. 타인의 게임 진행을 고의로 방해하거나, 서비스 운영을 고의로 저해하는 행위
+			li 7. 기타 현행 법령 및 본 약관을 위반하는 행위
+
+		h3.h3-changed 제8조 (서비스 이용 제한) #[span.badge.badge-changed 변경]
+		p 1. 관리자는 이용자가 제7조의 의무를 위반하거나 서비스의 정상적인 운영을 방해한 경우, 사전 통보 없이 경고, 일시 정지, 영구 정지(IP 차단 포함) 등의 조치를 취할 수 있습니다.
+		div.section-new
+			p #[span.badge.badge-new 신규] 2. 비정상적 이득(제2조 제6호)이 확인된 경우, 관리자는 다음과 같이 처리합니다.
+			ul
+				li - 버그 악용(제7조 제5호): 획득 이득 전량 회수 및 경고·정지·영구 차단 등의 제재를 병과할 수 있습니다.
+				li - 비인가 프로그램 사용(제7조 제3호): 획득 이득 전량 회수 및 영구 정지(IP 차단 포함) 조치를 취할 수 있습니다.
+		div.section-new
+			p #[span.badge.badge-new 신규] 3. 제재 조치의 수준은 위반 행위의 경중, 반복성, 고의성 등을 종합적으로 고려하여 결정됩니다.
+
+		h3.h3-new 제9조 (서버 운영 오류의 처리) #[span.badge.badge-new 신규]
+		div.section-new
+			p 1. 관리자의 실수 또는 시스템 오류로 인한 상황은 귀책 주체에 따라 다음과 같이 구분합니다.
+			ul
+				li
+					strong 가. 설정 오류 (관리자 귀책)
+				li 경험치·핑 배율의 잘못된 설정, 아이템·게임 화폐의 과도한 지급 등 관리자가 수치를 잘못 설정한 경우를 말합니다. 이 경우 이용자에게는 귀책이 없으며, 관리자는 다음 원칙에 따라 처리합니다.
+				li - 이용자에게 어떠한 제재도 가하지 않습니다.
+				li - 오류 기간 동안 정상 플레이로 획득한 이득 중 과다 지급분에 한하여 비례적으로 차감할 수 있습니다.
+				li - 오류 수정 후 공지사항을 통해 조정 내용과 기준을 고지하며, 이용자는 이에 이의를 제기할 수 있습니다.
+				li
+					strong 나. 코드 버그 (관리자 귀책, 공지 전)
+				li 게임 로직 오류 등 코드상의 결함으로 보상이 비정상적으로 지급된 경우, 관리자가 공지하기 이전에 이용자가 이를 인지하지 못하고 플레이한 경우에는 이용자에게 귀책이 없습니다. 처리 원칙은 위 가목과 동일합니다.
+				li
+					strong 다. 공지된 버그의 지속 이용 (이용자 귀책)
+				li 관리자가 공지사항을 통해 오류임을 명시한 이후에도 해당 버그를 계속 이용하는 경우에는 제7조 제5호의 버그 악용에 해당하며, 제8조 제2항에 따라 처리합니다.
+			p 2. 관리자는 오류 수정 후 공지사항을 통해 조정 내용, 기준, 적용 기간을 안내합니다. 이용자는 공지된 기준에 따라 조정 결과에 이의를 제기할 수 있으며, 관리자는 이를 성실히 검토합니다.
+
+		h3 제10조 (게시물의 관리)
+		p 1. 이용자가 작성한 게시물(채팅, 방 제목 등)에 대한 책임은 이용자 본인에게 있습니다.
+		p 2. 관리자는 게시물이 제7조 위반 사항을 포함하거나 서비스 운영 취지에 맞지 않는다고 판단되는 경우 사전 통지 없이 삭제하거나 이동할 수 있습니다.
+
+		h3.h3-changed 제11조 (면책 조항) #[span.badge.badge-changed 변경]
+		p 1. 본 서비스는 개인 운영 서버이므로, 천재지변, 디도스(DDoS) 공격, IDC 장애, 기간통신사업자의 회선 장애 등 불가항력적인 사유로 인한 서비스 중단에 대해 책임을 지지 않습니다.
+		p 2. 관리자는 이용자의 귀책사유로 인한 서비스 이용 장애 및 데이터 손실(경험치, 전적, 코인 등)에 대해 책임을 지지 않습니다.
+		p 3. 관리자는 이용자 간 또는 이용자와 제3자 상호 간에 서비스를 매개로 하여 발생한 분쟁에 대해 개입할 의무가 없으며, 이로 인한 손해를 배상할 책임도 없습니다.
+		div.section-new
+			p #[span.badge.badge-new 신규] 4. 관리자의 설정 오류 또는 코드 버그로 인해 지급된 이득을 제9조에 따라 조정하는 경우, 해당 조정은 이용자에 대한 제재가 아닌 오류 수정으로서, 관리자는 이로 인한 손해를 별도로 배상할 책임을 지지 않습니다.
+
+		h3 제12조 (재판권 및 준거법)
+		p 1. 서비스 이용과 관련하여 관리자와 이용자 간에 발생한 분쟁에 대해서는 대한민국의 법률을 준거법으로 합니다.
+		p 2. 분쟁으로 인한 소송이 제기될 경우 민사소송법상의 관할 법원에 제기합니다.
+
+		h3 부칙
+		p 이 약관은 2026년 6월 1일부터 시행합니다.
+		p(style='color: #aaa; font-size: 0.9em;') 이전 약관(2026년 1월 9일 ~ 2026년 5월 31일)은 #[a(href='/legal/terms_1' target='_blank' style='color:#90CAF9;') 여기]에서 확인할 수 있습니다.

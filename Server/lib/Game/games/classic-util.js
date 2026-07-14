@@ -44,6 +44,8 @@ const PREFERRED_CHAR_PROB = [0.6, 0.7, 0.8, 0.9, 1.0];
 const RIEUL_TO_NIEUN = [4449, 4450, 4457, 4460, 4462, 4467];
 const RIEUL_TO_IEUNG = [4451, 4455, 4456, 4461, 4466, 4469];
 const NIEUN_TO_IEUNG = [4455, 4461, 4466, 4469];
+const LEUM_CHAR = '름'.charCodeAt(0); // 로블두음 예외: 름은 늠/음 모두로 변환 가능
+const EUM_CHAR = '음'.charCodeAt(0);
 const PRIORITY_ATTACK_CHARS = ["렁", "듈", "븐", "튬", "쾃", "럿", "듐", "픔", "뮴", "읃", "읓", "읔", "읕", "읖", "읗", "냑", "녘"];
 const PRIORITY_ATTACK_CHARS_MANNER = ["릇", "럴", "텝", "슭", "픈", "깟", "왑", "븨", "껏"];
 const PRIORITY_KAP_ATTACK_CHARS = ["녈", "맞", "흰", "뉸", "뒷", "헛", "붉", "뻐", "첫", "룍", "뇩", "넓", "홑", "맆", "렾", "녚", "갯", "받", "뉼", "앉", "높", "롶", "돼", "윗", "넙", "랼", "된", "뾰", "햇", "엑", "좁", "굳", "왼", "뻔", "빤", "륽", "늙", "뺑", "엎", "같", "띾", "꺾", "닫", "랕", "뙤", "돋", "쨍", "씽", "꽈", "귓", "므", "쌩", "샐", "잦", "섞", "덮", "맏", "얽", "왱", "긁", "짧", "걷", "헥", "잿"];
@@ -1015,6 +1017,8 @@ function getSubChar(char) {
 							}
 							if (!RIEUL_TO_NIEUN.includes(cb[1])) {
 								resSet.add(buildChar(5, ca[1], ca[2]));
+							} else if (cd === EUM_CHAR) {
+								resSet.add(buildChar(5, ca[1], ca[2]));
 							}
 						} else if (cb[0] === 4354 && RIEUL_TO_NIEUN.indexOf(cb[1]) !== -1) {
 							resSet.add(buildChar(5, ca[1], ca[2]));
@@ -1023,6 +1027,9 @@ function getSubChar(char) {
 						if (cb[0] === 4357) {
 							if (RIEUL_TO_NIEUN.includes(cb[1])) {
 								resSet.add(buildChar(2, ca[1], ca[2]));
+								if (cd === LEUM_CHAR) {
+									resSet.add(buildChar(11, ca[1], ca[2]));
+								}
 							} else {
 								resSet.add(buildChar(11, ca[1], ca[2]));
 							}

@@ -114,7 +114,8 @@ exports.OPTIONS = {
 	'nyh': { name: "Nyeohweok" },  // 녜힁: 어려운 한글 조합으로 랜덤 생성
 	'ctc': { name: "Catch" },      // 캐치: 그림퀴즈 전용 특수 데이터베이스 사용
 	'ord': { name: "Order" },      // 순서대로: seq 순서로 술래
-	'shf': { name: "Shuffle" }     // 공정랜덤: 셔플 후 한 명씩 술래
+	'shf': { name: "Shuffle" },    // 공정랜덤: 셔플 후 한 명씩 술래
+	'stp': { name: "Stop" }        // 멈춰!: 슉슉 글자 이동 정지, 경험치 40%로 감소
 
 };
 
@@ -623,6 +624,24 @@ exports.RULE = {
 		ai: true,
 		big: false,
 		ewq: true
+	},
+	'KSK': {
+		lang: "ko",
+		rule: "Shuk",
+		opts: ["drg", "stp"],
+		time: 1,
+		ai: false,
+		big: true,
+		ewq: false
+	},
+	'ESK': {
+		lang: "en",
+		rule: "Shuk",
+		opts: ["drg", "stp"],
+		time: 1,
+		ai: false,
+		big: true,
+		ewq: false
 	}
 
 };
@@ -633,7 +652,7 @@ exports.GAME_CATEGORIES = {
 	},
 	'quiz': {
 		name: 'GameCategoryQuiz',
-		modes: ['CSQ', 'KCW', 'KSS', 'ESS', 'KPQ', 'EPQ', 'KSC', 'CRL', 'KQZ', 'EQZ', 'ESQ']
+		modes: ['CSQ', 'KCW', 'KSS', 'ESS', 'KPQ', 'EPQ', 'KSC', 'CRL', 'KQZ', 'EQZ', 'ESQ', 'KSK', 'ESK']
 	},
 	'other': {
 		name: 'GameCategoryOther',
@@ -740,6 +759,7 @@ exports.BOT_NAME_TEMPLATES = [
 	"내이름은조난당했죠", "넌내게목욕값을줬어", "대추나무사람걸렸네",
 	"맨체스터유나의비듬", "미녀는석유를좋아해", "외대맘을홍대는건대",
 	"이상한나라의김정은", "잠자는숲속의이봉주", "지키는박사와하인들",
+	"엘리베이터를위하여",
 	"18K반지의제왕", "넌정말극악무도회", "누구나비닐은있다", "바른먹거리풀먹어",
 	"부릅뜨니숲이었어", "아프리카청춘이다", "잠오는숲속의마녀", "조선왕조씰룩쌜룩",
 	"킴가산디지털단지", "팁있는다방을싣고", "귀신이고칼로리", "그놈은맛있었다",

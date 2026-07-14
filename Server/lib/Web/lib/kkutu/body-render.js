@@ -654,12 +654,12 @@ function requestProfile(id) {
 		var muteLobbyText = !o.muteLobby ? L['aiMuteLobby_on'] : L['aiMuteLobby_off'];
 		var rqText = o.canRageQuit ? L['aiRageQuit_on'] : L['aiRageQuit_off'];
 		$rec.append($("<div>").addClass("profile-record-field")
-			.append($("<div>").addClass("profile-field-name").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(fastText))
-			.append($("<div>").addClass("profile-field-record").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(muteGameText))
-			.append($("<div>").addClass("profile-field-score").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(muteLobbyText))
+			.append($("<div>").addClass("profile-field-name").css({ textAlign: 'center', fontSize: '11px' }).html(fastText))
+			.append($("<div>").addClass("profile-field-record").css({ textAlign: 'center', fontSize: '11px' }).html(muteGameText))
+			.append($("<div>").addClass("profile-field-score").css({ textAlign: 'center', fontSize: '11px' }).html(muteLobbyText))
 		);
 		$rec.append($("<div>").addClass("profile-record-field")
-			.append($("<div>").addClass("profile-field-name").css({ textAlign: 'center', fontSize: '11px', color: '#000' }).html(rqText))
+			.append($("<div>").addClass("profile-field-name").css({ textAlign: 'center', fontSize: '11px' }).html(rqText))
 		);
 	} else {
 		$stage.dialog.profileLevel.hide();
@@ -758,7 +758,7 @@ function filterShop(by) {
 		if (obj.cost < 0) continue;
 		$o = $("#goods_" + i);
 		var show = isAll || by.indexOf(obj.group) !== -1;
-		if (show && (searchTerm === '' || iName(i).toLowerCase().indexOf(searchTerm) === -1)) show = false;
+		if (show && searchTerm !== '' && iName(i).toLowerCase().indexOf(searchTerm) === -1) show = false;
 		if (show) {
 			$o.show();
 			visibleCount++;

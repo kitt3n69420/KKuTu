@@ -63,19 +63,34 @@
 }
 
 #Top {
-	background-color: #1976D2;
+	background-color: var(--color-primary) !important;
 	background-image: none;
 	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 #Top .menu-btn {
-	color: #FFFFFF;
-	background-color: transparent;
+	color: #FFFFFF !important;
+	background-color: transparent !important;
 	background-image: none;
+	font-weight: bold;
 }
 
 #Top .menu-sub-btn {
 	color: #222222;
+}
+
+body.dark-mode #Top .menu-btn,
+body.dark-mode #Top button {
+	border: none !important;
+	outline: none !important;
+	box-shadow: none !important;
+}
+body.dark-mode #Top .menu-btn,
+body.dark-mode #Top .menu-btn i.fa {
+	color: #111111 !important;
+}
+body.dark-mode #Top .menu-sub-btn {
+	color: #E0E0E0;
 }
 
 #Bottom .bottom-text {

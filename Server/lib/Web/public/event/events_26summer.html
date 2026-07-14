@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>끄투엔의 여름나기 - 끄투엔</title>
+	<style>
+		@font-face {
+			font-family: 'NBGothic';
+			src: url('../media/NanumBarunGothicLight.woff') format('woff');
+		}
+
+		:root {
+			--sky-a: #0288D1;
+			--sky-b: #4FC3F7;
+			--sea: #00ACC1;
+			--sea-dark: #00697A;
+			--sand: #FFF8E1;
+			--sand-deep: #FFECB3;
+			--coral: #FF7043;
+			--coral-deep: #D84315;
+			--ink: #33251A;
+			--ink-soft: #6D5B4C;
+		}
+
+		* { box-sizing: border-box; }
+
+		body {
+			margin: 0;
+			padding: 0;
+			font-family: NBGothic, 돋움, sans-serif;
+			background: var(--sand);
+			color: var(--ink);
+			min-width: 320px;
+			overflow-x: hidden;
+		}
+
+		img { max-width: 100%; }
+
+		h1, h2, h3 { margin: 0; }
+
+		.wave {
+			display: block;
+			width: 100%;
+			line-height: 0;
+		}
+		.wave svg { display: block; width: 100%; height: 70px; }
+
+		/* ===== 히어로 ===== */
+		.hero {
+			position: relative;
+			overflow: hidden;
+			padding: 60px 20px 0;
+			text-align: center;
+			background: linear-gradient(180deg, var(--sky-a) 0%, var(--sky-b) 100%);
+			color: #FFFFFF;
+		}
+		.sun {
+			position: absolute;
+			top: 30px;
+			right: 8%;
+			width: 130px;
+			height: 130px;
+			border-radius: 50%;
+			background: radial-gradient(circle at 35% 35%, #FFF9C4, #FFB300 75%);
+			box-shadow: 0 0 70px 24px rgba(255, 193, 7, 0.5);
+			overflow: hidden;
+		}
+		.sun img {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+		}
+		.hero-content { position: relative; z-index: 1; padding-bottom: 50px; }
+		.hero h1 {
+			font-size: 2.4em;
+			text-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+			letter-spacing: 1px;
+		}
+		.event-sub {
+			margin-top: 14px;
+			font-size: 1.05em;
+			color: #E0F7FA;
+		}
+		.exp-badge {
+			display: inline-block;
+			margin-top: 18px;
+			padding: 8px 22px;
+			border-radius: 999px;
+			background: var(--coral);
+			color: #FFFFFF;
+			font-weight: bold;
+			font-size: 1.1em;
+			box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+		}
+
+		/* ===== 공통 섹션 ===== */
+		.section { padding: 10px 20px 0; }
+		.section-inner { max-width: 920px; margin: 0 auto; padding-bottom: 60px; }
+		.section h2 {
+			text-align: center;
+			font-size: 1.6em;
+			margin-bottom: 30px;
+			color: var(--sea-dark);
+		}
+		.section.on-sea h2, .section.on-sky h2 { color: #FFFFFF; }
+
+		.section.on-sky {
+			background: linear-gradient(180deg, var(--sky-b) 0%, #81D4FA 100%);
+			color: #000000;
+		}
+		.section.on-sea {
+			background: linear-gradient(180deg, var(--sea) 0%, var(--sea-dark) 100%);
+			color: #FFFFFF;
+			padding-top: 0;
+		}
+		.section.on-sand {
+			background: var(--sand);
+			color: var(--ink);
+		}
+
+		/* ===== 섹션 1: 이벤트 정보 ===== */
+		.info-row {
+			display: flex;
+			gap: 28px;
+			align-items: center;
+			margin-bottom: 26px;
+		}
+		.info-row .info-icon {
+			flex: 0 0 84px;
+			width: 84px; height: 84px;
+			display: flex; align-items: center; justify-content: center;
+			background: #FFFFFF;
+			border-radius: 50%;
+			box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+		}
+		.info-row .info-icon img { width: 52px; height: 52px; image-rendering: pixelated; }
+		.info-row .info-text { flex: 1; }
+		.info-row h3 { color: #000000; margin-bottom: 6px; font-size: 1.15em; }
+		.info-row p { margin: 0; line-height: 1.7; color: rgba(0, 0, 0, 0.92); }
+		.info-row ul { margin: 8px 0 0; padding-left: 18px; color: rgba(0, 0, 0, 0.92); line-height: 1.7; }
+		.info-row strong { color: #0044e3; }
+
+		/* ===== 섹션 2: 메뉴판 ===== */
+		.menu-board {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 22px;
+		}
+		.menu-column {
+			min-width: 0;
+			background: rgba(255, 255, 255, 0.08);
+			border-radius: 14px;
+			padding: 14px;
+			backdrop-filter: blur(2px);
+		}
+		.column-header {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			padding: 10px 8px;
+			border-radius: 10px;
+			font-weight: bold;
+			font-size: 1.05em;
+			margin-bottom: 14px;
+			color: #FFFFFF;
+		}
+		.column-header img { width: 26px; height: 26px; image-rendering: pixelated; }
+		.column-water .column-header { background: var(--sea-dark); }
+		.column-ping .column-header { background: var(--coral); }
+		.column-ice .column-header { background: #0288D1; }
+
+		.menu-card {
+			position: relative;
+			display: flex;
+			align-items: flex-start;
+			gap: 12px;
+			min-width: 0;
+			background: var(--sand);
+			color: var(--ink);
+			border-radius: 10px;
+			padding: 12px 12px 34px;
+			margin-bottom: 10px;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+		}
+		.menu-card:last-child { margin-bottom: 0; }
+		.menu-card .card-icon {
+			position: relative;
+			flex: 0 0 64px;
+			width: 64px; height: 64px;
+			background: #FFFFFF;
+			border-radius: 10px;
+			overflow: hidden;
+		}
+		.menu-card .card-icon img {
+			position: absolute;
+			top: 0; left: 0;
+			width: 100%; height: 100%;
+			image-rendering: pixelated;
+		}
+		.menu-card .card-info { flex: 1; min-width: 0; padding-top: 2px; }
+		.menu-card .card-name { font-weight: bold; font-size: 1em; }
+		.menu-card .card-desc {
+			font-size: 0.8em;
+			color: var(--ink-soft);
+			line-height: 1.4;
+			margin-top: 4px;
+			display: -webkit-box;
+			-webkit-line-clamp: 3;
+			line-clamp: 3;
+			-webkit-box-orient: vertical;
+			overflow: hidden;
+		}
+		.menu-card .card-price {
+			position: absolute;
+			right: 12px;
+			bottom: 10px;
+			font-weight: bold;
+			font-size: 0.85em;
+			padding: 3px 10px;
+			border-radius: 999px;
+		}
+		.column-water .card-price { background: #E0F7FA; color: var(--sea-dark); }
+		.column-ping .card-price { background: #FBE9E7; color: var(--coral-deep); }
+		.column-ice .card-price { background: #E1F5FE; color: #0277BD; }
+
+		/* ===== 섹션 3: 상세 내용 ===== */
+		.detail-list { list-style: none; margin: 0; padding: 0; }
+		.detail-list li {
+			position: relative;
+			padding: 10px 0 10px 26px;
+			line-height: 1.7;
+			color: var(--ink-soft);
+			border-bottom: 1px dashed var(--sand-deep);
+		}
+		.detail-list li:last-child { border-bottom: none; }
+		.detail-list li::before {
+			content: "";
+			position: absolute;
+			left: 0;
+			top: 12px;
+			width: 18px;
+			height: 18px;
+			background-size: contain;
+			background-repeat: no-repeat;
+		}
+		.detail-list li:nth-child(odd)::before { background-image: url(/img/kkutu/shop/waterdrop.png); }
+		.detail-list li:nth-child(even)::before { background-image: url(/img/kkutu/shop/ice_cube.png); }
+		.detail-list strong { color: var(--ink); }
+
+		.closing {
+			text-align: center;
+			padding: 40px 20px 60px;
+			font-size: 1.15em;
+			font-weight: bold;
+			color: var(--sea-dark);
+		}
+
+		/* ===== 모바일 ===== */
+		@media (max-width: 700px) {
+			.hero h1 { font-size: 1.7em; }
+			.sun { width: 90px; height: 90px; right: 6%; top: 16px; }
+			.menu-board { grid-template-columns: 1fr; }
+			.info-row { flex-direction: column; align-items: stretch; text-align: center; }
+			.info-row .info-icon { margin: 0 auto; }
+		}
+		@media (max-width: 400px) {
+			.menu-card .card-icon { flex-basis: 52px; width: 52px; height: 52px; }
+			.menu-card .card-name { font-size: 0.92em; }
+			.menu-card .card-desc { font-size: 0.74em; }
+			.menu-card .card-price { font-size: 0.8em; padding: 3px 8px; }
+			.section h2 { font-size: 1.35em; }
+		}
+	</style>
+</head>
+
+<body>
+
+	<div class="hero">
+		<div class="sun">
+			<img src="/img/kkutu/moremi/eye/def.png" alt="">
+			<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+		</div>
+		<div class="hero-content">
+			<h1>끄투엔의 여름나기</h1>
+			<p class="event-sub">이벤트 기간: 2026.07.15 ~ 2026.08.31</p>
+			<div class="exp-badge">이벤트 기간 중 경험치 2배!</div>
+		</div>1
+		<div class="wave">
+			<svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+				<path d="M0,70 C240,110 480,20 720,60 C960,100 1200,20 1440,60 L1440,120 L0,120 Z" fill="rgba(255,255,255,0.3)" />
+				<path d="M0,90 C300,50 600,120 900,80 C1140,50 1300,90 1440,80 L1440,120 L0,120 Z" fill="rgba(255,255,255,0.55)" />
+			</svg>
+		</div>
+	</div>
+
+	<section class="section on-sky">
+		<div class="section-inner">
+			<h2>이벤트 정보</h2>
+
+			<div class="info-row">
+				<div class="info-icon"><img src="/img/kkutu/shop/waterdrop.png" alt="물방울"></div>
+				<div class="info-text">
+					<h3>물방울 &amp; 얼음 조각을 모아보세요!</h3>
+					<p>게임이 끝날 때마다 일정 확률로 <strong>물방울</strong> 또는 <strong>얼음 조각</strong>을 얻을 수 있습니다.</p>
+					<ul>
+						<li>물방울이 얼음 조각보다 <strong>2배</strong> 더 자주 나옵니다.</li>
+						<li>손님으로 플레이하거나 혼자 플레이한 경우에는 지급되지 않습니다.</li>
+					</ul>
+				</div>
+			</div>
+
+			<div class="info-row">
+				<div class="info-icon"><img src="/img/kkutu/shop/ice_cube.png" alt="얼음 조각"></div>
+				<div class="info-text">
+					<h3>아이템 교환소에서 교환하세요!</h3>
+					<p>모은 물방울과 얼음 조각은 <strong>아이템 교환소</strong>에서 여름 한정 아이템으로 교환할 수 있습니다. 로비 화면의 아이템 교환소 버튼을 눌러 이벤트 교환 탭을 확인해보세요.</p>
+				</div>
+			</div>
+		</div>
+		<div class="wave">
+			<svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+				<path d="M0,90 C300,50 600,120 900,80 C1140,50 1300,90 1440,80 L1440,120 L0,120 Z" fill="rgba(0,105,122,0.25)" />
+				<path d="M0,70 C240,110 480,20 720,60 C960,100 1200,20 1440,60 L1440,120 L0,120 Z" fill="#00ACC1" />
+			</svg>
+		</div>
+	</section>
+
+	<section class="section on-sea">
+		<div class="section-inner">
+			<h2>신상 아이템</h2>
+			<div class="menu-board">
+
+				<div class="menu-column column-water">
+					<div class="column-header"><img src="/img/kkutu/shop/waterdrop.png" alt="물방울">물방울 교환</div>
+
+					<div class="menu-card">
+						<div class="card-icon">
+							<img src="/img/kkutu/moremi/body.png" alt="">
+							<img src="/img/kkutu/moremi/eye/def.png" alt="">
+							<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+							<img src="/img/kkutu/moremi/badge/b3_water.png" alt="물의 휘장">
+						</div>
+						<div class="card-info">
+							<div class="card-name">물의 휘장</div>
+							<div class="card-desc">물의 휘장과 함께 시원한 여름을 보내세요!</div>
+						</div>
+						<div class="card-price">물방울 ×3</div>
+					</div>
+
+					<div class="menu-card">
+						<div class="card-icon">
+							<img src="/img/kkutu/moremi/body.png" alt="">
+							<img src="/img/kkutu/moremi/eye/def.png" alt="">
+							<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+							<img src="/img/kkutu/moremi/clothes/seawave_cloth.png" alt="파도 옷">
+						</div>
+						<div class="card-info">
+							<div class="card-name">파도 옷</div>
+							<div class="card-desc">넘실대는 파도 무늬를 옷으로 담았습니다.</div>
+						</div>
+						<div class="card-price">물방울 ×5</div>
+					</div>
+
+					<div class="menu-card">
+						<div class="card-icon">
+							<img src="/img/kkutu/moremi/body.png" alt="">
+							<img src="/img/kkutu/moremi/eye/def.png" alt="">
+							<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+							<img src="/img/kkutu/moremi/clothes/flamingo_tube.png" alt="플라밍고 튜브">
+						</div>
+						<div class="card-info">
+							<div class="card-name">플라밍고 튜브</div>
+							<div class="card-desc">분홍빛 플라밍고 모양의 화려한 튜브입니다.</div>
+						</div>
+						<div class="card-price">물방울 ×10</div>
+					</div>
+
+					<div class="menu-card">
+						<div class="card-icon">
+							<img src="/img/kkutu/moremi/body.png" alt="">
+							<img src="/img/kkutu/moremi/eye/def.png" alt="">
+							<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+							<img src="/img/kkutu/moremi/back/beach.png" alt="바닷가">
+						</div>
+						<div class="card-info">
+							<div class="card-name">바닷가</div>
+							<div class="card-desc">다시 돌아온 바닷가, 왠지 그녀도 왔을까?</div>
+						</div>
+						<div class="card-price">물방울 ×15</div>
+					</div>
+				</div>
+				<div class="menu-column column-ping">
+					<div class="column-header">상점 신상(상시 구매 가능!)</div>
+
+					<div class="menu-card">
+						<div class="card-icon">
+							<img src="/img/kkutu/moremi/body.png" alt="">
+							<img src="/img/kkutu/moremi/eye/def.png" alt="">
+							<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+							<img src="/img/kkutu/moremi/hand/water_bottle.png" alt="생수병">
+						</div>
+						<div class="card-info">
+							<div class="card-name">생수병</div>
+							<div class="card-desc">무더운 여름, 목을 축여줄 시원한 생수 한 병입니다.</div>
+						</div>
+						<div class="card-price">200핑</div>
+					</div>
+
+					<div class="menu-card">
+						<div class="card-icon">
+							<img src="/img/kkutu/moremi/body.png" alt="">
+							<img src="/img/kkutu/moremi/eye/def.png" alt="">
+							<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+							<img src="/img/kkutu/moremi/hand/iced_coffee.png" alt="아이스커피">
+						</div>
+						<div class="card-info">
+							<div class="card-name">아이스커피</div>
+							<div class="card-desc">얼어 죽어도 아이스커피!</div>
+						</div>
+						<div class="card-price">300핑</div>
+					</div>
+
+					<div class="menu-card">
+						<div class="card-icon">
+							<img src="/img/kkutu/moremi/body.png" alt="">
+							<img src="/img/kkutu/moremi/eye/def.png" alt="">
+							<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+							<img src="/img/kkutu/moremi/hand/hand_fan.png" alt="손 선풍기">
+						</div>
+						<div class="card-info">
+							<div class="card-name">손 선풍기</div>
+							<div class="card-desc">하나만 가지고 있어도 여름날이 시원해져요.</div>
+						</div>
+						<div class="card-price">400핑</div>
+					</div>
+
+					<div class="menu-card">
+						<div class="card-icon">
+							<img src="/img/kkutu/moremi/body.png" alt="">
+							<img src="/img/kkutu/moremi/eye/def.png" alt="">
+							<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+							<img src="/img/kkutu/moremi/head/droplet_bere.png" alt="물방울 베레모">
+						</div>
+						<div class="card-info">
+							<div class="card-name">물방울 베레모</div>
+							<div class="card-desc">동글동글 물방울 모양의 귀여운 베레모입니다.</div>
+						</div>
+						<div class="card-price">600핑</div>
+					</div>
+
+					<div class="menu-card">
+						<div class="card-icon">
+							<img src="/img/kkutu/moremi/body.png" alt="">
+							<img src="/img/kkutu/moremi/eye/def.png" alt="">
+							<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+							<img src="/img/kkutu/moremi/clothes/blue_tube.png" alt="파란 튜브">
+						</div>
+						<div class="card-info">
+							<div class="card-name">파란 튜브</div>
+							<div class="card-desc">시원한 파란빛 튜브를 몸에 두르고 물놀이를 즐겨보세요.</div>
+						</div>
+						<div class="card-price">700핑</div>
+					</div>
+				</div>
+
+				<div class="menu-column column-ice">
+					<div class="column-header"><img src="/img/kkutu/shop/ice_cube.png" alt="얼음 조각">얼음 조각 교환</div>
+
+					<div class="menu-card">
+						<div class="card-icon">
+							<img src="/img/kkutu/moremi/body.png" alt="">
+							<img src="/img/kkutu/moremi/eye/def.png" alt="">
+							<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+							<img src="/img/kkutu/moremi/badge/b3_ice.png" alt="얼음의 휘장">
+						</div>
+						<div class="card-info">
+							<div class="card-name">얼음의 휘장</div>
+							<div class="card-desc">무더운 여름, 이 얼음 휘장이 당신을 지켜줄 거에요.</div>
+						</div>
+						<div class="card-price">얼음 조각 ×2</div>
+					</div>
+
+					<div class="menu-card">
+						<div class="card-icon">
+							<img src="/img/kkutu/moremi/body.png" alt="">
+							<img src="/img/kkutu/moremi/eye/def.png" alt="">
+							<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+							<img src="/img/kkutu/moremi/head/melted_icecream.png" alt="머리 위 아이스크림">
+						</div>
+						<div class="card-info">
+							<div class="card-name">머리 위 아이스크림</div>
+							<div class="card-desc">누가 내 머리에 아이스크림 던졌어?</div>
+						</div>
+						<div class="card-price">얼음 조각 ×3</div>
+					</div>
+
+					<div class="menu-card">
+						<div class="card-icon">
+							<img src="/img/kkutu/moremi/body.png" alt="">
+							<img src="/img/kkutu/moremi/eye/def.png" alt="">
+							<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+							<img src="/img/kkutu/moremi/head/ice_bucket.png" alt="아이스 버킷 챌린지">
+						</div>
+						<div class="card-info">
+							<div class="card-name">아이스 버킷 챌린지</div>
+							<div class="card-desc">모레미도 아이스 버킷 챌린지에 참여했나 봐요!</div>
+						</div>
+						<div class="card-price">얼음 조각 ×5</div>
+					</div>
+
+					<div class="menu-card">
+						<div class="card-icon">
+							<img src="/img/kkutu/moremi/body.png" alt="">
+							<img src="/img/kkutu/moremi/eye/def.png" alt="">
+							<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+							<img src="/img/kkutu/moremi/clothes/bingsu.png" alt="팥빙수">
+						</div>
+						<div class="card-info">
+							<div class="card-name">팥빙수</div>
+							<div class="card-desc">모레미는 먹으면 곤란해요.</div>
+						</div>
+						<div class="card-price">얼음 조각 ×7</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+		<div class="wave">
+			<svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+				<path d="M0,70 C240,110 480,20 720,60 C960,100 1200,20 1440,60 L1440,120 L0,120 Z" fill="rgba(255,255,255,0.25)" />
+				<path d="M0,90 C300,50 600,120 900,80 C1140,50 1300,90 1440,80 L1440,120 L0,120 Z" fill="#FFF8E1" />
+			</svg>
+		</div>
+	</section>
+
+	<section class="section on-sand">
+		<div class="section-inner">
+			<h2>유의사항</h2>
+			<ul class="detail-list">
+				<li>물방울과 얼음 조각은 <strong>손님 계정</strong>이나 <strong>1인 플레이</strong> 시 지급되지 않습니다.</li>
+				<li>이벤트 아이템 교환은 이벤트 기간(<strong>2026.08.31</strong>) 종료 전까지만 가능하며, 종료 후 남은 물방울/얼음 조각은 자동으로 사라집니다.</li>
+				<li>교환하여 획득한 아이템은 이벤트 종료 후에도 계속 사용할 수 있습니다. 단, <strong>물의 휘장</strong>과 <strong>얼음의 휘장</strong>은 획득일로부터 <strong>3개월간만</strong> 사용 가능합니다.</li>
+				<li>부당하게 아이템을 획득한 경우, 아이템이 회수되고 제재를 받을 수 있습니다.</li>
+			</ul>
+		</div>
+	</section>
+
+	<div class="closing">무더운 여름, 끄투엔과 함께 시원하게 보내세요!</div>
+
+</body>
+
+</html>

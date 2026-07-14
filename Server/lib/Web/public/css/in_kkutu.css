@@ -152,12 +152,6 @@ body {
 	font-weight: bold;
 }
 
-#Top .menu-btn:hover {
-	background-color: rgba(255, 255, 255, 0.2) !important;
-}
-
-
-
 #Top .menu-sub-btn {
 	color: #222222;
 }
@@ -222,9 +216,12 @@ iframe {
 	width: 1010px;
 	height: 30px;
 	position: relative;
+	z-index: 0;
 }
 
 .kkutu-menu button:not(.ItemButton) {
+	position: relative;
+	z-index: 1;
 	float: left;
 	border: none;
 	border-bottom-left-radius: 0px;
@@ -267,6 +264,13 @@ iframe {
 	margin-top: -5px;
 }
 
+#DictionaryBtn:active {
+	margin-top: 5px !important;
+	height: 25px !important;
+	background-color: var(--color-bg-light) !important;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+}
+
 /* Specific styling for 'Exit' or widely used negative actions if needed */
 #ExitBtn {
 	background-color: white !important;
@@ -276,6 +280,10 @@ iframe {
 	/* Border removed as requested */
 }
 
+#ExitBtn:active {
+	background-color: var(--color-bg-light) !important;
+}
+
 .kkutu-menu button:not(.ItemButton):hover {
 	margin-top: -5px;
 	height: 25px;
@@ -283,7 +291,7 @@ iframe {
 
 .kkutu-menu button:not(.ItemButton):active {
 	margin-top: 5px !important;
-	height: 20px !important;
+	height: 15px !important;
 	background-color: var(--color-bg-light) !important;
 	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15) !important;
 }
@@ -299,6 +307,7 @@ iframe {
 /* Toggled State for Unified Menu Buttons (Spectate, etc.) */
 .kkutu-menu .toggled {
 	margin-top: 5px !important;
+	height: 15px !important;
 	color: var(--color-primary-dark) !important;
 	/* Darker Blue Text */
 	background-color: var(--color-bg-light) !important;
@@ -311,7 +320,7 @@ iframe {
 #ReadyBtn.toggled {
 	margin-top: 5px !important;
 	/* Pressed effect */
-	height: 20px !important;
+	height: 15px !important;
 	animation: none;
 	background-color: var(--color-bg-medium) !important;
 	color: white !important;
@@ -1486,6 +1495,28 @@ body.theme-green .GameBox::before {
 	color: #FFFF44;
 	font-weight: bold;
 	font-size: 24px;
+}
+
+.shuk-board {
+	position: relative;
+	width: 100%;
+	max-width: 320px;
+	aspect-ratio: 1 / 1;
+	margin: 0 auto;
+}
+
+.shuk-char {
+	position: absolute;
+	box-sizing: border-box;
+	width: 33.333%;
+	height: 33.333%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 54px;
+	font-weight: bold;
+	text-align: center;
+	transition: top 0.5s ease-in-out, left 0.5s ease-in-out;
 }
 
 .chain {
@@ -2827,6 +2858,7 @@ body.theme-green .GameBox::before {
 
 .kkutu-menu .ItemButton {
 	position: relative;
+	z-index: 1;
 	float: left;
 	border: none;
 	border-bottom-left-radius: 0px;
@@ -2863,6 +2895,12 @@ body.theme-green .GameBox::before {
 .kkutu-menu .ItemButton:hover:not(.item-disabled) {
 	margin-top: -5px;
 	height: 25px;
+}
+
+.kkutu-menu .ItemButton:active:not(.item-disabled) {
+	margin-top: 5px;
+	height: 15px;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .kkutu-menu .ItemButton.item-disabled {
@@ -2957,6 +2995,7 @@ body.theme-green .GameBox::before {
 }
 .raingame-strategy-btn {
 	position: relative;
+	z-index: 1;
 	overflow: visible;
 	width: 86px !important;
 	height: 30px !important;
@@ -2964,6 +3003,16 @@ body.theme-green .GameBox::before {
 	cursor: pointer;
 	background-color: rgba(255, 255, 255, 0.9) !important;
 	color: var(--color-primary) !important;
+}
+.raingame-strategy-btn:hover {
+	margin-top: -5px !important;
+	height: 35px !important;
+}
+#raingame-strategy .raingame-strategy-btn:active {
+	margin-top: 5px !important;
+	height: 25px !important;
+	background-color: var(--color-bg-light) !important;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15) !important;
 }
 .raingame-strategy-btn .StratIcon {
 	margin-right: 3px;
@@ -2973,14 +3022,15 @@ body.theme-green .GameBox::before {
 	display: inline-block;
 }
 .kkutu-menu .raingame-strategy-btn.toggled {
-	margin-top: 0 !important;
+	margin-top: 5px !important;
+	height: 25px !important;
 	background-color: var(--color-border) !important;
 	color: var(--color-primary-dark) !important;
 }
 .raingame-strategy-btn[data-tooltip]:hover::after {
 	content: attr(data-tooltip);
 	position: absolute;
-	top: 100%;
+	bottom: 100%;
 	left: 50%;
 	transform: translateX(-50%);
 	background: rgba(0, 0, 0, 0.85);
@@ -2992,7 +3042,7 @@ body.theme-green .GameBox::before {
 	white-space: nowrap;
 	z-index: 100;
 	pointer-events: none;
-	margin-top: 4px;
+	margin-bottom: 4px;
 }
 /* WordStack */
 .jjo-turn-time .graph-bar.overflow {

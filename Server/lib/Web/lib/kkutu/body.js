@@ -676,6 +676,9 @@ function onMessage(data) {
 		case 'wordstackAtk':
 			if ($lib.Wordstack && $lib.Wordstack.onAtk) $lib.Wordstack.onAtk(data);
 			break;
+		case 'shukMove':
+			if ($lib.Shuk && $lib.Shuk.shukMove) $lib.Shuk.shukMove(data);
+			break;
 		case 'roundEnd':
 			for (i in data.users) {
 				if (data.users[i] && data.users[i].robot) {

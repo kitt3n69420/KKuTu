@@ -1540,6 +1540,7 @@ function Room(room, channel) {
 		clearTimeout(my.game.hintTimer2);
 		clearTimeout(my.game.qTimer);
 		clearTimeout(my.game.robotTimer);
+		clearInterval(my.game.moveTimer);
 		if (my._botIdleTimers) {
 			for (var _bti = 0; _bti < my._botIdleTimers.length; _bti++) clearTimeout(my._botIdleTimers[_bti]);
 			my._botIdleTimers = [];
@@ -1803,9 +1804,13 @@ function Room(room, channel) {
 				if (rw.score > 100) rw.score = 100;
 				if (rw.money > 10) rw.money = 10;
 			}
+			// 슉슉: 보드가 고갈되지 않아 누적 점수가 무제한으로 커질 수 있어 라운드당 소프트 캡을 둔다
+			if (Const.GAME_TYPE[my.mode] === 'KSK' && rw.score > 4000) rw.score = 4000;
+			if (Const.GAME_TYPE[my.mode] === 'ESK' && rw.score > 3000) rw.score = 3000;
+			if (my.opts.stp) rw.score = Math.round(rw.score * 0.4);
 			if (my.opts.big) {
-				rw.score = Math.round(rw.score / 3);
-				rw.money = Math.round(rw.money / 3);
+				rw.score = Math.round(rw.score / 2);
+				rw.money = Math.round(rw.money / 2);
 			}
 			var _em = getEventMults();
 			if (rw.together) {
@@ -2655,6 +2660,12 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 		case 'KTT':
 		case 'ETT':
 			rw.score += score * 1.0;
+			break;
+		case 'KSK':
+			rw.score += score * 1.25;
+			break;
+		case 'ESK':
+			rw.score += score * 0.7;
 			break;
 		default:
 			rw.score += score * 1.25;

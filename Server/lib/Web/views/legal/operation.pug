@@ -1,0 +1,155 @@
+extends ../layout
+
+block CSS
+	style.
+		.legal-box { line-height: 1.8; word-break: keep-all; }
+		.legal-box h1 { margin-bottom: 20px; border-bottom: 2px solid #fff; padding-bottom: 10px; }
+		.legal-box h3 { margin-top: 40px; margin-bottom: 15px; font-size: 1.3em; font-weight: bold; color: #81D4FA; }
+		.legal-box h4 { margin-top: 25px; margin-bottom: 10px; font-size: 1.1em; font-weight: bold; color: #B3E5FC; }
+		.legal-box p { margin-bottom: 12px; font-size: 1.05em; color: #eee; }
+		.legal-box ul { margin-bottom: 12px; list-style-type: none; padding-left: 10px; }
+		.legal-box li { margin-bottom: 8px; color: #ddd; }
+
+		.table-wrap { overflow-x: auto; margin-bottom: 20px; }
+		.legal-box table { width: 100%; border-collapse: collapse; min-width: 480px; }
+		.legal-box th, .legal-box td { border: 1px solid rgba(255,255,255,0.15); padding: 10px 14px; font-size: 0.95em; color: #ddd; text-align: left; }
+		.legal-box th { background: rgba(129, 212, 250, 0.12); color: #81D4FA; white-space: nowrap; }
+		.legal-box td:first-child { color: #eee; }
+
+block Subject
+	title 운영 정책 - 끄투엔
+
+block Middle
+	div.legal-box(style='padding: 20px; color: white; overflow-y: scroll; height: 100%;')
+		h1 끄투엔 운영 정책
+
+		h3 제1조 (목적)
+		p 본 운영 정책(이하 "본 정책")은 끄투엔 이용약관(이하 "약관") 제7조(이용자의 의무) 및 제8조(서비스 이용 제한)에서 정한 사항을 시행하기 위하여, 위반행위의 유형과 위반 횟수에 따른 구체적인 제재 기준을 정함을 목적으로 합니다.
+
+		h3 제2조 (약관과의 관계)
+		p 1. 본 정책에서 사용하는 용어는 약관 제2조(용어의 정의)를 따릅니다.
+		p 2. 본 정책은 약관 제7조 및 제8조의 시행을 위한 세부 기준이며, 본 정책과 약관이 상충하는 경우 약관이 우선합니다.
+		p 3. 본 정책에 명시되지 않은 위반행위에 대해서는 약관 제8조에 따라 관리자가 개별적으로 판단하여 조치합니다.
+
+		h3 제3조 (제재의 원칙)
+		p 1. 위반 횟수는 이용자(계정) 기준으로 누적 산정하며, 1차·2차·3차 순으로 적용됩니다. 4차 이상 위반 시에는 3차 기준을 준용하거나 이보다 가중하여 처리할 수 있습니다.
+		p 2. 제재 수준은 아래 표를 기본 기준으로 하되, 위반 행위의 경중, 반복성, 고의성, 피해 규모 등을 종합적으로 고려하여 관리자 재량으로 가중되거나 감경될 수 있습니다(약관 제8조 제3항).
+		p 3. 비인가 프로그램 사용 등 서비스의 공정성을 중대하게 침해하는 행위는 위반 횟수와 관계없이 1차 위반만으로도 영구 정지될 수 있습니다.
+		p 4. 버그 악용 등으로 취득한 비정상적 이득은 제재 여부와 관계없이 전부 또는 일부 회수될 수 있습니다(약관 제8조 제2항).
+
+		h3 제4조 (위반행위별 제재 기준)
+		p 아래 항목은 약관 제7조 각 호에 대응합니다.
+
+		h4 1. 정보 도용 및 사칭 (약관 제7조 제1호)
+		div.table-wrap
+			table
+				thead
+					tr
+						th 위반 항목
+						th 1차
+						th 2차
+						th 3차
+				tbody
+					tr
+						td 타인의 정보 도용 또는 관리자 사칭
+						td 게임 이용 제한 3일
+						td 게임 이용 제한 7일
+						td 게임 이용 제한 15일
+
+		h4 2. 비인가 프로그램 (약관 제7조 제3호)
+		div.table-wrap
+			table
+				thead
+					tr
+						th 위반 항목
+						th 1차
+				tbody
+					tr
+						td 비인가 프로그램의 제작, 배포, 사용(복사·붙여넣기 등 정상적인 타이핑 과정 없이 단어를 입력하는 행위 포함) 또는 사용 권유·방법 공유
+						td 게임 이용 영구 제한 (비정상적 이득 전량 회수 포함)
+
+		h4 3. 부적절한 채팅 행위 (약관 제7조 제4호)
+		div.table-wrap
+			table
+				thead
+					tr
+						th 위반 항목
+						th 1차
+						th 2차
+						th 3차
+				tbody
+					tr
+						td 욕설·비방, 음란한 내용, 도배 등 공서양속에 위반되는 내용을 채팅으로 게시·유포하는 행위
+						td 게임 및 채팅 이용 제한 최대 30일
+						td 게임 및 채팅 이용 제한 최대 90일
+						td 게임 및 채팅 이용 제한 최대 1년
+
+		h4 4. 부적절한 별명 설정 행위 (약관 제7조 제4호)
+		div.table-wrap
+			table
+				thead
+					tr
+						th 위반 항목
+						th 1차
+						th 2차
+						th 3차
+				tbody
+					tr
+						td 욕설·비방, 음란한 내용 등 공서양속에 위반되는 닉네임을 설정하는 행위
+						td 닉네임 강제 변경
+						td 닉네임 강제 변경 및 게임 이용 제한 3일
+						td 닉네임 강제 변경(변경 권한 제한) 및 게임 이용 제한 7일
+
+		h4 5. 버그 악용 (약관 제7조 제5호)
+		div.table-wrap
+			table
+				thead
+					tr
+						th 위반 항목
+						th 1차
+						th 2차
+						th 3차
+				tbody
+					tr
+						td 버그 악용 행위
+						td 비정상적 이득 전량 회수 및 게임 이용 제한 7일
+						td 비정상적 이득 전량 회수 및 게임 이용 제한 30일
+						td 비정상적 이득 전량 회수 및 게임 이용 영구 제한
+		p(style='color: #aaa; font-size: 0.9em;') ※ 버그 악용은 관리자가 공지사항을 통해 오류임을 고지한 이후에도 해당 오류를 지속적으로 이용한 경우에 한하여 적용됩니다. 관리자의 공지 이전에 발생한 플레이는 버그 악용에 해당하지 않습니다(약관 제2조 제5호).
+
+		h4 6. 게임 진행 및 운영 방해 (약관 제7조 제6호)
+		div.table-wrap
+			table
+				thead
+					tr
+						th 위반 항목
+						th 1차
+						th 2차
+						th 3차
+				tbody
+					tr
+						td 타인의 게임 진행을 고의로 방해하거나 서비스 운영을 고의로 저해하는 행위
+						td 게임 이용 제한 7일
+						td 게임 이용 제한 30일
+						td 게임 이용 제한 90일
+
+		h4 7. 기타 위반 (약관 제7조 제7호)
+		div.table-wrap
+			table
+				thead
+					tr
+						th 위반 항목
+						th 제재
+				tbody
+					tr
+						td 기타 현행 법령 및 약관을 위반하는 행위
+						td 위반 사안의 경중에 따라 경고부터 영구 정지까지 관리자 재량으로 결정
+
+		h3 제5조 (비정상적 이득의 처리)
+		p 버그 악용 또는 비인가 프로그램 사용으로 취득한 비정상적 이득(약관 제2조 제6호)은 제재 여부와 관계없이 전부 또는 일부 회수되며, 관련 데이터는 수정 또는 초기화될 수 있습니다(약관 제8조 제2항, 제9조).
+
+		h3 제6조 (이의 제기)
+		p 제재에 이의가 있는 이용자는 디스코드 또는 이메일을 통해 관리자에게 소명할 수 있으며, 관리자는 제출된 소명을 검토하여 제재 수준을 조정할 수 있습니다.
+
+		h3 부칙
+		p 이 정책은 2026년 8월 1일부터 시행합니다.

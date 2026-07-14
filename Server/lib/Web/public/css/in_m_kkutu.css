@@ -34,8 +34,8 @@ body.theme-red {
 }
 
 body.theme-orange {
-	--color-primary: #E65100;
-	--color-primary-dark: #BF360C;
+	--color-primary: #e67300;
+	--color-primary-dark: #bf510c;
 	--color-bg-light: #FFF3E0;
 	--color-bg-medium: #FFCC80;
 	--color-border: #FFE0B2;
@@ -154,6 +154,8 @@ body {
 }
 
 .kkutu-menu button:not(.ItemButton) {
+	position: relative;
+	z-index: 1;
 	flex: 0 1 35px;
 	min-width: 20px;
 	border: none;
@@ -199,32 +201,28 @@ body {
 	/* Border removed */
 }
 
-#DictionaryBtn {
-	padding: 0;
-	margin: 0px 1px;
+#ExitBtn:active {
+	background-color: var(--color-bg-light) !important;
 }
 
-#DictionaryBtn:hover {
-	height: 35px;
-	margin-top: -5px;
-}
-
-.kkutu-menu button:not(.ItemButton):hover {
-	margin-top: -5px;
-	height: 25px;
+@media (hover: hover) {
+	.kkutu-menu button:not(.ItemButton):hover {
+		margin-top: -5px;
+		height: 25px;
+	}
 }
 
 .kkutu-menu button:not(.ItemButton):active {
-	margin-top: 5px !important;
-	height: 20px !important;
+	margin-top: 6px !important;
+	height: 25px !important;
 	background-color: var(--color-bg-light) !important;
 	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15) !important;
 }
 
 #StartBtn:active,
 #ReadyBtn:active {
-	margin-top: 5px !important;
-	height: 15px !important;
+	margin-top: 8.5px !important;
+	height: 22.5px !important;
 	background-color: var(--color-primary-dark) !important;
 	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2) !important;
 }
@@ -1148,6 +1146,10 @@ body.theme-green .GameBox::before {
 	padding: 8px 0px;
 }
 
+.jjo-display:has(.shuk-char) {
+	padding: 8px 0px;
+}
+
 .cw .jjo-display {
 	position: relative;
 	padding: 5px;
@@ -1278,6 +1280,28 @@ body.theme-green .GameBox::before {
 	color: #FFFF44;
 	font-weight: bold;
 	font-size: 24px;
+}
+
+.shuk-board {
+	position: relative;
+	width: 100%;
+	max-width: 220px;
+	aspect-ratio: 1 / 1;
+	margin: 0 auto;
+}
+
+.shuk-char {
+	position: absolute;
+	box-sizing: border-box;
+	width: 33.333%;
+	height: 33.333%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 54px;
+	font-weight: bold;
+	text-align: center;
+	transition: top 0.5s ease-in-out, left 0.5s ease-in-out;
 }
 
 .items {
@@ -2544,12 +2568,15 @@ body.theme-green .GameBox::before {
 
 .kkutu-menu .ItemButton {
 	position: relative;
+	z-index: 1;
 	float: left;
 	border: none;
 	border-bottom-left-radius: 0px;
 	border-bottom-right-radius: 0px;
-	width: 25px;
-	height: 20px;
+	width: 35px;
+	height: 30px;
+	box-sizing: border-box;
+	container-type: inline-size;
 	margin: 0px 1px;
 	cursor: pointer;
 	font-weight: bold;
@@ -2560,6 +2587,17 @@ body.theme-green .GameBox::before {
 	overflow: visible;
 }
 
+.kkutu-menu .ItemButton:active:not(.item-disabled) {
+	margin-top: 5px;
+	height: 25px;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 400px) {
+	.kkutu-menu .ItemButton {
+		width: max(17.5px, calc(17.5vw - 35px));
+	}
+}
 
 .kkutu-menu .ItemButton.item-disabled {
 	cursor: default;
@@ -2596,6 +2634,7 @@ body.theme-green .GameBox::before {
 
 .ItemIcon {
 	margin-right: 2px;
+	font-size: clamp(10px, 40cqi, 15px);
 }
 
 .ItemName {
@@ -2605,7 +2644,7 @@ body.theme-green .GameBox::before {
 .ItemCount {
 	display: inline-block;
 	font-weight: bold;
-	font-size: 12px;
+	font-size: clamp(8px, 34cqi, 12px);
 }
 
 /* Mobile player card item overlay */
@@ -2671,15 +2710,13 @@ body.theme-green .GameBox::before {
 }
 
 #raingame-strategy {
-	float: right;
+	display: flex;
+	margin-left: auto;
 }
 
 .raingame-strategy-btn {
 	position: relative;
 	overflow: visible;
-	width: 25px !important;
-	height: 20px !important;
-	padding: 5px !important;
 	cursor: pointer;
 }
 
