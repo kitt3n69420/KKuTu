@@ -220,7 +220,7 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 		Rule[k] = require(`./games/${k.toLowerCase()}`);
 		Rule[k].init(DB, DIC, checkSwearWords);
 	}
-	Room.setContext({ DB: DB, DIC: DIC, ROOM: ROOM, CHAN: CHAN, Rule: Rule, checkSwearWords: checkSwearWords, narrate: exports.narrate, publish: exports.publish, Robot: exports.Robot, getEventMults: function() { return _eventMults; } });
+	Room.setContext({ DB: DB, DIC: DIC, ROOM: ROOM, CHAN: CHAN, Rule: Rule, checkSwearWords: checkSwearWords, censorSwearWords: censorSwearWords, narrate: exports.narrate, publish: exports.publish, Robot: exports.Robot, getEventMults: function() { return _eventMults; } });
 
 	// === 글로벌 heartbeat 타이머 (per-client setInterval 대체) ===
 	// 모든 클라이언트를 20초마다 한 번에 순회하여 heartbeat 전송 + 타임아웃 감지

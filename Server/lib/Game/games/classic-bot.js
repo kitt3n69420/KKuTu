@@ -1,6 +1,7 @@
 ﻿var Const = require('../../const');
 var util = require('./classic-util');
 
+var ctx = util.ctx;
 var getAuto = util.getAuto;
 var getChar = util.getChar;
 var getSubChar = util.getSubChar;
@@ -205,7 +206,7 @@ exports.readyRobot = function (robot) {
 					if (my.game.chain && my.game.chain.includes(w._id)) return false;
 					// 도돌이 금지: 봇도 도돌이 단어 제외
 					if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
-					if (my.opts.noswear && checkSwearWords && checkSwearWords(w._id).length > 0) return false;
+					if (my.opts.noswear && ctx.checkSwearWords && ctx.checkSwearWords(w._id).length > 0) return false;
 					return true;
 				});
 
@@ -252,7 +253,7 @@ exports.readyRobot = function (robot) {
 						if (my.game.chain && my.game.chain.includes(w._id)) return false;
 						if (fetched.some(function (existing) { return existing._id === w._id; })) return false;
 						if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
-						if (my.opts.noswear && checkSwearWords && checkSwearWords(w._id).length > 0) return false;
+						if (my.opts.noswear && ctx.checkSwearWords && ctx.checkSwearWords(w._id).length > 0) return false;
 						return true;
 					});
 
@@ -778,7 +779,7 @@ exports.readyRobot = function (robot) {
 					}
 					if (robot._done.has(w._id)) return false;
 					if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
-					if (my.opts.noswear && checkSwearWords && checkSwearWords(w._id).length > 0) return false;
+					if (my.opts.noswear && ctx.checkSwearWords && ctx.checkSwearWords(w._id).length > 0) return false;
 					return true;
 				});
 
@@ -911,7 +912,7 @@ exports.readyRobot = function (robot) {
 									if (w._id.length < minLen || w._id.length > maxLen) return false;
 									if (robot._done.has(w._id)) return false;
 									if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
-									if (my.opts.noswear && checkSwearWords && checkSwearWords(w._id).length > 0) return false;
+									if (my.opts.noswear && ctx.checkSwearWords && ctx.checkSwearWords(w._id).length > 0) return false;
 									return true;
 								});
 

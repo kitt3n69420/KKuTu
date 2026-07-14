@@ -22,7 +22,7 @@ var JLog = require('../sub/jjlog');
 var Const = require('../const');
 var DiscordBot = Cluster.isMaster ? require('../sub/discord-bot') : null;
 
-var DB, DIC, ROOM, CHAN, Rule, checkSwearWords, narrate, publish, Robot, getEventMults;
+var DB, DIC, ROOM, CHAN, Rule, checkSwearWords, censorSwearWords, narrate, publish, Robot, getEventMults;
 
 Room.setContext = function(ctx) {
     DB = ctx.DB;
@@ -31,6 +31,7 @@ Room.setContext = function(ctx) {
     CHAN = ctx.CHAN;
     Rule = ctx.Rule;
     checkSwearWords = ctx.checkSwearWords;
+    censorSwearWords = ctx.censorSwearWords;
     narrate = ctx.narrate;
     publish = ctx.publish;
     Robot = ctx.Robot;
@@ -1804,9 +1805,9 @@ function Room(room, channel) {
 				if (rw.score > 100) rw.score = 100;
 				if (rw.money > 10) rw.money = 10;
 			}
-			// 슉슉: 보드가 고갈되지 않아 누적 점수가 무제한으로 커질 수 있어 라운드당 소프트 캡을 둔다
-			if (Const.GAME_TYPE[my.mode] === 'KSK' && rw.score > 4000) rw.score = 4000;
-			if (Const.GAME_TYPE[my.mode] === 'ESK' && rw.score > 3000) rw.score = 3000;
+			// 슉슉/양말대전: 보드가 고갈되지 않아 누적 점수가 무제한으로 커질 수 있어 라운드당 소프트 트랜지션을 둔다
+			// 참고: 클로드가 양말대전이라 한건 사실 솎솎(sock)이다
+			if (['KSK', 'ESK', 'KSS', 'ESS'].indexOf(Const.GAME_TYPE[my.mode]) !== -1) rw.score = softTransition(rw.score);
 			if (my.opts.stp) rw.score = Math.round(rw.score * 0.4);
 			if (my.opts.big) {
 				rw.score = Math.round(rw.score / 2);
@@ -2555,6 +2556,18 @@ function Room(room, channel) {
 	}
 };
 
+// 낮은 x → y ≈ x (기울기 1), 높은 x → y ≈ x*ratio (기울기 ratio), breakpoint 부근에서 부드럽게 전환
+function softTransition(x, opts) {
+	opts = opts || {};
+	var breakpoint = typeof opts.breakpoint === 'undefined' ? 4000 : opts.breakpoint;
+	var ratio = typeof opts.ratio === 'undefined' ? 0.1 : opts.ratio;
+	var smoothness = typeof opts.smoothness === 'undefined' ? 3000000 : opts.smoothness;
+	var offset = typeof opts.offset === 'undefined' ? 208.5 : opts.offset;
+	var low = x + offset;
+	var high = ratio * (x - breakpoint) + breakpoint;
+	return (low + high - Math.sqrt((low - high) * (low - high) + smoothness)) / 2;
+}
+
 function shuffle(arr) {
 	var r = arr.slice(); // 원본 배열 복사
 	for (var i = r.length - 1; i > 0; i--) {
@@ -2662,10 +2675,10 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 			rw.score += score * 1.0;
 			break;
 		case 'KSK':
-			rw.score += score * 1.25;
+			rw.score += score * 0.70;
 			break;
 		case 'ESK':
-			rw.score += score * 0.7;
+			rw.score += score * 0.55;
 			break;
 		default:
 			rw.score += score * 1.25;

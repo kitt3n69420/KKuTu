@@ -670,6 +670,7 @@ function getAnswer(theme) {
     args.push(['flag', { $lte: 7 }]);
 
     DB.kkutu[lang].find.apply(my, args).on(function ($res) {
+        if (!my.game.done) return R.go(null);
         if (!$res) return R.go(null);
         var pick;
         var len = $res.length;
