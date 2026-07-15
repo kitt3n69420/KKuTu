@@ -1808,7 +1808,7 @@ function Room(room, channel) {
 			// 슉슉/양말대전: 보드가 고갈되지 않아 누적 점수가 무제한으로 커질 수 있어 라운드당 소프트 트랜지션을 둔다
 			// 참고: 클로드가 양말대전이라 한건 사실 솎솎(sock)이다
 			if (['KSK', 'ESK', 'KSS', 'ESS'].indexOf(Const.GAME_TYPE[my.mode]) !== -1) rw.score = softTransition(rw.score);
-			if (my.opts.stp) rw.score = Math.round(rw.score * 0.4);
+			if (my.opts.stop) rw.score = Math.round(rw.score * 0.4);
 			if (my.opts.big) {
 				rw.score = Math.round(rw.score / 2);
 				rw.money = Math.round(rw.money / 2);

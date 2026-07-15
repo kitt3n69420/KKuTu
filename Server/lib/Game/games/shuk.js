@@ -128,7 +128,7 @@ exports.turnStart = function () {
 		positions: my.game.positions
 	}, true);
 
-	if (!my.opts.stp) {
+	if (!my.opts.stop) {
 		my.game.moveTimer = setInterval(function () {
 			applyMove(my);
 		}, MOVE_INTERVAL);

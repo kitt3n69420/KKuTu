@@ -4269,6 +4269,7 @@ $lib.Shuk.roundReady = function (data, spec) {
 	clearInterval($data._tTime);
 };
 $lib.Shuk.shukMove = function (data) {
+	if ($data.room.opts.stop) return;
 	var positions = data.positions;
 	var i, $c;
 
@@ -4321,7 +4322,7 @@ $lib.Shuk.drawMaps = function () {
 	}
 };
 $lib.Shuk.drawDisplay = function () {
-	var $a = $("<div>").addClass("shuk-board").css('height', "100%");
+	var $a = $("<div>").addClass("shuk-board");
 	var positions = $data._positions || [];
 	var i, $c;
 
@@ -4333,6 +4334,7 @@ $lib.Shuk.drawDisplay = function () {
 		$data._shukEls[positions[i]] = $c;
 	}
 	$stage.game.display.empty().append($a);
+	$a.height($stage.game.display.height());
 	$lib.Shuk.drawMaps();
 };
 $lib.Shuk.turnStart = function (data, spec) {

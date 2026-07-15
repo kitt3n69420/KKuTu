@@ -1285,8 +1285,6 @@ body.theme-green .GameBox::before {
 .shuk-board {
 	position: relative;
 	width: 100%;
-	max-width: 220px;
-	aspect-ratio: 1 / 1;
 	margin: 0 auto;
 }
 
