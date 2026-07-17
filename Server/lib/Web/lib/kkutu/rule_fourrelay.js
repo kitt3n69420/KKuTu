@@ -16,45 +16,39 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-$lib.Calcrelay = {};
+$lib.Fourrelay = {};
 
-// 코옵 모드에서는 체인 표시를 "(현재 체인 수) / (목표 문제 수)"로 보여준다.
-function getChainDisplay() {
-	var rule = RULE[MODE[$data.room.mode]];
-	if (rule && rule.coop) {
-		var target = ($data.room.coopTarget !== undefined) ? $data.room.coopTarget : $data.room.round;
-		return $data.chain + " / " + target;
-	}
-	return $data.chain;
+// 코옵 모드 체인 표시: "(현재 체인 수) / (목표 문제 수)"
+function getFourrelayChainDisplay() {
+	var target = ($data.room.coopTarget !== undefined) ? $data.room.coopTarget : $data.room.round;
+	return $data.chain + " / " + target;
+}
+function getFourrelayClueHtml(clue) {
+	var qStr = clue + new Array(clue.length + 1).join("○");
+	if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
+	return qStr;
 }
 
-$lib.Calcrelay.roundReady = function (data) {
-	var i, len = $data.room.game.title.length;
-	var $l;
-
+$lib.Fourrelay.roundReady = function (data) {
 	clearBoard();
 	$data._roundTime = $data.room.time * 1000;
-	var qStr = data.question;
-	if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
-	$stage.game.display.html($data._question = qStr);
+	$stage.game.display.html($data._question = getFourrelayClueHtml(data.clue));
 	$data.chain = 0;
-	$stage.game.chain.show().html(getChainDisplay());
+	$stage.game.chain.show().html(getFourrelayChainDisplay());
 	drawRound(data.round);
 	playSound('round_start');
 	recordEvent('roundReady', { data: data });
 };
 
-$lib.Calcrelay.turnStart = function (data) {
+$lib.Fourrelay.turnStart = function (data) {
 	$data.room.game.turn = data.turn;
 	if (data.seq) $data.room.game.seq = data.seq;
 	$data._tid = $data.room.game.seq[data.turn];
 	if ($data._tid.robot) $data._tid = $data._tid.id;
 	data.id = $data._tid;
 
-	if (data.question) {
-		var qStr = data.question;
-		if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
-		$stage.game.display.html($data._question = qStr);
+	if (data.clue) {
+		$stage.game.display.html($data._question = getFourrelayClueHtml(data.clue));
 	}
 
 	var $u = $("#game-user-" + data.id).addClass("game-user-current");
@@ -82,14 +76,12 @@ $lib.Calcrelay.turnStart = function (data) {
 	$data._turnTime = data.turnTime;
 	$data._roundTime = data.roundTime;
 	$data._turnSound = playSound("T" + data.speed);
-	recordEvent('turnStart', {
-		data: data
-	});
+	recordEvent('turnStart', { data: data });
 };
 
-$lib.Calcrelay.turnGoing = $lib.Classic.turnGoing;
+$lib.Fourrelay.turnGoing = $lib.Classic.turnGoing;
 
-$lib.Calcrelay.turnEnd = function (id, data) {
+$lib.Fourrelay.turnEnd = function (id, data) {
 	var $sc = $("<div>")
 		.addClass("deltaScore")
 		.html((data.score > 0) ? ("+" + data.score) : data.score);
@@ -99,26 +91,15 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 	if (id == $data.id) $data._relay = false;
 	clearInterval($data._tTime);
 
-	// ========== 서바이벌 모드 처리 ==========
-	if (data.survival && data.ko) {
-		// calcrelay 전용: 정답 표시
-		if (data.answer !== undefined) {
-			$stage.game.display.empty()
-				.append($("<label>").html(data.answer));
-		}
-		if (handleSurvivalKO(id, data, $sc, $uc)) return;
-	}
-	handleSurvivalDamage(data);
-	// ========== 서바이벌 모드 끝 ==========
-
 	addScore(id, data.score, data.totalScore);
 	if (data.ok) {
 		checkFailCombo();
 		clearTimeout($data._fail);
 		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		$data.chain++;
-		$stage.game.chain.html(getChainDisplay());
-		// 코옵 모드에서 목표 문제 수를 채운 마지막 턴이면, pushDisplay 애니메이션이 다 끝난 뒤에
+		$stage.game.chain.html(getFourrelayChainDisplay());
+
+		// 코옵 목표 문제수를 채운 마지막 턴이면, pushDisplay 애니메이션이 다 끝난 뒤에
 		// roundEnd의 "성공!" 표시가 뜨도록 완료 콜백으로 순서를 맞춘다(경쟁 상태 방지).
 		var isCoopFinalTurn = data.coopTarget !== undefined && data.coopTurn !== undefined && data.coopTurn >= data.coopTarget;
 		if (isCoopFinalTurn) {
@@ -132,12 +113,11 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 				}
 			});
 		} else {
-			// 정답 표시 (daneo/free처럼 pushDisplay 사용)
+			// 정답 단어 4글자를 모두 보여준다.
 			pushDisplay(data.value, null, null, null, false, null, false);
 		}
-		// 다음 문제 표시 (pushDisplay 애니메이션 후)
-		if (data.nextQuestion) {
-			$data._question = data.nextQuestion;
+		if (data.nextClue) {
+			$data._question = getFourrelayClueHtml(data.nextClue);
 		}
 	} else {
 		checkFailCombo(id);
@@ -145,24 +125,14 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 		$(".game-user-current").addClass("game-user-bomb");
 		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
 		playSound('timeout');
-		// 정답 표시 후 원래 문제 복원
 		if (data.answer !== undefined) {
 			$stage.game.display.empty()
 				.append($("<label>").html(data.answer));
-			// 잠시 후 원래 문제로 복원
-			addTimeout(function() {
-				var qStr = $data._question;
-				if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
-				$stage.game.display.html(qStr);
+			addTimeout(function () {
+				$stage.game.display.html($data._question);
 			}, 1500);
 		}
 	}
-	// 서바이벌 모드에서는 자신의 점수 스플래시 숨김 (데미지만 표시)
-	if (!data.survival) {
-		drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
-	} else {
-		// 서바이벌 모드: 스플래시 없이 current 클래스만 제거
-		$uc.removeClass("game-user-current").css('border-color', '');
-	}
+	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	updateScore(id, getScore(id));
 };

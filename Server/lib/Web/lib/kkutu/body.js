@@ -469,6 +469,13 @@ function onMessage(data) {
 			$data.robots = {};
 			$data.rooms = data.rooms;
 			$data.place = 0;
+			$data.room = null;
+			// 재접속 시 이전 방 소켓이 close 이벤트 없이 남아있는 경우를 대비해 정리
+			if (rws) {
+				rws.onclose = null;
+				rws.close();
+				rws = undefined;
+			}
 			$data.friends = data.friends;
 			$data._friends = {};
 			$data._playTime = data.playTime;
@@ -708,7 +715,13 @@ function onMessage(data) {
 			$('.ItemButton').addClass('item-disabled').css({'filter': 'grayscale(100%)', 'opacity': '0.5', 'cursor': 'not-allowed'}).removeClass('item-available item-queued');
 			$data.pendingItem = null;
 			$data._resultRank = data.ranks;
-			roundEnd(data.result, data.data);
+			// 코옵 마지막 문제의 pushDisplay 애니메이션이 아직 끝나지 않았으면, 그게 끝날 때까지
+			// "성공!" 결과 화면 표시를 미룬다(완료 콜백이 오면 그때 roundEnd를 실행함).
+			if ($data._coopFinalAnimPending) {
+				$data._pendingCoopRoundEnd = { result: data.result, data: data.data };
+			} else {
+				roundEnd(data.result, data.data);
+			}
 			break;
 		case 'draw':
 			// Picture Quiz drawing sync
@@ -1713,9 +1726,11 @@ function roomListBar(o) {
 	var $R, $ch, $rm;
 	var opts = getOptions(o.mode, o.opts, false, mobile);
 	var rule = RULE[MODE[o.mode]];
-	var isAlwaysSurvival = ALWAYS_SURVIVAL_MODES.indexOf(MODE[o.mode]) !== -1;
+	var isAlwaysSurvival = !!(rule && rule.survival);
 	var isSurvival = isAlwaysSurvival || (o.opts && o.opts.survival);
-	var roundOrHP = isSurvival ? ((o.opts && o.opts.surHP || 500) + " HP") : (L['rounds'] + " " + o.round);
+	var isCoop = !!(rule && rule.coop);
+	var displayRound = (o.coopTarget !== undefined) ? o.coopTarget : o.round;
+	var roundOrHP = isSurvival ? ((o.opts && o.opts.surHP || 500) + " HP") : ((isCoop ? L['coopRound'] : L['rounds']) + " " + displayRound);
 
 	$R = $("<div>").attr('id', "room-" + o.id).addClass("rooms-item")
 		.append($ch = $("<div>").addClass("rooms-channel channel-" + o.channel).on('click', function (e) { requestRoomInfo(o.id); }))
@@ -2510,8 +2525,8 @@ function turnError(code, text) {
 	playSound('fail');
 	clearTimeout($data._fail);
 	$data._fail = addTimeout(function () {
-		// 계산 릴레이 모드에서는 _question을 복원, 다른 모드에서는 _char를 복원
-		var restoreContent = ($data.room && MODE[$data.room.mode] === 'CRL')
+		// 계산 릴레이 / 네글자 이어말하기 모드에서는 _question을 복원, 다른 모드에서는 _char를 복원
+		var restoreContent = ($data.room && (MODE[$data.room.mode] === 'CRL' || MODE[$data.room.mode] === 'K4R'))
 			? $data._question
 			: $data._char;
 		$stage.game.display.html(restoreContent);
@@ -2655,7 +2670,12 @@ function roundEnd(result, data) {
 	$data._relay = false;
 
 	$(".result-me-expl").empty();
-	$stage.game.display.removeClass("raingame-board").html(L['roundEnd']);
+	if (data && data.coopSuccess) {
+		$stage.game.display.removeClass("raingame-board").html(L['coopSuccess']);
+		playSound('success');
+	} else {
+		$stage.game.display.removeClass("raingame-board").html(L['roundEnd']);
+	}
 	$data._resultPage = 1;
 	$data._result = null;
 	for (i in result) {
@@ -3022,9 +3042,11 @@ function setRoomHead($obj, room) {
 	var opts = getOptions(room.mode, room.opts, false, false);
 	var rule = RULE[MODE[room.mode]];
 	var $rm;
-	var isAlwaysSurvival = ALWAYS_SURVIVAL_MODES.indexOf(MODE[room.mode]) !== -1;
+	var isAlwaysSurvival = !!(rule && rule.survival);
 	var isSurvival = isAlwaysSurvival || (room.opts && room.opts.survival);
-	var roundOrHP = isSurvival ? ((room.opts && room.opts.surHP || 500) + " HP") : (room.round + " " + L['rounds']);
+	var isCoop = !!(rule && rule.coop);
+	var displayRound = (room.coopTarget !== undefined) ? room.coopTarget : room.round;
+	var roundOrHP = isSurvival ? ((room.opts && room.opts.surHP || 500) + " HP") : (displayRound + " " + (isCoop ? L['coopRound'] : L['rounds']));
 
 	$obj.empty()
 		.append($("<h5>").addClass("room-head-number").text("[" + (room.practice ? L['practice'] : room.id) + "]"))

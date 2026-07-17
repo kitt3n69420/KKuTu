@@ -1944,9 +1944,22 @@ exports.getScore = function (text, delay, ignoreMission) {
 	var gameType = Const.GAME_TYPE[my.mode];
 
 	if (!text || !my.game.chain || !my.game.dic) return 0;
+
+	// 서바이벌 밸런스 보정: 아이템/카오스/랜덤턴이 모두 없는 순차 진행에서는
+	// 턴 순서상 나중에 낼수록 체인이 길어져 유리해지므로, 같은 바퀴(생존자 수만큼 한 바퀴)
+	// 내의 모든 플레이어에게 동일한 체인 값(바퀴 수 * 생존자 수)을 적용해 공정하게 만든다.
+	var chainForScore = my.game.chain;
+	if (my.opts.survival && !my.opts.item && !my.opts.chaos && !my.opts.randomturn) {
+		var aliveN = Const.checkSurvivalStatus(my, DIC).aliveCount;
+		if (aliveN > 0) {
+			var lapIndex = Math.floor(my.game.chain.length / aliveN);
+			chainForScore = new Array(lapIndex * aliveN);
+		}
+	}
+
 	score = (gameType === 'KJM')
-		? Const.getPreScoreJamo(text, my.game.chain, tr)
-		: Const.getPreScore(text, my.game.chain, tr);
+		? Const.getPreScoreJamo(text, chainForScore, tr)
+		: Const.getPreScore(text, chainForScore, tr);
 
 	if (my.game.dic[text]) score *= 15 / (my.game.dic[text] + 15);
 	if (!ignoreMission && my.game.mission && typeof my.game.mission === "string") {

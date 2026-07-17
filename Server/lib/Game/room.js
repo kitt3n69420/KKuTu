@@ -79,7 +79,6 @@ function Room(room, channel) {
 			if (my._jst_stage2) { clearTimeout(my._jst_stage2); delete my._jst_stage2; }
 			return;
 		}
-		if (my.password) return;
 
 		if (my._adt) { clearTimeout(my._adt); delete my._adt; }
 		// 버그 수정: _jst 타이머도 함께 정리하여 중복 알림 방지
@@ -273,7 +272,6 @@ function Room(room, channel) {
 	my.checkJamsu = function () {
 		// 마스터 프로세스에서는 잠수 체크하지 않음 (워커에서만 실행)
 		if (Cluster.isMaster) return;
-		if (my.password) return;
 		// 게임 중이거나 연습 중이면 잠수 체크 안 함
 		if (my.gaming || my.isPracticing) {
 			if (my._jst) {
@@ -509,6 +507,10 @@ function Room(room, channel) {
 			limit: my.limit,
 			mode: my.mode,
 			round: my.round,
+			// 코옵 모드는 게임 중 my.round가 1로 고정되므로, 목표 문제 수는 별도 필드로 노출한다
+			// (round 자체를 바꾸면 drawRound() 등 "실제 라운드 수" 가정 코드가 깨짐).
+			// 게임 중이 아닐 때는 undefined로 둬서 클라이언트가 room.round(방금 바뀐 설정값)를 쓰게 한다.
+			coopTarget: (my.gaming && my.rule && my.rule.coop && my.game) ? my.game.coopTarget : undefined,
 			time: my.time,
 			master: my.master,
 			players: pls,
@@ -863,8 +865,32 @@ function Room(room, channel) {
 							`seqLen=${my.game.seq.length} _wasAlive=${_wasAlive} ` +
 							`hasTurnTimer=${!!my.game.turnTimer} hasRobotTimer=${!!my.game.robotTimer} hasRRT=${!!my.game._rrt}`);
 					} catch (_e) { JLog.warn("[diag#4] leave log failed: " + _e); }
+					// 코옵 모드: 자기 턴에 이탈하면 즉시 전원 실패, 남의 턴이면 로테이션에서만 제외하고 계속 진행
+					if (my.rule.coop) {
+						var coopIsTurn = (my.game.turn == seqIndex);
+
+						if (my.game.pendingItems) delete my.game.pendingItems[client.id];
+						my.game.seq.splice(seqIndex, 1);
+						if (my.game.turn > seqIndex) {
+							my.game.turn--;
+							if (my.game.turn < 0) my.game.turn = my.game.seq.length - 1;
+						}
+						if (my.game.turn >= my.game.seq.length) my.game.turn = 0;
+
+						if (coopIsTurn) {
+							clearTimeout(my.game.turnTimer);
+							clearTimeout(my.game.robotTimer);
+							clearTimeout(my.game._rrt);
+							if (Cluster.isWorker) {
+								my.game._rrt = setTimeout(function () {
+									my.roundEnd({ coopSuccess: false });
+								}, 500);
+							}
+						}
+						// 남의 턴에 이탈한 경우: 기존 턴 타이머가 그대로 유지되어 남은 인원이 계속 진행됨
+					}
 					// 서바이벌 모드: 중도 퇴장 시 KO 처리 (seq에서 제거하지 않음)
-					if (my.opts.survival || (my.gaming && my.rule && (my.rule.rule === 'Raingame' || my.rule.rule === 'Wordstack'))) {
+					else if (my.opts.survival || (my.gaming && my.rule && my.rule.survival)) {
 						if (_wasAlive === false) {
 							// 이미 KO된 플레이어 퇴장 (heartbeat 타임아웃 등):
 							// turnEnd()가 이미 KO/타이머를 처리했으므로 게임 흐름에 영향 없음
@@ -996,7 +1022,9 @@ function Room(room, channel) {
 					}
 				}
 
-				if (my.gaming && my.game.seq.length < 2) my.roundEnd();
+				// 코옵 모드는 자체 종료 조건(목표 턴 달성/실패/자기 턴 이탈)만으로 끝나야 하므로
+				// 인원이 줄었다는 이유만으로 강제 종료하지 않는다 (남의 턴 이탈 시 계속 진행).
+				if (my.gaming && !my.rule.coop && my.game.seq.length < 2) my.roundEnd();
 			}
 
 		} else {
@@ -1163,6 +1191,11 @@ function Room(room, channel) {
 		if (my.rule.opts.includes("qij")) {
 			if (!my.opts.quizpick) return 400;
 			if (!my.opts.quizpick.length) return 413;
+		}
+		// 코옵 턴 수 검사: 목표 턴 수가 참여 인원(봇 포함)보다 적으면 시작 불가
+		if (my.rule.coop && teams) {
+			var coopHeadcount = teams[0].length + teams[1].length + teams[2].length + teams[3].length + teams[4].length;
+			if (my.round < coopHeadcount) return 448;
 		}
 		return false;
 	};
@@ -1395,6 +1428,7 @@ function Room(room, channel) {
 			o.game.bonus = 0;
 			o.game.survivalKOOrder = 0;
 			o.game.survivalDamageDealt = 0;
+			o.game.coopTurns = 0;
 			o.game.item = [/*0, 0, 0, 0, 0, 0*/];
 			o.game.wpc = [];
 			delete o.game.lastWord;
@@ -1408,8 +1442,18 @@ function Room(room, channel) {
 			my.game.bonusScore[o.id] = 0;
 			if (my.game.pendingItems[o.id]) delete my.game.pendingItems[o.id];
 		}
+		// 서바이벌/코옵 모드는 my.round를 강제로 바꾸므로, 게임 종료 후 방 설정에 원래 값을 되돌리기 위해 백업
+		if (my.opts.survival || my.rule.coop) {
+			my.originalRound = my.round;
+		}
 		// 서바이벌 모드는 1라운드만 진행
 		if (my.opts.survival) {
+			my.round = 1;
+			my.game.maxRound = 1;
+		}
+		// 코옵 모드: 라운드 수 입력값을 목표 턴 수로 전환하고 1라운드로 고정
+		if (my.rule.coop) {
+			my.game.coopTarget = my.round;
 			my.round = 1;
 			my.game.maxRound = 1;
 		}
@@ -1760,6 +1804,46 @@ function Room(room, channel) {
 		}
 
 
+		// 코옵 모드: 개별 기본 보상(아이템효과 적용 전)을 풀링해서 턴 수 비율로 재분배
+		var coopRewardMap = null;
+		if (my.rule.coop) {
+			coopRewardMap = {};
+			// 봇의 존재가 보상 곡선에 영향을 주지 않도록, 인원수(all)와 총점(ss) 모두 사람 기준으로만 계산한다.
+			// "실인간 1명" 솔로 페널티는 getRewards 내부의 all<2 컷이 아니라 아래에서 실인간 수 기준으로 직접 적용한다.
+			var coopFormulaAll = Math.max(2, humanCount);
+			var coopHumanSumScore = 0;
+			for (i in res) {
+				if (!res[i].robot) coopHumanSumScore += res[i].score;
+			}
+			var coopActive = [];
+			for (i in res) {
+				if (res[i].robot) continue;
+				var co = DIC[res[i].id];
+				if (!co || !co.game) continue;
+				var crw = getRewards(my.mode, res[i].score / res[i].dim, co.game.bonus, 1, coopFormulaAll, coopHumanSumScore);
+				var centry = { rw: crw, turns: co.game.coopTurns || 0 };
+				coopRewardMap[co.id] = centry;
+				coopActive.push(centry);
+			}
+			var coopPoolScore = 0, coopPoolMoney = 0, coopTurnDenom = 0;
+			for (i in coopActive) {
+				coopPoolScore += coopActive[i].rw.score;
+				coopPoolMoney += coopActive[i].rw.money;
+				coopTurnDenom += coopActive[i].turns;
+			}
+			if (coopActive.length === 1) {
+				coopPoolScore *= 0.05;
+				coopPoolMoney *= 0.5;
+			}
+			var coopSuccessMult = (data && data.coopSuccess) ? 1 : 0.1;
+			for (i in coopActive) {
+				var coopShare = coopTurnDenom > 0 ? coopActive[i].turns / coopTurnDenom : 0;
+				coopActive[i].rw.score = Math.round(coopPoolScore * coopShare * coopSuccessMult);
+				coopActive[i].rw.money = Math.round(coopPoolMoney * coopShare * coopSuccessMult);
+				coopActive[i].rw.together = coopActive.length >= 2;
+			}
+		}
+
 		var humanRes = res.filter(function (r) { return !r.robot; });
 		var h_pv = -1;
 		for (i in humanRes) {
@@ -1795,6 +1879,8 @@ function Room(room, channel) {
 				// applyEquipOptions를 스킵하므로 클라이언트 explainReward()가 참조하는 필드 직접 초기화
 				rw = { score: 0, money: 0, _score: 0, _money: 0, _blog: [] };
 				noReward = true;
+			} else if (coopRewardMap) {
+				rw = coopRewardMap[o.id] ? coopRewardMap[o.id].rw : { score: 0, money: 0, _score: 0, _money: 0, _blog: [] };
 			} else {
 				rw = getRewards(my.mode, res[i].score / res[i].dim, o.game.bonus, myHumanRank, humanCount, sumScore);
 			}
@@ -1933,6 +2019,11 @@ function Room(room, channel) {
 				}
 			});
 		});
+		// 서바이벌/코옵 모드가 게임 중 강제로 바꿔둔 라운드 수를 방 설정용 원래 값으로 복원
+		if (my.originalRound !== undefined) {
+			my.round = my.originalRound;
+			delete my.originalRound;
+		}
 		my.gaming = false;
 		my.checkJamsu();
 		my.export();

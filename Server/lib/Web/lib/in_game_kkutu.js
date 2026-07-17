@@ -17,7 +17,6 @@
  */
 
 var MODE;
-var ALWAYS_SURVIVAL_MODES = ['KWR', 'EWR', 'KWS', 'EWS'];
 var PACK_TOOLTIP = { '키뮤': 'Kimu-Nowchira 제공 · CC BY-NC 4.0' };
 var BEAT = [null,
 	"10000000",
@@ -677,8 +676,11 @@ $(document).ready(function () {
 	$("#room-round").on('change', function (e) {
 		var $target = $(e.currentTarget);
 		var value = $target.val();
+		var currentRule = RULE[MODE[$("#room-mode").val()]];
+		var isCoopMode = currentRule && currentRule.coop;
+		var outOfRange = isCoopMode ? (value < 5 || value > 50) : (value < 1 || value > 10);
 
-		if (value < 1 || value > 10) {
+		if (outOfRange) {
 			$target.css('color', "#FF4444");
 		} else {
 			$target.css('color', "");
@@ -1306,6 +1308,15 @@ $(document).ready(function () {
 		// 게임 모드 변경 시 서바이벌 UI 업데이트
 		var survivalChecked = $("#room-survival").is(':checked') || $("#room-flat-survival").is(':checked');
 		updateSurvivalUI(survivalChecked);
+		// 코옵 모드: 라운드 수 입력칸을 목표 문제 수(5~50) 입력칸으로 전환
+		// (updateSurvivalUI 호출 뒤에 와야 라벨이 덮어써지지 않음)
+		if (rule.coop) {
+			$("#room-round").attr({ min: 5, max: 50 }).val(Math.max(5, Math.min(50, Number($("#room-round").val()) || 5)));
+			$("#room-round-label").text(L['coopTurns']);
+		} else {
+			$("#room-round").attr({ min: 1, max: 10 });
+			$("#room-round-label").text(mobile ? L['numRound'] : L['roundSetting']);
+		}
 		if (window.updateViewAllRulesBtn) setTimeout(window.updateViewAllRulesBtn, 10);
 	});
 	// 나락-무적 상호배타: 나락 체크시 무적 해제
@@ -1598,6 +1609,18 @@ $(document).ready(function () {
 				}
 			});
 		} else {
+			if ($data.practicing) {
+				$data.room.gaming = true;
+			}
+			if ($data.resulting) {
+				$data.resulting = false;
+				$stage.dialog.result.hide();
+				delete $data._replay;
+				delete $data._resultRank;
+				$stage.box.room.height(360);
+				playBGM('lobby');
+				forkChat();
+			}
 			send('leave');
 		}
 	});
@@ -2716,12 +2739,11 @@ $(document).ready(function () {
 	});
 
 	// 8. 서바이벌 모드 UI 변경
-	// ALWAYS_SURVIVAL_MODES is defined globally in head.js
 	function updateSurvivalUI(isSurvival) {
 		// 현재 선택된 게임 모드가 서바이벌을 지원하는지 확인
 		var currentMode = $("#room-mode").val();
 		var rule = RULE[MODE[currentMode]];
-		var isAlwaysSurvival = ALWAYS_SURVIVAL_MODES.indexOf(MODE[currentMode]) !== -1;
+		var isAlwaysSurvival = !!(rule && rule.survival);
 		var supportsSurvival = isAlwaysSurvival || (rule && rule.opts && rule.opts.indexOf("sur") !== -1);
 
 		// 서바이벌이 활성화되었고, 해당 게임이 서바이벌을 지원하는 경우에만 HP UI 표시
@@ -2810,6 +2832,33 @@ $(document).ready(function () {
 	});
 
 	// 웹소켓 연결
+	// 모바일 브라우저(특히 파이어폭스)는 백그라운드로 전환되면 JS 타이머가 정지되어
+	// heartbeat가 끊기고, 복귀 시점에 code=1006(비정상 종료)으로 소켓이 닫혀 있는 경우가 많다.
+	// 이때는 사용자가 새로고침하지 않아도 자동으로 재접속을 시도한다.
+	var _reconnectPending = false;
+	function scheduleReconnect() {
+		if (_reconnectPending) return;
+		_reconnectPending = true;
+		// 화면이 보이는 상태면 바로 시도, 백그라운드면 다시 보일 때까지 대기
+		// (백그라운드에서의 재시도는 네트워크가 살아있지 않은 경우가 많아 낭비)
+		if (document.visibilityState === 'visible') {
+			setTimeout(doReconnect, 1500);
+		}
+	}
+	function doReconnect() {
+		_reconnectPending = false;
+		connect();
+	}
+	document.addEventListener('visibilitychange', function () {
+		var state = document.visibilityState;
+		// 진단용: 서버 로그에서 disconnect 직전 visibility 상태를 확인할 수 있도록 표시
+		if (ws && ws.readyState === _WebSocket.OPEN) {
+			ws.send(JSON.stringify({ type: 'visibility', state: state }));
+		}
+		if (state === 'visible' && _reconnectPending) {
+			doReconnect();
+		}
+	});
 	function connect() {
 		var heartbeatInterval;
 		ws = new _WebSocket($data.URL);
@@ -2852,14 +2901,37 @@ $(document).ready(function () {
 			if (rws) rws.close();
 			stopAllSounds();
 
+			// 연결이 끊기면 재접속 성공 여부와 무관하게 즉시 로비 화면으로 전환한다.
+			// (재접속 시 서버가 다시 'welcome'을 보내며 로비 상태로 초기화하므로,
+			//  화면도 미리 로비로 돌려놓아 끊긴 방/게임 화면에 그대로 머무르지 않게 한다)
+			if ($data.place) {
+				clearInterval($data._tTime);
+				clearBoard();
+				$data.place = 0;
+				$data.room = null;
+				// practicing이 true면 updateUI()가 강제로 게임 화면을 유지시키므로 함께 해제한다
+				$data.practicing = false;
+				$data.resulting = false;
+				updateUI();
+				playBGM('lobby');
+			}
+
 			if ($data._bannedClose) {
 				$.get("/kkutu_notice.html", function (res) { loading(res); });
 				return;
 			}
 
+			// code=1006(비정상 종료)은 모바일 백그라운드 전환 등으로 인한 순간적인 연결 유실이
+			// 대부분이므로, 사용자에게 alert를 띄우는 대신 조용히 재접속을 시도한다.
+			if (e.code === 1006) {
+				loading(L['reconnecting']);
+				scheduleReconnect();
+				return;
+			}
+
 			var ct = L['closed'] + " (#" + e.code + ")";
-			// 1004, 1005, 1006 에러 코드는 일반적인 연결 끊김이므로 alert 대신 오버레이로 표시
-			if (e.code === 1004 || e.code === 1005 || e.code === 1006) {
+			// 1004, 1005 에러 코드는 일반적인 연결 끊김이므로 alert 대신 오버레이로 표시
+			if (e.code === 1004 || e.code === 1005) {
 				loading(ct);
 			} else {
 				showAlert(ct, function () {
@@ -5153,6 +5225,16 @@ $lib.Picture.turnHint = function () {
 
 $lib.Calcrelay = {};
 
+// 코옵 모드에서는 체인 표시를 "(현재 체인 수) / (목표 문제 수)"로 보여준다.
+function getChainDisplay() {
+	var rule = RULE[MODE[$data.room.mode]];
+	if (rule && rule.coop) {
+		var target = ($data.room.coopTarget !== undefined) ? $data.room.coopTarget : $data.room.round;
+		return $data.chain + " / " + target;
+	}
+	return $data.chain;
+}
+
 $lib.Calcrelay.roundReady = function (data) {
 	var i, len = $data.room.game.title.length;
 	var $l;
@@ -5162,7 +5244,8 @@ $lib.Calcrelay.roundReady = function (data) {
 	var qStr = data.question;
 	if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
 	$stage.game.display.html($data._question = qStr);
-	$stage.game.chain.show().html($data.chain = 0);
+	$data.chain = 0;
+	$stage.game.chain.show().html(getChainDisplay());
 	drawRound(data.round);
 	playSound('round_start');
 	recordEvent('roundReady', { data: data });
@@ -5240,9 +5323,25 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 		checkFailCombo();
 		clearTimeout($data._fail);
 		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
-		$stage.game.chain.html(++$data.chain);
-		// 정답 표시 (daneo/free처럼 pushDisplay 사용)
-		pushDisplay(data.value, null, null, null, false, null, false);
+		$data.chain++;
+		$stage.game.chain.html(getChainDisplay());
+		// 코옵 모드에서 목표 문제 수를 채운 마지막 턴이면, pushDisplay 애니메이션이 다 끝난 뒤에
+		// roundEnd의 "성공!" 표시가 뜨도록 완료 콜백으로 순서를 맞춘다(경쟁 상태 방지).
+		var isCoopFinalTurn = data.coopTarget !== undefined && data.coopTurn !== undefined && data.coopTurn >= data.coopTarget;
+		if (isCoopFinalTurn) {
+			$data._coopFinalAnimPending = true;
+			pushDisplay(data.value, null, null, null, false, null, false, undefined, undefined, undefined, undefined, undefined, undefined, undefined, function () {
+				$data._coopFinalAnimPending = false;
+				if ($data._pendingCoopRoundEnd) {
+					var pending = $data._pendingCoopRoundEnd;
+					$data._pendingCoopRoundEnd = null;
+					roundEnd(pending.result, pending.data);
+				}
+			});
+		} else {
+			// 정답 표시 (daneo/free처럼 pushDisplay 사용)
+			pushDisplay(data.value, null, null, null, false, null, false);
+		}
 		// 다음 문제 표시 (pushDisplay 애니메이션 후)
 		if (data.nextQuestion) {
 			$data._question = data.nextQuestion;
@@ -5272,6 +5371,145 @@ $lib.Calcrelay.turnEnd = function (id, data) {
 		// 서바이벌 모드: 스플래시 없이 current 클래스만 제거
 		$uc.removeClass("game-user-current").css('border-color', '');
 	}
+	updateScore(id, getScore(id));
+};
+
+/**
+ * Rule the words! KKuTu Online
+ * Copyright (C) 2017 JJoriping(op@jjo.kr)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+$lib.Fourrelay = {};
+
+// 코옵 모드 체인 표시: "(현재 체인 수) / (목표 문제 수)"
+function getFourrelayChainDisplay() {
+	var target = ($data.room.coopTarget !== undefined) ? $data.room.coopTarget : $data.room.round;
+	return $data.chain + " / " + target;
+}
+function getFourrelayClueHtml(clue) {
+	var qStr = clue + new Array(clue.length + 1).join("○");
+	if ($data.room.opts.drg) qStr = "<label style='color:" + getRandomColor() + "'>" + qStr + "</label>";
+	return qStr;
+}
+
+$lib.Fourrelay.roundReady = function (data) {
+	clearBoard();
+	$data._roundTime = $data.room.time * 1000;
+	$stage.game.display.html($data._question = getFourrelayClueHtml(data.clue));
+	$data.chain = 0;
+	$stage.game.chain.show().html(getFourrelayChainDisplay());
+	drawRound(data.round);
+	playSound('round_start');
+	recordEvent('roundReady', { data: data });
+};
+
+$lib.Fourrelay.turnStart = function (data) {
+	$data.room.game.turn = data.turn;
+	if (data.seq) $data.room.game.seq = data.seq;
+	$data._tid = $data.room.game.seq[data.turn];
+	if ($data._tid.robot) $data._tid = $data._tid.id;
+	data.id = $data._tid;
+
+	if (data.clue) {
+		$stage.game.display.html($data._question = getFourrelayClueHtml(data.clue));
+	}
+
+	var $u = $("#game-user-" + data.id).addClass("game-user-current");
+	if ($data.room.opts.drg) $u.css('border-color', getRandomColor());
+	if (!$data._replay) {
+		if (data.id == $data.id) {
+			$stage.game.here.css('opacity', 1).show();
+		} else if (mobile) {
+			$stage.game.here.css('opacity', 0.5).show();
+		} else {
+			$stage.game.here.hide();
+		}
+		if (data.id == $data.id) {
+			$data._relay = true;
+			mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
+		}
+	}
+
+	ws.onmessage = _onMessage;
+	clearInterval($data._tTime);
+	clearTrespasses();
+	$data._speed = data.speed;
+	$data._tTime = addInterval(turnGoing, TICK);
+	$data.turnTime = data.turnTime;
+	$data._turnTime = data.turnTime;
+	$data._roundTime = data.roundTime;
+	$data._turnSound = playSound("T" + data.speed);
+	recordEvent('turnStart', { data: data });
+};
+
+$lib.Fourrelay.turnGoing = $lib.Classic.turnGoing;
+
+$lib.Fourrelay.turnEnd = function (id, data) {
+	var $sc = $("<div>")
+		.addClass("deltaScore")
+		.html((data.score > 0) ? ("+" + data.score) : data.score);
+	var $uc = $(".game-user-current");
+
+	if ($data._turnSound) $data._turnSound.stop();
+	if (id == $data.id) $data._relay = false;
+	clearInterval($data._tTime);
+
+	addScore(id, data.score, data.totalScore);
+	if (data.ok) {
+		checkFailCombo();
+		clearTimeout($data._fail);
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
+		$data.chain++;
+		$stage.game.chain.html(getFourrelayChainDisplay());
+
+		// 코옵 목표 문제수를 채운 마지막 턴이면, pushDisplay 애니메이션이 다 끝난 뒤에
+		// roundEnd의 "성공!" 표시가 뜨도록 완료 콜백으로 순서를 맞춘다(경쟁 상태 방지).
+		var isCoopFinalTurn = data.coopTarget !== undefined && data.coopTurn !== undefined && data.coopTurn >= data.coopTarget;
+		if (isCoopFinalTurn) {
+			$data._coopFinalAnimPending = true;
+			pushDisplay(data.value, null, null, null, false, null, false, undefined, undefined, undefined, undefined, undefined, undefined, undefined, function () {
+				$data._coopFinalAnimPending = false;
+				if ($data._pendingCoopRoundEnd) {
+					var pending = $data._pendingCoopRoundEnd;
+					$data._pendingCoopRoundEnd = null;
+					roundEnd(pending.result, pending.data);
+				}
+			});
+		} else {
+			// 정답 단어 4글자를 모두 보여준다.
+			pushDisplay(data.value, null, null, null, false, null, false);
+		}
+		if (data.nextClue) {
+			$data._question = getFourrelayClueHtml(data.nextClue);
+		}
+	} else {
+		checkFailCombo(id);
+		$sc.addClass("lost");
+		$(".game-user-current").addClass("game-user-bomb");
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
+		playSound('timeout');
+		if (data.answer !== undefined) {
+			$stage.game.display.empty()
+				.append($("<label>").html(data.answer));
+			addTimeout(function () {
+				$stage.game.display.html($data._question);
+			}, 1500);
+		}
+	}
+	drawObtainedScore($uc, $sc).removeClass("game-user-current").css('border-color', '');
 	updateScore(id, getScore(id));
 };
 
@@ -7616,7 +7854,7 @@ Object.defineProperty(BONUS_COLORS, 'linking', {
 	enumerable: true,
 	configurable: true
 });
-function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars, historyOverride, isAttack, isDefense, isFlush, isJackpot) {
+function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars, historyOverride, isAttack, isDefense, isFlush, isJackpot, onComplete) {
 	var len;
 	var mode = MODE[$data.room.mode];
 	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK";
@@ -7943,6 +8181,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 		}
 		addTimeout(pushHistory, tick * 4, (historyOverride !== undefined ? historyOverride : displayText), mean, theme, wc);
 		if (!isKKT) playSound(kkt);
+		if (onComplete) addTimeout(onComplete, tick * 4 + 50);
 	}, sg);
 }
 function pushHint(hint) {
@@ -8642,6 +8881,13 @@ function onMessage(data) {
 			$data.robots = {};
 			$data.rooms = data.rooms;
 			$data.place = 0;
+			$data.room = null;
+			// 재접속 시 이전 방 소켓이 close 이벤트 없이 남아있는 경우를 대비해 정리
+			if (rws) {
+				rws.onclose = null;
+				rws.close();
+				rws = undefined;
+			}
 			$data.friends = data.friends;
 			$data._friends = {};
 			$data._playTime = data.playTime;
@@ -8881,7 +9127,13 @@ function onMessage(data) {
 			$('.ItemButton').addClass('item-disabled').css({'filter': 'grayscale(100%)', 'opacity': '0.5', 'cursor': 'not-allowed'}).removeClass('item-available item-queued');
 			$data.pendingItem = null;
 			$data._resultRank = data.ranks;
-			roundEnd(data.result, data.data);
+			// 코옵 마지막 문제의 pushDisplay 애니메이션이 아직 끝나지 않았으면, 그게 끝날 때까지
+			// "성공!" 결과 화면 표시를 미룬다(완료 콜백이 오면 그때 roundEnd를 실행함).
+			if ($data._coopFinalAnimPending) {
+				$data._pendingCoopRoundEnd = { result: data.result, data: data.data };
+			} else {
+				roundEnd(data.result, data.data);
+			}
 			break;
 		case 'draw':
 			// Picture Quiz drawing sync
@@ -9886,9 +10138,11 @@ function roomListBar(o) {
 	var $R, $ch, $rm;
 	var opts = getOptions(o.mode, o.opts, false, mobile);
 	var rule = RULE[MODE[o.mode]];
-	var isAlwaysSurvival = ALWAYS_SURVIVAL_MODES.indexOf(MODE[o.mode]) !== -1;
+	var isAlwaysSurvival = !!(rule && rule.survival);
 	var isSurvival = isAlwaysSurvival || (o.opts && o.opts.survival);
-	var roundOrHP = isSurvival ? ((o.opts && o.opts.surHP || 500) + " HP") : (L['rounds'] + " " + o.round);
+	var isCoop = !!(rule && rule.coop);
+	var displayRound = (o.coopTarget !== undefined) ? o.coopTarget : o.round;
+	var roundOrHP = isSurvival ? ((o.opts && o.opts.surHP || 500) + " HP") : ((isCoop ? L['coopRound'] : L['rounds']) + " " + displayRound);
 
 	$R = $("<div>").attr('id', "room-" + o.id).addClass("rooms-item")
 		.append($ch = $("<div>").addClass("rooms-channel channel-" + o.channel).on('click', function (e) { requestRoomInfo(o.id); }))
@@ -10683,8 +10937,8 @@ function turnError(code, text) {
 	playSound('fail');
 	clearTimeout($data._fail);
 	$data._fail = addTimeout(function () {
-		// 계산 릴레이 모드에서는 _question을 복원, 다른 모드에서는 _char를 복원
-		var restoreContent = ($data.room && MODE[$data.room.mode] === 'CRL')
+		// 계산 릴레이 / 네글자 이어말하기 모드에서는 _question을 복원, 다른 모드에서는 _char를 복원
+		var restoreContent = ($data.room && (MODE[$data.room.mode] === 'CRL' || MODE[$data.room.mode] === 'K4R'))
 			? $data._question
 			: $data._char;
 		$stage.game.display.html(restoreContent);
@@ -10828,7 +11082,12 @@ function roundEnd(result, data) {
 	$data._relay = false;
 
 	$(".result-me-expl").empty();
-	$stage.game.display.removeClass("raingame-board").html(L['roundEnd']);
+	if (data && data.coopSuccess) {
+		$stage.game.display.removeClass("raingame-board").html(L['coopSuccess']);
+		playSound('success');
+	} else {
+		$stage.game.display.removeClass("raingame-board").html(L['roundEnd']);
+	}
 	$data._resultPage = 1;
 	$data._result = null;
 	for (i in result) {
@@ -11195,9 +11454,11 @@ function setRoomHead($obj, room) {
 	var opts = getOptions(room.mode, room.opts, false, false);
 	var rule = RULE[MODE[room.mode]];
 	var $rm;
-	var isAlwaysSurvival = ALWAYS_SURVIVAL_MODES.indexOf(MODE[room.mode]) !== -1;
+	var isAlwaysSurvival = !!(rule && rule.survival);
 	var isSurvival = isAlwaysSurvival || (room.opts && room.opts.survival);
-	var roundOrHP = isSurvival ? ((room.opts && room.opts.surHP || 500) + " HP") : (room.round + " " + L['rounds']);
+	var isCoop = !!(rule && rule.coop);
+	var displayRound = (room.coopTarget !== undefined) ? room.coopTarget : room.round;
+	var roundOrHP = isSurvival ? ((room.opts && room.opts.surHP || 500) + " HP") : (displayRound + " " + (isCoop ? L['coopRound'] : L['rounds']));
 
 	$obj.empty()
 		.append($("<h5>").addClass("room-head-number").text("[" + (room.practice ? L['practice'] : room.id) + "]"))

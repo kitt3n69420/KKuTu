@@ -136,7 +136,8 @@ exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 
 exports.ROBOT_TIMEOUT_MESSAGES_SAMETEAM = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
 	"저런", "아이고...", "멍충이", "그럴 수도 있지", "님 뭐함?",
 	"어후", "바부", "정신차려!", "아오", "트롤하지마", "아잇",
-	"좀 제대로 해", "어휴", "에휴", "실수지...?", "하..."
+	"좀 제대로 해", "어휴", "에휴", "실수지...?", "하...", "님아",
+	"아잇 진짜", "제대로 해", "?", "뭐함?"
 ];
 exports.ROBOT_DEFEAT_MESSAGES_2 = [ // 남은 단어가 없으면 봇이 보내는 메시지
 	"뭐였더라?", "단어가 생각이 안나", "아 까먹었다", "GG", "모르겠어",
@@ -235,7 +236,8 @@ exports.RULE = {
 			time: 시간 상수,
 			ai: AI 가능?,
 			big: 큰 화면?,
-			ewq: 현재 턴 나가면 라운드 종료?
+			ewq: 현재 턴 나가면 라운드 종료?,
+			survival: 서바이벌(sur) 옵션 없이 항상 서바이벌인가?
 		}
 	*/
 
@@ -246,7 +248,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'ESH': {
 		lang: "en",
@@ -255,7 +258,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'KKT': {
 		lang: "ko",
@@ -264,7 +268,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'KSH': {
 		lang: "ko",
@@ -273,7 +278,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'CSQ': {
 		lang: "ko",
@@ -282,7 +288,8 @@ exports.RULE = {
 		time: 0.5,
 		ai: true,
 		big: false,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'KCW': {
 		lang: "ko",
@@ -291,7 +298,8 @@ exports.RULE = {
 		time: 2,
 		ai: true,
 		big: true,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'KTY': {
 		lang: "ko",
@@ -300,7 +308,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'ETY': {
 		lang: "en",
@@ -309,7 +318,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'KAP': {
 		lang: "ko",
@@ -319,7 +329,8 @@ exports.RULE = {
 		ai: true,
 		big: false,
 		_back: true,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'EAP': {
 		lang: "en",
@@ -329,7 +340,8 @@ exports.RULE = {
 		ai: true,
 		big: false,
 		_back: true,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 
 	'HUN': {
@@ -339,7 +351,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'KDA': {
 		lang: "ko",
@@ -347,7 +360,8 @@ exports.RULE = {
 		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm", "chs", "nsw"],
 		time: 1,
 		ai: true,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'EDA': {
 		lang: "en",
@@ -356,7 +370,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'KSS': {
 		lang: "ko",
@@ -365,7 +380,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: true,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'ESS': {
 		lang: "en",
@@ -374,7 +390,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: true,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'KPQ': {
 		lang: "ko",
@@ -383,7 +400,8 @@ exports.RULE = {
 		time: 2,
 		ai: false,
 		big: true,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'KSC': {
 		lang: "ko",
@@ -392,7 +410,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'KFR': {
 		lang: "ko",
@@ -401,7 +420,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'EFR': {
 		lang: "en",
@@ -410,7 +430,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'EKK': {
 		lang: "en",
@@ -419,7 +440,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'EPQ': {
 		lang: "en",
@@ -428,7 +450,8 @@ exports.RULE = {
 		time: 2,
 		ai: false,
 		big: true,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'KAK': {
 		lang: "ko",
@@ -438,7 +461,8 @@ exports.RULE = {
 		ai: true,
 		big: false,
 		_back: true,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'EAK': {
 		lang: "en",
@@ -448,7 +472,8 @@ exports.RULE = {
 		ai: true,
 		big: false,
 		_back: true,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'KKU': {
 		lang: "ko",
@@ -457,16 +482,19 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'CRL': {
 		lang: "etc",
 		rule: "Calcrelay",
-		opts: ["spd", "one", "drg", "nar", "god", "rnt", "sur", "itm", "chs"],
+		opts: ["spd", "one", "drg"],
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: true
+		ewq: true,
+		survival: false,
+		coop: true
 	},
 	'KCB': {
 		lang: "ko",
@@ -475,7 +503,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'ECB': {
 		lang: "en",
@@ -484,7 +513,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'CAL': {
 		lang: "etc",
@@ -493,7 +523,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'KQZ': {
 		lang: "ko",
@@ -502,7 +533,8 @@ exports.RULE = {
 		time: 0.1,
 		ai: true,
 		big: false,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'EQZ': {
 		lang: "en",
@@ -511,7 +543,8 @@ exports.RULE = {
 		time: 0.1,
 		ai: true,
 		big: false,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'ESQ': {
 		lang: "en",
@@ -520,7 +553,8 @@ exports.RULE = {
 		time: 0.5,
 		ai: true,
 		big: false,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'KPF': {
 		lang: "ko",
@@ -529,7 +563,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: true,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'EPF': {
 		lang: "en",
@@ -538,7 +573,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: true,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'KJM': {
 		lang: "ko",
@@ -548,7 +584,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'KWR': {
 		lang: "ko",
@@ -557,7 +594,8 @@ exports.RULE = {
 		time: 2,
 		ai: true,
 		big: true,
-		ewq: false
+		ewq: false,
+		survival: true
 	},
 	'EWR': {
 		lang: "en",
@@ -566,7 +604,8 @@ exports.RULE = {
 		time: 2,
 		ai: true,
 		big: true,
-		ewq: false
+		ewq: false,
+		survival: true
 	},
 	'KWS': {
 		lang: "ko",
@@ -575,7 +614,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: false
+		ewq: false,
+		survival: true
 	},
 	'EWS': {
 		lang: "en",
@@ -584,7 +624,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: false
+		ewq: false,
+		survival: true
 	},
 	'KTT': {
 		lang: "ko",
@@ -593,7 +634,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'ETT': {
 		lang: "en",
@@ -602,7 +644,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'KTF': {
 		lang: "ko",
@@ -613,7 +656,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'ETF': {
 		lang: "en",
@@ -623,7 +667,8 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: false,
-		ewq: true
+		ewq: true,
+		survival: false
 	},
 	'KSK': {
 		lang: "ko",
@@ -632,7 +677,8 @@ exports.RULE = {
 		time: 1,
 		ai: false,
 		big: true,
-		ewq: false
+		ewq: false,
+		survival: false
 	},
 	'ESK': {
 		lang: "en",
@@ -641,7 +687,19 @@ exports.RULE = {
 		time: 1,
 		ai: false,
 		big: true,
-		ewq: false
+		ewq: false,
+		survival: false
+	},
+	'K4R': {
+		lang: "ko",
+		rule: "Fourrelay",
+		opts: ["spd", "one", "drg", "ln6"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: true,
+		survival: false,
+		coop: true
 	}
 
 };
@@ -652,7 +710,7 @@ exports.GAME_CATEGORIES = {
 	},
 	'quiz': {
 		name: 'GameCategoryQuiz',
-		modes: ['CSQ', 'KCW', 'KSS', 'ESS', 'KPQ', 'EPQ', 'KSC', 'CRL', 'KQZ', 'EQZ', 'ESQ', 'KSK', 'ESK']
+		modes: ['CSQ', 'KCW', 'KSS', 'ESS', 'KPQ', 'EPQ', 'KSC', 'CRL', 'KQZ', 'EQZ', 'ESQ', 'KSK', 'ESK', 'K4R']
 	},
 	'other': {
 		name: 'GameCategoryOther',

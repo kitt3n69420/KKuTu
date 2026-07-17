@@ -733,6 +733,8 @@ exports.Client = function (socket, profile, sid) {
 	}
 	// heartbeat 타임스탬프 (글로벌 heartbeat 타이머에서 사용)
 	my._lastHeartbeat = Date.now();
+	// 클라이언트가 보고하는 마지막 visibility 상태 (모바일 백그라운드 진단용)
+	my._lastVisibility = null;
 
 	// 소켓 에러 핸들러 (미등록 시 에러로 소켓이 깨져도 DIC에 잔류 — 유령 유저 원인)
 	socket.on('error', function (err) {
@@ -744,12 +746,15 @@ exports.Client = function (socket, profile, sid) {
 
 	socket.on('close', function (code) {
 		var elapsed = Math.round((Date.now() - my._lastHeartbeat) / 1000);
+		var visInfo = my._lastVisibility
+			? (my._lastVisibility.state + ' ' + Math.round((Date.now() - my._lastVisibility.at) / 1000) + 's ago')
+			: 'unknown';
 		// go()가 이미 호출된 경우(place==0): 서버 측에서 소켓을 닫은 것이므로 info 레벨로 기록
 		// 그 외 비정상 종료(place가 남아있는 경우)는 warn 레벨
 		if (my.place === 0) {
 			JLog.info('Socket closed (post-go) #' + my.id + ' code=' + code);
 		} else {
-			JLog.warn('Socket closed #' + my.id + ' code=' + code + ' lastHeartbeat=' + elapsed + 's ago');
+			JLog.warn('Socket closed #' + my.id + ' code=' + code + ' lastHeartbeat=' + elapsed + 's ago' + ' lastVisibility=' + visInfo);
 		}
 		// 글로벌 heartbeat에서 이미 cleanup 한 경우 중복 방지
 		if (my._ghostCleaned) return;

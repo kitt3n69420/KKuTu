@@ -101,8 +101,8 @@ exports.turnStart = function (force) {
 		question: my.game.question,
 		seq: force ? my.game.seq : undefined
 	}, true);
-	// 서바이벌 모드: 라운드 시간 체크 제거 (턴 시간만 사용)
-	var timeout = my.opts.survival
+	// 서바이벌/코옵 모드: 라운드 시간 체크 제거 (턴 시간만 사용)
+	var timeout = (my.opts.survival || my.rule.coop)
 		? my.game.turnTime + 100
 		: Math.min(my.game.roundTime, my.game.turnTime + 100);
 	my.game.turnTimer = setTimeout(my.turnEnd, timeout);
@@ -125,6 +125,48 @@ exports.turnEnd = function () {
 	if (!my.game.chain) return;
 
 	my.game.late = true;
+
+	// ========== 코옵 모드: 타임아웃 = 즉시 전원 실패 ==========
+	if (my.rule.coop) {
+		my.byMaster('turnEnd', {
+			ok: false,
+			target: target ? target.id : null,
+			score: 0,
+			totalScore: 0,
+			answer: my.game.answer,
+			coop: true,
+			ko: true
+		}, true);
+
+		// 봇 꼽주기: 코옵은 전원이 같은 팀이므로, 실패 시 다른 봇들이 같은 팀 실패 메시지를 보낸다
+		if (target && my.game.seq) {
+			var targetId = getPlayerId(target);
+			var bots = [];
+			for (var si in my.game.seq) {
+				var sp = (typeof my.game.seq[si] === 'string') ? DIC[my.game.seq[si]] : my.game.seq[si];
+				if (sp && sp.robot && sp.id !== targetId) bots.push(sp);
+			}
+			for (var bi in bots) {
+				(function (bot) {
+					if (bot.adjustAnger) bot.adjustAnger(0.5);
+					if (Math.random() < 0.5 && !bot.muteGame) {
+						setTimeout(function () {
+							var msgs = Const.ROBOT_TIMEOUT_MESSAGES_SAMETEAM;
+							bot.chat(msgs[Math.floor(Math.random() * msgs.length)]);
+						}, 500 + Math.random() * 1000);
+					}
+				})(bots[bi]);
+			}
+		}
+
+		clearTimeout(my.game.robotTimer);
+		if (my.game._rrt) clearTimeout(my.game._rrt);
+		my.game._rrt = setTimeout(function () {
+			my.roundEnd({ coopSuccess: false });
+		}, 2000);
+		return;
+	}
+	// ========== 코옵 모드 끝 ==========
 
 	// ========== 서바이벌 모드: 타임아웃 = 즉시 KO ==========
 	if (my.opts.survival && target && target.game && target.game.alive) {
@@ -363,6 +405,39 @@ exports.submit = function (client, text, data) {
 			return;
 		}
 		// ========== 서바이벌 모드 끝 ==========
+
+		// ========== 코옵 모드: 목표 턴 수 도달 시 성공 ==========
+		if (my.rule.coop) {
+			client.game.coopTurns = (client.game.coopTurns || 0) + 1;
+			client.game.score += score;
+
+			client.publish('turnEnd', {
+				ok: true,
+				value: text,
+				score: score,
+				totalScore: client.game.score,
+				nextQuestion: my.game.question,
+				coopTurn: my.game.chain.length,
+				coopTarget: my.game.coopTarget
+			}, true);
+
+			if (my.game.chain.length >= my.game.coopTarget) {
+				clearTimeout(my.game.turnTimer);
+				clearTimeout(my.game.robotTimer);
+				if (my.game._rrt) clearTimeout(my.game._rrt);
+				my.game._rrt = setTimeout(function () {
+					my.roundEnd({ coopSuccess: true });
+				}, 1500);
+				return;
+			}
+
+			if (my.opts.item || my.opts.chaos) {
+				my.checkItemGrant(client.id, 0, true);
+			}
+			setTimeout(my.turnNext, my.game.turnTime / 6);
+			return;
+		}
+		// ========== 코옵 모드 끝 ==========
 
 		client.game.score += score;
 

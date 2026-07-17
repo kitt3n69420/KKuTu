@@ -320,6 +320,11 @@ KKuTu.onClientMessage = function ($c, msg) {
     case "heartbeat":
       $c._lastHeartbeat = Date.now();
       break;
+    case "visibility":
+      if (validateInput(msg.state, "string", { maxLength: 20 })) {
+        $c._lastVisibility = { state: msg.state, at: Date.now() };
+      }
+      break;
     case "yell":
       if (!msg.value) return;
       if (!validateInput(msg.value, "string", { maxLength: 200 })) return;
@@ -438,7 +443,13 @@ KKuTu.onClientMessage = function ($c, msg) {
           stable = false;
         }
         if (msg.mode < 0 || msg.mode >= MODE_LENGTH) stable = false;
-        if (msg.round < 1 || msg.round > 10) {
+        var _coopRule = Const.getRule(msg.mode);
+        if (_coopRule && _coopRule.coop) {
+          if (msg.round < 5 || msg.round > 50) {
+            msg.code = 433;
+            stable = false;
+          }
+        } else if (msg.round < 1 || msg.round > 10) {
           msg.code = 433;
           stable = false;
         }

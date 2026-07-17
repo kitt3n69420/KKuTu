@@ -42,6 +42,7 @@ const KKUTU_LIST = [
 	"Web/lib/kkutu/rule_shuk.js",
 	"Web/lib/kkutu/rule_picture.js",
 	"Web/lib/kkutu/rule_calcrelay.js",
+	"Web/lib/kkutu/rule_fourrelay.js",
 	"Web/lib/kkutu/rule_chainbattle.js",
 	"Web/lib/kkutu/rule_calcbattle.js",
 	"Web/lib/kkutu/rule_quiz.js",

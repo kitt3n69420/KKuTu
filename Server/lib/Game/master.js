@@ -969,6 +969,14 @@ KKuTu.onClientMessage = function ($c, msg) {
     return;
   }
 
+  // 클라이언트의 탭 visibility 변화 보고 (모바일 백그라운드 disconnect 진단용)
+  if (msg.type === "visibility") {
+    if (validateInput(msg.state, "string", { maxLength: 20 })) {
+      $c._lastVisibility = { state: msg.state, at: Date.now() };
+    }
+    return;
+  }
+
   if ($c.passRecaptcha) {
     processClientRequest($c, msg);
   } else {
@@ -1110,7 +1118,13 @@ function processClientRequest($c, msg) {
           stable = false;
         }
         if (msg.mode < 0 || msg.mode >= MODE_LENGTH) stable = false;
-        if (msg.round < 1 || msg.round > 10) {
+        var _coopRule = Const.getRule(msg.mode);
+        if (_coopRule && _coopRule.coop) {
+          if (msg.round < 5 || msg.round > 50) {
+            msg.code = 433;
+            stable = false;
+          }
+        } else if (msg.round < 1 || msg.round > 10) {
           msg.code = 433;
           stable = false;
         }

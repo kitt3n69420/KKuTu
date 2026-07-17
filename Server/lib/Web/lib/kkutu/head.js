@@ -17,7 +17,6 @@
  */
 
 var MODE;
-var ALWAYS_SURVIVAL_MODES = ['KWR', 'EWR', 'KWS', 'EWS'];
 var PACK_TOOLTIP = { '키뮤': 'Kimu-Nowchira 제공 · CC BY-NC 4.0' };
 var BEAT = [null,
 	"10000000",

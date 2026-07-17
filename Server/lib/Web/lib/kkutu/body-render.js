@@ -883,7 +883,7 @@ Object.defineProperty(BONUS_COLORS, 'linking', {
 	enumerable: true,
 	configurable: true
 });
-function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars, historyOverride, isAttack, isDefense, isFlush, isJackpot) {
+function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars, historyOverride, isAttack, isDefense, isFlush, isJackpot, onComplete) {
 	var len;
 	var mode = MODE[$data.room.mode];
 	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK";
@@ -1210,6 +1210,7 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 		}
 		addTimeout(pushHistory, tick * 4, (historyOverride !== undefined ? historyOverride : displayText), mean, theme, wc);
 		if (!isKKT) playSound(kkt);
+		if (onComplete) addTimeout(onComplete, tick * 4 + 50);
 	}, sg);
 }
 function pushHint(hint) {

@@ -543,8 +543,11 @@ $(document).ready(function () {
 	$("#room-round").on('change', function (e) {
 		var $target = $(e.currentTarget);
 		var value = $target.val();
+		var currentRule = RULE[MODE[$("#room-mode").val()]];
+		var isCoopMode = currentRule && currentRule.coop;
+		var outOfRange = isCoopMode ? (value < 5 || value > 50) : (value < 1 || value > 10);
 
-		if (value < 1 || value > 10) {
+		if (outOfRange) {
 			$target.css('color', "#FF4444");
 		} else {
 			$target.css('color', "");
@@ -1172,6 +1175,15 @@ $(document).ready(function () {
 		// 게임 모드 변경 시 서바이벌 UI 업데이트
 		var survivalChecked = $("#room-survival").is(':checked') || $("#room-flat-survival").is(':checked');
 		updateSurvivalUI(survivalChecked);
+		// 코옵 모드: 라운드 수 입력칸을 목표 문제 수(5~50) 입력칸으로 전환
+		// (updateSurvivalUI 호출 뒤에 와야 라벨이 덮어써지지 않음)
+		if (rule.coop) {
+			$("#room-round").attr({ min: 5, max: 50 }).val(Math.max(5, Math.min(50, Number($("#room-round").val()) || 5)));
+			$("#room-round-label").text(L['coopTurns']);
+		} else {
+			$("#room-round").attr({ min: 1, max: 10 });
+			$("#room-round-label").text(mobile ? L['numRound'] : L['roundSetting']);
+		}
 		if (window.updateViewAllRulesBtn) setTimeout(window.updateViewAllRulesBtn, 10);
 	});
 	// 나락-무적 상호배타: 나락 체크시 무적 해제
@@ -1464,6 +1476,18 @@ $(document).ready(function () {
 				}
 			});
 		} else {
+			if ($data.practicing) {
+				$data.room.gaming = true;
+			}
+			if ($data.resulting) {
+				$data.resulting = false;
+				$stage.dialog.result.hide();
+				delete $data._replay;
+				delete $data._resultRank;
+				$stage.box.room.height(360);
+				playBGM('lobby');
+				forkChat();
+			}
 			send('leave');
 		}
 	});
@@ -2582,12 +2606,11 @@ $(document).ready(function () {
 	});
 
 	// 8. 서바이벌 모드 UI 변경
-	// ALWAYS_SURVIVAL_MODES is defined globally in head.js
 	function updateSurvivalUI(isSurvival) {
 		// 현재 선택된 게임 모드가 서바이벌을 지원하는지 확인
 		var currentMode = $("#room-mode").val();
 		var rule = RULE[MODE[currentMode]];
-		var isAlwaysSurvival = ALWAYS_SURVIVAL_MODES.indexOf(MODE[currentMode]) !== -1;
+		var isAlwaysSurvival = !!(rule && rule.survival);
 		var supportsSurvival = isAlwaysSurvival || (rule && rule.opts && rule.opts.indexOf("sur") !== -1);
 
 		// 서바이벌이 활성화되었고, 해당 게임이 서바이벌을 지원하는 경우에만 HP UI 표시
@@ -2676,6 +2699,33 @@ $(document).ready(function () {
 	});
 
 	// 웹소켓 연결
+	// 모바일 브라우저(특히 파이어폭스)는 백그라운드로 전환되면 JS 타이머가 정지되어
+	// heartbeat가 끊기고, 복귀 시점에 code=1006(비정상 종료)으로 소켓이 닫혀 있는 경우가 많다.
+	// 이때는 사용자가 새로고침하지 않아도 자동으로 재접속을 시도한다.
+	var _reconnectPending = false;
+	function scheduleReconnect() {
+		if (_reconnectPending) return;
+		_reconnectPending = true;
+		// 화면이 보이는 상태면 바로 시도, 백그라운드면 다시 보일 때까지 대기
+		// (백그라운드에서의 재시도는 네트워크가 살아있지 않은 경우가 많아 낭비)
+		if (document.visibilityState === 'visible') {
+			setTimeout(doReconnect, 1500);
+		}
+	}
+	function doReconnect() {
+		_reconnectPending = false;
+		connect();
+	}
+	document.addEventListener('visibilitychange', function () {
+		var state = document.visibilityState;
+		// 진단용: 서버 로그에서 disconnect 직전 visibility 상태를 확인할 수 있도록 표시
+		if (ws && ws.readyState === _WebSocket.OPEN) {
+			ws.send(JSON.stringify({ type: 'visibility', state: state }));
+		}
+		if (state === 'visible' && _reconnectPending) {
+			doReconnect();
+		}
+	});
 	function connect() {
 		var heartbeatInterval;
 		ws = new _WebSocket($data.URL);
@@ -2718,14 +2768,37 @@ $(document).ready(function () {
 			if (rws) rws.close();
 			stopAllSounds();
 
+			// 연결이 끊기면 재접속 성공 여부와 무관하게 즉시 로비 화면으로 전환한다.
+			// (재접속 시 서버가 다시 'welcome'을 보내며 로비 상태로 초기화하므로,
+			//  화면도 미리 로비로 돌려놓아 끊긴 방/게임 화면에 그대로 머무르지 않게 한다)
+			if ($data.place) {
+				clearInterval($data._tTime);
+				clearBoard();
+				$data.place = 0;
+				$data.room = null;
+				// practicing이 true면 updateUI()가 강제로 게임 화면을 유지시키므로 함께 해제한다
+				$data.practicing = false;
+				$data.resulting = false;
+				updateUI();
+				playBGM('lobby');
+			}
+
 			if ($data._bannedClose) {
 				$.get("/kkutu_notice.html", function (res) { loading(res); });
 				return;
 			}
 
+			// code=1006(비정상 종료)은 모바일 백그라운드 전환 등으로 인한 순간적인 연결 유실이
+			// 대부분이므로, 사용자에게 alert를 띄우는 대신 조용히 재접속을 시도한다.
+			if (e.code === 1006) {
+				loading(L['reconnecting']);
+				scheduleReconnect();
+				return;
+			}
+
 			var ct = L['closed'] + " (#" + e.code + ")";
-			// 1004, 1005, 1006 에러 코드는 일반적인 연결 끊김이므로 alert 대신 오버레이로 표시
-			if (e.code === 1004 || e.code === 1005 || e.code === 1006) {
+			// 1004, 1005 에러 코드는 일반적인 연결 끊김이므로 alert 대신 오버레이로 표시
+			if (e.code === 1004 || e.code === 1005) {
 				loading(ct);
 			} else {
 				showAlert(ct, function () {
