@@ -1724,31 +1724,45 @@ exports.notifyRoundEnd = function (roomId, chainLog, round, totalRounds) {
     safeExecute(async () => {
         // Format chain: words show as "player: word", events show as "player 입력 실패" or "player KO"
         var wordCount = 0;
-        const chainStr = chainLog.map(function (entry) {
+        const entries = chainLog.map(function (entry) {
             if (entry.event === 'timeout') return `**${entry.player}** 입력 실패`;
             if (entry.event === 'ko') return `**${entry.player}** KO`;
             wordCount++;
             return `**${entry.player}**: ${entry.word}`;
-        }).join(' > ');
+        });
 
-        // Show tail (last 1000 chars) with ellipsis prefix if truncated
-        const maxLen = 1000;
-        const displayChain = chainStr.length > maxLen
-            ? '...' + chainStr.substring(chainStr.length - maxLen)
-            : chainStr;
+        // 1800자를 넘으면 잘라내지 않고 단어(체인 항목) 단위로 여러 메시지로 나눠 보낸다.
+        const MAX_CHUNK_LEN = 1800;
+        const SEP = ' > ';
+        const chunks = [];
+        let current = '';
+        for (const entry of entries) {
+            const piece = current ? SEP + entry : entry;
+            if (current && (current.length + piece.length) > MAX_CHUNK_LEN) {
+                chunks.push(current);
+                current = entry;
+            } else {
+                current += piece;
+            }
+        }
+        if (current) chunks.push(current);
 
         const roundText = (round && totalRounds)
             ? ` (${round}/${totalRounds})`
             : '';
 
-        const embed = new EmbedBuilder()
-            .setColor(0x9B59B6)
-            .setTitle(`📝 ${roomId}번 방 라운드 종료${roundText}`)
-            .setDescription(displayChain)
-            .setFooter({ text: `총 ${wordCount}개 단어` })
-            .setTimestamp();
-
-        await channel.send({ embeds: [embed] });
+        for (let i = 0; i < chunks.length; i++) {
+            const partText = chunks.length > 1 ? ` [${i + 1}/${chunks.length}]` : '';
+            const embed = new EmbedBuilder()
+                .setColor(0x9B59B6)
+                .setTitle(`📝 ${roomId}번 방 라운드 종료${roundText}${partText}`)
+                .setDescription(chunks[i])
+                .setTimestamp();
+            if (i === chunks.length - 1) {
+                embed.setFooter({ text: `총 ${wordCount}개 단어` });
+            }
+            await channel.send({ embeds: [embed] });
+        }
     }, 'notifyRoundEnd');
 };
 

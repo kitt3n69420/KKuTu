@@ -23,7 +23,11 @@ var path = require("path");
 var Const = require('../const');
 var Lizard = require('../sub/lizard');
 var JLog = require('../sub/jjlog');
-var DiscordBot = Cluster.isMaster ? require('../sub/discord-bot') : null;
+// 마스터 프로세스 안에서 처리되는 이벤트(로비 채팅 등)는 discord-bot.js를 직접 물고 있으면
+// 그 인스턴스가 한 번도 init()되지 않아 항상 오프라인 취급된다. 실제 로그인된 디스코드
+// 클라이언트는 별도의 discordProcess 자식 프로세스에만 있으므로, master.js가 주입하는
+// relayDiscordEvent(type, data)를 통해 그쪽으로 중계해야 한다.
+var DiscordRelay = null;
 var Room = require('./room');
 // 망할 셧다운제 var Ajae = require("../sub/ajae");
 var DB;
@@ -172,7 +176,7 @@ function refreshEventMults() {
 	});
 }
 
-exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
+exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN, _DiscordRelay) {
 	var i, k;
 
 	DB = _DB;
@@ -180,6 +184,7 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 	ROOM = _ROOM;
 	GUEST_PERMISSION = _GUEST_PERMISSION;
 	CHAN = _CHAN;
+	DiscordRelay = _DiscordRelay;
 	_rid = 100;
 	refreshEventMults();
 	setInterval(refreshEventMults, 300000); // 5분마다 갱신 (이벤트는 자주 바뀌지 않음)
@@ -220,7 +225,7 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN) {
 		Rule[k] = require(`./games/${k.toLowerCase()}`);
 		Rule[k].init(DB, DIC, checkSwearWords);
 	}
-	Room.setContext({ DB: DB, DIC: DIC, ROOM: ROOM, CHAN: CHAN, Rule: Rule, checkSwearWords: checkSwearWords, censorSwearWords: censorSwearWords, narrate: exports.narrate, publish: exports.publish, Robot: exports.Robot, getEventMults: function() { return _eventMults; } });
+	Room.setContext({ DB: DB, DIC: DIC, ROOM: ROOM, CHAN: CHAN, Rule: Rule, checkSwearWords: checkSwearWords, censorSwearWords: censorSwearWords, narrate: exports.narrate, publish: exports.publish, Robot: exports.Robot, getEventMults: function() { return _eventMults; }, DiscordRelay: DiscordRelay });
 
 	// === 글로벌 heartbeat 타이머 (per-client setInterval 대체) ===
 	// 모든 클라이언트를 20초마다 한 번에 순회하여 heartbeat 전송 + 타임아웃 감지
@@ -495,8 +500,8 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 	my.chat = function (msg, code) {
 		my.publish('chat', { value: msg });
 		// Log robot chat
-		if (Cluster.isMaster && DiscordBot && !code) {
-			DiscordBot.logChat(my.profile, msg, my.place, true);
+		if (Cluster.isMaster && !code) {
+			DiscordRelay("chat-log", { profile: my.profile, message: msg, place: my.place, isRobot: true });
 		} else if (Cluster.isWorker) {
 			process.send({ type: "chat-log", profile: my.profile, message: msg, place: my.place, isRobot: true });
 		}
@@ -880,8 +885,8 @@ exports.Client = function (socket, profile, sid) {
 		my.publish('chat', { value: msg, notice: code ? true : false, code: code });
 		// Log chat to Discord
 		if (!code) {
-			if (Cluster.isMaster && DiscordBot) {
-				DiscordBot.logChat(my.profile, msg, my.place, false);
+			if (Cluster.isMaster) {
+				DiscordRelay("chat-log", { profile: my.profile, message: msg, place: my.place, isRobot: false });
 			} else if (Cluster.isWorker) {
 				process.send({ type: "chat-log", profile: my.profile, message: msg, place: my.place, isRobot: false });
 			}
@@ -1323,8 +1328,8 @@ exports.Client = function (socket, profile, sid) {
 						time: $room.time,
 						opts: $room.opts
 					};
-					if (Cluster.isMaster && DiscordBot) {
-						DiscordBot.notifyRoomSettings($room.id, roomData);
+					if (Cluster.isMaster) {
+						DiscordRelay("room-settings", { roomId: $room.id, room: roomData });
 					} else if (Cluster.isWorker) {
 						process.send({ type: "room-settings", roomId: $room.id, room: roomData });
 					}

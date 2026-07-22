@@ -149,6 +149,47 @@ function discordSend(type, data) {
   }
 }
 
+// 워커(방)가 IPC로 보내는 이벤트를 discordProcess로 중계하는 로직.
+// 방/로비가 워커 없이 마스터 프로세스 안에서 직접 처리되는 경우(예: 로비 채팅)에도
+// KKuTu.init()으로 주입되어 동일하게 사용된다 — 마스터 프로세스에는 실제로 로그인된
+// 디스코드 클라이언트가 없으므로, 이 경로를 거치지 않으면 discordProcess로 전달될 수 없다.
+function relayDiscordEvent(type, data) {
+  switch (type) {
+    case "game-start":
+      discordSend("notify-game-start", { roomId: data.room });
+      break;
+    case "chat-log":
+      discordSend("notify-chat-log", { profile: data.profile, message: data.message, place: data.place, isRobot: data.isRobot });
+      break;
+    case "whisper-log":
+      discordSend("notify-whisper-log", { profile: data.profile, message: data.message, targets: data.targets });
+      break;
+    case "round-end":
+      discordSend("notify-round-end", { roomId: data.room, chainLog: data.chainLog, round: data.round, totalRounds: data.totalRounds });
+      break;
+    case "quiz-round-end":
+      discordSend("notify-quiz-round-end", { roomId: data.room, data: data.data });
+      break;
+    case "game-over":
+      discordSend("notify-game-over", { roomId: data.room, rankings: data.rankings });
+      break;
+    case "room-settings":
+      discordSend("notify-room-settings", { roomId: data.roomId, room: data.room });
+      break;
+    case "bot-settings":
+      discordSend("notify-bot-settings", { roomId: data.roomId, botInfo: data.botInfo });
+      break;
+    case "room-join":
+      discordSend("notify-room-join", { roomId: data.roomId, name: data.name, isRobot: data.isRobot });
+      break;
+    case "room-leave":
+      discordSend("notify-room-leave", { roomId: data.roomId, name: data.name, isRobot: data.isRobot, reason: data.reason });
+      break;
+    default:
+      JLog.warn("[Discord] Unhandled relay type: " + type);
+  }
+}
+
 function handleDiscordProcessMessage(msg) {
   switch (msg.type) {
     case "query-online-user": {
@@ -703,34 +744,16 @@ Cluster.on("message", function (worker, msg) {
       }
       break;
     case "game-start":
-      discordSend("notify-game-start", { roomId: msg.room });
-      break;
     case "chat-log":
-      discordSend("notify-chat-log", { profile: msg.profile, message: msg.message, place: msg.place, isRobot: msg.isRobot });
-      break;
     case "whisper-log":
-      discordSend("notify-whisper-log", { profile: msg.profile, message: msg.message, targets: msg.targets });
-      break;
     case "round-end":
-      discordSend("notify-round-end", { roomId: msg.room, chainLog: msg.chainLog, round: msg.round, totalRounds: msg.totalRounds });
-      break;
     case "quiz-round-end":
-      discordSend("notify-quiz-round-end", { roomId: msg.room, data: msg.data });
-      break;
     case "game-over":
-      discordSend("notify-game-over", { roomId: msg.room, rankings: msg.rankings });
-      break;
     case "room-settings":
-      discordSend("notify-room-settings", { roomId: msg.roomId, room: msg.room });
-      break;
     case "bot-settings":
-      discordSend("notify-bot-settings", { roomId: msg.roomId, botInfo: msg.botInfo });
-      break;
     case "room-join":
-      discordSend("notify-room-join", { roomId: msg.roomId, name: msg.name, isRobot: msg.isRobot });
-      break;
     case "room-leave":
-      discordSend("notify-room-leave", { roomId: msg.roomId, name: msg.name, isRobot: msg.isRobot, reason: msg.reason });
+      relayDiscordEvent(msg.type, msg);
       break;
     default:
       JLog.warn(`Unhandled IPC message type: ${msg.type}`);
@@ -967,7 +990,7 @@ exports.init = function (_SID, CHAN) {
     Server.on("error", function (err) {
       JLog.warn("Error on ws: " + err.toString());
     });
-    KKuTu.init(MainDB, DIC, ROOM, GUEST_PERMISSION, CHAN);
+    KKuTu.init(MainDB, DIC, ROOM, GUEST_PERMISSION, CHAN, relayDiscordEvent);
   };
 };
 

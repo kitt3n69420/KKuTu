@@ -20,9 +20,7 @@ var Cluster = require("cluster");
 var Lizard = require('../sub/lizard');
 var JLog = require('../sub/jjlog');
 var Const = require('../const');
-var DiscordBot = Cluster.isMaster ? require('../sub/discord-bot') : null;
-
-var DB, DIC, ROOM, CHAN, Rule, checkSwearWords, censorSwearWords, narrate, publish, Robot, getEventMults;
+var DB, DIC, ROOM, CHAN, Rule, checkSwearWords, censorSwearWords, narrate, publish, Robot, getEventMults, DiscordRelay;
 
 Room.setContext = function(ctx) {
     DB = ctx.DB;
@@ -36,6 +34,7 @@ Room.setContext = function(ctx) {
     publish = ctx.publish;
     Robot = ctx.Robot;
     getEventMults = ctx.getEventMults;
+    DiscordRelay = ctx.DiscordRelay;
 };
 
 function Room(room, channel) {
@@ -1248,7 +1247,9 @@ function Room(room, channel) {
 		//my.kicked = []; //클로드가 추가한 코드인데 얘는 한번 강퇴되면 다시 못들어오는 걸 이해못하나봄
 
 		// Discord notification for game start
-		if (Cluster.isWorker) {
+		if (Cluster.isMaster) {
+			DiscordRelay("game-start", { room: my.id });
+		} else if (Cluster.isWorker) {
 			process.send({ type: "game-start", room: my.id });
 		}
 
@@ -1627,8 +1628,8 @@ function Room(room, channel) {
 		var r = round || my.game.round || 0;
 		var totalRounds = my.round || 0;
 		var logCopy = my.game.chainLog.slice();
-		if (Cluster.isMaster && DiscordBot) {
-			DiscordBot.notifyRoundEnd(my.id, logCopy, r, totalRounds);
+		if (Cluster.isMaster) {
+			DiscordRelay("round-end", { room: my.id, chainLog: logCopy, round: r, totalRounds: totalRounds });
 		} else if (Cluster.isWorker) {
 			process.send({ type: "round-end", room: my.id, chainLog: logCopy, round: r, totalRounds: totalRounds });
 		}
@@ -1653,8 +1654,8 @@ function Room(room, channel) {
 			round: r,
 			totalRounds: totalRounds
 		};
-		if (Cluster.isMaster && DiscordBot) {
-			DiscordBot.notifyQuizRoundEnd(my.id, data);
+		if (Cluster.isMaster) {
+			DiscordRelay("quiz-round-end", { room: my.id, data: data });
 		} else if (Cluster.isWorker) {
 			process.send({ type: "quiz-round-end", room: my.id, data: data });
 		}
@@ -2036,8 +2037,8 @@ function Room(room, channel) {
 				var name = (p && p.profile) ? (p.profile.title || p.profile.name) : r.id;
 				return { name: name, score: r.score, rank: r.rank, robot: r.robot };
 			});
-			if (Cluster.isMaster && DiscordBot) {
-				DiscordBot.notifyGameOver(my.id, rankings);
+			if (Cluster.isMaster) {
+				DiscordRelay("game-over", { room: my.id, rankings: rankings });
 			} else if (Cluster.isWorker) {
 				process.send({ type: "game-over", room: my.id, rankings: rankings });
 			}
