@@ -631,12 +631,30 @@ block Middle
 				div.profile-field-score= L('recordScore')
 			div#profile-record
 		div.dialog-bar.tail-button
+			button#profile-report= L('report')
 			button#profile-whisper= L('whisper')
 			button#profile-shut= L('shut')
 			button#profile-kick= L('kick')
 			button#profile-level= L('aiSetting')
 			button#profile-dress= L('dress')
 			button#profile-handover= L('handover')
+	+Dialog('ReportDiag', 300, 330, L('report'))
+		div.dialog-bar
+			h4= L('place')
+			h4.dialog-bar-value#report-target
+		div.dialog-bar
+			h4= L('report')
+			select#report-reason(style="width: 283px;")
+				option(value=1)= L('report_reason1')
+				option(value=2)= L('report_reason2')
+				option(value=3)= L('report_reason3')
+				option(value=4)= L('report_reason4')
+				option(value=5)= L('report_reason5')
+				option(value=6)= L('report_reason6')
+		div.dialog-bar
+			textarea#report-detail(style='width: 283px; height: 120px;', maxlength=200, placeholder=L('report_detail_placeholder'))
+		div.dialog-bar.tail-button
+			button#report-submit= L('report_submit')
 	+Dialog('DressDiag', 300, 420, L('dress'))
 		div.dress-top
 			div.moremi#dress-view
