@@ -631,6 +631,7 @@ exports.getScore = function (text) {
 };
 
 exports.playRobot = function (robot) {
+	if (robot.level === -1) return;
 	var my = this;
 
 	if (!my.game || !my.game.playerStates) return;

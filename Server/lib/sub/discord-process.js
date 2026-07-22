@@ -67,6 +67,12 @@ process.on('message', function (msg) {
         case 'notify-chat-log':
             DiscordBot.logChat(msg.profile, msg.message, msg.place, msg.isRobot);
             break;
+        case 'notify-whisper-log':
+            DiscordBot.logWhisper(msg.profile, msg.message, msg.targets);
+            break;
+        case 'report':
+            DiscordBot.logReport(msg.reporterProfile, msg.reporterGuest, msg.targetProfile, msg.targetGuest, msg.targetId, msg.reasonCode, msg.detail);
+            break;
         case 'notify-round-end':
             DiscordBot.notifyRoundEnd(msg.roomId, msg.chainLog, msg.round, msg.totalRounds);
             break;

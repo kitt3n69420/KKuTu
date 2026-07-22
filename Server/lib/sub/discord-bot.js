@@ -8,10 +8,12 @@ const safeRegex = require('safe-regex');
 const JLog = require('./jjlog');
 const LANG = require('../Web/lang/ko_KR.json');
 const Const = require('../const');
+const FallbackLog = require('./discord-fallback-log');
 
 // Constants
 const GUILD_ID = '1447976671805182086';
 const CHANNEL_ID = '1485462715395870800';
+const REPORT_CHANNEL_ID = '1529461366900133958';
 const BOT_PERMISSIONS = '9193377795136';
 const MAX_RESULTS = 20;
 const MAX_REGEX_LENGTH = 200;
@@ -20,10 +22,16 @@ const MAX_REGEX_GROUPS = 5;
 const MAX_REGEX_QUANTIFIERS = 5;
 const VALID_WORD_CHARS = /^[0-9a-zㄱ-ㅣ가-힣]+$/;
 const DB_TIMEOUT = 8000;
+const logToFile = FallbackLog.logToFile;
+
+function isBotAvailable() {
+    return isEnabled && isReady && !!channel;
+}
 
 // State
 let client = null;
 let channel = null;
+let reportChannel = null;
 let DB = null;
 let DIC = null;
 let ROOM = null;
@@ -243,6 +251,9 @@ exports.init = async function (token, db, dic, options = {}) {
                 client.channels.fetch(CHANNEL_ID).then(ch => {
                     if (ch) { channel = ch; isReady = true; }
                 }).catch(err => JLog.error(`[Discord Bot] Failed to re-fetch channel on resume: ${err.message}`));
+                client.channels.fetch(REPORT_CHANNEL_ID).then(ch => {
+                    if (ch) reportChannel = ch;
+                }).catch(err => JLog.error(`[Discord Bot] Failed to re-fetch report channel on resume: ${err.message}`));
             }
         });
 
@@ -255,6 +266,13 @@ exports.init = async function (token, db, dic, options = {}) {
                     JLog.error(`[Discord Bot] Could not find channel ${CHANNEL_ID}`);
                 } else {
                     JLog.success(`[Discord Bot] Target channel: #${channel.name}`);
+                }
+
+                reportChannel = await client.channels.fetch(REPORT_CHANNEL_ID);
+                if (!reportChannel) {
+                    JLog.error(`[Discord Bot] Could not find report channel ${REPORT_CHANNEL_ID}`);
+                } else {
+                    JLog.success(`[Discord Bot] Report channel: #${reportChannel.name}`);
                 }
 
                 await registerCommands(token);
@@ -1319,7 +1337,11 @@ function scheduleNotifyFlush() {
 
 function flushNotifyQueue() {
     _notifyTimer = null;
-    if (!isEnabled || !isReady || !channel) {
+    if (!isBotAvailable()) {
+        _notifyQueue.join.forEach(function (e) { logToFile(`[유저입장] ${e.name} (현재 ${e.count}명)`); });
+        _notifyQueue.leave.forEach(function (e) { logToFile(`[유저퇴장] ${e.name} (현재 ${e.count}명)`); });
+        _notifyQueue.roomJoin.forEach(function (e) { logToFile(`[방입장] ${e.name} → ${e.roomId}번 방`); });
+        _notifyQueue.roomLeave.forEach(function (e) { logToFile(`[방퇴장] ${e.name} ← ${e.roomId}번 방 (${e.reason})`); });
         _notifyQueue.join = [];
         _notifyQueue.leave = [];
         _notifyQueue.roomJoin = [];
@@ -1391,6 +1413,14 @@ function flushChatEntry(entry, mergeKey) {
     const desc = `${entry.location}:\n${entry.lines.join('\n')}`;
     const truncated = desc.length > 4000 ? desc.substring(0, 4000) : desc;
 
+    if (!isBotAvailable()) {
+        logToFile(`[채팅|${entry.location}] ${entry.lines.join(' / ')}`);
+        entry.lines = null;
+        entry.discordMessage = null;
+        if (mergeKey) delete _chatMerge[mergeKey];
+        return;
+    }
+
     if (entry.discordMessage) {
         // Already sent once - edit
         safeExecute(async () => {
@@ -1431,7 +1461,10 @@ exports.logChat = function (profile, message, place, isRobot = false) {
     const senderType = isRobot ? '[봇]' : '';
     const line = `${senderType}**${name}**: ${message}`;
 
-    if (!isEnabled || !isReady || !channel) return;
+    if (!isBotAvailable()) {
+        logToFile(`[채팅|${location}] ${senderType}${name}: ${message}`);
+        return;
+    }
 
     const now = Date.now();
     const mergeKey = `place_${place}`;
@@ -1464,10 +1497,72 @@ exports.logChat = function (profile, message, place, isRobot = false) {
 };
 
 /**
+ * Log a whisper - called when a user sends a whisper
+ * Sent immediately (not merged) since whispers are moderation-sensitive.
+ * @param {object} profile - Sender profile
+ * @param {string} message - Whisper content
+ * @param {string} targets - Comma-separated recipient nicknames as typed by the sender
+ */
+exports.logWhisper = function (profile, message, targets) {
+    const name = getDisplayName(profile);
+
+    if (!isBotAvailable()) {
+        logToFile(`[귓속말] ${name} → ${targets}: ${message}`);
+        return;
+    }
+
+    safeExecute(async () => {
+        const embed = new EmbedBuilder()
+            .setColor(0x9B59B6)
+            .setDescription(`\u{1F512} **${name}** → ${targets}: ${message}`)
+            .setTimestamp();
+        await channel.send({ embeds: [embed] });
+    }, 'logWhisper');
+};
+
+/**
+ * Log a user report - sends a short notice to the general log channel,
+ * then forwards a link to that message plus the reason/detail to the dedicated report channel.
+ */
+exports.logReport = function (reporterProfile, reporterGuest, targetProfile, targetGuest, targetId, reasonCode, detail) {
+    const reporterName = getDisplayName(reporterProfile) + (reporterGuest ? ' (손님)' : '');
+    const targetName = getDisplayName(targetProfile) + (targetGuest ? ' (손님)' : '');
+    const reasonLabel = Const.REPORT_REASON_LABELS[reasonCode] || Const.REPORT_REASON_LABELS[6];
+
+    if (!isBotAvailable()) {
+        logToFile(`[신고] ${reporterName} → ${targetName} (${reasonLabel}): ${detail}`);
+        return;
+    }
+
+    safeExecute(async () => {
+        const logEmbed = new EmbedBuilder()
+            .setColor(0xE74C3C)
+            .setDescription(`\u{1F6A8} **${reporterName}**님이 **${targetName}**(${targetId})님을 신고했습니다.`)
+            .setTimestamp();
+        const sentMsg = await channel.send({ embeds: [logEmbed] });
+
+        if (!reportChannel) return;
+
+        const reportEmbed = new EmbedBuilder()
+            .setColor(0xE74C3C)
+            .setDescription(`[${reporterName} → ${targetName} 신고 로그](${sentMsg.url})`)
+            .addFields(
+                { name: '사유', value: reasonLabel },
+                { name: '상세 내용', value: detail || '(작성 안 함)' }
+            )
+            .setTimestamp();
+        await reportChannel.send({ embeds: [reportEmbed] });
+    }, 'logReport');
+};
+
+/**
  * Notify user join - only if enabled
  */
 exports.notifyUserJoin = function (profile, userCount) {
-    if (!isEnabled || !isReady || !channel) return;
+    if (!isBotAvailable()) {
+        logToFile(`[유저입장] ${getDisplayName(profile)} (현재 ${userCount}명)`);
+        return;
+    }
     if (userCount <= 10) {
         safeExecute(async () => {
             const embed = new EmbedBuilder()
@@ -1486,7 +1581,10 @@ exports.notifyUserJoin = function (profile, userCount) {
  * Notify user leave - only if enabled
  */
 exports.notifyUserLeave = function (profile, userCount) {
-    if (!isEnabled || !isReady || !channel) return;
+    if (!isBotAvailable()) {
+        logToFile(`[유저퇴장] ${getDisplayName(profile)} (현재 ${userCount}명)`);
+        return;
+    }
     if (userCount <= 10) {
         safeExecute(async () => {
             const embed = new EmbedBuilder()
@@ -1508,7 +1606,10 @@ exports.notifyUserLeave = function (profile, userCount) {
  */
 exports.notifyRoomCreate = function (roomId, room, realPassword) {
 
-    if (!isEnabled || !isReady || !channel) return;
+    if (!isBotAvailable()) {
+        logToFile(`[방생성] ${roomId}번 방: ${room && room.title || '(없음)'}`);
+        return;
+    }
 
     safeExecute(async () => {
         const embed = new EmbedBuilder()
@@ -1564,7 +1665,10 @@ exports.notifyRoomCreate = function (roomId, room, realPassword) {
  */
 exports.notifyRoomDelete = function (roomId) {
 
-    if (!isEnabled || !isReady || !channel) return;
+    if (!isBotAvailable()) {
+        logToFile(`[방삭제] ${roomId}번 방`);
+        return;
+    }
 
     safeExecute(async () => {
         const embed = new EmbedBuilder()
@@ -1581,7 +1685,10 @@ exports.notifyRoomDelete = function (roomId) {
  */
 exports.notifyGameStart = function (roomId) {
 
-    if (!isEnabled || !isReady || !channel) return;
+    if (!isBotAvailable()) {
+        logToFile(`[게임시작] ${roomId}번 방`);
+        return;
+    }
 
     safeExecute(async () => {
         const embed = new EmbedBuilder()
@@ -1601,8 +1708,18 @@ exports.notifyGameStart = function (roomId) {
  * @param {number} totalRounds - Total number of rounds
  */
 exports.notifyRoundEnd = function (roomId, chainLog, round, totalRounds) {
-    if (!isEnabled || !isReady || !channel) return;
     if (!chainLog || !Array.isArray(chainLog) || chainLog.length === 0) return;
+
+    if (!isBotAvailable()) {
+        const roundText = (round && totalRounds) ? ` (${round}/${totalRounds})` : '';
+        const chainStr = chainLog.map(function (entry) {
+            if (entry.event === 'timeout') return `${entry.player} 입력 실패`;
+            if (entry.event === 'ko') return `${entry.player} KO`;
+            return `${entry.player}: ${entry.word}`;
+        }).join(' > ');
+        logToFile(`[라운드종료] ${roomId}번 방${roundText} ${chainStr}`);
+        return;
+    }
 
     safeExecute(async () => {
         // Format chain: words show as "player: word", events show as "player 입력 실패" or "player KO"
@@ -1641,8 +1758,18 @@ exports.notifyRoundEnd = function (roomId, chainLog, round, totalRounds) {
  * @param {object} data - { answer, winners, missed, giveup, round, totalRounds }
  */
 exports.notifyQuizRoundEnd = function (roomId, data) {
-    if (!isEnabled || !isReady || !channel) return;
     if (!data) return;
+
+    if (!isBotAvailable()) {
+        const { answer, winners, missed, giveup, round, totalRounds } = data;
+        const roundText = (round && totalRounds) ? ` (${round}/${totalRounds})` : '';
+        const parts = [`정답: ${answer}`];
+        if (winners && winners.length > 0) parts.push(`맞힘: ${winners.join(', ')}`);
+        if (missed && missed.length > 0) parts.push(`못맞힘: ${missed.join(', ')}`);
+        if (giveup && giveup.length > 0) parts.push(`포기: ${giveup.join(', ')}`);
+        logToFile(`[퀴즈라운드종료] ${roomId}번 방${roundText} ${parts.join(' | ')}`);
+        return;
+    }
 
     safeExecute(async () => {
         const { answer, winners, missed, giveup, round, totalRounds } = data;
@@ -1686,8 +1813,16 @@ exports.notifyQuizRoundEnd = function (roomId, data) {
  */
 exports.notifyGameOver = function (roomId, rankings) {
 
-    if (!isEnabled || !isReady || !channel) return;
     if (!rankings || !Array.isArray(rankings) || rankings.length === 0) return;
+
+    if (!isBotAvailable()) {
+        const lines = rankings.map(function (r) {
+            const score = (typeof r.score === 'number') ? r.score : 0;
+            return `${r.rank + 1}위 ${r.name}${r.robot ? '(봇)' : ''}: ${score}점`;
+        });
+        logToFile(`[게임종료] ${roomId}번 방 ${lines.join(', ')}`);
+        return;
+    }
 
     safeExecute(async () => {
         const medals = ['🥇', '🥈', '🥉'];
@@ -1749,7 +1884,10 @@ function getIjpName(code) {
  * @param {object} room - Room data (title, password, limit, mode, opts, etc.)
  */
 exports.notifyRoomSettings = function (roomId, room) {
-    if (!isEnabled || !isReady || !channel) return;
+    if (!isBotAvailable()) {
+        logToFile(`[방설정변경] ${roomId}번 방: ${room && room.title || '(없음)'}`);
+        return;
+    }
 
     safeExecute(async () => {
         const modeName = getModeName(room.mode);
@@ -1803,7 +1941,10 @@ exports.notifyRoomSettings = function (roomId, room) {
  * @param {object} botInfo - Bot info { name, level, personality, preferredChar }
  */
 exports.notifyBotSettings = function (roomId, botInfo) {
-    if (!isEnabled || !isReady || !channel) return;
+    if (!isBotAvailable()) {
+        logToFile(`[봇설정변경] ${roomId}번 방: ${botInfo && botInfo.name}`);
+        return;
+    }
 
     safeExecute(async () => {
         const levelName = Const.BOT_LEVEL_NAMES[botInfo.level] || `레벨 ${botInfo.level}`;
@@ -1841,7 +1982,10 @@ exports.notifyBotSettings = function (roomId, botInfo) {
  * @param {boolean} isRobot - Whether the player is a bot
  */
 exports.notifyRoomJoin = function (roomId, name, isRobot) {
-    if (!isEnabled || !isReady || !channel) return;
+    if (!isBotAvailable()) {
+        logToFile(`[방입장] ${name}${isRobot ? '(봇)' : ''} → ${roomId}번 방`);
+        return;
+    }
     _notifyQueue.roomJoin.push({ roomId: roomId, name: name + (isRobot ? ' \u{1F916}' : '') });
     scheduleNotifyFlush();
 };
@@ -1854,7 +1998,10 @@ exports.notifyRoomJoin = function (roomId, name, isRobot) {
  * @param {string} [reason] - Leave reason: "normal", "kick", "disconnect", "timeout", "ghost", or "spam"
  */
 exports.notifyRoomLeave = function (roomId, name, isRobot, reason) {
-    if (!isEnabled || !isReady || !channel) return;
+    if (!isBotAvailable()) {
+        logToFile(`[방퇴장] ${name}${isRobot ? '(봇)' : ''} ← ${roomId}번 방 (${reason || 'abnormal'})`);
+        return;
+    }
     _notifyQueue.roomLeave.push({ roomId: roomId, name: name + (isRobot ? ' \u{1F916}' : ''), reason: reason || 'abnormal' });
     scheduleNotifyFlush();
 };

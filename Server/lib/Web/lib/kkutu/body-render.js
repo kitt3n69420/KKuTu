@@ -685,11 +685,13 @@ function requestProfile(id) {
 	$stage.dialog.profileDress.hide();
 	$stage.dialog.profileWhisper.hide();
 	$stage.dialog.profileHandover.hide();
+	$stage.dialog.profileReport.hide();
 
 	if ($data.id == id) $stage.dialog.profileDress.show();
 	else if (!o.robot) {
 		$stage.dialog.profileShut.show();
 		$stage.dialog.profileWhisper.show();
+		if (!$data.guest) $stage.dialog.profileReport.show();
 	}
 	if ($data.room) {
 		if ($data.id != id && $data.id == $data.room.master) {
@@ -700,6 +702,19 @@ function requestProfile(id) {
 	showDialog($stage.dialog.profile);
 	$stage.dialog.profile.show();
 	global.expl($ex);
+}
+function openReportDialog(id) {
+	var o = $data.users[id];
+
+	if ($data.guest) return fail(451);
+	if (!o) return notice(L['error_405']);
+	if ($data.id == id) return fail(460);
+
+	$stage.dialog.reportTarget.text(o.profile.title || o.profile.name);
+	$stage.dialog.reportReason.val(1);
+	$stage.dialog.reportDetail.val('');
+	$data._reportTarget = id;
+	showDialog($stage.dialog.report);
 }
 function requestInvite(id) {
 	var nick;

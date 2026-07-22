@@ -317,6 +317,7 @@ exports.getScore = function (text) {
 	}
 };
 exports.playRobot = function (robot) {
+	if (robot.level === -1) return;
 	var my = this;
 	var targetWord;
 	var level, cpm, accuracy;

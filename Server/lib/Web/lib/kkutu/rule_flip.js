@@ -95,6 +95,7 @@ $lib.Flip._buildColorMap = function () {
 			var t = colors[i]; colors[i] = colors[j]; colors[j] = t;
 		}
 		for (i = 0; i < n; i++) {
+			if (!seq[i]) continue;
 			id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
 			map[id] = colors[i];
 		}
@@ -102,6 +103,7 @@ $lib.Flip._buildColorMap = function () {
 		// 1~10명: 1~10번 색상에서 랜덤 오프셋으로 순환
 		offset = Math.floor(Math.random() * 10);
 		for (i = 0; i < n; i++) {
+			if (!seq[i]) continue;
 			id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
 			map[id] = ((i + offset) % 10) + 1;
 		}
@@ -109,15 +111,35 @@ $lib.Flip._buildColorMap = function () {
 	$data._flipColorMap = map;
 };
 
+// 컬러맵에 없는 플레이어(빌드 시점 이후 seq에 반영된 경우 등)를 위한 안전망 — 검은 화면 방지
+$lib.Flip._assignFallbackColor = function (ownerId) {
+	var used = {};
+	for (var id in $data._flipColorMap) used[$data._flipColorMap[id]] = true;
+	for (var c = 1; c <= 12; c++) {
+		if (!used[c]) { $data._flipColorMap[ownerId] = c; return; }
+	}
+	$data._flipColorMap[ownerId] = (Object.keys($data._flipColorMap).length % 12) + 1;
+};
+
 $lib.Flip._getPlayerColor = function (ownerId) {
 	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK : $lib.Flip._PLAYER_COLORS;
-	if (!ownerId || !$data._flipColorMap || !$data._flipColorMap[ownerId]) return colors[0];
+	if (!ownerId) return colors[0];
+	if (!$data._flipColorMap) $data._flipColorMap = {};
+	if (!$data._flipColorMap[ownerId]) $lib.Flip._assignFallbackColor(ownerId);
 	return colors[$data._flipColorMap[ownerId]];
 };
 
 $lib.Flip._applyUserCardColors = function () {
 	if (!$data._flipColorMap) return;
 	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK : $lib.Flip._PLAYER_COLORS;
+	var seq = $data.room && $data.room.game && $data.room.game.seq;
+	if (seq) {
+		for (var i = 0; i < seq.length; i++) {
+			if (!seq[i]) continue;
+			var seqId = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
+			if (!$data._flipColorMap[seqId]) $lib.Flip._assignFallbackColor(seqId);
+		}
+	}
 	for (var id in $data._flipColorMap) {
 		var color = colors[$data._flipColorMap[id]];
 		$("#game-user-" + id).css('background-color', color);

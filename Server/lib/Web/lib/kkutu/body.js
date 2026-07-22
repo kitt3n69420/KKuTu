@@ -1083,6 +1083,7 @@ function runCommand(cmd) {
 		'/차단': L['cmd_shut'],
 		'/id': L['cmd_id'],
 		'/친추': L['cmd_fa'],
+		'/신고': L['cmd_report'],
 		'/사전': L['cmd_dict'],
 		'/팁': L['cmd_tip'],
 		'/랜덤팁': L['cmd_randomtip']
@@ -1166,6 +1167,28 @@ function runCommand(cmd) {
 				}
 			} else {
 				notice(L['cmd_fa']);
+			}
+			break;
+		case "/신고":
+		case "/ㅅㄱ":
+		case "/report":
+			if (cmd[1]) {
+				var reportTargetName = cmd.slice(1).join(' ');
+				var reportTargetId = null;
+				for (i in $data.users) {
+					var ru = $data.users[i];
+					if (i == reportTargetName || (ru.profile.title || ru.profile.name) == reportTargetName) {
+						reportTargetId = i;
+						break;
+					}
+				}
+				if (reportTargetId) {
+					openReportDialog(reportTargetId);
+				} else {
+					notice(L['error_405']);
+				}
+			} else {
+				notice(L['cmd_report']);
 			}
 			break;
 		case "/사전":
@@ -3343,19 +3366,25 @@ function renderMoremi(target, equip) {
 	else equip = $.extend({}, equip); // Create a shallow copy to prevent mutation
 
 	// Easter Egg for 'nya' language
+	var HAMSTER_HEAD_ITEMS = ['hamster_G', 'hamster_O'];
 	var savedLang = localStorage.getItem('kkutu_lang');
 	var savedVolume = loadVolumeSettings();
 	var easterEggDisabled = savedVolume.noEasterEgg === true;
+	var showCatEars = false;
 
 	if (!easterEggDisabled && savedLang === 'nya') {
-		equip['Mhead'] = 'nekomimi';
+		if (HAMSTER_HEAD_ITEMS.indexOf(equip['Mhead']) != -1) {
+			equip['Mhead'] = 'nekomimi';
+		} else {
+			showCatEars = true;
+		}
 	}
 
 	// Easter Egg for 'troll' sound pack
-	if (!easterEggDisabled && savedVolume.soundPack === '병맛') {
+	var showTrollFace = !easterEggDisabled && savedVolume.soundPack === '병맛';
+	if (showTrollFace) {
 		equip['Meye'] = 'hidden_eye';
 		equip['Mmouth'] = 'nocomment';
-		equip['Mclothes'] = 'troll';
 	}
 
 	// Random Moremi Item (Drug Mode) Logic Removed - Handled in Interval
@@ -3369,6 +3398,13 @@ function renderMoremi(target, equip) {
 			.attr('src', iImage(equip[key], LR[key] || key))
 			.css({ 'width': "100%", 'height': "100%" })
 		);
+		if (key == 'Mhead' && showCatEars) {
+			$obj.append($("<img>")
+				.addClass("moremies moremi-catears")
+				.attr('src', iImage('nekomimi', 'Mhead'))
+				.css({ 'width': "100%", 'height': "100%" })
+			);
+		}
 	}
 	if (key = equip['BDG']) {
 		$obj.append($("<img>")
@@ -3382,6 +3418,14 @@ function renderMoremi(target, equip) {
 		.css({ 'width': "100%", 'height': "100%" })
 	);
 	$obj.children(".moremi-rhand").css('transform', "scaleX(-1)");
+
+	if (showTrollFace) {
+		$obj.append($("<img>")
+			.addClass("moremies moremi-trollface")
+			.attr('src', iImage('troll', 'Mclothes'))
+			.css({ 'width': "100%", 'height': "100%" })
+		);
+	}
 }
 function commify(val) {
 	var tester = /(^[+-]?\d+)(\d{3})/;

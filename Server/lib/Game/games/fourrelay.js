@@ -217,6 +217,7 @@ exports.submit = function (client, text, data) {
 		score = my.getScore(answer, tv - my.game.turnAt);
 		my.logChainWord(full, client);
 		client.game.score += score;
+		if (!client.robot) client.invokeWordPiece(full, 1);
 		nextProblem = my.game.problems[my.game.chain.length];
 
 		client.publish('turnEnd', {

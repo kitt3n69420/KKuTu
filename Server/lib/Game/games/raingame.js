@@ -566,6 +566,7 @@ exports.getScore = function() {
 };
 
 exports.playRobot = function(robot) {
+	if (robot.level === -1) return;
 	var my = this;
 
 	if (my.game.late || !robot.game || !robot.game.alive) return;

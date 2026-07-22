@@ -392,6 +392,7 @@ KKuTu.onClientMessage = function ($c, msg) {
         var chatVal = (chatRoom && chatRoom.opts.noswear && KKuTu.checkSwearWords(msg.value).length > 0) ? KKuTu.censorSwearWords(msg.value) : msg.value;
         if (msg.whisper) {
           process.send({ type: "tail-report", id: $c.id, chan: CHAN, place: $c.place, msg: msg });
+          process.send({ type: "whisper-log", profile: $c.profile, message: chatVal, targets: msg.whisper });
           msg.whisper.split(",").forEach((v) => {
             if ((temp = DIC[DNAME[v]])) {
               temp.send("chat", { from: $c.profile.title || $c.profile.name, profile: $c.profile, value: chatVal });
@@ -508,9 +509,11 @@ KKuTu.onClientMessage = function ($c, msg) {
         // console.log("[DEBUG] practice: level NaN check failed");
         return;
       }
-      if (ROOM[$c.place].rule.ai) {
+      if (msg.level === -1) {
+        if (ROOM[$c.place].rule.ewq) return;
+      } else if (ROOM[$c.place].rule.ai) {
         if (msg.level < 0 || msg.level >= 5) return;
-      } else if (msg.level != -1) return;
+      } else return;
 
       if (msg.personality !== undefined) msg.personality = Number(msg.personality);
 

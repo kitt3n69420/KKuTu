@@ -646,6 +646,7 @@ exports.getScore = function (text, delay, ignoreMission) {
 	return Math.round(score);
 };
 exports.readyRobot = function (robot) {
+	if (robot.level === -1) return;
 	var my = this;
 	var level = robot.level;
 	var delay = ROBOT_START_DELAY[level];

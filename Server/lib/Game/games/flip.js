@@ -319,6 +319,7 @@ exports.getScore = function () {
 	return 0;
 };
 exports.playRobot = function (robot) {
+	if (robot.level === -1) return;
 	var my = this;
 	var level, cpm, accuracy;
 	var botTeam, candidates, i, cell, ownerTeam;

@@ -139,6 +139,12 @@ $(document).ready(function () {
 			profileLevel: $("#profile-level"),
 			profileDress: $("#profile-dress"),
 			profileWhisper: $("#profile-whisper"),
+			profileReport: $("#profile-report"),
+			report: $("#ReportDiag"),
+			reportTarget: $("#report-target"),
+			reportReason: $("#report-reason"),
+			reportDetail: $("#report-detail"),
+			reportSubmit: $("#report-submit"),
 			kickVote: $("#KickVoteDiag"),
 			kickVoteY: $("#kick-vote-yes"),
 			kickVoteN: $("#kick-vote-no"),
@@ -1449,6 +1455,8 @@ $(document).ready(function () {
 	});
 	$stage.menu.practice.on('click', function (e) {
 		if (RULE[MODE[$data.room.mode]].ai) {
+			$("#practice-level option[value='-1']").toggle(!RULE[MODE[$data.room.mode]].ewq);
+			if (RULE[MODE[$data.room.mode]].ewq && $("#practice-level").val() == -1) $("#practice-level").val(2);
 			$("#PracticeDiag .dialog-title").html(L['practice']);
 			$("#ai-team").val(0).prop('disabled', true);
 			var saved = loadVolumeSettings();
@@ -1707,6 +1715,8 @@ $(document).ready(function () {
 		updateEffectVol();
 	});
 	$stage.dialog.profileLevel.on('click', function (e) {
+		$("#practice-level option[value='-1']").hide();
+		if ($("#practice-level").val() == -1) $("#practice-level").val(2);
 		$("#PracticeDiag .dialog-title").html(L['robot']);
 		$("#ai-team").prop('disabled', false);
 		var bot = $data.robots[$data._profiled];
@@ -1920,6 +1930,17 @@ $(document).ready(function () {
 		var o = $data.users[$data._profiled];
 
 		$stage.talk.val("/e " + (o.profile.title || o.profile.name).replace(/\s/g, "") + " ").focus();
+	});
+	$stage.dialog.profileReport.on('click', function (e) {
+		openReportDialog($data._profiled);
+	});
+	$stage.dialog.reportSubmit.on('click', function (e) {
+		var reasonCode = parseInt($stage.dialog.reportReason.val());
+		var detail = $stage.dialog.reportDetail.val().substr(0, 200);
+
+		send('report', { target: $data._reportTarget, reasonCode: reasonCode, detail: detail }, true);
+		$stage.dialog.report.hide();
+		notice(L['report_sent']);
 	});
 	$stage.dialog.profileDress.on('click', function (e) {
 		// alert(L['error_555']);

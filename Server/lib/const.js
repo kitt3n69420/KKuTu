@@ -127,6 +127,7 @@ exports.CHAOS_LINK_CHANCE    = 0.05; // 매 턴 linkChange 아이템 강제 발�
 exports.ITEM_MAX_COUNT = 10;       // 종류별 최대 보유 개수
 exports.ITEM_GRANT_INTERVAL = 6;  // 글로벌 N턴마다 전체 자동 지급
 exports.ITEM_BONUS_THRESHOLD = 2; // 보너스 수치 N 이상이면 지급
+exports.WORD_PIECE_CHANCE = 0.06; // 글자 조각 획득 기본 확률 (게임별 coef가 곱해짐)
 
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
 	"저런", "ㅋㅋㅋㅋ", "안타깝네요", "아이고...", "바부", "컷~",
@@ -850,6 +851,15 @@ exports.BOT_LEVEL_NAMES = {
 	"2": "중수",
 	"3": "고수",
 	"4": "초고수"
+};
+
+exports.REPORT_REASON_LABELS = {
+	1: "부적절한 닉네임",
+	2: "부적절한 채팅(욕설, 선정적인 내용 등)",
+	3: "싸움이나 분쟁 조장",
+	4: "게임 이용 방해(라먹, 중퇴 등)",
+	5: "핵이나 비정상적 플레이",
+	6: "기타"
 };
 
 /**

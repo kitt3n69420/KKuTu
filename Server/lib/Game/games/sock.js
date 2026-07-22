@@ -188,6 +188,7 @@ function pickForRobot(my, level) {
 }
 
 function robotSubmitOne(my, robot) {
+	if (robot.level === -1) return;
 	if (my.game.late || !my.gaming) return;
 
 	var level = robot.level || 2;

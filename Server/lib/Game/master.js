@@ -28,6 +28,7 @@ var KKuTu = require("./kkutu");
 var GLOBAL = require("../sub/global.json");
 var Const = require("../const");
 var JLog = require("../sub/jjlog");
+var FallbackLog = require("../sub/discord-fallback-log");
 var Secure = require("../sub/secure");
 var Recaptcha = require("../sub/recaptcha");
 var { validateInput, checkPrototypePollution } = require("../Web/validators");
@@ -38,6 +39,7 @@ var Server;
 var DIC = {};
 var DNAME = {};
 var ROOM = {};
+var reportCooldown = {};
 
 var T_ROOM = {};
 var T_USER = {};
@@ -69,8 +71,77 @@ const PORT = process.env["KKUTU_PORT"];
 var discordProcess = null;
 var _shuttingDown = false;
 
+function discordDisplayName(profile) {
+  if (!profile) return "알 수 없음";
+  return profile.title || profile.name || "알 수 없음";
+}
+
+// 디스코드 봇이 꺼져있거나(BOT_ENABLED=false) discordProcess가 아직 뜨지 않았을 때
+// 이벤트를 그냥 버리지 않고 discord-fallback.log에 남기기 위한 텍스트 포맷
+function formatDiscordFallback(type, data) {
+  switch (type) {
+    case "notify-user-join":
+      return `[유저입장] ${discordDisplayName(data.profile)} (현재 ${data.userCount}명)`;
+    case "notify-user-leave":
+      return `[유저퇴장] ${discordDisplayName(data.profile)} (현재 ${data.userCount}명)`;
+    case "notify-room-create":
+      return `[방생성] ${data.roomId}번 방: ${(data.room && data.room.title) || "(없음)"}`;
+    case "notify-room-delete":
+      return `[방삭제] ${data.roomId}번 방`;
+    case "notify-game-start":
+      return `[게임시작] ${data.roomId}번 방`;
+    case "notify-chat-log": {
+      var location = (data.place === 0 || data.place === "0") ? "로비" : `${data.place}번 방`;
+      return `[채팅|${location}] ${data.isRobot ? "[봇]" : ""}${discordDisplayName(data.profile)}: ${data.message}`;
+    }
+    case "notify-whisper-log":
+      return `[귓속말] ${discordDisplayName(data.profile)} → ${data.targets}: ${data.message}`;
+    case "notify-round-end": {
+      var roundText = (data.round && data.totalRounds) ? ` (${data.round}/${data.totalRounds})` : "";
+      var chainStr = (data.chainLog || []).map(function (entry) {
+        if (entry.event === "timeout") return `${entry.player} 입력 실패`;
+        if (entry.event === "ko") return `${entry.player} KO`;
+        return `${entry.player}: ${entry.word}`;
+      }).join(" > ");
+      return `[라운드종료] ${data.roomId}번 방${roundText} ${chainStr}`;
+    }
+    case "notify-quiz-round-end": {
+      var qd = data.data || {};
+      var qRoundText = (qd.round && qd.totalRounds) ? ` (${qd.round}/${qd.totalRounds})` : "";
+      var parts = [`정답: ${qd.answer}`];
+      if (qd.winners && qd.winners.length) parts.push(`맞힘: ${qd.winners.join(", ")}`);
+      if (qd.missed && qd.missed.length) parts.push(`못맞힘: ${qd.missed.join(", ")}`);
+      if (qd.giveup && qd.giveup.length) parts.push(`포기: ${qd.giveup.join(", ")}`);
+      return `[퀴즈라운드종료] ${data.roomId}번 방${qRoundText} ${parts.join(" | ")}`;
+    }
+    case "notify-game-over": {
+      var lines = (data.rankings || []).map(function (r) {
+        var score = (typeof r.score === "number") ? r.score : 0;
+        return `${r.rank + 1}위 ${r.name}${r.robot ? "(봇)" : ""}: ${score}점`;
+      });
+      return `[게임종료] ${data.roomId}번 방 ${lines.join(", ")}`;
+    }
+    case "notify-room-settings":
+      return `[방설정변경] ${data.roomId}번 방: ${(data.room && data.room.title) || "(없음)"}`;
+    case "notify-bot-settings":
+      return `[봇설정변경] ${data.roomId}번 방: ${data.botInfo && data.botInfo.name}`;
+    case "notify-room-join":
+      return `[방입장] ${data.name}${data.isRobot ? "(봇)" : ""} → ${data.roomId}번 방`;
+    case "notify-room-leave":
+      return `[방퇴장] ${data.name}${data.isRobot ? "(봇)" : ""} ← ${data.roomId}번 방 (${data.reason || "abnormal"})`;
+    case "report":
+      return `[신고] ${discordDisplayName(data.reporterProfile)} → ${discordDisplayName(data.targetProfile)}(${data.targetId}) - 사유: ${Const.REPORT_REASON_LABELS[data.reasonCode] || Const.REPORT_REASON_LABELS[6]}, 상세내용: ${data.detail || "(작성 안 함)"}`;
+    default:
+      return null;
+  }
+}
+
 function discordSend(type, data) {
-  if (!discordProcess) return;
+  if (!discordProcess) {
+    var fallbackText = formatDiscordFallback(type, data);
+    if (fallbackText) FallbackLog.logToFile(fallbackText);
+    return;
+  }
   try {
     discordProcess.send(Object.assign({ type: type }, data));
   } catch (e) {
@@ -637,6 +708,9 @@ Cluster.on("message", function (worker, msg) {
     case "chat-log":
       discordSend("notify-chat-log", { profile: msg.profile, message: msg.message, place: msg.place, isRobot: msg.isRobot });
       break;
+    case "whisper-log":
+      discordSend("notify-whisper-log", { profile: msg.profile, message: msg.message, targets: msg.targets });
+      break;
     case "round-end":
       discordSend("notify-round-end", { roomId: msg.room, chainLog: msg.chainLog, round: msg.round, totalRounds: msg.totalRounds });
       break;
@@ -1067,6 +1141,26 @@ function processClientRequest($c, msg) {
       } else {
         $c.sendError(450);
       }
+      break;
+    case "report":
+      if (typeof msg.target !== "string" || !msg.target) return;
+      if (!msg.reasonCode || typeof msg.detail !== "string") return;
+      if ($c.guest) return $c.sendError(451);
+      if ($c.id == msg.target) return $c.sendError(460);
+      if (!(temp = DIC[msg.target]) || temp.id !== msg.target) return $c.sendError(405);
+      var reportKey = $c.id + ":" + msg.target;
+      if (reportCooldown[reportKey]) return $c.sendError(461);
+      reportCooldown[reportKey] = now;
+      setTimeout(function () { delete reportCooldown[reportKey]; }, 5 * 60 * 1000);
+      discordSend("report", {
+        reporterProfile: $c.profile,
+        reporterGuest: !!$c.guest,
+        targetProfile: temp.profile,
+        targetGuest: !!temp.guest,
+        targetId: temp.id,
+        reasonCode: Math.min(Math.max(parseInt(msg.reasonCode) || 6, 1), 6),
+        detail: msg.detail.substr(0, 200)
+      });
       break;
     case "friendAddRes":
       if (!(temp = DIC[msg.from])) return;

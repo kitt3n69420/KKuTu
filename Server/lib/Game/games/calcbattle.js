@@ -354,6 +354,7 @@ exports.getScore = function (chainLength, op, a, b) {
 };
 
 exports.playRobot = function (robot) {
+	if (robot.level === -1) return;
 	var my = this;
 	var level, cpm, accuracy;
 	var answer, response;

@@ -272,6 +272,7 @@ exports.getScore = function (text, delay) {
 	return isNaN(result) ? 0 : result;
 };
 exports.readyRobot = function (robot) {
+	if (robot.level === -1) return;
 	var my = this;
 	var level = robot.level;
 	var delay, text;

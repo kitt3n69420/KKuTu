@@ -272,6 +272,12 @@ $(document).ready(function () {
 			profileLevel: $("#profile-level"),
 			profileDress: $("#profile-dress"),
 			profileWhisper: $("#profile-whisper"),
+			profileReport: $("#profile-report"),
+			report: $("#ReportDiag"),
+			reportTarget: $("#report-target"),
+			reportReason: $("#report-reason"),
+			reportDetail: $("#report-detail"),
+			reportSubmit: $("#report-submit"),
 			kickVote: $("#KickVoteDiag"),
 			kickVoteY: $("#kick-vote-yes"),
 			kickVoteN: $("#kick-vote-no"),
@@ -1582,6 +1588,8 @@ $(document).ready(function () {
 	});
 	$stage.menu.practice.on('click', function (e) {
 		if (RULE[MODE[$data.room.mode]].ai) {
+			$("#practice-level option[value='-1']").toggle(!RULE[MODE[$data.room.mode]].ewq);
+			if (RULE[MODE[$data.room.mode]].ewq && $("#practice-level").val() == -1) $("#practice-level").val(2);
 			$("#PracticeDiag .dialog-title").html(L['practice']);
 			$("#ai-team").val(0).prop('disabled', true);
 			var saved = loadVolumeSettings();
@@ -1840,6 +1848,8 @@ $(document).ready(function () {
 		updateEffectVol();
 	});
 	$stage.dialog.profileLevel.on('click', function (e) {
+		$("#practice-level option[value='-1']").hide();
+		if ($("#practice-level").val() == -1) $("#practice-level").val(2);
 		$("#PracticeDiag .dialog-title").html(L['robot']);
 		$("#ai-team").prop('disabled', false);
 		var bot = $data.robots[$data._profiled];
@@ -2053,6 +2063,17 @@ $(document).ready(function () {
 		var o = $data.users[$data._profiled];
 
 		$stage.talk.val("/e " + (o.profile.title || o.profile.name).replace(/\s/g, "") + " ").focus();
+	});
+	$stage.dialog.profileReport.on('click', function (e) {
+		openReportDialog($data._profiled);
+	});
+	$stage.dialog.reportSubmit.on('click', function (e) {
+		var reasonCode = parseInt($stage.dialog.reportReason.val());
+		var detail = $stage.dialog.reportDetail.val().substr(0, 200);
+
+		send('report', { target: $data._reportTarget, reasonCode: reasonCode, detail: detail }, true);
+		$stage.dialog.report.hide();
+		notice(L['report_sent']);
 	});
 	$stage.dialog.profileDress.on('click', function (e) {
 		// alert(L['error_555']);
@@ -6268,6 +6289,7 @@ $lib.Flip._buildColorMap = function () {
 			var t = colors[i]; colors[i] = colors[j]; colors[j] = t;
 		}
 		for (i = 0; i < n; i++) {
+			if (!seq[i]) continue;
 			id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
 			map[id] = colors[i];
 		}
@@ -6275,6 +6297,7 @@ $lib.Flip._buildColorMap = function () {
 		// 1~10명: 1~10번 색상에서 랜덤 오프셋으로 순환
 		offset = Math.floor(Math.random() * 10);
 		for (i = 0; i < n; i++) {
+			if (!seq[i]) continue;
 			id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
 			map[id] = ((i + offset) % 10) + 1;
 		}
@@ -6282,15 +6305,35 @@ $lib.Flip._buildColorMap = function () {
 	$data._flipColorMap = map;
 };
 
+// 컬러맵에 없는 플레이어(빌드 시점 이후 seq에 반영된 경우 등)를 위한 안전망 — 검은 화면 방지
+$lib.Flip._assignFallbackColor = function (ownerId) {
+	var used = {};
+	for (var id in $data._flipColorMap) used[$data._flipColorMap[id]] = true;
+	for (var c = 1; c <= 12; c++) {
+		if (!used[c]) { $data._flipColorMap[ownerId] = c; return; }
+	}
+	$data._flipColorMap[ownerId] = (Object.keys($data._flipColorMap).length % 12) + 1;
+};
+
 $lib.Flip._getPlayerColor = function (ownerId) {
 	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK : $lib.Flip._PLAYER_COLORS;
-	if (!ownerId || !$data._flipColorMap || !$data._flipColorMap[ownerId]) return colors[0];
+	if (!ownerId) return colors[0];
+	if (!$data._flipColorMap) $data._flipColorMap = {};
+	if (!$data._flipColorMap[ownerId]) $lib.Flip._assignFallbackColor(ownerId);
 	return colors[$data._flipColorMap[ownerId]];
 };
 
 $lib.Flip._applyUserCardColors = function () {
 	if (!$data._flipColorMap) return;
 	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK : $lib.Flip._PLAYER_COLORS;
+	var seq = $data.room && $data.room.game && $data.room.game.seq;
+	if (seq) {
+		for (var i = 0; i < seq.length; i++) {
+			if (!seq[i]) continue;
+			var seqId = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
+			if (!$data._flipColorMap[seqId]) $lib.Flip._assignFallbackColor(seqId);
+		}
+	}
 	for (var id in $data._flipColorMap) {
 		var color = colors[$data._flipColorMap[id]];
 		$("#game-user-" + id).css('background-color', color);
@@ -7656,11 +7699,13 @@ function requestProfile(id) {
 	$stage.dialog.profileDress.hide();
 	$stage.dialog.profileWhisper.hide();
 	$stage.dialog.profileHandover.hide();
+	$stage.dialog.profileReport.hide();
 
 	if ($data.id == id) $stage.dialog.profileDress.show();
 	else if (!o.robot) {
 		$stage.dialog.profileShut.show();
 		$stage.dialog.profileWhisper.show();
+		if (!$data.guest) $stage.dialog.profileReport.show();
 	}
 	if ($data.room) {
 		if ($data.id != id && $data.id == $data.room.master) {
@@ -7671,6 +7716,19 @@ function requestProfile(id) {
 	showDialog($stage.dialog.profile);
 	$stage.dialog.profile.show();
 	global.expl($ex);
+}
+function openReportDialog(id) {
+	var o = $data.users[id];
+
+	if ($data.guest) return fail(451);
+	if (!o) return notice(L['error_405']);
+	if ($data.id == id) return fail(460);
+
+	$stage.dialog.reportTarget.text(o.profile.title || o.profile.name);
+	$stage.dialog.reportReason.val(1);
+	$stage.dialog.reportDetail.val('');
+	$data._reportTarget = id;
+	showDialog($stage.dialog.report);
 }
 function requestInvite(id) {
 	var nick;
@@ -9495,6 +9553,7 @@ function runCommand(cmd) {
 		'/차단': L['cmd_shut'],
 		'/id': L['cmd_id'],
 		'/친추': L['cmd_fa'],
+		'/신고': L['cmd_report'],
 		'/사전': L['cmd_dict'],
 		'/팁': L['cmd_tip'],
 		'/랜덤팁': L['cmd_randomtip']
@@ -9578,6 +9637,27 @@ function runCommand(cmd) {
 				}
 			} else {
 				notice(L['cmd_fa']);
+			}
+			break;
+		case "/신고":
+		case "/report":
+			if (cmd[1]) {
+				var reportTargetName = cmd.slice(1).join(' ');
+				var reportTargetId = null;
+				for (i in $data.users) {
+					var ru = $data.users[i];
+					if (i == reportTargetName || (ru.profile.title || ru.profile.name) == reportTargetName) {
+						reportTargetId = i;
+						break;
+					}
+				}
+				if (reportTargetId) {
+					openReportDialog(reportTargetId);
+				} else {
+					notice(L['error_405']);
+				}
+			} else {
+				notice(L['cmd_report']);
 			}
 			break;
 		case "/사전":
@@ -11755,19 +11835,25 @@ function renderMoremi(target, equip) {
 	else equip = $.extend({}, equip); // Create a shallow copy to prevent mutation
 
 	// Easter Egg for 'nya' language
+	var HAMSTER_HEAD_ITEMS = ['hamster_G', 'hamster_O'];
 	var savedLang = localStorage.getItem('kkutu_lang');
 	var savedVolume = loadVolumeSettings();
 	var easterEggDisabled = savedVolume.noEasterEgg === true;
+	var showCatEars = false;
 
 	if (!easterEggDisabled && savedLang === 'nya') {
-		equip['Mhead'] = 'nekomimi';
+		if (HAMSTER_HEAD_ITEMS.indexOf(equip['Mhead']) != -1) {
+			equip['Mhead'] = 'nekomimi';
+		} else {
+			showCatEars = true;
+		}
 	}
 
 	// Easter Egg for 'troll' sound pack
-	if (!easterEggDisabled && savedVolume.soundPack === '병맛') {
+	var showTrollFace = !easterEggDisabled && savedVolume.soundPack === '병맛';
+	if (showTrollFace) {
 		equip['Meye'] = 'hidden_eye';
 		equip['Mmouth'] = 'nocomment';
-		equip['Mclothes'] = 'troll';
 	}
 
 	// Random Moremi Item (Drug Mode) Logic Removed - Handled in Interval
@@ -11781,6 +11867,13 @@ function renderMoremi(target, equip) {
 			.attr('src', iImage(equip[key], LR[key] || key))
 			.css({ 'width': "100%", 'height': "100%" })
 		);
+		if (key == 'Mhead' && showCatEars) {
+			$obj.append($("<img>")
+				.addClass("moremies moremi-catears")
+				.attr('src', iImage('nekomimi', 'Mhead'))
+				.css({ 'width': "100%", 'height': "100%" })
+			);
+		}
 	}
 	if (key = equip['BDG']) {
 		$obj.append($("<img>")
@@ -11794,6 +11887,14 @@ function renderMoremi(target, equip) {
 		.css({ 'width': "100%", 'height': "100%" })
 	);
 	$obj.children(".moremi-rhand").css('transform', "scaleX(-1)");
+
+	if (showTrollFace) {
+		$obj.append($("<img>")
+			.addClass("moremies moremi-trollface")
+			.attr('src', iImage('troll', 'Mclothes'))
+			.css({ 'width': "100%", 'height': "100%" })
+		);
+	}
 }
 function commify(val) {
 	var tester = /(^[+-]?\d+)(\d{3})/;
