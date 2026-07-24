@@ -1524,20 +1524,20 @@ exports.logWhisper = function (profile, message, targets) {
  * Log a user report - sends a short notice to the general log channel,
  * then forwards a link to that message plus the reason/detail to the dedicated report channel.
  */
-exports.logReport = function (reporterProfile, reporterGuest, targetProfile, targetGuest, targetId, reasonCode, detail) {
+exports.logReport = function (reporterProfile, reporterGuest, reporterId, targetProfile, targetGuest, targetId, reasonCode, detail) {
     const reporterName = getDisplayName(reporterProfile) + (reporterGuest ? ' (손님)' : '');
     const targetName = getDisplayName(targetProfile) + (targetGuest ? ' (손님)' : '');
     const reasonLabel = Const.REPORT_REASON_LABELS[reasonCode] || Const.REPORT_REASON_LABELS[6];
 
     if (!isBotAvailable()) {
-        logToFile(`[신고] ${reporterName} → ${targetName} (${reasonLabel}): ${detail}`);
+        logToFile(`[신고] ${reporterName}(${reporterId}) → ${targetName}(${targetId}) (${reasonLabel}): ${detail}`);
         return;
     }
 
     safeExecute(async () => {
         const logEmbed = new EmbedBuilder()
             .setColor(0xE74C3C)
-            .setDescription(`\u{1F6A8} **${reporterName}**님이 **${targetName}**(${targetId})님을 신고했습니다.`)
+            .setDescription(`\u{1F6A8} **${reporterName}**(${reporterId})님이 **${targetName}**(${targetId})님을 신고했습니다.`)
             .setTimestamp();
         const sentMsg = await channel.send({ embeds: [logEmbed] });
 

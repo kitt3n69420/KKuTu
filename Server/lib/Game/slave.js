@@ -220,7 +220,7 @@ Server.on("connection", function (socket, info) {
 
       /* Enhanced User Block System [S] */
       $c.remoteAddress = GLOBAL.USER_BLOCK_OPTIONS.USE_X_FORWARDED_FOR
-        ? info.headers["x-forwarded-for"] || info.connection.remoteAddress
+        ? info.headers["cf-connecting-ip"] || info.headers["x-forwarded-for"] || info.connection.remoteAddress
         : info.connection.remoteAddress;
       /* Enhanced User Block System [E] */
 

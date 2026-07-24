@@ -130,7 +130,7 @@ function formatDiscordFallback(type, data) {
     case "notify-room-leave":
       return `[방퇴장] ${data.name}${data.isRobot ? "(봇)" : ""} ← ${data.roomId}번 방 (${data.reason || "abnormal"})`;
     case "report":
-      return `[신고] ${discordDisplayName(data.reporterProfile)} → ${discordDisplayName(data.targetProfile)}(${data.targetId}) - 사유: ${Const.REPORT_REASON_LABELS[data.reasonCode] || Const.REPORT_REASON_LABELS[6]}, 상세내용: ${data.detail || "(작성 안 함)"}`;
+      return `[신고] ${discordDisplayName(data.reporterProfile)}(${data.reporterId}) → ${discordDisplayName(data.targetProfile)}(${data.targetId}) - 사유: ${Const.REPORT_REASON_LABELS[data.reasonCode] || Const.REPORT_REASON_LABELS[6]}, 상세내용: ${data.detail || "(작성 안 함)"}`;
     default:
       return null;
   }
@@ -862,7 +862,7 @@ exports.init = function (_SID, CHAN) {
           $c.admin = GLOBAL.ADMIN.indexOf($c.id) != -1;
           /* Enhanced User Block System [S] */
           $c.remoteAddress = GLOBAL.USER_BLOCK_OPTIONS.USE_X_FORWARDED_FOR
-            ? info.headers["x-forwarded-for"] || info.connection.remoteAddress
+            ? info.headers["cf-connecting-ip"] || info.headers["x-forwarded-for"] || info.connection.remoteAddress
             : info.connection.remoteAddress;
           /* Enhanced User Block System [E] */
 
@@ -1178,6 +1178,7 @@ function processClientRequest($c, msg) {
       discordSend("report", {
         reporterProfile: $c.profile,
         reporterGuest: !!$c.guest,
+        reporterId: $c.id,
         targetProfile: temp.profile,
         targetGuest: !!temp.guest,
         targetId: temp.id,

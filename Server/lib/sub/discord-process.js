@@ -71,7 +71,7 @@ process.on('message', function (msg) {
             DiscordBot.logWhisper(msg.profile, msg.message, msg.targets);
             break;
         case 'report':
-            DiscordBot.logReport(msg.reporterProfile, msg.reporterGuest, msg.targetProfile, msg.targetGuest, msg.targetId, msg.reasonCode, msg.detail);
+            DiscordBot.logReport(msg.reporterProfile, msg.reporterGuest, msg.reporterId, msg.targetProfile, msg.targetGuest, msg.targetId, msg.reasonCode, msg.detail);
             break;
         case 'notify-round-end':
             DiscordBot.notifyRoundEnd(msg.roomId, msg.chainLog, msg.round, msg.totalRounds);

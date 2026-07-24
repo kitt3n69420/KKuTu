@@ -62,6 +62,14 @@ require("../sub/checkpub");
 JLog.info("<< KKuTu Web >>");
 Server.set("views", __dirname + "/views");
 Server.set("view engine", "pug");
+// 방화벽에서 Cloudflare IP 대역만 허용하므로 X-Forwarded-For를 신뢰해도 안전함
+Server.set("trust proxy", true);
+// CF-Connecting-IP가 있으면 req.ip를 이 값으로 덮어씀 (X-Forwarded-For보다 체인 신뢰 문제가 없음)
+Server.use(function (req, res, next) {
+  var cfIp = req.headers["cf-connecting-ip"];
+  if (cfIp) Object.defineProperty(req, "ip", { value: cfIp, configurable: true });
+  next();
+});
 Server.use(Express.static(__dirname + "/public", { maxAge: "1d", etag: true }));
 // 요청 타임아웃: DB hang 시 연쇄 커넥션 고갈 방지
 Server.use(function (req, res, next) {
