@@ -57,6 +57,8 @@ var MOREMI_PART;
 var AVAIL_EQUIP;
 var RULE;
 var OPTIONS;
+var KO_INJEONG;
+var EN_INJEONG;
 var MAX_LEVEL = 360;
 var TICK = 30;
 var EXP = [];

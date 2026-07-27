@@ -753,8 +753,8 @@ exports.KO_INJEONG = [
 	"GNS", "WEB", "UNE", "KPO", 
 	"VOC", "ETR", "JAT", "ZEL",
 	"CKR", "FUR", "POK", "FRC", "PSK", "HSS",
-	"HAI", "KPM", "HDC", "HAR", "HOS", "IMS"
-	
+	"HAI", "KPM", "HDC", "HAR", "HOS", "IMS", "RHV"
+
 ];
 exports.EN_INJEONG = [
 	"LOL", "MCJ"

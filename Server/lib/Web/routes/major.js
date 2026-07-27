@@ -532,46 +532,35 @@ exports.run = function (Server, page) {
     MainDB.crafting.findOne(["item1", items[0]], ["item2", items[1]]).on(function ($r) { _recipe = $r; craftPhase1(); });
     MainDB.users.findOne(["_id", uid]).limit(["money", true], ["box", true]).on(function ($r) { _user = $r; craftPhase1(); });
   });
-  Server.get("/exchange-check", function (req, res) {
+  Server.get("/exchange-offers", function (req, res) {
     if (!req.session.profile) return res.json({ error: 400 });
+    var uid = req.session.profile.id;
+    var _events = null, _recipes = null, _user = null, _done = 0;
 
-    var itemsParam = req.query.items;
-    if (!itemsParam) return res.json({ error: 400 });
+    function done() {
+      if (++_done < 3) return;
+      if (!_user) return res.json({ error: 400 });
+      if (!_user.box) _user.box = {};
 
-    var tray;
-    try { tray = JSON.parse(itemsParam); } catch (e) { return res.json({ error: 400 }); }
-    if (typeof tray !== 'object' || Array.isArray(tray) || tray === null) return res.json({ error: 400 });
-
-    var trayKeys = Object.keys(tray);
-    if (trayKeys.length === 0) return res.json({ error: 400 });
-    for (var k = 0; k < trayKeys.length; k++) {
-      if (!validateInput(trayKeys[k], "string", { maxLength: 64, noSpecialChars: true })) return res.json({ error: 400 });
-      if (typeof tray[trayKeys[k]] !== 'number' || tray[trayKeys[k]] < 1 || !Number.isInteger(tray[trayKeys[k]])) return res.json({ error: 400 });
-    }
-
-    var _events = null, _recipes = null, _done = 0;
-    function excCheckDone() {
-      if (++_done < 2) return;
       var activeEventIds = (_events || []).filter(Const.isEventActive).map(function (e) { return e._id; });
       var validRecipes = (_recipes || []).filter(function (r) {
         return r.eventid === null || activeEventIds.indexOf(r.eventid) !== -1;
       });
-      var match = null;
-      for (var i = 0; i < validRecipes.length; i++) {
-        var recipe = validRecipes[i].recipe;
-        var recipeKeys = Object.keys(recipe);
-        if (recipeKeys.length !== trayKeys.length) continue;
-        var ok = true;
-        for (var j = 0; j < recipeKeys.length; j++) {
-          if (tray[recipeKeys[j]] !== recipe[recipeKeys[j]]) { ok = false; break; }
+      var offers = validRecipes.filter(function (r) {
+        var keys = Object.keys(r.recipe);
+        for (var i = 0; i < keys.length; i++) {
+          var bd = _user.box[keys[i]];
+          var have = (typeof bd === 'number') ? bd : (bd && bd.value ? bd.value : 0);
+          if (have < r.recipe[keys[i]]) return false;
         }
-        if (ok) { match = validRecipes[i]; break; }
-      }
-      if (!match) return res.json({ result: null, reason: "no_recipe" });
-      res.json({ result: match.result });
+        return true;
+      }).map(function (r) { return { recipe: r.recipe, result: r.result }; });
+
+      res.json({ offers: offers });
     }
-    MainDB.event.find().on(function ($r) { _events = $r || []; excCheckDone(); });
-    MainDB.itemexc.find().on(function ($r) { _recipes = $r || []; excCheckDone(); });
+    MainDB.event.find().on(function ($r) { _events = $r || []; done(); });
+    MainDB.itemexc.find().on(function ($r) { _recipes = $r || []; done(); });
+    MainDB.users.findOne(["_id", uid]).limit(["box", true]).on(function ($r) { _user = $r; done(); });
   });
   Server.post("/exchange", function (req, res) {
     if (!req.session.profile) return res.json({ error: 400 });

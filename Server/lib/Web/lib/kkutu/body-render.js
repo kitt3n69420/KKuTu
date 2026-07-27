@@ -386,105 +386,65 @@ function drawCraftWorkshop() {
 	}
 }
 function drawExchangeWorkshop() {
-	var $tray = $("#exc-tray");
-	var $goods = $("#exc-goods");
-	var $preview = $("#exc-result-preview");
+	var $list = $("#exc-list");
 
-	$data._excTray = {};
-	$data._excResult = null;
-	$preview.empty();
-	$stage.dialog.excCompose.removeClass("exc-exchangeable");
+	$list.empty();
+	$.get("/exchange-offers", {}, function (res) {
+		var offers = (res && res.offers) || [];
 
-	var specFilter = ($("#dress-type-spec").attr('value') || "").split(',').filter(Boolean);
-	var excFilter = (specFilter.length ? specFilter : ['PIX', 'PIY', 'PIZ', 'CNS']).filter(function(g) { return g !== 'PIX'; }).concat(['eventcol']);
-	renderGoods($goods, 'exc', excFilter, null, onExcGoodsClick);
-
-	function onExcGoodsClick(e) {
-		var $target = $(e.currentTarget);
-		var id = $target.attr('id').slice(4);
-
-		if ($data._excTray.hasOwnProperty(id)) {
-			delete $data._excTray[id];
-			drawExcTray();
+		$list.empty();
+		if (!offers.length) {
+			$list.append($("<div>").addClass("exc-list-empty").html(L['excNoOffers']));
 			return;
 		}
-
-		var bd = $data.box[id];
-		var available = (typeof bd === 'number') ? bd : (bd && bd.value ? bd.value : 0);
-		if (available < 1) return fail(434);
-
-		showPrompt(L['excHowMany'], "1", function (val) {
-			if (val === null) return;
-			var n = parseInt(val, 10);
-			if (isNaN(n) || n < 1) return;
-			if (n > available) n = available;
-			$data._excTray[id] = n;
-			drawExcTray();
+		offers.forEach(function (offer) {
+			if (!$data.shop[offer.result]) return;
+			var resultObj = iGoods(offer.result);
+			var $row = $("<div>").addClass("exc-offer-row")
+				.append($("<div>").addClass("jt-image exc-offer-image").css('background-image', "url(" + resultObj.image + ")"))
+				.append($("<div>").addClass("exc-offer-name").html(resultObj.name))
+				.append($("<div>").addClass("exc-offer-count").html("x1"))
+				.append(explainExcRecipe(resultObj, offer.recipe));
+			$row.on('click', function () { requestExchange(offer); });
+			$list.append($row);
 		});
-	}
+		global.expl($list);
+	});
+}
+function explainExcRecipe(resultObj, recipe) {
+	var $R = $("<div>").addClass("expl dress-expl")
+		.append($("<div>").addClass("dress-item-title").html(resultObj.name));
+	var $opts = $("<div>").addClass("dress-item-opts");
 
-	function trayEmpty() {
-		$tray.html($("<span>").css({ 'font-size': "11px", 'color': "#999" }).html(L['excTrayHint']));
-		$("#exc-arrow").hide();
-		$("#exc-empty-slot").hide();
-	}
-	trayEmpty();
+	Object.keys(recipe).forEach(function (id) {
+		var gd = iGoods(id);
+		$opts.append($("<label>").addClass("item-opts-head").html(gd.name))
+			.append($("<label>").addClass("item-opts-body").html("x" + recipe[id]))
+			.append($("<br>"));
+	});
+	$R.append($opts);
+	return $R;
+}
+function requestExchange(offer) {
+	var lines = [L['excSureExchange']];
+	Object.keys(offer.recipe).forEach(function (id) {
+		var gd = iGoods(id);
+		lines.push(gd.name + " x" + offer.recipe[id]);
+	});
+	showConfirm(lines.join('\n'), function (res) {
+		if (!res) return;
+		$.post("/exchange", { items: JSON.stringify(offer.recipe) }, function (res) {
+			if (res.error) return fail(res.error);
+			send('refresh');
+			showAlert(L['excExchanged']);
+			$data.box = res.box;
+			queueObtain({ key: res.exchanged, value: 1 });
 
-	function drawExcTray() {
-		$tray.empty();
-		$(".exc-tray-selected").removeClass("exc-tray-selected");
-		$preview.empty();
-		$stage.dialog.excCompose.removeClass("exc-exchangeable");
-		$data._excResult = null;
-
-		var ids = Object.keys($data._excTray);
-		if (ids.length === 0) {
-			trayEmpty();
-			return;
-		}
-
-		ids.forEach(function (itemId) {
-			var gd = iGoods(itemId);
-			var cnt = $data._excTray[itemId];
-			var $wrap = $("<div>").addClass("exc-tray-item");
-			var $imgWrap = $("<div>").addClass("exc-img-wrap");
-			var $img = $("<div>").addClass("jt-image")
-				.css('background-image', "url(" + gd.image + ")")
-				.attr('data-item', itemId);
-			var $label = $("<span>").addClass("exc-count-label").text("x" + cnt);
-			$imgWrap.append($img).append($label);
-			$wrap.append($imgWrap).append(explainGoods(gd, false));
-			$wrap.on('click', function () {
-				delete $data._excTray[itemId];
-				drawExcTray();
-			});
-			$tray.append($wrap);
-			$("#exc-" + itemId).addClass("exc-tray-selected");
+			drawMyDress($data._avGroup);
+			updateMe();
+			drawExchangeWorkshop();
 		});
-		global.expl($tray);
-
-		$("#exc-arrow").show();
-		$("#exc-empty-slot").show();
-
-		$preview.html("<span style='color:#888; font-size:11px;'>" + L['searching'] + "</span>");
-		$.get("/exchange-check", { items: JSON.stringify($data._excTray) }, function (res) {
-			if (res.error || !res.result) {
-				$preview.html("<span style='color:#CC3333; font-size:11px;'>" + L['excNoRecipe'] + "</span>");
-				return;
-			}
-			if (!$data.shop[res.result]) {
-				$preview.html("<span style='color:#CC3333; font-size:11px;'>" + L['excNoRecipe'] + "</span>");
-				return;
-			}
-			var resultObj = iGoods(res.result);
-			var $resultImg = getImage(resultObj.image).addClass("exc-result-image");
-			var $resultWrap = $("<div>").css('display', 'inline-block').append($resultImg).append(explainGoods(resultObj, false));
-			$preview.empty().append($resultWrap);
-			global.expl($preview);
-			$data._excResult = res.result;
-			$stage.dialog.excCompose.addClass("exc-exchangeable");
-		});
-	}
+	});
 }
 
 function drawLeaderboard(data) {

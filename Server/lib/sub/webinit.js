@@ -97,9 +97,18 @@ exports.init = function (Server, shop) {
 	Server.get("/language/:page/:lang", function (req, res) {
 		var page = req.params.page.replace(/_/g, "/");
 		var lang = req.params.lang;
+		var i;
 
 		if (page.substr(0, 2) == "m/") page = page.slice(2);
 		if (page == "portal") page = "kkutu";
+		res.type("application/javascript");
+		if (lang == "all") {
+			var all = {};
+
+			for (i in Language) all[i] = getLanguage(i, page, shop);
+			res.send("window.LANG_ALL = " + JSON.stringify(all) + "; window.L = window.LANG_ALL[" + JSON.stringify(req.query.current || "ko_KR") + "];");
+			return;
+		}
 		res.send("window.L = " + JSON.stringify(getLanguage(lang, page, shop)) + ";");
 	});
 	Server.get("/language/flush", function (req, res) {

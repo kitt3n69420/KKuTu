@@ -119,7 +119,7 @@ exports.turnStart = function (force) {
 		turnTime: my.game.turnTime,
 		seq: force ? my.game.seq : undefined
 	}, true);
-	my.game.turnTimer = setTimeout(my.turnEnd, my.game.turnTime + 100);
+	my.game.turnTimer = setTimeout(my.turnEnd, Math.min(my.game.roundTime, my.game.turnTime + 100));
 
 	if (si = my.game.seq[my.game.turn]) if (si.robot) {
 		my.readyRobot(si);
@@ -208,14 +208,16 @@ exports.submit = function (client, text, data) {
 	}
 
 	function accept() {
-		var score, nextProblem;
+		var score, nextProblem, t;
 
 		if (my.game.late) return;
 		my.game.loading = false;
 		my.game.late = true;
 		clearTimeout(my.game.turnTimer);
-		score = my.getScore(answer, tv - my.game.turnAt);
+		t = tv - my.game.turnAt;
+		score = my.getScore(answer, t);
 		my.logChainWord(full, client);
+		my.game.roundTime -= t;
 		client.game.score += score;
 		if (!client.robot) client.invokeWordPiece(full, 1);
 		nextProblem = my.game.problems[my.game.chain.length];

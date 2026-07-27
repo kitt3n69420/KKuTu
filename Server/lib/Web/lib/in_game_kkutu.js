@@ -57,6 +57,8 @@ var MOREMI_PART;
 var AVAIL_EQUIP;
 var RULE;
 var OPTIONS;
+var KO_INJEONG;
+var EN_INJEONG;
 var MAX_LEVEL = 360;
 var TICK = 30;
 var EXP = [];
@@ -301,7 +303,6 @@ $(document).ready(function () {
 			craftWorkshop: $("#CraftingDiag"),
 			craftCompose: $("#craft-compose"),
 			exchangeWorkshop: $("#ExchangeDiag"),
-			excCompose: $("#exc-compose"),
 			injPick: $("#InjPickDiag"),
 			injPickAll: $("#injpick-all"),
 			injPickNo: $("#injpick-no"),
@@ -487,6 +488,8 @@ $(document).ready(function () {
 	RULE = JSON.parse($("#RULE").html());
 	OPTIONS = JSON.parse($("#OPTIONS").html());
 	GAME_CATEGORIES = JSON.parse($("#GAME_CATEGORIES").html());
+	KO_INJEONG = JSON.parse($("#KO_INJEONG").html() || "[]");
+	EN_INJEONG = JSON.parse($("#EN_INJEONG").html() || "[]");
 	MODE = Object.keys(RULE);
 	mobile = $("#mobile").html() == "true";
 	if (mobile) TICK = 60;
@@ -702,9 +705,11 @@ $(document).ready(function () {
 	});
 	// 양방향 실시간 입력 동기화
 	$stage.talk.on('input', function (e) {
+		if (checkInput($(this))) { $stage.game.hereText.val(""); return; }
 		$stage.game.hereText.val($stage.talk.val());
 	});
 	$stage.game.hereText.on('input', function (e) {
+		if (checkInput($(this))) { $stage.talk.val(""); return; }
 		$stage.talk.val($stage.game.hereText.val());
 	});
 	// 모바일 가상 키보드 엔터 제출 처리
@@ -824,6 +829,8 @@ $(document).ready(function () {
 		var effMute = savedSettings.effectMute !== null ? savedSettings.effectMute : $data.muteEff;
 		$("#mute-bgm").prop('checked', bgmMute || false);
 		$("#mute-effect").prop('checked', effMute || false);
+		$(".bgmVolume").prop('disabled', bgmMute || false);
+		$(".effectVolume").prop('disabled', effMute || false);
 
 		// 사운드팩 선택 설정
 		$("#sound-pack").val(savedSettings.soundPack || "");
@@ -1136,6 +1143,7 @@ $(document).ready(function () {
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg', 'flu', 'jkp', 'dfb'];
+		var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'lng', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'chs', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf', 'stp'];
 
 		if (showCategory) {
 			// Categorized view - hide flat panel, show category panels
@@ -1253,8 +1261,10 @@ $(document).ready(function () {
 				$("#room-simple-quizpick-panel").hide();
 			}
 
-			// Update simple panel options visibility 
-			updateGameOptions(rule.opts, 'room-simple');
+			// Update simple panel options visibility
+			// 규칙 개수가 10개 이하인 모드는 keyRules와 무관하게 전부 노출
+			var simplePanelOpts = rule.opts.length <= 10 ? rule.opts : rule.opts.filter(function (opt) { return keyRules.indexOf(opt) !== -1; });
+			updateGameOptions(simplePanelOpts, 'room-simple');
 		} else {
 			$("#room-simple-rules-panel").hide();
 			$("#view-all-rules-btn").hide();
@@ -1745,8 +1755,15 @@ $(document).ready(function () {
 			} else {
 				search = search + (search ? '&' : '?') + 'locale=' + newLang;
 			}
-			location.href = location.pathname + search;
-			return; // 리로드 하니까 여기서 중단
+			if (window.LANG_ALL && window.LANG_ALL[newLang]) {
+				// 언어 사전이 이미 클라이언트에 모두 로드되어 있으므로 리로드 없이 즉시 반영
+				window.L = window.LANG_ALL[newLang];
+				retranslatePage(window.L);
+				history.replaceState(null, '', location.pathname + search);
+			} else {
+				location.href = location.pathname + search;
+				return; // 리로드 하니까 여기서 중단
+			}
 		}
 
 		applyTheme(newTheme);
@@ -2269,28 +2286,6 @@ $(document).ready(function () {
 				drawMyDress($data._avGroup);
 				updateMe();
 				drawCraftWorkshop();
-			});
-		});
-	});
-	$stage.dialog.excCompose.on('click', function (e) {
-		if (!$stage.dialog.excCompose.hasClass("exc-exchangeable")) return fail(458);
-		if (!$data._excResult) return fail(458);
-
-		showConfirm(L['excSureExchange'], function (res) {
-			if (!res) return;
-
-			$.post("/exchange", {
-				items: JSON.stringify($data._excTray)
-			}, function (res) {
-				if (res.error) return fail(res.error);
-				send('refresh');
-				showAlert(L['excExchanged']);
-				$data.box = res.box;
-				queueObtain({ key: res.exchanged, value: 1 });
-
-				drawMyDress($data._avGroup);
-				updateMe();
-				drawExchangeWorkshop();
 			});
 		});
 	});
@@ -7400,105 +7395,65 @@ function drawCraftWorkshop() {
 	}
 }
 function drawExchangeWorkshop() {
-	var $tray = $("#exc-tray");
-	var $goods = $("#exc-goods");
-	var $preview = $("#exc-result-preview");
+	var $list = $("#exc-list");
 
-	$data._excTray = {};
-	$data._excResult = null;
-	$preview.empty();
-	$stage.dialog.excCompose.removeClass("exc-exchangeable");
+	$list.empty();
+	$.get("/exchange-offers", {}, function (res) {
+		var offers = (res && res.offers) || [];
 
-	var specFilter = ($("#dress-type-spec").attr('value') || "").split(',').filter(Boolean);
-	var excFilter = (specFilter.length ? specFilter : ['PIX', 'PIY', 'PIZ', 'CNS']).filter(function(g) { return g !== 'PIX'; }).concat(['eventcol']);
-	renderGoods($goods, 'exc', excFilter, null, onExcGoodsClick);
-
-	function onExcGoodsClick(e) {
-		var $target = $(e.currentTarget);
-		var id = $target.attr('id').slice(4);
-
-		if ($data._excTray.hasOwnProperty(id)) {
-			delete $data._excTray[id];
-			drawExcTray();
+		$list.empty();
+		if (!offers.length) {
+			$list.append($("<div>").addClass("exc-list-empty").html(L['excNoOffers']));
 			return;
 		}
-
-		var bd = $data.box[id];
-		var available = (typeof bd === 'number') ? bd : (bd && bd.value ? bd.value : 0);
-		if (available < 1) return fail(434);
-
-		showPrompt(L['excHowMany'], "1", function (val) {
-			if (val === null) return;
-			var n = parseInt(val, 10);
-			if (isNaN(n) || n < 1) return;
-			if (n > available) n = available;
-			$data._excTray[id] = n;
-			drawExcTray();
+		offers.forEach(function (offer) {
+			if (!$data.shop[offer.result]) return;
+			var resultObj = iGoods(offer.result);
+			var $row = $("<div>").addClass("exc-offer-row")
+				.append($("<div>").addClass("jt-image exc-offer-image").css('background-image', "url(" + resultObj.image + ")"))
+				.append($("<div>").addClass("exc-offer-name").html(resultObj.name))
+				.append($("<div>").addClass("exc-offer-count").html("x1"))
+				.append(explainExcRecipe(resultObj, offer.recipe));
+			$row.on('click', function () { requestExchange(offer); });
+			$list.append($row);
 		});
-	}
+		global.expl($list);
+	});
+}
+function explainExcRecipe(resultObj, recipe) {
+	var $R = $("<div>").addClass("expl dress-expl")
+		.append($("<div>").addClass("dress-item-title").html(resultObj.name));
+	var $opts = $("<div>").addClass("dress-item-opts");
 
-	function trayEmpty() {
-		$tray.html($("<span>").css({ 'font-size': "11px", 'color': "#999" }).html(L['excTrayHint']));
-		$("#exc-arrow").hide();
-		$("#exc-empty-slot").hide();
-	}
-	trayEmpty();
+	Object.keys(recipe).forEach(function (id) {
+		var gd = iGoods(id);
+		$opts.append($("<label>").addClass("item-opts-head").html(gd.name))
+			.append($("<label>").addClass("item-opts-body").html("x" + recipe[id]))
+			.append($("<br>"));
+	});
+	$R.append($opts);
+	return $R;
+}
+function requestExchange(offer) {
+	var lines = [L['excSureExchange']];
+	Object.keys(offer.recipe).forEach(function (id) {
+		var gd = iGoods(id);
+		lines.push(gd.name + " x" + offer.recipe[id]);
+	});
+	showConfirm(lines.join('\n'), function (res) {
+		if (!res) return;
+		$.post("/exchange", { items: JSON.stringify(offer.recipe) }, function (res) {
+			if (res.error) return fail(res.error);
+			send('refresh');
+			showAlert(L['excExchanged']);
+			$data.box = res.box;
+			queueObtain({ key: res.exchanged, value: 1 });
 
-	function drawExcTray() {
-		$tray.empty();
-		$(".exc-tray-selected").removeClass("exc-tray-selected");
-		$preview.empty();
-		$stage.dialog.excCompose.removeClass("exc-exchangeable");
-		$data._excResult = null;
-
-		var ids = Object.keys($data._excTray);
-		if (ids.length === 0) {
-			trayEmpty();
-			return;
-		}
-
-		ids.forEach(function (itemId) {
-			var gd = iGoods(itemId);
-			var cnt = $data._excTray[itemId];
-			var $wrap = $("<div>").addClass("exc-tray-item");
-			var $imgWrap = $("<div>").addClass("exc-img-wrap");
-			var $img = $("<div>").addClass("jt-image")
-				.css('background-image', "url(" + gd.image + ")")
-				.attr('data-item', itemId);
-			var $label = $("<span>").addClass("exc-count-label").text("x" + cnt);
-			$imgWrap.append($img).append($label);
-			$wrap.append($imgWrap).append(explainGoods(gd, false));
-			$wrap.on('click', function () {
-				delete $data._excTray[itemId];
-				drawExcTray();
-			});
-			$tray.append($wrap);
-			$("#exc-" + itemId).addClass("exc-tray-selected");
+			drawMyDress($data._avGroup);
+			updateMe();
+			drawExchangeWorkshop();
 		});
-		global.expl($tray);
-
-		$("#exc-arrow").show();
-		$("#exc-empty-slot").show();
-
-		$preview.html("<span style='color:#888; font-size:11px;'>" + L['searching'] + "</span>");
-		$.get("/exchange-check", { items: JSON.stringify($data._excTray) }, function (res) {
-			if (res.error || !res.result) {
-				$preview.html("<span style='color:#CC3333; font-size:11px;'>" + L['excNoRecipe'] + "</span>");
-				return;
-			}
-			if (!$data.shop[res.result]) {
-				$preview.html("<span style='color:#CC3333; font-size:11px;'>" + L['excNoRecipe'] + "</span>");
-				return;
-			}
-			var resultObj = iGoods(res.result);
-			var $resultImg = getImage(resultObj.image).addClass("exc-result-image");
-			var $resultWrap = $("<div>").css('display', 'inline-block').append($resultImg).append(explainGoods(resultObj, false));
-			$preview.empty().append($resultWrap);
-			global.expl($preview);
-			$data._excResult = res.result;
-			$stage.dialog.excCompose.addClass("exc-exchangeable");
-		});
-	}
+	});
 }
 
 function drawLeaderboard(data) {
@@ -8622,6 +8577,57 @@ function applyDarkMode(setting) {
 	if (isDark) document.body.classList.add('dark-mode');
 	else document.body.classList.remove('dark-mode');
 }
+function rebuildInjeongExplHTML(dict) {
+	function themeList(list) {
+		return (list || []).map(function (item) { return dict['theme_' + item] || item; });
+	}
+
+	return "<h5>" + (dict['explInjeong'] || '') + "</h5>"
+		+ "<h5 style='margin-top: 2px; border-top: 1px dashed #444444; padding-top: 2px; color: #BBBBBB;'>" + (dict['explInjeongListTitle'] || '') + "</h5>"
+		+ "<h5>" + themeList(KO_INJEONG) + "</h5>"
+		+ "<h5 style='margin-top: 2px; border-top: 1px dashed #444444; padding-top: 2px; color: #BBBBBB;'>" + (dict['explInjeongListTitle'] || '') + " (" + (dict['modeEKT'] || '') + ", " + (dict['modeESH'] || '') + ")</h5>"
+		+ "<h5>" + themeList(EN_INJEONG) + "</h5>";
+}
+function retranslatePage(dict) {
+	function faReplace(raw) {
+		return raw.replace(/FA\{[^\}]+\}/g, function (seq) {
+			return "<i class='fa fa-" + seq.slice(3, seq.length - 1) + "'></i>";
+		});
+	}
+	function resolve(key, fallbackKey) {
+		var v = dict[key];
+
+		if (v === undefined && fallbackKey) v = dict[fallbackKey];
+		if (v === undefined) v = "(L#" + key + ")";
+		return v.toString();
+	}
+
+	$("[data-lang-key]").not("[data-lang-special]").each(function () {
+		var $el = $(this);
+		var value = resolve($el.attr('data-lang-key'), $el.attr('data-lang-fallback'));
+		var suffix = $el.attr('data-lang-suffix');
+
+		if (suffix !== undefined) value += suffix;
+		if ($el.is('[data-lang-raw]')) $el.html(faReplace(value));
+		else $el.text(value);
+	});
+	$("[data-lang-special='explInjeong']").html(rebuildInjeongExplHTML(dict));
+
+	document.querySelectorAll('[data-lang-attr-placeholder], [data-lang-attr-label], [data-lang-attr-data-tooltip]').forEach(function (el) {
+		for (var i = 0; i < el.attributes.length; i++) {
+			var attr = el.attributes[i];
+
+			if (attr.name.indexOf('data-lang-attr-') === 0) {
+				el.setAttribute(attr.name.slice('data-lang-attr-'.length), resolve(attr.value));
+			}
+		}
+	});
+
+	var $roomTitle = $('#room-title');
+	if ($roomTitle.length) {
+		$roomTitle.attr('placeholder', ($roomTitle.attr('data-nick') || resolve('guest')) + resolve('roomDefault'));
+	}
+}
 
 function applyOptions(opt) {
 	$data.opts = opt;
@@ -8651,6 +8657,8 @@ function applyOptions(opt) {
 	// UI 요소에 값 설정
 	$("#mute-bgm").prop('checked', $data.muteBGM);
 	$("#mute-effect").prop('checked', $data.muteEff);
+	$(".bgmVolume").prop('disabled', $data.muteBGM);
+	$(".effectVolume").prop('disabled', $data.muteEff);
 	$("#deny-invite").attr('checked', $data.opts.di);
 	$("#deny-whisper").attr('checked', $data.opts.dw);
 	$("#deny-friend").attr('checked', $data.opts.df);
@@ -8716,6 +8724,7 @@ function updateBGMVol() {
 	if ($("#mute-bgm").prop("checked") !== $data.muteBGM) {
 		$("#mute-bgm").prop("checked", $data.muteBGM);
 	}
+	$(".bgmVolume").prop('disabled', $data.muteBGM);
 	// 슬라이더는 항상 실제 볼륨 값을 표시 (음소거 상태와 무관)
 	var currentSliderValue = $(".bgmVolume").val();
 	var expectedSliderValue = Math.round($data.BGMVolume * 100);
@@ -8735,6 +8744,7 @@ function updateEffectVol() {
 	if ($("#mute-effect").prop("checked") !== $data.muteEff) {
 		$("#mute-effect").prop("checked", $data.muteEff);
 	}
+	$(".effectVolume").prop('disabled', $data.muteEff);
 	// 슬라이더는 항상 실제 볼륨 값을 표시 (음소거 상태와 무관)
 	var currentSliderValue = $(".effectVolume").val();
 	var expectedSliderValue = Math.round($data.EffectVolume * 100);
@@ -8759,19 +8769,19 @@ function updateVolume(bgmVol, effectVol) { // bgmVol, effectVol
 		else if ($_sound[i].audio) $_sound[i].audio.volume = vol;
 	}
 }
-function checkInput() {
-	/*var v = $stage.talk.val();
-	var len = v.length;
-	
-	if($data.room) if($data.room.gaming){
-		if(len - $data._kd.length > 3) $stage.talk.val($data._kd);
-		if($stage.talk.is(':focus')){
-			$data._kd = v;
-		}else{
-			$stage.talk.val($data._kd);
+function checkInput($input) {
+	$input = $input || $stage.talk;
+	var v = $input.val();
+
+	if ($data.room && $data.room.gaming) {
+		if (v.length - $data._kd.length >= 3) {
+			$input.val("");
+			$data._kd = "";
+			return true;
 		}
 	}
-	$data._kd = v;*/
+	$data._kd = v;
+	return false;
 }
 function addInterval(cb, v, a1, a2, a3, a4, a5) {
 	var R = _setInterval(cb, v, a1, a2, a3, a4, a5);
@@ -9640,6 +9650,7 @@ function runCommand(cmd) {
 			}
 			break;
 		case "/신고":
+		case "/ㅅㄱ":
 		case "/report":
 			if (cmd[1]) {
 				var reportTargetName = cmd.slice(1).join(' ');

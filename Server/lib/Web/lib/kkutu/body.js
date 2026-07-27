@@ -152,6 +152,57 @@ function applyDarkMode(setting) {
 	if (isDark) document.body.classList.add('dark-mode');
 	else document.body.classList.remove('dark-mode');
 }
+function rebuildInjeongExplHTML(dict) {
+	function themeList(list) {
+		return (list || []).map(function (item) { return dict['theme_' + item] || item; });
+	}
+
+	return "<h5>" + (dict['explInjeong'] || '') + "</h5>"
+		+ "<h5 style='margin-top: 2px; border-top: 1px dashed #444444; padding-top: 2px; color: #BBBBBB;'>" + (dict['explInjeongListTitle'] || '') + "</h5>"
+		+ "<h5>" + themeList(KO_INJEONG) + "</h5>"
+		+ "<h5 style='margin-top: 2px; border-top: 1px dashed #444444; padding-top: 2px; color: #BBBBBB;'>" + (dict['explInjeongListTitle'] || '') + " (" + (dict['modeEKT'] || '') + ", " + (dict['modeESH'] || '') + ")</h5>"
+		+ "<h5>" + themeList(EN_INJEONG) + "</h5>";
+}
+function retranslatePage(dict) {
+	function faReplace(raw) {
+		return raw.replace(/FA\{[^\}]+\}/g, function (seq) {
+			return "<i class='fa fa-" + seq.slice(3, seq.length - 1) + "'></i>";
+		});
+	}
+	function resolve(key, fallbackKey) {
+		var v = dict[key];
+
+		if (v === undefined && fallbackKey) v = dict[fallbackKey];
+		if (v === undefined) v = "(L#" + key + ")";
+		return v.toString();
+	}
+
+	$("[data-lang-key]").not("[data-lang-special]").each(function () {
+		var $el = $(this);
+		var value = resolve($el.attr('data-lang-key'), $el.attr('data-lang-fallback'));
+		var suffix = $el.attr('data-lang-suffix');
+
+		if (suffix !== undefined) value += suffix;
+		if ($el.is('[data-lang-raw]')) $el.html(faReplace(value));
+		else $el.text(value);
+	});
+	$("[data-lang-special='explInjeong']").html(rebuildInjeongExplHTML(dict));
+
+	document.querySelectorAll('[data-lang-attr-placeholder], [data-lang-attr-label], [data-lang-attr-data-tooltip]').forEach(function (el) {
+		for (var i = 0; i < el.attributes.length; i++) {
+			var attr = el.attributes[i];
+
+			if (attr.name.indexOf('data-lang-attr-') === 0) {
+				el.setAttribute(attr.name.slice('data-lang-attr-'.length), resolve(attr.value));
+			}
+		}
+	});
+
+	var $roomTitle = $('#room-title');
+	if ($roomTitle.length) {
+		$roomTitle.attr('placeholder', ($roomTitle.attr('data-nick') || resolve('guest')) + resolve('roomDefault'));
+	}
+}
 
 function applyOptions(opt) {
 	$data.opts = opt;
@@ -181,6 +232,8 @@ function applyOptions(opt) {
 	// UI 요소에 값 설정
 	$("#mute-bgm").prop('checked', $data.muteBGM);
 	$("#mute-effect").prop('checked', $data.muteEff);
+	$(".bgmVolume").prop('disabled', $data.muteBGM);
+	$(".effectVolume").prop('disabled', $data.muteEff);
 	$("#deny-invite").attr('checked', $data.opts.di);
 	$("#deny-whisper").attr('checked', $data.opts.dw);
 	$("#deny-friend").attr('checked', $data.opts.df);
@@ -246,6 +299,7 @@ function updateBGMVol() {
 	if ($("#mute-bgm").prop("checked") !== $data.muteBGM) {
 		$("#mute-bgm").prop("checked", $data.muteBGM);
 	}
+	$(".bgmVolume").prop('disabled', $data.muteBGM);
 	// 슬라이더는 항상 실제 볼륨 값을 표시 (음소거 상태와 무관)
 	var currentSliderValue = $(".bgmVolume").val();
 	var expectedSliderValue = Math.round($data.BGMVolume * 100);
@@ -265,6 +319,7 @@ function updateEffectVol() {
 	if ($("#mute-effect").prop("checked") !== $data.muteEff) {
 		$("#mute-effect").prop("checked", $data.muteEff);
 	}
+	$(".effectVolume").prop('disabled', $data.muteEff);
 	// 슬라이더는 항상 실제 볼륨 값을 표시 (음소거 상태와 무관)
 	var currentSliderValue = $(".effectVolume").val();
 	var expectedSliderValue = Math.round($data.EffectVolume * 100);
@@ -289,19 +344,19 @@ function updateVolume(bgmVol, effectVol) { // bgmVol, effectVol
 		else if ($_sound[i].audio) $_sound[i].audio.volume = vol;
 	}
 }
-function checkInput() {
-	/*var v = $stage.talk.val();
-	var len = v.length;
-	
-	if($data.room) if($data.room.gaming){
-		if(len - $data._kd.length > 3) $stage.talk.val($data._kd);
-		if($stage.talk.is(':focus')){
-			$data._kd = v;
-		}else{
-			$stage.talk.val($data._kd);
+function checkInput($input) {
+	$input = $input || $stage.talk;
+	var v = $input.val();
+
+	if ($data.room && $data.room.gaming) {
+		if (v.length - $data._kd.length >= 3) {
+			$input.val("");
+			$data._kd = "";
+			return true;
 		}
 	}
-	$data._kd = v;*/
+	$data._kd = v;
+	return false;
 }
 function addInterval(cb, v, a1, a2, a3, a4, a5) {
 	var R = _setInterval(cb, v, a1, a2, a3, a4, a5);

@@ -272,6 +272,19 @@ span {
 	z-index: -1;
 }
 
+#menu-bar #event-banner {
+	position: absolute;
+	top: -65px;
+	right: calc(100% + 125px);
+	box-shadow: none;
+}
+
+#event-banner img {
+	max-width: 200px;
+	height: auto;
+	cursor: pointer;
+}
+
 .searching {
 	color: #EEEEEE;
 	background-color: #555555;

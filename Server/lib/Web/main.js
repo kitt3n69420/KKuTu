@@ -52,7 +52,7 @@ var ROUTES = ["major", "consume", "admin", "login"];
 //볕뉘 수정 끝
 var page = WebInit.page;
 var gameServers = [];
-var _noticeCache = { text: null, at: 0 };
+var _noticeCache = { text: null, banner: null, at: 0 };
 var NOTICE_CACHE_TTL = 300000; // 5분 (이벤트는 자주 바뀌지 않음)
 
 WebInit.MOBILE_AVAILABLE = ["portal", "main", "kkutu"];
@@ -83,6 +83,7 @@ Server.use(function (req, res, next) {
 Server.use(Parser.urlencoded({ extended: true }));
 Server.use(function (req, res, next) {
   res.locals.activeEventNotice = _noticeCache.text;
+  res.locals.activeEventBanner = _noticeCache.banner;
   var now = Date.now();
   if (now - _noticeCache.at >= NOTICE_CACHE_TTL) {
     _noticeCache.at = now;
@@ -90,13 +91,20 @@ Server.use(function (req, res, next) {
       var active = ($events || []).filter(function (ev) { return Const.isEventActive(ev); });
       if (!active.length) {
         _noticeCache.text = null;
+        _noticeCache.banner = null;
       } else {
         active.sort(function (a, b) {
           if (b.start !== a.start) return b.start - a.start;
           return (a.end - a.start) - (b.end - b.start);
         });
-        var n = active[0].notice;
+        var top = active[0];
+        var n = top.notice;
         _noticeCache.text = (n && n.trim()) ? n : null;
+        // 배너 규칙: 이미지는 "/event/<이벤트ID>.png", 링크는 ID의 "kkn"을 "events"로 바꾼 "/event/<...>.html"
+        _noticeCache.banner = {
+          image: "/event/" + top._id + ".png",
+          link: "/event/" + top._id.replace("kkn", "events") + ".html"
+        };
       }
     });
   }
@@ -199,7 +207,8 @@ Const.MAIN_PORTS.forEach(function (v, i) {
 function GameClient(id, url) {
   var my = this;
   var reconnectAttempts = 0;
-  var maxReconnectDelay = 30000; // 30 seconds max
+  var reconnectDelays = [3000, 5000, 10000, 15000]; // 1st~4th: 3s, 5s, 10s, 15s
+  var maxReconnectDelay = 30000; // 5th+ : 30 seconds
 
   my.id = id;
   my.url = url;
@@ -221,9 +230,9 @@ function GameClient(id, url) {
       my.socket.removeAllListeners();
       delete my.socket;
 
-      // Auto reconnect with exponential backoff
+      // Auto reconnect with fixed backoff schedule
       reconnectAttempts++;
-      var delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), maxReconnectDelay);
+      var delay = reconnectDelays[reconnectAttempts - 1] || maxReconnectDelay;
       JLog.info(`Game server #${my.id} will reconnect in ${delay / 1000} seconds...`);
       setTimeout(connect, delay);
     });

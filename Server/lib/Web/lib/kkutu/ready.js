@@ -168,7 +168,6 @@ $(document).ready(function () {
 			craftWorkshop: $("#CraftingDiag"),
 			craftCompose: $("#craft-compose"),
 			exchangeWorkshop: $("#ExchangeDiag"),
-			excCompose: $("#exc-compose"),
 			injPick: $("#InjPickDiag"),
 			injPickAll: $("#injpick-all"),
 			injPickNo: $("#injpick-no"),
@@ -354,6 +353,8 @@ $(document).ready(function () {
 	RULE = JSON.parse($("#RULE").html());
 	OPTIONS = JSON.parse($("#OPTIONS").html());
 	GAME_CATEGORIES = JSON.parse($("#GAME_CATEGORIES").html());
+	KO_INJEONG = JSON.parse($("#KO_INJEONG").html() || "[]");
+	EN_INJEONG = JSON.parse($("#EN_INJEONG").html() || "[]");
 	MODE = Object.keys(RULE);
 	mobile = $("#mobile").html() == "true";
 	if (mobile) TICK = 60;
@@ -569,9 +570,11 @@ $(document).ready(function () {
 	});
 	// 양방향 실시간 입력 동기화
 	$stage.talk.on('input', function (e) {
+		if (checkInput($(this))) { $stage.game.hereText.val(""); return; }
 		$stage.game.hereText.val($stage.talk.val());
 	});
 	$stage.game.hereText.on('input', function (e) {
+		if (checkInput($(this))) { $stage.talk.val(""); return; }
 		$stage.talk.val($stage.game.hereText.val());
 	});
 	// 모바일 가상 키보드 엔터 제출 처리
@@ -691,6 +694,8 @@ $(document).ready(function () {
 		var effMute = savedSettings.effectMute !== null ? savedSettings.effectMute : $data.muteEff;
 		$("#mute-bgm").prop('checked', bgmMute || false);
 		$("#mute-effect").prop('checked', effMute || false);
+		$(".bgmVolume").prop('disabled', bgmMute || false);
+		$(".effectVolume").prop('disabled', effMute || false);
 
 		// 사운드팩 선택 설정
 		$("#sound-pack").val(savedSettings.soundPack || "");
@@ -1003,6 +1008,7 @@ $(document).ready(function () {
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg', 'flu', 'jkp', 'dfb'];
+		var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'lng', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'chs', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf', 'stp'];
 
 		if (showCategory) {
 			// Categorized view - hide flat panel, show category panels
@@ -1120,8 +1126,10 @@ $(document).ready(function () {
 				$("#room-simple-quizpick-panel").hide();
 			}
 
-			// Update simple panel options visibility 
-			updateGameOptions(rule.opts, 'room-simple');
+			// Update simple panel options visibility
+			// 규칙 개수가 10개 이하인 모드는 keyRules와 무관하게 전부 노출
+			var simplePanelOpts = rule.opts.length <= 10 ? rule.opts : rule.opts.filter(function (opt) { return keyRules.indexOf(opt) !== -1; });
+			updateGameOptions(simplePanelOpts, 'room-simple');
 		} else {
 			$("#room-simple-rules-panel").hide();
 			$("#view-all-rules-btn").hide();
@@ -1612,8 +1620,15 @@ $(document).ready(function () {
 			} else {
 				search = search + (search ? '&' : '?') + 'locale=' + newLang;
 			}
-			location.href = location.pathname + search;
-			return; // 리로드 하니까 여기서 중단
+			if (window.LANG_ALL && window.LANG_ALL[newLang]) {
+				// 언어 사전이 이미 클라이언트에 모두 로드되어 있으므로 리로드 없이 즉시 반영
+				window.L = window.LANG_ALL[newLang];
+				retranslatePage(window.L);
+				history.replaceState(null, '', location.pathname + search);
+			} else {
+				location.href = location.pathname + search;
+				return; // 리로드 하니까 여기서 중단
+			}
 		}
 
 		applyTheme(newTheme);
@@ -2136,28 +2151,6 @@ $(document).ready(function () {
 				drawMyDress($data._avGroup);
 				updateMe();
 				drawCraftWorkshop();
-			});
-		});
-	});
-	$stage.dialog.excCompose.on('click', function (e) {
-		if (!$stage.dialog.excCompose.hasClass("exc-exchangeable")) return fail(458);
-		if (!$data._excResult) return fail(458);
-
-		showConfirm(L['excSureExchange'], function (res) {
-			if (!res) return;
-
-			$.post("/exchange", {
-				items: JSON.stringify($data._excTray)
-			}, function (res) {
-				if (res.error) return fail(res.error);
-				send('refresh');
-				showAlert(L['excExchanged']);
-				$data.box = res.box;
-				queueObtain({ key: res.exchanged, value: 1 });
-
-				drawMyDress($data._avGroup);
-				updateMe();
-				drawExchangeWorkshop();
 			});
 		});
 	});

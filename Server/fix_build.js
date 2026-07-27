@@ -67,7 +67,7 @@ try {
 if (UglifyJS) {
     try {
         console.log("Minifying...");
-        const result = UglifyJS.minify(content);
+        const result = UglifyJS.minify(content, { fromString: true });
         if (result.error) {
             console.error("Minification error:", result.error);
         } else {
