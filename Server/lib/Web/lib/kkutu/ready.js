@@ -73,6 +73,7 @@ $(document).ready(function () {
 	EXP.push(Infinity);
 	$stage = {
 		loading: $("#Loading"),
+		nickBlockOverlay: $("#NickBlockOverlay"),
 		lobby: {
 			userListTitle: $(".UserListBox .product-title"),
 			userList: $(".UserListBox .product-body"),
@@ -192,6 +193,10 @@ $(document).ready(function () {
 			inputInput: $("#input-input"),
 			inputOK: $("#input-ok"),
 			inputNo: $("#input-no"),
+			nickSetup: $("#NickSetupDiag"),
+			nickSetupInput: $("#nickSetup-input"),
+			nickSetupError: $("#nickSetup-error"),
+			nickSetupOk: $("#nickSetup-ok"),
 			viewAllRules: $("#ViewAllRulesDiag"),
 			viewAllRulesOK: $("#view-all-ok"),
 			userListDiag: $("#UserListDiag"),
@@ -1985,6 +1990,10 @@ $(document).ready(function () {
 			showConfirm($data.NICKNAME_LIMIT.TERM > 0 ? L.confirmNickChangeLimit.replace("{V1}", $data.NICKNAME_LIMIT.TERM) : L.confirmNickChange, function (res) {
 				if (res) {
 					$.post("/profile", data, function (res) {
+						if (res.error) {
+							if (res.error === 457 && res.remaining) return showAlert(nickCooldownMessage(res.remaining));
+							return fail(res.error);
+						}
 						const message = [];
 						if (data.nickname) {
 							$("#account-info").text($data.users[$data.id].nickname = $data.users[$data.id].profile.title = $data.users[$data.id].profile.name = $data.nickname = data.nickname);
@@ -2029,6 +2038,73 @@ $(document).ready(function () {
 			if (data.nickname) data.rawNickname = data.nickname;
 			checkEmpty();
 		}
+	});
+	$stage.dialog.nickSetupOk.on('click', function (e) {
+		var raw = $stage.dialog.nickSetupInput.val();
+	
+		$stage.dialog.nickSetupError.text('');
+	
+		if (!raw) {
+			$stage.dialog.nickSetupError.text(L.nickSetupEmpty);
+			return;
+		}
+	
+		var nickname = raw;
+		if ($data.NICKNAME_LIMIT.REGEX && $data.NICKNAME_LIMIT.REGEX.test(nickname)) {
+			nickname = nickname.replace($data.NICKNAME_LIMIT.REGEX, "");
+		}
+		if (!nickname) {
+			$stage.dialog.nickSetupError.text(L.nickSetupEmpty);
+			return;
+		}
+	
+		function applyNickname(finalNickname, autoAssigned) {
+			$data.nickname = finalNickname;
+			$data.users[$data.id].nickname = finalNickname;
+			$data.users[$data.id].profile.nickname = finalNickname;
+			$data.users[$data.id].profile.title = finalNickname;
+			$data.users[$data.id].profile.name = finalNickname;
+			$("#account-info").text(finalNickname);
+			send("updateProfile", { nickname: finalNickname }, true);
+			$stage.dialog.nickSetup.hide();
+			$stage.nickBlockOverlay.hide();
+			if (autoAssigned) showAlert(L.nickSetupAutoAssigned.replace("{V1}", finalNickname));
+		}
+	
+		function requestFallback() {
+			$stage.dialog.nickSetupOk.attr('disabled', true);
+			$.post("/profile/fallback", {}, function (res) {
+				$stage.dialog.nickSetupOk.attr('disabled', false);
+				if (res && res.result === 200 && res.nickname) {
+					applyNickname(res.nickname, true);
+				} else {
+					$stage.dialog.nickSetupError.text(L.nickSetupFailed);
+				}
+			}).fail(function () {
+				$stage.dialog.nickSetupOk.attr('disabled', false);
+				$stage.dialog.nickSetupError.text(L.nickSetupFailed);
+			});
+		}
+	
+		$stage.dialog.nickSetupOk.attr('disabled', true);
+	
+		$.post("/profile", { nickname: nickname }, function (res) {
+			$stage.dialog.nickSetupOk.attr('disabled', false);
+	
+			if (res && res.result === 200) {
+				applyNickname(res.nickname || nickname, res.autoAssigned);
+			} else if (res && res.error) {
+				if (res.error === 457 && res.remaining) {
+					$stage.dialog.nickSetupError.text(nickCooldownMessage(res.remaining));
+				} else {
+					$stage.dialog.nickSetupError.text(L['error_' + res.error] || L.nickSetupFailed);
+				}
+			} else {
+				requestFallback();
+			}
+		}).fail(function () {
+			requestFallback();
+		});
 	});
 	$("#DressDiag .dress-type").on('click', function (e) {
 		var $target = $(e.currentTarget);

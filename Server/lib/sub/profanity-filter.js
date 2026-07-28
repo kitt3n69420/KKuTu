@@ -15,7 +15,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+const fs = require('fs');
+const path = require('path');
 const cenkor = require('cenkor');
+
+// 닉네임 금지어 정규식 (head.js의 BAD와 같은 방식: 파일에 한 줄당 패턴 하나씩 적어두고 '|'로 합쳐 컴파일)
+var nicknameBannedRegex = null;
+(function loadNicknameBannedWords() {
+	var listPath = path.join(__dirname, '../data/nickname_banned.txt');
+	var lines;
+
+	try {
+		lines = fs.readFileSync(listPath, 'utf8').split(/\r?\n/).filter(function (w) { return w.length > 0; });
+	} catch (e) {
+		return;
+	}
+	if (!lines.length) return;
+
+	nicknameBannedRegex = new RegExp(lines.join('|'), 'gi');
+})();
 
 /**
  * Cenkor 결과를 사용하여 욕설을 치환합니다.
@@ -109,15 +127,24 @@ exports.filterRoomTitle = function(title) {
 };
 
 /**
- * 닉네임용 필터 (12자 제한 고려)
- * 욕설이 감지되면 해당 부분을 제거합니다.
- * @param {string} nickname - 닉네임
- * @returns {string} 필터링된 닉네임
+ * 텍스트에 닉네임 금지어(lib/data/nickname_banned.txt)가 매치되는지 확인합니다.
+ * 일부만 잘라내는 방식(치환 후 재사용)은 "씨섹스발"에서 "섹스"만 제거하면
+ * 남은 부분이 "씨발"이 되어버리는 것처럼, 제거 후 새로운 금지어가 만들어질 수 있습니다.
+ * 이를 피하기 위해 원본 텍스트 매치 여부만 검사하고, 통과하지 못하면 통째로 거부하는 용도로 씁니다.
+ * @param {string} text - 검사할 텍스트
+ * @returns {boolean} 금지어 매치 여부
  */
-exports.filterNickname = function(nickname) {
-	if (!nickname) return nickname;
-	// 최대 12자로 제한 (major.js의 제한 사항 반영)
-	const truncated = nickname.length > 12 ? nickname.slice(0, 12) : nickname;
-	// 욕설을 빈 문자열로 치환 (제거)
-	return replaceWithCenkor(truncated, "");
+exports.containsBannedWord = function(text) {
+	if (!text || !nicknameBannedRegex) return false;
+	nicknameBannedRegex.lastIndex = 0;
+	return nicknameBannedRegex.test(text);
+};
+
+/**
+ * 닉네임으로 쓸 수 없는 표현(욕설 또는 금지어)이 포함되어 있는지 확인합니다.
+ * @param {string} text - 검사할 텍스트
+ * @returns {boolean} 금지된 표현 포함 여부
+ */
+exports.isNicknameForbidden = function(text) {
+	return exports.hasProfanity(text) || exports.containsBannedWord(text);
 };

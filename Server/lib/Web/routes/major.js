@@ -22,7 +22,9 @@ var JLog = require("../../sub/jjlog");
 var GLOBAL = require("../../sub/global.json");
 var Const = require("../../const");
 var ProfanityFilter = require("../../sub/profanity-filter");
+var NicknameGuard = require("../../sub/nickname-guard");
 var { validateInput } = require("../validators");
+var KO_KR_LANG = require("../lang/ko_KR.json");
 
 function obtain($user, key, value, term, addValue) {
   var now = new Date().getTime();
@@ -72,6 +74,7 @@ exports.run = function (Server, page) {
   Server.get("/help", function (req, res) {
     page(req, res, "help", {
       KO_INJEONG: Const.KO_INJEONG,
+      KO_LANG: KO_KR_LANG.kkutu,
     });
   });
   Server.get("/ranking", function (req, res) {
@@ -144,6 +147,33 @@ exports.run = function (Server, page) {
     // res.json({ error: 555 });
   });
 
+  // 시스템 오류(DB 오류 등)로 닉네임 저장이 실패했을 때만 사용하는 대체 닉네임 생성/부여
+  function makeFallbackCandidates(id) {
+    return ["유저" + id.slice(-5), "유저" + id.slice(-8), "유저" + id];
+  }
+  function assignFallbackNickname(req, res, candidates) {
+    candidates = candidates || makeFallbackCandidates(req.session.profile.id);
+    if (!candidates.length) return res.send({ error: 500 });
+
+    const candidate = candidates[0];
+    const rest = candidates.slice(1);
+
+    MainDB.users
+      .update(["_id", req.session.profile.id])
+      .set(["nickname", candidate])
+      .on(
+        function () {
+          req.session.profile = { ...req.session.profile, name: candidate, title: candidate, nickname: candidate };
+          MainDB.session.update(["_id", req.session.id]).set(["profile", req.session.profile]).on();
+          res.send({ result: 200, nickname: candidate, autoAssigned: true });
+        },
+        null,
+        function () {
+          assignFallbackNickname(req, res, rest);
+        },
+      );
+  }
+
   // POST
   Server.post("/profile", function (req, res) {
     let nickname = req.body.nickname;
@@ -172,27 +202,102 @@ exports.run = function (Server, page) {
     // if (rawNickname) console.log("[DEBUG] /profile received raw nickname: " + rawNickname + " -> " + nickname);
     if (!nickname) return res.send({ result: 200 });
 
-    // 서버 측 닉네임 욕설 필터링 적용
+    // 서버 측 닉네임 욕설/금지어 검사
+    // 주의: 일부만 잘라내는 필터링(치환)은 쓰지 않는다.
+    // 예) "씨섹스발"에서 "섹스"만 제거하면 남은 부분이 "씨발"이 되어버리는 것처럼,
+    // 치환 결과에 새로운 금지어가 생겨날 수 있기 때문에 포함 여부만 검사해 통째로 거부한다.
     if (nickname.length > 12) nickname = nickname.slice(0, 12);
-    nickname = ProfanityFilter.filterNickname(nickname);
+    if (ProfanityFilter.isNicknameForbidden(nickname)) {
+      return res.send({ error: 462, message: "Nickname contains a forbidden word" });
+    }
 
-    MainDB.users.findOne(["nickname", nickname]).on(function (data) {
-      if (data && data._id !== req.session.profile.id) return res.send({ error: 456 });
-      MainDB.users.findOne(["_id", req.session.profile.id]).on(function (requester) {
-        const now = Number(new Date());
-        if (GLOBAL.NICKNAME_LIMIT.TERM > 0) {
-          const changedDate = new Date(Number(requester.nickChanged));
+    // 서버 측 허용 문자 검증 (클라이언트 우회 대비)
+    if (GLOBAL.NICKNAME_LIMIT.REGEX) {
+      const policy = new RegExp(GLOBAL.NICKNAME_LIMIT.REGEX[0], GLOBAL.NICKNAME_LIMIT.REGEX[1]);
+      if (policy.test(nickname)) {
+        return res.send({ error: 400, message: "Invalid nickname characters" });
+      }
+    }
 
-          changedDate.setDate(changedDate.getDate() + GLOBAL.NICKNAME_LIMIT.TERM);
-          if (now < Number(changedDate)) return res.send({ error: 457 });
+    MainDB.users.findOne(["nickname", nickname]).on(
+      function (data) {
+        if (data && data._id !== req.session.profile.id) return res.send({ error: 456 });
+        MainDB.users.findOne(["_id", req.session.profile.id]).on(
+          function (requester) {
+            const now = Number(new Date());
+
+            function proceedToUpdate() {
+              MainDB.users
+                .update(["_id", req.session.profile.id])
+                .set(["nickname", nickname], ["nickChanged", now])
+                .on(
+                  function () {
+                    req.session.profile = { ...req.session.profile, name: nickname, title: nickname, nickname };
+                    MainDB.session.update(["_id", req.session.id]).set(["profile", req.session.profile]).on();
+                    return res.send({ result: 200 });
+                  },
+                  null,
+                  function (err) {
+                    // 사전 검사를 통과했지만 동시 요청으로 유일성 제약이 걸린 경우: 중복으로 안내하고 재시도 유도
+                    if (err && err.code === "23505") return res.send({ error: 456 });
+                    assignFallbackNickname(req, res);
+                  },
+                );
+            }
+
+            if (GLOBAL.NICKNAME_LIMIT.TERM > 0) {
+              // 현재 닉네임이 금지어를 포함하거나 다른 유저와 중복되는 상태라면
+              // (금지어 목록이 나중에 추가되었거나, 유일성 제약 이전의 legacy 데이터인 경우)
+              // 정상적으로 고칠 기회를 줘야 하므로 변경 주기 제한을 적용하지 않는다.
+              NicknameGuard.isCurrentNicknameInvalid(
+                MainDB,
+                requester.nickname,
+                requester._id,
+                function (currentInvalid) {
+                  if (!currentInvalid) {
+                    const changedDate = new Date(Number(requester.nickChanged));
+
+                    changedDate.setDate(changedDate.getDate() + GLOBAL.NICKNAME_LIMIT.TERM);
+
+                    const remaining = Number(changedDate) - now;
+                    if (remaining > 0) return res.send({ error: 457, remaining });
+                  }
+                  proceedToUpdate();
+                },
+              );
+            } else {
+              proceedToUpdate();
+            }
+          },
+          null,
+          function () {
+            assignFallbackNickname(req, res);
+          },
+        );
+      },
+      null,
+      function () {
+        assignFallbackNickname(req, res);
+      },
+    );
+  });
+
+  // 강제 닉네임 설정 흐름에서 /profile 호출 자체가 실패(네트워크 오류 등)했을 때 클라이언트가 호출하는 안전망
+  Server.post("/profile/fallback", function (req, res) {
+    if (!req.session.profile) return res.send({ error: 400 });
+
+    MainDB.users.findOne(["_id", req.session.profile.id]).on(
+      function (requester) {
+        if (requester && requester.nickname) {
+          return res.send({ result: 200, nickname: requester.nickname });
         }
-
-        MainDB.users.update(["_id", req.session.profile.id]).set(["nickname", nickname], ["nickChanged", now]).on();
-        req.session.profile = { ...req.session.profile, name: nickname, title: nickname, nickname };
-        MainDB.session.update(["_id", req.session.id]).set(["profile", req.session.profile]).on();
-        return res.send({ result: 200 });
-      });
-    });
+        assignFallbackNickname(req, res);
+      },
+      null,
+      function () {
+        assignFallbackNickname(req, res);
+      },
+    );
   });
   Server.post("/buy/:id", function (req, res) {
     if (req.session.profile) {

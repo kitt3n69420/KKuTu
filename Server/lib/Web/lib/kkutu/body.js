@@ -497,10 +497,21 @@ function onMessage(data) {
 					var _updName = getDisplayName($data.users[$data.id]);
 					if (_updName) {
 						$("#room-title").attr('placeholder', _updName + L['roomDefault']);
+						$("#account-info").text(_updName);
 					}
+					updateMe();
 				}
+				// 로비 유저 목록/초대 목록에 이미 그려진 행이 있다면 새 프로필로 교체
+				var $userRow = $("#users-item-" + data.id);
+				if ($userRow.length) $userRow.replaceWith(userListBar($data.users[data.id]));
+				var $inviteRow = $("#invite-item-" + data.id);
+				if ($inviteRow.length) $inviteRow.replaceWith(userListBar($data.users[data.id], true));
 				updateUserList();
 				if ($data.room) updateRoom($data.room.gaming);
+				// 해당 유저의 프로필 창이 열려 있으면 즉시 새로고침
+				if ($data._profiled === data.id && $stage.dialog.profile.is(':visible')) {
+					requestProfile(data.id);
+				}
 			}
 			break;
 		case 'recaptcha':
@@ -537,11 +548,16 @@ function onMessage(data) {
 			$data._okg = data.okg;
 			$data._gaming = false;
 			$data.box = data.box;
+			$stage.nickBlockOverlay.hide();
 			if ($data.users[$data.id]) {
 				var _me = $data.users[$data.id];
 				var _myName = getDisplayName(_me);
 				if (_myName) {
 					$("#room-title").attr('placeholder', _myName + L['roomDefault']);
+				}
+				if (!$data.guest && (!(_me.profile && _me.profile.nickname) || data.nicknameInvalid)) {
+					showDialog($stage.dialog.nickSetup, true);
+					$stage.nickBlockOverlay.show();
 				}
 			}
 			if (data.test) showAlert(L['welcomeTestServer']);
@@ -3498,6 +3514,13 @@ function setLocation(place) {
 }
 function fail(code) {
 	return showAlert(L['error_' + code]);
+}
+function nickCooldownMessage(remaining) {
+	var totalMinutes = Math.max(1, Math.ceil(remaining / 60000));
+	var hours = Math.floor(totalMinutes / 60);
+	var minutes = totalMinutes % 60;
+
+	return L.error_457.replace("{V1}", hours).replace("{V2}", minutes);
 }
 function yell(msg) {
 	$stage.yell.show().css('opacity', 1).text(msg);

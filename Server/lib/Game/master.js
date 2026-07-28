@@ -31,6 +31,7 @@ var JLog = require("../sub/jjlog");
 var FallbackLog = require("../sub/discord-fallback-log");
 var Secure = require("../sub/secure");
 var Recaptcha = require("../sub/recaptcha");
+var NicknameGuard = require("../sub/nickname-guard");
 var { validateInput, checkPrototypePollution } = require("../Web/validators");
 
 var MainDB;
@@ -241,6 +242,19 @@ function handleDiscordProcessMessage(msg) {
       }
       try {
         discordProcess.send({ type: "send-roommsg-result", _reqId: msg._reqId, exists: rmExists, sent: rmSent });
+      } catch (e) {}
+      break;
+    }
+    case "kick-user": {
+      var kTarget = DIC[msg.userId];
+      var kFound = !!(kTarget && kTarget.socket && kTarget.socket.readyState == 1);
+      if (kFound) {
+        kTarget.send("error", { code: 410 });
+        kTarget.socket.close();
+        JLog.info("[Discord] kick user #" + msg.userId);
+      }
+      try {
+        discordProcess.send({ type: "kick-user-result", _reqId: msg._reqId, found: kFound });
       } catch (e) {}
       break;
     }
@@ -1028,29 +1042,41 @@ setInterval(function () {
 
 function joinNewUser($c) {
   $c._lastActivity = Date.now();
-  $c.send("welcome", {
-    id: $c.id,
-    guest: $c.guest,
-    box: $c.box,
-    playTime: $c.data.playTime,
-    okg: $c.okgCount,
-    users: KKuTu.getUserList($c.id),
-    rooms: KKuTu.getRoomList(),
-    friends: $c.friends,
-    admin: $c.admin,
-    test: global.test,
-    caj: $c._checkAjae ? true : false,
-  });
-  narrateFriends($c.id, $c.friends, "on");
-  KKuTu.publish("conn", { user: $c.getData() });
-  // 방 안 유저(slave)에게도 전달
-  for (var _ch in CHAN_DIC) CHAN_DIC[_ch].send({ type: "broadcast", event: "conn", data: { user: $c.getData() } });
 
-  // Discord notification
-  discordSend("notify-user-join", { profile: $c.profile, userCount: Object.keys(DIC).length, id: $c.id, guest: !!$c.guest, ip: $c.remoteAddress });
+  function proceed(nicknameInvalid) {
+    $c.send("welcome", {
+      id: $c.id,
+      guest: $c.guest,
+      box: $c.box,
+      playTime: $c.data.playTime,
+      okg: $c.okgCount,
+      users: KKuTu.getUserList($c.id),
+      rooms: KKuTu.getRoomList(),
+      friends: $c.friends,
+      admin: $c.admin,
+      test: global.test,
+      caj: $c._checkAjae ? true : false,
+      nicknameInvalid: nicknameInvalid,
+    });
+    narrateFriends($c.id, $c.friends, "on");
+    KKuTu.publish("conn", { user: $c.getData() });
+    // 방 안 유저(slave)에게도 전달
+    for (var _ch in CHAN_DIC) CHAN_DIC[_ch].send({ type: "broadcast", event: "conn", data: { user: $c.getData() } });
 
-  JLog.info("New user #" + $c.id);
+    // Discord notification
+    discordSend("notify-user-join", { profile: $c.profile, userCount: Object.keys(DIC).length, id: $c.id, guest: !!$c.guest, ip: $c.remoteAddress });
 
+    JLog.info("New user #" + $c.id);
+  }
+
+  // 접속 시점 기준으로 저장된 닉네임이 여전히 유효한지 확인
+  // (금지어 목록이 사후에 추가되었거나, 유일성 제약 이전의 legacy 데이터라 중복인 경우)
+  // 유효하지 않다면 강제 닉네임 설정 창을 다시 띄우도록 클라이언트에 알린다.
+  if ($c.guest || !$c.profile || !$c.profile.nickname) {
+    proceed(false);
+  } else {
+    NicknameGuard.isCurrentNicknameInvalid(MainDB, $c.profile.nickname, $c.id, proceed);
+  }
 }
 
 KKuTu.onClientMessage = function ($c, msg) {
@@ -1288,16 +1314,26 @@ function processClientRequest($c, msg) {
       break;
     case "updateProfile":
       if (!$c.profile) return;
-      var safeProfile = {};
       // 닉네임은 HTTP /profile 라우트에서만 변경 가능 (소켓 우회 방지)
       // 소개글만 길이 제한 적용하여 허용
-      if (msg && typeof msg.exordial === 'string') {
-        safeProfile.exordial = msg.exordial.slice(0, 100);
-      }
+      var exordialUpdate = (msg && typeof msg.exordial === 'string') ? msg.exordial.slice(0, 100) : undefined;
+
       if (msg && typeof msg.nickname === 'string') {
-        safeProfile.nickname = msg.nickname.slice(0, 12);
+        var claimedNickname = msg.nickname.slice(0, 12);
+        // 소켓 메시지의 닉네임은 DB에 실제로 반영된 값과 일치할 때만 허용 (임의의 닉네임 사칭/우회 방지)
+        MainDB.users.findOne(["_id", $c.id]).on(function (row) {
+          var safeProfile = {};
+          if (exordialUpdate !== undefined) safeProfile.exordial = exordialUpdate;
+          if (row && row.nickname === claimedNickname) {
+            safeProfile.nickname = claimedNickname;
+          } else {
+            JLog.warn(`[SECURITY] updateProfile nickname mismatch from ${$c.id}: claimed "${claimedNickname}"`);
+          }
+          $c.updateProfile(safeProfile);
+        });
+      } else {
+        $c.updateProfile({ exordial: exordialUpdate });
       }
-      $c.updateProfile(safeProfile);
       break;
     default:
       break;

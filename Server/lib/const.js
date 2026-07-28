@@ -711,15 +711,19 @@ exports.GAME_CATEGORIES = {
 	},
 	'quiz': {
 		name: 'GameCategoryQuiz',
-		modes: ['CSQ', 'KCW', 'KSS', 'ESS', 'KPQ', 'EPQ', 'KSC', 'CRL', 'KQZ', 'EQZ', 'ESQ', 'KSK', 'ESK', 'K4R']
+		modes: ['CSQ', 'KCW', 'KPQ', 'EPQ', 'KSC', 'CRL', 'KQZ', 'EQZ', 'ESQ', 'K4R']
 	},
-	'other': {
-		name: 'GameCategoryOther',
-		modes: ['KDA', 'EDA', 'KTY', 'ETY', 'HUN', 'KFR', 'EFR', 'KCB', 'ECB', 'CAL', 'KPF', 'EPF', 'KWR', 'EWR', 'KWS', 'EWS', 'KTT', 'ETT', 'KTF', 'ETF']
+	'board': {
+		name: 'GameCategoryBoard',
+		modes: ['KPF', 'EPF', 'KWR', 'EWR', 'KWS', 'EWS', 'KSS', 'ESS', 'KSK', 'ESK']
 	},
-	'etc': { //이건뭐지
+	'speed': {
+		name: 'GameCategorySpeed',
+		modes: ['KTY', 'ETY', 'KTT', 'ETT', 'KCB', 'ECB', 'CAL']
+	},
+	'etc': {
 		name: 'GameCategoryEtc',
-		modes: ['CRL']
+		modes: ['KDA', 'EDA', 'HUN', 'KFR', 'EFR', 'KTF', 'ETF']
 	}
 };
 exports.GAME_TYPE = Object.keys(exports.RULE);

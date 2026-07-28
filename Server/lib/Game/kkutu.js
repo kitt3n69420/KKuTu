@@ -953,10 +953,13 @@ exports.Client = function (socket, profile, sid) {
 			my.profile.nickname = my.profile.title = my.profile.name = profile.nickname;
 		}
 		if (profile.exordial) my.profile.exordial = profile.exordial;
-		my.publish('updateUser', {
-			id: my.id,
-			profile: my.profile
-		});
+
+		var payload = { id: my.id, profile: my.profile };
+		// my.publish는 같은 방/로비 사용자에게만 전달되므로, 닉네임 변경처럼 접속 중인
+		// 모든 사용자에게 즉시 반영되어야 하는 이벤트는 exports.publish로 전체 브로드캐스트한다.
+		exports.publish('updateUser', payload);
+		// 방 안(worker 프로세스) 유저에게도 전달
+		if (CHAN) for (var ch in CHAN) CHAN[ch].send({ type: "broadcast", event: "updateUser", data: payload });
 	};
 	my.refresh = function () {
 		var R = new Lizard.Tail();

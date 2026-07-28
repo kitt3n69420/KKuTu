@@ -27,7 +27,24 @@ body{
 img{
 	cursor: pointer;
 }
+.page-body img{
+	max-width: 100%;
+	height: auto;
+}
 span{
+	display: none;
+}
+.toggle-arrow{
+	display: inline-block;
+	width: 12px;
+	cursor: pointer;
+	user-select: none;
+	transition: transform 0.15s ease;
+}
+li.collapsed>.toggle-arrow{
+	transform: rotate(-90deg);
+}
+li.collapsed>ul{
 	display: none;
 }
 ol, ul{
@@ -69,6 +86,9 @@ word{
 #list{
 	height: 350px;
 	overflow-y: scroll;
+}
+#list li{
+	cursor: pointer;
 }
 #contents{
 	float: left;

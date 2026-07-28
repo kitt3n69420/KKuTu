@@ -36,6 +36,9 @@ const proxyCallbacks = {
     },
     sendRoomMsg: function (roomId, message) {
         return ipcRequest('send-roommsg', { roomId: roomId, message: message });
+    },
+    kickUser: function (userId) {
+        return ipcRequest('kick-user', { userId: userId });
     }
 };
 
@@ -123,6 +126,7 @@ MainDB.ready = function () {
         ROOM: null,
         ADMIN: GLOBAL.ADMIN,
         queryOnlineUser: proxyCallbacks.queryOnlineUser,
-        sendRoomMsg: proxyCallbacks.sendRoomMsg
+        sendRoomMsg: proxyCallbacks.sendRoomMsg,
+        kickUser: proxyCallbacks.kickUser
     });
 };

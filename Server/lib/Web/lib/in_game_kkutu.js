@@ -62,42 +62,26 @@ var EN_INJEONG;
 var MAX_LEVEL = 360;
 var TICK = 30;
 var EXP = [];
-var BAD = new RegExp(["느으*[^가-힣]*금마?", 
-	"(?<!밀레)니[^가-힣]*(엄|앰|엠)", 
-	"(ㅄ|ㅅㅂ|ㅆㅂ|ㅂㅅ|ㄴㄱㅁ|ㄴㅇㅁ|ㅈㄹ)", 
-	"미(친|띤)(년|놈)?", 
-	"(병|븅|빙|벙)[^가-힣]*신", 
-	"(새|섀|쌔|썌|색|섁|쌕|썍)[^가-힣]*(기|끼)", 
-	"(섹|야)[^가-힣]*스", "교[^가-힣]*미", "발[^가-힣]*정",
-	"(시|씨|쉬|쒸|슈|쓔)이*입?[^가-힣]*(발|빨|벌|뻘|팔|펄)", 
-	"십[^가-힣]*새", "씹", "딸[^가-힣]*딸[^가-힣]*이",
-	"(?<!(흰|노른|검은))자[^가-힣]*위",
-	"(애|에)[^가-힣]*(미|비)", 
-	"(자|보|쟈|쥬|뷰)[^가-힣]*지", 
-	"(존|졸|ㅈ)[^가-힣]*(나|라)", "좆|죶|좃|죳", 
-	"(지|야)[^가-힣]*랄", 
-	"창[^가-힣]*(녀|년|놈)", 
-	"야[^가-힣]*(동|덩|둉|짤)",
-	"(?<!라)운[^가-힣]*지",
-	"자[^가-힣]*(살|해)",
-	"tlqkf", "torl", "tprtm", "wlfkf",
-	"[mf][a4@][g]{2,}[o0][t+]",        // faggot, f4ggot, f@ggot
-    "f[a4@]g",                         // fag
-    "(r[e3]|[b8][a4@][s5])t[a4@]rd",   // retard, r3tard, bastard
-    "n[i1!]gg([e3]r|[a4@])",           // nigger
-    "b[i1!][t+0]ch",                   // bitch
-    "sh[i1!][t+0]",                    // shit
-    "f[u*u][c|k]{1,}",                 // fuck, f*ck
-    "p[u*u][s]{2}y",                   // pussy
-	"c(u|oo)m",
-	"[s5][e3]x",
-	"p[o0]rn", "kys",
-	"y[i1!|]ff",
-    "d[i1!]ck",
-	"[s5]u[i!1]c[i!1]d[e3]",
-	"m[a@4][s5]tur[b8][a4]t([i1!][o0]n|[e3]|[o0]r)",
-	"j[]e3rk([1i]n|[0f]ff).*",
-    "(h[a@4]nd|f[0o][0o]t|t[i1!]t|bl[0o]w)j[o0]b"
+var BAD = new RegExp(["느으*[^가-힣]*금마?", "(?<!(밀레|심포|도미))니[^가-힣]*(엄|앰|엠)", "(ㅄ|[ㅅㅆ[^가-힣]*][^가-힣]*ㅂ|ㅂ[^가-힣]*ㅅ|ㄴ[^가-힣]*[ㄱㅇ][^가-힣]*ㅁ|ㅈ[^가-힣]*ㄹ|ㅗ|ㅅ[^가-힣]*ㄲ)", "미(친|찐|틴|띤)(년|놈)?", "(병|븅|빙|벙)[^가-힣]*신", 
+		"(새|섀|쌔|썌|색|섁|쌕|썍)[^가-힣]*(기|끼)", "(섹|야|쎅|셱|쌕|떽|땍)[^가-힣]*(스|뜨|쓰|슈)(?!텟)", "교[^가-힣]*미", "발[^가-힣]*정", "(시|씨|쉬|쒸|슈|쓔|싯|씻|tl)이*입?[^가-힣]*(발|빨|벌|뻘|팔|펄|qkf)",
+		"(십|씹)[^가-힣]*새", "(씹|씝)", "딸[^가-힣]*딸[^가-힣]*이", "(?<!(흰|노른|검은))자[^가-힣]*위", "(애|에)[^가-힣]*(미|비)", "(자|보|쟈|쥬|뷰)[^가-힣]*지", "(존|졸|ㅈ)[^가-힣]*(나|라)", "보[^가-힣]*빨",
+		"꼴[^가-힣]*(리|릿)", "좆|죶|좃|죳|븃", "(지|야)[^가-힣]*랄", "창[^가-힣]*(녀|년|놈)", "야[^가-힣]*(동|덩|둉|짤)", "뷰[^가-힣]*(르[^가-힣]*)*릇", "(?!라운지)운[^가-힣]*지(?!법)", "일[^가-힣]*베",
+		"메[^가-힣]*갈", "계[^가-힣]*엄([^가-힣]*령)?", "탄[^가-힣]*핵", "(좌|우)[^가-힣]*파", "빨[^가-힣]*갱[^가-힣]*이", "화[^가-힣]*짱[^가-힣]*조", "짱[^가-힣]*(개|깨)", "(이|리)[^가-힣]*(재|짜이)[^가-힣]*(명|밍)",
+		"(이|리)[^가-힣]*(준)[^가-힣]*(석|썩)", "김[^가-힣]*문[^가-힣]*수", "(노[^가-힣]*|엠[^가-힣]*씨[^가-힣]*|[mM][^가-힣]*[Cc][^가-힣]*)무[^가-힣]*현", "노[^가-힣]*알[^가-힣]*라", "부[^가-힣]*엉[^가-힣]*이[^가-힣]*바[^가-힣]*위",
+		"응[^가-힣]*(딩[^가-힣]*이|디|가)", "윤[^가-힣]*((석|썩)[^가-힣]*(열|렬)|카|어[^가-힣]*게[^가-힣]*인)", "한[^가-힣]*동[^가-힣]*훈", "홍[^가-힣]*준[^가-힣]*표", "오[^가-힣]*세[^가-힣]*훈", "안[^가-힣]*철[^가-힣]*수",
+		"유[^가-힣]*승[^가-힣]*민", "김[^가-힣]*동[^가-힣]*연", "조[^가-힣]*국", "나[^가-힣]*경[^가-힣]*원", "추[^가-힣]*미[^가-힣]*애", "원[^가-힣]*희[^가-힣]*룡", "박[^가-힣]*용[^가-힣]*진", "김[^가-힣]*경[^가-힣]*수",
+		"이[^가-힣]*승[^가-힣]*만", "윤[^가-힣]*보[^가-힣]*선", "박[^가-힣]*정[^가-힣]*희", "최[^가-힣]*규[^가-힣]*하", "전[^가-힣]*두[^가-힣]*환", "노[^가-힣]*태[^가-힣]*우", "김[^가-힣]*영[^가-힣]*삼", "김[^가-힣]*대[^가-힣]*중",
+		"이[^가-힣]*명[^가-힣]*박", "박[^가-힣]*근[^가-힣]*혜", "문[^가-힣]*재[^가-힣]*인", "자[^가-힣]*(살|해)", "찐[^가-힣]*따", "(민[^가-힣]*주|진[^가-힣]*보|개[^가-힣]*혁[^가-힣]*신)[^가-힣]*당", "국[^가-힣]*민[^가-힣]*의[^가-힣]*힘",
+		
+		"tlqkf", "torl", "tprtm", "wlfkf", "[mf][a4@][g]{2,}[o0][t+]", "f[a4@]g", "(r[e3]|[b8][a4@][s5])t[a4@]rd", "n[i1!]gg([e3]r|[a4@])", "b[i1!][t+0]ch", "sh[i1!][t+0]", "f[u*u](c|k){1,}", "p[u*u][s]{2}y",
+		"c(u|oo)m", "[s5][e3]x", "p[o0]rn", "k[^a-zA-Z0-9]*y[^a-zA-Z0-9]*s", "y[i1!|]ff", "d[i1!]ck", "[s5]u[i!1]c[i!1]d[e3]", "m[a@4][s5]tur[b8][a4]t([i1!][o0]n|[e3]|[o0]r)", "jerk([1i]n|[0f]ff).*",
+		"(h[a@4]nd|f[0o][0o]t|t[i1!]t|bl[0o]w)j[o0]b", "🤏", "🖕",
+		
+		"(염|옘|엠)[^가-힣]*병", "ㅂ[^가-힣]*ㅅ", "[개걔][^가-힣]*소[^가-힣]*리", "딜[^가-힣]*도", "오[^가-힣]*나[^가-힣]*홀", "ㅈ[^가-힣]*도", "조[^가-힣]*선[^가-힣]*족", "국[^가-힣]*뽕[^가-힣]*충", "[남북헬][^가-힣]*[조좆]선",
+		"꺼[^가-힣]*(져|저|지)", "쳐[^가-힣]*맞", "[씨시][^가-힣]*부[^가-힣]*(리|려|랄|럴)", "능[^가-힣]*지[^가-힣]*(딸|달)", "개[^가-힣]*돼[^가-힣]*지", "[또도][^가-힣]*라[^가-힣]*이", "[돌똘][^가-힣]*아[^가-힣]*이", "[씹십][^가-힣]*(덕|뜨[^가-힣]*억)",
+		"퐁퐁[^가-힣]*남", "방[^가-힣]*구[^가-힣]*석[^가-힣]*(여[^가-힣]*포|인[^가-힣]*생)", "어[^가-힣]*그[^가-힣]*로[^가-힣]", "긁[^가-힣]*힌", "[엠앰][^가-힣]*생", "보[^가-힣]*추", "종[^가-힣]*간[^가-힣]*나",
+		"1[789]금[^가-힣]*영[^가-힣]*상", "[ㅓㅗ]ㅜㅑ", "르[^가-힣]*가[^가-힣]*[즘슴]", "정[^가-힣]*신[^가-힣]*(병|이[^가-힣]*상|개[^가-힣]*쑊)", "(한[^가-힣]*국|나[^가-힣]*라)[^가-힣]*망", "[한H][^가-힣]*남[^대역동]",
+		"[한H][^가-힣]*[녀여]", "[그니너저샹썅][^가-힣]*년", "닥[^가-힣]*[치쳐처]", "(대|머|아)[^가-힣]*((갈[^가-힣]*[통빡])|가[^가-힣]*리)", "w[^가-힣]*l[^가-힣]*s", "찐[^가-힣]*(따|평)", "쿨[^가-힣]*찐"
     ].join('|'), "g");
 
 var ws, rws;
@@ -208,6 +192,7 @@ $(document).ready(function () {
 	EXP.push(Infinity);
 	$stage = {
 		loading: $("#Loading"),
+		nickBlockOverlay: $("#NickBlockOverlay"),
 		lobby: {
 			userListTitle: $(".UserListBox .product-title"),
 			userList: $(".UserListBox .product-body"),
@@ -327,6 +312,10 @@ $(document).ready(function () {
 			inputInput: $("#input-input"),
 			inputOK: $("#input-ok"),
 			inputNo: $("#input-no"),
+			nickSetup: $("#NickSetupDiag"),
+			nickSetupInput: $("#nickSetup-input"),
+			nickSetupError: $("#nickSetup-error"),
+			nickSetupOk: $("#nickSetup-ok"),
 			viewAllRules: $("#ViewAllRulesDiag"),
 			viewAllRulesOK: $("#view-all-ok"),
 			userListDiag: $("#UserListDiag"),
@@ -2120,6 +2109,10 @@ $(document).ready(function () {
 			showConfirm($data.NICKNAME_LIMIT.TERM > 0 ? L.confirmNickChangeLimit.replace("{V1}", $data.NICKNAME_LIMIT.TERM) : L.confirmNickChange, function (res) {
 				if (res) {
 					$.post("/profile", data, function (res) {
+						if (res.error) {
+							if (res.error === 457 && res.remaining) return showAlert(nickCooldownMessage(res.remaining));
+							return fail(res.error);
+						}
 						const message = [];
 						if (data.nickname) {
 							$("#account-info").text($data.users[$data.id].nickname = $data.users[$data.id].profile.title = $data.users[$data.id].profile.name = $data.nickname = data.nickname);
@@ -2164,6 +2157,73 @@ $(document).ready(function () {
 			if (data.nickname) data.rawNickname = data.nickname;
 			checkEmpty();
 		}
+	});
+	$stage.dialog.nickSetupOk.on('click', function (e) {
+		var raw = $stage.dialog.nickSetupInput.val();
+	
+		$stage.dialog.nickSetupError.text('');
+	
+		if (!raw) {
+			$stage.dialog.nickSetupError.text(L.nickSetupEmpty);
+			return;
+		}
+	
+		var nickname = raw;
+		if ($data.NICKNAME_LIMIT.REGEX && $data.NICKNAME_LIMIT.REGEX.test(nickname)) {
+			nickname = nickname.replace($data.NICKNAME_LIMIT.REGEX, "");
+		}
+		if (!nickname) {
+			$stage.dialog.nickSetupError.text(L.nickSetupEmpty);
+			return;
+		}
+	
+		function applyNickname(finalNickname, autoAssigned) {
+			$data.nickname = finalNickname;
+			$data.users[$data.id].nickname = finalNickname;
+			$data.users[$data.id].profile.nickname = finalNickname;
+			$data.users[$data.id].profile.title = finalNickname;
+			$data.users[$data.id].profile.name = finalNickname;
+			$("#account-info").text(finalNickname);
+			send("updateProfile", { nickname: finalNickname }, true);
+			$stage.dialog.nickSetup.hide();
+			$stage.nickBlockOverlay.hide();
+			if (autoAssigned) showAlert(L.nickSetupAutoAssigned.replace("{V1}", finalNickname));
+		}
+	
+		function requestFallback() {
+			$stage.dialog.nickSetupOk.attr('disabled', true);
+			$.post("/profile/fallback", {}, function (res) {
+				$stage.dialog.nickSetupOk.attr('disabled', false);
+				if (res && res.result === 200 && res.nickname) {
+					applyNickname(res.nickname, true);
+				} else {
+					$stage.dialog.nickSetupError.text(L.nickSetupFailed);
+				}
+			}).fail(function () {
+				$stage.dialog.nickSetupOk.attr('disabled', false);
+				$stage.dialog.nickSetupError.text(L.nickSetupFailed);
+			});
+		}
+	
+		$stage.dialog.nickSetupOk.attr('disabled', true);
+	
+		$.post("/profile", { nickname: nickname }, function (res) {
+			$stage.dialog.nickSetupOk.attr('disabled', false);
+	
+			if (res && res.result === 200) {
+				applyNickname(res.nickname || nickname, res.autoAssigned);
+			} else if (res && res.error) {
+				if (res.error === 457 && res.remaining) {
+					$stage.dialog.nickSetupError.text(nickCooldownMessage(res.remaining));
+				} else {
+					$stage.dialog.nickSetupError.text(L['error_' + res.error] || L.nickSetupFailed);
+				}
+			} else {
+				requestFallback();
+			}
+		}).fail(function () {
+			requestFallback();
+		});
 	});
 	$("#DressDiag .dress-type").on('click', function (e) {
 		var $target = $(e.currentTarget);
@@ -8922,10 +8982,21 @@ function onMessage(data) {
 					var _updName = getDisplayName($data.users[$data.id]);
 					if (_updName) {
 						$("#room-title").attr('placeholder', _updName + L['roomDefault']);
+						$("#account-info").text(_updName);
 					}
+					updateMe();
 				}
+				// 로비 유저 목록/초대 목록에 이미 그려진 행이 있다면 새 프로필로 교체
+				var $userRow = $("#users-item-" + data.id);
+				if ($userRow.length) $userRow.replaceWith(userListBar($data.users[data.id]));
+				var $inviteRow = $("#invite-item-" + data.id);
+				if ($inviteRow.length) $inviteRow.replaceWith(userListBar($data.users[data.id], true));
 				updateUserList();
 				if ($data.room) updateRoom($data.room.gaming);
+				// 해당 유저의 프로필 창이 열려 있으면 즉시 새로고침
+				if ($data._profiled === data.id && $stage.dialog.profile.is(':visible')) {
+					requestProfile(data.id);
+				}
 			}
 			break;
 		case 'recaptcha':
@@ -8962,11 +9033,16 @@ function onMessage(data) {
 			$data._okg = data.okg;
 			$data._gaming = false;
 			$data.box = data.box;
+			$stage.nickBlockOverlay.hide();
 			if ($data.users[$data.id]) {
 				var _me = $data.users[$data.id];
 				var _myName = getDisplayName(_me);
 				if (_myName) {
 					$("#room-title").attr('placeholder', _myName + L['roomDefault']);
+				}
+				if (!$data.guest && (!(_me.profile && _me.profile.nickname) || data.nicknameInvalid)) {
+					showDialog($stage.dialog.nickSetup, true);
+					$stage.nickBlockOverlay.show();
 				}
 			}
 			if (data.test) showAlert(L['welcomeTestServer']);
@@ -11923,6 +11999,13 @@ function setLocation(place) {
 }
 function fail(code) {
 	return showAlert(L['error_' + code]);
+}
+function nickCooldownMessage(remaining) {
+	var totalMinutes = Math.max(1, Math.ceil(remaining / 60000));
+	var hours = Math.floor(totalMinutes / 60);
+	var minutes = totalMinutes % 60;
+
+	return L.error_457.replace("{V1}", hours).replace("{V2}", minutes);
 }
 function yell(msg) {
 	$stage.yell.show().css('opacity', 1).text(msg);

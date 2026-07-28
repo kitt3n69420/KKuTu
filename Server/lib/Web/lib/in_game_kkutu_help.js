@@ -19,19 +19,33 @@
 $(document).ready(function(){
 	$("#list").children().each(function(index, obj){
 		var p = "c" + (index + 1);
-		
-		$(obj).attr('id', p).on('click', onMenu).find("li").each(function(_index, _obj){
-			$(_obj).attr('id', p + "p" + (_index + 1)).on('click', onMenu);
+
+		$(obj).attr('id', p).find("li").each(function(_index, _obj){
+			$(_obj).attr('id', p + "p" + (_index + 1));
 		});
+	});
+	$("#list li").each(function(_index, obj){
+		var $li = $(obj);
+		var $childUl = $li.children("ul");
+
+		if($childUl.length){
+			$li.prepend("<span class='toggle-arrow'>▽</span>").addClass("collapsed");
+			$li.on('click', function(e){
+				$li.toggleClass("collapsed");
+				e.stopPropagation();
+			});
+		} else {
+			$li.on('click', onMenu);
+		}
 	});
 	$("img").on('click', function(e){
 		var $target = $(e.currentTarget);
-		
+
 		window.open($target.attr('src'), "", [
 			"resizable=no", "status=no"
 		].join(','));
 	});
-	
+
 	function onMenu(e){
 		$(".selected").removeClass("selected");
 		var $target = $(e.currentTarget).addClass("selected");

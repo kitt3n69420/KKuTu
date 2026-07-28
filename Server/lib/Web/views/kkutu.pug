@@ -66,6 +66,7 @@ block Jungle
 	span#EN_INJEONG= JSON.stringify(locals.EN_INJEONG)
 	div#Yell
 	div#Loading(data-lang-key='LOADING')= L('LOADING')
+	div#NickBlockOverlay
 	div#Balloons(style='position: absolute;')
 	-
 		LANG['explInjeong'] = `<h5>${L('explInjeong')}</h5>\
@@ -297,7 +298,9 @@ block Middle
 				option(value='all', data-lang-key='categoryAll')= L('categoryAll')
 				option(value='classic', data-lang-key='categoryClassic')= L('categoryClassic')
 				option(value='quiz', data-lang-key='categoryQuiz')= L('categoryQuiz')
-				option(value='other', data-lang-key='categoryOther')= L('categoryOther')
+				option(value='board', data-lang-key='categoryBoard')= L('categoryBoard')
+				option(value='speed', data-lang-key='categorySpeed')= L('categorySpeed')
+				option(value='etc', data-lang-key='categoryEtc')= L('categoryEtc')
 		div.dialog-bar
 			h4(data-lang-key='gameMode')= L('gameMode')
 			select#room-mode(style="width: 283px;")
@@ -784,6 +787,13 @@ block Middle
 		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; right: 10px; width: calc(100% - 20px);')
 			button#input-no(data-lang-key='NO')= L('NO')
 			button#input-ok(data-lang-key='OK')= L('OK')
+	+Dialog('NickSetupDiag', 300, 190, 'nickSetupTitle', true)
+		div.dialog-bar(style='text-align: center; padding: 10px;', data-lang-key='nickSetupDesc')= L('nickSetupDesc')
+		div.dialog-bar(style='text-align: center;')
+			input#nickSetup-input(type='text', style='width: 90%;', maxlength=12)
+		div.dialog-bar#nickSetup-error(style='text-align: center; color: #FF4444; min-height: 16px;')
+		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; right: 10px; width: calc(100% - 20px);')
+			button#nickSetup-ok(data-lang-key='OK')= L('OK')
 	+Product('UserList')
 	+Product('RoomList')
 	+Product('Shop')

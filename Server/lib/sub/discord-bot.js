@@ -45,6 +45,7 @@ const RECONNECT_DELAY = 30000; // 30s before manual reconnect attempt
 // Proxy callbacks set when running as a separate process
 let _queryOnlineUser = null; // (query) => Promise<{profile, data}|null>
 let _sendRoomMsg = null;     // (roomId, message) => Promise<{exists, sent}>
+let _kickUser = null;        // (userId) => Promise<{found}|null>
 
 /**
  * Safe wrapper for async operations
@@ -72,7 +73,7 @@ function scheduleReconnect() {
             client = null;
             channel = null;
             await Promise.race([
-                exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN, queryOnlineUser: _queryOnlineUser, sendRoomMsg: _sendRoomMsg }),
+                exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN, queryOnlineUser: _queryOnlineUser, sendRoomMsg: _sendRoomMsg, kickUser: _kickUser }),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Reconnect timeout (35s)')), 35000))
             ]);
         } catch (err) {
@@ -226,6 +227,7 @@ exports.init = async function (token, db, dic, options = {}) {
     ADMIN = options.ADMIN || [];
     _queryOnlineUser = options.queryOnlineUser || null;
     _sendRoomMsg = options.sendRoomMsg || null;
+    _kickUser = options.kickUser || null;
 
     try {
         client = new Client({
@@ -610,6 +612,24 @@ async function registerCommands(token) {
                         })
                         .setRequired(true)
                         .setMaxLength(64)
+                ),
+
+            new SlashCommandBuilder()
+                .setName('kick')
+                .setNameLocalizations({ ko: '킥' })
+                .setDescription('Disconnect an online user (admin only)')
+                .setDescriptionLocalizations({
+                    ko: '접속 중인 유저의 연결을 강제로 끊어요. (관리자 전용)'
+                })
+                .addStringOption(opt =>
+                    opt.setName('user_id')
+                        .setNameLocalizations({ ko: '아이디' })
+                        .setDescription('User ID to kick')
+                        .setDescriptionLocalizations({
+                            ko: '강퇴할 유저 아이디'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(64)
                 )
         ];
 
@@ -691,6 +711,9 @@ async function handleCommand(interaction) {
                 break;
             case 'unban':
                 await handleUnban(interaction);
+                break;
+            case 'kick':
+                await handleKick(interaction);
                 break;
             default:
                 await interaction.reply({ content: '알 수 없는 명령어입니다. 어떻게 하신 거죠?', ephemeral: true });
@@ -804,6 +827,11 @@ async function handleHelp(interaction) {
             {
                 name: '✅ /unban (제재풀기) `<아이디>`',
                 value: '유저 제재 해제 (관리자 전용, 오프라인 가능)\n예: `/unban abc123`',
+                inline: false
+            },
+            {
+                name: '🥾 /kick (킥) `<아이디>`',
+                value: '접속 중인 유저의 연결을 강제로 종료 (관리자 전용, 온라인 유저만 가능)\n예: `/kick abc123`',
                 inline: false
             }
         )
@@ -1545,6 +1573,50 @@ async function handleUnban(interaction) {
     } catch (err) {
         JLog.error(`[Discord Bot] Unban error: ${err.message}`);
         await interaction.editReply({ content: `❌ 제재 해제 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
+/**
+ * /kick command - Disconnect an online user (admin only)
+ */
+async function handleKick(interaction) {
+    if (!isAdmin(interaction)) {
+        await interaction.reply({ content: '❌ 관리자만 사용할 수 있는 명령어입니다.', ephemeral: true });
+        return;
+    }
+
+    const userId = interaction.options.getString('user_id');
+    const discordId = 'discord-' + interaction.user.id;
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+        let found = false;
+
+        if (_kickUser) {
+            // Separate process mode: proxy to master
+            const result = await _kickUser(userId);
+            found = !!(result && result.found);
+        } else if (DIC) {
+            // Same process mode: direct DIC access
+            const target = DIC[userId];
+            if (target && target.socket && target.socket.readyState === 1) {
+                target.send('error', { code: 410 });
+                target.socket.close();
+                found = true;
+            }
+        }
+
+        if (!found) {
+            await interaction.editReply({ content: `❌ "${userId}"는 현재 접속 중이 아니에요.` });
+            return;
+        }
+
+        JLog.info(`[Discord Bot] kick ${userId} by ${discordId}`);
+        await interaction.editReply({ content: `✅ "${userId}" 유저의 연결을 끊었습니다.` });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Kick error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 킥 처리 중 오류가 발생했습니다: ${err.message}` });
     }
 }
 

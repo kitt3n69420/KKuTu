@@ -109,6 +109,19 @@ body.theme-green #Intro img {
 	z-index: 4;
 }
 
+/* 닉네임을 설정하기 전까지 로비/게임 화면을 흐리게 가려 다른 상호작용을 막는다. (#Loading과 달리 어둡게 덮지 않고 블러만 적용) */
+#NickBlockOverlay {
+	display: none;
+	position: fixed;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	height: 100%;
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
+	z-index: 9;
+}
+
 /* Global Background - Blue Theme (Mobile) */
 body {
 	background: linear-gradient(135deg, var(--color-bg-light) 0%, var(--color-bg-medium) 100%) fixed !important;
