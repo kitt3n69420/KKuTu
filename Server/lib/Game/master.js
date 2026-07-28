@@ -76,14 +76,19 @@ function discordDisplayName(profile) {
   return profile.title || profile.name || "알 수 없음";
 }
 
+// 손님은 아이디(guest__세션ID)만으로는 추적이 어려우므로 접속 IP를 함께 남김
+function discordUserTag(data) {
+  return data.guest ? `${data.id}, IP: ${data.ip}` : data.id;
+}
+
 // 디스코드 봇이 꺼져있거나(BOT_ENABLED=false) discordProcess가 아직 뜨지 않았을 때
 // 이벤트를 그냥 버리지 않고 discord-fallback.log에 남기기 위한 텍스트 포맷
 function formatDiscordFallback(type, data) {
   switch (type) {
     case "notify-user-join":
-      return `[유저입장] ${discordDisplayName(data.profile)} (현재 ${data.userCount}명)`;
+      return `[유저입장] ${discordDisplayName(data.profile)}(${discordUserTag(data)}) (현재 ${data.userCount}명)`;
     case "notify-user-leave":
-      return `[유저퇴장] ${discordDisplayName(data.profile)} (현재 ${data.userCount}명)`;
+      return `[유저퇴장] ${discordDisplayName(data.profile)}(${discordUserTag(data)}) (현재 ${data.userCount}명)`;
     case "notify-room-create":
       return `[방생성] ${data.roomId}번 방: ${(data.room && data.room.title) || "(없음)"}`;
     case "notify-room-delete":
@@ -1042,7 +1047,7 @@ function joinNewUser($c) {
   for (var _ch in CHAN_DIC) CHAN_DIC[_ch].send({ type: "broadcast", event: "conn", data: { user: $c.getData() } });
 
   // Discord notification
-  discordSend("notify-user-join", { profile: $c.profile, userCount: Object.keys(DIC).length });
+  discordSend("notify-user-join", { profile: $c.profile, userCount: Object.keys(DIC).length, id: $c.id, guest: !!$c.guest, ip: $c.remoteAddress });
 
   JLog.info("New user #" + $c.id);
 
@@ -1327,7 +1332,7 @@ KKuTu.onClientClosed = function ($c, code) {
   delete DIC[$c.id];
 
   // Discord notification (삭제 후 정확한 카운트)
-  discordSend("notify-user-leave", { profile: $c.profile, userCount: Object.keys(DIC).length });
+  discordSend("notify-user-leave", { profile: $c.profile, userCount: Object.keys(DIC).length, id: $c.id, guest: !!$c.guest, ip: $c.remoteAddress });
 
   // server 필드를 항상 정리 (유령 방지)
   if (!$c.guest) MainDB.users.update(["_id", $c.id]).set(["server", ""]).on();

@@ -91,6 +91,14 @@ function getDisplayName(profile) {
 }
 
 /**
+ * Build the (아이디) tag for join/leave logs.
+ * 손님은 아이디만으로 추적이 어려우므로 접속 IP(Cloudflare X-Forwarded-For 기준)를 함께 남긴다.
+ */
+function formatUserTag(id, guest, ip) {
+    return guest ? `${id}, IP: ${ip}` : id;
+}
+
+/**
  * Parse word meaning from DB format to readable format
  * DB format: ＂1＂first meaning＂2＂second meaning
  */
@@ -528,6 +536,80 @@ async function registerCommands(token) {
                         })
                         .setRequired(true)
                         .setMaxLength(500)
+                ),
+
+            new SlashCommandBuilder()
+                .setName('id')
+                .setNameLocalizations({ ko: '아이디' })
+                .setDescription('Look up a user ID by nickname (admin only)')
+                .setDescriptionLocalizations({
+                    ko: '별명으로 유저 아이디를 조회해요. (관리자 전용)'
+                })
+                .addStringOption(opt =>
+                    opt.setName('nickname')
+                        .setNameLocalizations({ ko: '별명' })
+                        .setDescription('Nickname to search')
+                        .setDescriptionLocalizations({
+                            ko: '검색할 별명'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(12)
+                ),
+
+            new SlashCommandBuilder()
+                .setName('ban')
+                .setNameLocalizations({ ko: '제재' })
+                .setDescription('Ban a user until a given date (admin only)')
+                .setDescriptionLocalizations({
+                    ko: '유저를 지정한 날짜까지 제재해요. (관리자 전용)'
+                })
+                .addStringOption(opt =>
+                    opt.setName('user_id')
+                        .setNameLocalizations({ ko: '아이디' })
+                        .setDescription('User ID to ban')
+                        .setDescriptionLocalizations({
+                            ko: '제재할 유저 아이디'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(64)
+                )
+                .addStringOption(opt =>
+                    opt.setName('until')
+                        .setNameLocalizations({ ko: '기한' })
+                        .setDescription('Ban expiration date (YYYY-MM-DD)')
+                        .setDescriptionLocalizations({
+                            ko: '제재 만료일 (YYYY-MM-DD)'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(10)
+                )
+                .addStringOption(opt =>
+                    opt.setName('reason')
+                        .setNameLocalizations({ ko: '사유' })
+                        .setDescription('Ban reason')
+                        .setDescriptionLocalizations({
+                            ko: '제재 사유'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(200)
+                ),
+
+            new SlashCommandBuilder()
+                .setName('unban')
+                .setNameLocalizations({ ko: '제재풀기' })
+                .setDescription("Lift a user's ban (admin only)")
+                .setDescriptionLocalizations({
+                    ko: '유저의 제재를 해제해요. (관리자 전용)'
+                })
+                .addStringOption(opt =>
+                    opt.setName('user_id')
+                        .setNameLocalizations({ ko: '아이디' })
+                        .setDescription('User ID to unban')
+                        .setDescriptionLocalizations({
+                            ko: '제재를 해제할 유저 아이디'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(64)
                 )
         ];
 
@@ -600,6 +682,15 @@ async function handleCommand(interaction) {
                 break;
             case 'roommsg':
                 await handleRoomMsg(interaction);
+                break;
+            case 'id':
+                await handleId(interaction);
+                break;
+            case 'ban':
+                await handleBan(interaction);
+                break;
+            case 'unban':
+                await handleUnban(interaction);
                 break;
             default:
                 await interaction.reply({ content: '알 수 없는 명령어입니다. 어떻게 하신 거죠?', ephemeral: true });
@@ -698,6 +789,21 @@ async function handleHelp(interaction) {
             {
                 name: '📢 /roommsg (방메시지) `<방번호>` `<메시지>`',
                 value: '방에 관리자 공지 메시지 전송 (관리자 전용)\n예: `/roommsg 102 안녕하세요`',
+                inline: false
+            },
+            {
+                name: '🆔 /id (아이디) `<별명>`',
+                value: '별명으로 유저 아이디 조회 (관리자 전용, 오프라인 가능)\n예: `/id 홍길동`',
+                inline: false
+            },
+            {
+                name: '🚫 /ban (제재) `<아이디>` `<기한>` `<사유>`',
+                value: '유저를 지정한 날짜까지 제재 (관리자 전용, 오프라인 가능)\n예: `/ban abc123 2026-08-15 욕설`',
+                inline: false
+            },
+            {
+                name: '✅ /unban (제재풀기) `<아이디>`',
+                value: '유저 제재 해제 (관리자 전용, 오프라인 가능)\n예: `/unban abc123`',
                 inline: false
             }
         )
@@ -1324,6 +1430,124 @@ async function handleRoomMsg(interaction) {
     await interaction.reply({ content: `✅ ${rid}번 방에 메시지를 보냈습니다. (${sent}명에게 전달)`, ephemeral: true });
 }
 
+/**
+ * Check whether the interacting user is a registered bot admin
+ */
+function isAdmin(interaction) {
+    return ADMIN.indexOf('discord-' + interaction.user.id) !== -1;
+}
+
+/**
+ * /id command - Look up a user's account ID by nickname (admin only, works offline)
+ */
+async function handleId(interaction) {
+    if (!isAdmin(interaction)) {
+        await interaction.reply({ content: '❌ 관리자만 사용할 수 있는 명령어입니다.', ephemeral: true });
+        return;
+    }
+
+    const nickname = interaction.options.getString('nickname');
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+        if (!DB || !DB.users) throw new Error('데이터베이스가 준비되지 않았습니다.');
+
+        const user = await dbFindOne(DB.users, ['nickname', nickname]);
+        if (!user) {
+            await interaction.editReply({ content: `❌ 별명 "${nickname}"을(를) 가진 유저를 찾을 수 없습니다.` });
+            return;
+        }
+
+        await interaction.editReply({ content: `🆔 "${nickname}"의 아이디: \`${user._id}\`` });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Id lookup error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 조회 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
+/**
+ * /ban command - Ban a user until a given date (admin only, works offline)
+ */
+async function handleBan(interaction) {
+    if (!isAdmin(interaction)) {
+        await interaction.reply({ content: '❌ 관리자만 사용할 수 있는 명령어입니다.', ephemeral: true });
+        return;
+    }
+
+    const userId = interaction.options.getString('user_id');
+    const until = interaction.options.getString('until');
+    const reason = interaction.options.getString('reason');
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(until)) {
+        await interaction.reply({ content: '❌ 기한은 YYYY-MM-DD 형식으로 입력해주세요. (예: 2026-08-15)', ephemeral: true });
+        return;
+    }
+
+    // 입력한 날짜의 자정(KST)까지를 제재 기한으로 처리
+    const untilDate = new Date(`${until}T23:59:59+09:00`);
+    if (isNaN(untilDate.getTime())) {
+        await interaction.reply({ content: '❌ 유효하지 않은 날짜입니다.', ephemeral: true });
+        return;
+    }
+    if (untilDate.getTime() <= Date.now()) {
+        await interaction.reply({ content: '❌ 기한은 오늘 이후 날짜여야 합니다.', ephemeral: true });
+        return;
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+        if (!DB || !DB.users) throw new Error('데이터베이스가 준비되지 않았습니다.');
+
+        const user = await dbFindOne(DB.users, ['_id', userId]);
+        if (!user) {
+            await interaction.editReply({ content: `❌ 아이디 "${userId}"를 가진 유저를 찾을 수 없습니다.` });
+            return;
+        }
+
+        DB.users.update(['_id', userId]).set(['black', reason], ['blockeduntil', String(untilDate.getTime())]).on();
+
+        JLog.info(`[Discord Bot] ban ${userId} by discord-${interaction.user.id}: ${reason} (until ${until})`);
+        await interaction.editReply({ content: `✅ "${userId}" 유저를 ${until}까지 제재했습니다. (사유: ${reason})` });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Ban error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 제재 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
+/**
+ * /unban command - Lift a user's ban (admin only, works offline)
+ */
+async function handleUnban(interaction) {
+    if (!isAdmin(interaction)) {
+        await interaction.reply({ content: '❌ 관리자만 사용할 수 있는 명령어입니다.', ephemeral: true });
+        return;
+    }
+
+    const userId = interaction.options.getString('user_id');
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+        if (!DB || !DB.users) throw new Error('데이터베이스가 준비되지 않았습니다.');
+
+        const user = await dbFindOne(DB.users, ['_id', userId]);
+        if (!user) {
+            await interaction.editReply({ content: `❌ 아이디 "${userId}"를 가진 유저를 찾을 수 없습니다.` });
+            return;
+        }
+
+        DB.users.update(['_id', userId]).set(['black', null], ['blockeduntil', '']).on();
+
+        JLog.info(`[Discord Bot] unban ${userId} by discord-${interaction.user.id}`);
+        await interaction.editReply({ content: `✅ "${userId}" 유저의 제재를 해제했습니다.` });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Unban error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 제재 해제 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
 // === 고빈도 알림 배칭 시스템 ===
 // 유저 입퇴장, 방 입퇴장을 모아서 5초마다 한 번에 전송 (Discord API 부하 감소)
 const _notifyQueue = { join: [], leave: [], roomJoin: [], roomLeave: [] };
@@ -1338,8 +1562,8 @@ function scheduleNotifyFlush() {
 function flushNotifyQueue() {
     _notifyTimer = null;
     if (!isBotAvailable()) {
-        _notifyQueue.join.forEach(function (e) { logToFile(`[유저입장] ${e.name} (현재 ${e.count}명)`); });
-        _notifyQueue.leave.forEach(function (e) { logToFile(`[유저퇴장] ${e.name} (현재 ${e.count}명)`); });
+        _notifyQueue.join.forEach(function (e) { logToFile(`[유저입장] ${e.name}(${e.tag}) (현재 ${e.count}명)`); });
+        _notifyQueue.leave.forEach(function (e) { logToFile(`[유저퇴장] ${e.name}(${e.tag}) (현재 ${e.count}명)`); });
         _notifyQueue.roomJoin.forEach(function (e) { logToFile(`[방입장] ${e.name} → ${e.roomId}번 방`); });
         _notifyQueue.roomLeave.forEach(function (e) { logToFile(`[방퇴장] ${e.name} ← ${e.roomId}번 방 (${e.reason})`); });
         _notifyQueue.join = [];
@@ -1354,11 +1578,11 @@ function flushNotifyQueue() {
         var lines = [];
         var lastCount = 0;
         _notifyQueue.join.forEach(function (e) {
-            lines.push('\u{1F7E2} **' + e.name + '** 입장');
+            lines.push('\u{1F7E2} **' + e.name + '**(' + e.tag + ') 입장');
             lastCount = e.count;
         });
         _notifyQueue.leave.forEach(function (e) {
-            lines.push('\u{1F534} **' + e.name + '** 퇴장');
+            lines.push('\u{1F534} **' + e.name + '**(' + e.tag + ') 퇴장');
             lastCount = e.count;
         });
         var desc = lines.join('\n') + '\n현재 **' + lastCount + '**명';
@@ -1558,44 +1782,46 @@ exports.logReport = function (reporterProfile, reporterGuest, reporterId, target
 /**
  * Notify user join - only if enabled
  */
-exports.notifyUserJoin = function (profile, userCount) {
+exports.notifyUserJoin = function (profile, userCount, id, guest, ip) {
+    const tag = formatUserTag(id, guest, ip);
     if (!isBotAvailable()) {
-        logToFile(`[유저입장] ${getDisplayName(profile)} (현재 ${userCount}명)`);
+        logToFile(`[유저입장] ${getDisplayName(profile)}(${tag}) (현재 ${userCount}명)`);
         return;
     }
     if (userCount <= 10) {
         safeExecute(async () => {
             const embed = new EmbedBuilder()
                 .setColor(0x2ECC71)
-                .setDescription('\u{1F7E2} **' + getDisplayName(profile) + '** 입장\n현재 **' + userCount + '**명')
+                .setDescription('\u{1F7E2} **' + getDisplayName(profile) + '**(' + tag + ') 입장\n현재 **' + userCount + '**명')
                 .setTimestamp();
             await channel.send({ embeds: [embed] });
         }, 'notifyUserJoin-instant');
         return;
     }
-    _notifyQueue.join.push({ name: getDisplayName(profile), count: userCount });
+    _notifyQueue.join.push({ name: getDisplayName(profile), count: userCount, tag: tag });
     scheduleNotifyFlush();
 };
 
 /**
  * Notify user leave - only if enabled
  */
-exports.notifyUserLeave = function (profile, userCount) {
+exports.notifyUserLeave = function (profile, userCount, id, guest, ip) {
+    const tag = formatUserTag(id, guest, ip);
     if (!isBotAvailable()) {
-        logToFile(`[유저퇴장] ${getDisplayName(profile)} (현재 ${userCount}명)`);
+        logToFile(`[유저퇴장] ${getDisplayName(profile)}(${tag}) (현재 ${userCount}명)`);
         return;
     }
     if (userCount <= 10) {
         safeExecute(async () => {
             const embed = new EmbedBuilder()
                 .setColor(0xE74C3C)
-                .setDescription('\u{1F534} **' + getDisplayName(profile) + '** 퇴장\n현재 **' + userCount + '**명')
+                .setDescription('\u{1F534} **' + getDisplayName(profile) + '**(' + tag + ') 퇴장\n현재 **' + userCount + '**명')
                 .setTimestamp();
             await channel.send({ embeds: [embed] });
         }, 'notifyUserLeave-instant');
         return;
     }
-    _notifyQueue.leave.push({ name: getDisplayName(profile), count: userCount });
+    _notifyQueue.leave.push({ name: getDisplayName(profile), count: userCount, tag: tag });
     scheduleNotifyFlush();
 };
 

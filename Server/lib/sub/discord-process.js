@@ -50,10 +50,10 @@ process.on('message', function (msg) {
 
     switch (msg.type) {
         case 'notify-user-join':
-            DiscordBot.notifyUserJoin(msg.profile, msg.userCount);
+            DiscordBot.notifyUserJoin(msg.profile, msg.userCount, msg.id, msg.guest, msg.ip);
             break;
         case 'notify-user-leave':
-            DiscordBot.notifyUserLeave(msg.profile, msg.userCount);
+            DiscordBot.notifyUserLeave(msg.profile, msg.userCount, msg.id, msg.guest, msg.ip);
             break;
         case 'notify-room-create':
             DiscordBot.notifyRoomCreate(msg.roomId, msg.room, msg.realPassword);
