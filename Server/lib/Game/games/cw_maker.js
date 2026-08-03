@@ -239,7 +239,7 @@ var consecutiveFails = 0; // 이 코어가 성공 없이 연속으로 실패한 
 var CONSECUTIVE_FAIL_LIMIT = 5; // 연속 실패가 이 횟수에 도달하면 words와 FAIL을 초기화
 var totalFails = 0; // 이 코어의, 연속 여부와 무관한 누적 실패 횟수(성공해도 리셋되지 않음)
 var TOTAL_FAIL_LIMIT = 20; // 누적 실패가 이 횟수에 도달하면 words를 초기화
-var GENERATE_TIMEOUT = 30000; // 퍼즐 한 판 생성에 이 시간(ms)이 넘게 걸리면 포기(=FAIL 카운터 증가 조건)
+var GENERATE_TIMEOUT = 45000; // 퍼즐 한 판 생성에 이 시간(ms)이 넘게 걸리면 포기(=FAIL 카운터 증가 조건)
 var TARGET = 1000; // 언어(LANG)별 전체 퍼즐(kkutu_cw 행) 목표 개수. 코어 간 공유되는 MC 합으로 판정.
 var POOL = null; // { [lang]로 필터링된 단어를 길이별로 묶어 hit 내림차순 정렬한 캐시. 이 코어에서 1회 로드. }
 
