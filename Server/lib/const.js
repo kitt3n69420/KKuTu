@@ -728,8 +728,8 @@ exports.RULE = {
 	'CNC': {
 		lang: "etc",
 		rule: "Numberclap",
-		opts: ["one", "rnt", "chs"],
-		time: 0.5,
+		opts: ["one", "rnt", "chs", "spd"],
+		time: 1,
 		ai: true,
 		big: false,
 		ewq: true,
