@@ -430,8 +430,8 @@ exports.submit = function (client, text, data) {
 						client.game.lastWordLen = currentLen;
 
 						if (client.game.straightStreak >= 2) {
-							var multiplier = (client.game.straightStreak - 1) / 2;
-							straightBonus = Math.round(baseScoreWithoutMission * multiplier);
+							var straightPct = Math.min(15 + (client.game.straightStreak - 2) * 5, 50);
+							straightBonus = Math.round(baseScoreWithoutMission * (straightPct / 100));
 							if (my.opts.bbungtwigi) straightBonus *= 2; // 뻥튀기: 스트레이트 보너스 2배
 						}
 					}
@@ -459,7 +459,7 @@ exports.submit = function (client, text, data) {
 					}
 
 					if (matchCount === prevChars.length) {
-						fullHouseBonus = Math.round(baseScoreWithoutMission * 1.5);
+						fullHouseBonus = Math.round(baseScoreWithoutMission * 0.60);
 						if (my.opts.bbungtwigi) fullHouseBonus *= 2; // 뻥튀기: 보너스 2배
 						fullHouseChars = matchedIndices;
 					}
@@ -627,7 +627,7 @@ exports.getScore = function (text, delay, ignoreMission) {
 				}
 
 				if (matchCount > 0) {
-					var missionBonus = score * 0.5 * matchCount;
+					var missionBonus = score * 0.30 * matchCount;
 					if (my.opts.bbungtwigi) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
 					score += missionBonus;
 					my.game.mission = true;
@@ -636,7 +636,7 @@ exports.getScore = function (text, delay, ignoreMission) {
 		} else {
 			// 기본 미션 규칙
 			if (arr = text.match(new RegExp(my.game.mission, "g"))) {
-				var missionBonus = score * 0.5 * arr.length;
+				var missionBonus = score * 0.30 * arr.length;
 				if (my.opts.bbungtwigi) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
 				score += missionBonus;
 				my.game.mission = true;

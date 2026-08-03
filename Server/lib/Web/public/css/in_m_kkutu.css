@@ -2889,19 +2889,6 @@ body.dark-mode #Top .menu-btn,
 body.dark-mode #Top .menu-btn i.fa {
 	color: #111111 !important;
 }
-body.dark-mode .team-1 {
-	background-color: #11319b !important;
-}
-body.dark-mode .team-2 {
-	background-color: #8263b8 !important;
-}
-body.dark-mode .team-3 {
-	background-color: #d42e66 !important;
-}
-body.dark-mode .team-4 {
-	background-color: #ecc756 !important;
-}
-
 body.dark-mode .team-button {
 	background-color: #333 !important;
 	color: #E0E0E0 !important;
@@ -2915,6 +2902,18 @@ body.dark-mode .team-selector {
 }
 body.dark-mode .team-unable div {
 	background-color: #444 !important;
+}
+body.dark-mode .team-1 {
+	background-color: #11319b !important;
+}
+body.dark-mode .team-2 {
+	background-color: #8263b8 !important;
+}
+body.dark-mode .team-3 {
+	background-color: #d42e66 !important;
+}
+body.dark-mode .team-4 {
+	background-color: #ecc756 !important;
 }
 
 body.dark-mode .room-users {

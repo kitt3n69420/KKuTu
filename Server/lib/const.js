@@ -408,7 +408,7 @@ exports.RULE = {
 		lang: "ko",
 		rule: "Jaqwi",
 		opts: ["ijp", "unl", "drg"],
-		time: 1,
+		time: 0.5,
 		ai: true,
 		big: false,
 		ewq: false,
@@ -701,6 +701,39 @@ exports.RULE = {
 		ewq: true,
 		survival: false,
 		coop: true
+	},
+
+	// 아래는 항상 맨 끝에 추가할 것 (인덱스가 클라이언트 <option value=N>/modex<N>과 직결됨)
+	'ECW': {
+		lang: "en",
+		rule: "Crossword",
+		opts: ["drg"],
+		time: 2,
+		ai: true,
+		big: true,
+		ewq: false,
+		survival: false
+	},
+	'CCW': {
+		lang: "etc",
+		rule: "Crossword",
+		calc: true,
+		opts: ["drg"],
+		time: 2,
+		ai: true,
+		big: true,
+		ewq: false,
+		survival: false
+	},
+	'CNC': {
+		lang: "etc",
+		rule: "Numberclap",
+		opts: ["one", "rnt", "chs"],
+		time: 0.5,
+		ai: true,
+		big: false,
+		ewq: true,
+		survival: false
 	}
 
 };
@@ -711,7 +744,7 @@ exports.GAME_CATEGORIES = {
 	},
 	'quiz': {
 		name: 'GameCategoryQuiz',
-		modes: ['CSQ', 'KCW', 'KPQ', 'EPQ', 'KSC', 'CRL', 'KQZ', 'EQZ', 'ESQ', 'K4R']
+		modes: ['CSQ', 'KCW', 'KPQ', 'EPQ', 'KSC', 'CRL', 'KQZ', 'EQZ', 'ESQ', 'K4R', 'ECW', 'CCW']
 	},
 	'board': {
 		name: 'GameCategoryBoard',
@@ -723,12 +756,12 @@ exports.GAME_CATEGORIES = {
 	},
 	'etc': {
 		name: 'GameCategoryEtc',
-		modes: ['KDA', 'EDA', 'HUN', 'KFR', 'EFR', 'KTF', 'ETF']
+		modes: ['KDA', 'EDA', 'HUN', 'KFR', 'EFR', 'KTF', 'ETF', 'CNC']
 	}
 };
 exports.GAME_TYPE = Object.keys(exports.RULE);
 exports.EXAMPLE_TITLE = {
-	'ko': "이기자도지사리스트법",
+	'ko': "이기자도지사상가소법",
 	'en': "demography"
 };
 exports.KKU_START_BIGRAMS = [
@@ -747,7 +780,7 @@ exports.MISSION_jamo = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅅ', 'ㅇ', 
 
 exports.KO_INJEONG = [
 	"KRR", "KDI", "KTV", "KBS", 
-	"KPT", "KHJ", "KSC", "TPW",
+	"KPT", "KHJ", "KSC", "WCH",
 	"BTC", "KOT", "DOT", "ANC", "DGM", "RAG",
 	"JLN", "LVL", "LOL", "RHV", "MMM",
 	"MCJ", "JAN", "MAP", "MKK", "MNG",
@@ -756,8 +789,8 @@ exports.KO_INJEONG = [
 	"SAO", "HRH", "STA", "OIJ",
 	"KGR", "MAM", "ESB", "ELW", "KMV", "OVW",
 	"GNS", "WEB", "UNE", "KPO", 
-	"VOC", "ETR", "JAT", "ZEL",
-	"CKR", "FUR", "POK", "FRC", "PSK", "HSS",
+	"VOC", "ETR", "JAT", "ZEL",	"CKR", "TPW", 
+    "FUR", "POK", "FRC", "PSK", "HSS",
 	"HAI", "KPM", "HDC", "HAR", "HOS", "IMS"
 
 ];
@@ -813,7 +846,7 @@ exports.getRule = function (mode) {
 };
 
 exports.BOT_NAME_TEMPLATES = [
-	"나는 {0}다", "{0} 끄돌이", "{0} 끄순이", "{0} 끄투 봇", "끄투잘하고싶어요",
+	"나일론머스크", "모레미파솔라시도", "벼량위의포효", "끄투 봇", "끄투잘하고싶어요",
 	"완전 물렙", "모레미귀여워", "모레미는세계최강", "유기농 감자", "평범한 끄투러",
 	"끄투가좋아", "한판해요", "나는야끄투봇", "일 동안 끄투중", "년 동안 초보",
 	"우리집강아지는몹쓸강아지", "내이름은가난돈이없죠", "내이름은고난시련이죠",

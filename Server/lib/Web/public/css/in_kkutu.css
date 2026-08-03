@@ -3334,6 +3334,9 @@ body.dark-mode .kkutu-menu button {
 body.dark-mode .cw-bar {
 	background-color: #555555 !important;
 }
+body.dark-mode .cw-bar:hover {
+	background-color: #777777 !important;
+}
 body.dark-mode .cw-bar.cw-open {
 	background-color: #AAAAAA !important;
 }

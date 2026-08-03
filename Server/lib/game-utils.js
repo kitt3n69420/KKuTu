@@ -82,6 +82,54 @@ exports.generateWrongAnswer = function (correct) {
 	return digits.join('');
 };
 
+exports.generateMathClue = function (answerDigits) {
+	var V = parseInt(answerDigits, 10);
+	var L = answerDigits.length;
+	// 4자리 이상 정답은 덧셈/뺄셈만 사용 (곱셈/나눗셈은 3자리 이하에서만)
+	var order = (L >= 4) ? ['+', '-'] : ['+', '-', '*', '/'];
+	for (var i = order.length - 1; i > 0; i--) {
+		var j = Math.floor(Math.random() * (i + 1));
+		var t = order[i]; order[i] = order[j]; order[j] = t;
+	}
+
+	for (var k = 0; k < order.length; k++) {
+		var res = _tryMathOp(order[k], V, L);
+		if (res) return res;
+	}
+	return (V + 1) + "-1"; // 위 시도가 모두 실패하는 극단값(자릿수 경계)을 위한 최종 안전망
+};
+
+function _tryMathOp(op, V, L) {
+	var lo = Math.pow(10, L - 1), hi = Math.pow(10, L) - 1;
+	var tries = 20, A, B, f, factors, chosen, d;
+
+	switch (op) {
+		case '+':
+			while (tries--) {
+				A = lo + Math.floor(Math.random() * (hi - lo + 1));
+				B = V - A;
+				if (B > 0) return A + " + " + B + ' = ?';
+			}
+			return null;
+		case '-':
+			while (tries--) {
+				A = lo + Math.floor(Math.random() * (hi - lo + 1));
+				B = A - V;
+				if (A > V && B > 0) return A + " - " + B + ' = ?';
+			}
+			return null;
+		case '*':
+			factors = [];
+			for (f = 2; f <= 20; f++) if (V % f === 0) factors.push(f);
+			if (!factors.length) return null;
+			chosen = factors[Math.floor(Math.random() * factors.length)];
+			return chosen + " × " + (V / chosen) + ' = ?';
+		case '/':
+			d = 2 + Math.floor(Math.random() * 8); // [2,9]
+			return (V * d) + " ÷ " + d + ' = ?';
+	}
+}
+
 // ========== 한글 자모 시스템 ==========
 
 var _JAMO_INITIALS = ['ㄱ', 'ㄱㄱ', 'ㄴ', 'ㄷ', 'ㄷㄷ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅂㅂ', 'ㅅ', 'ㅅㅅ', 'ㅇ', 'ㅈ', 'ㅈㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];

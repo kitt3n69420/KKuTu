@@ -2701,6 +2701,12 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 		case 'KCW':
 			rw.score += score * 2.0;
 			break;
+		case 'ECW':
+			rw.score += score * 1.8;
+			break;
+		case 'CCW':
+			rw.score += score * 1.5;
+			break;
 		case 'KTY':
 			rw.score += score * 0.96;
 			break;
@@ -2759,6 +2765,9 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 			break;
 		case 'CAL':
 			rw.score += score * 0.75;
+			break;
+		case 'CNC':
+			rw.score += score * 0.9;
 			break;
 		case 'KWS':
 		case 'EWS':

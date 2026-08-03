@@ -936,8 +936,7 @@ exports.submit = function (client, text) {
 				if (my.opts.speedtoss && !my.opts.random) {
 					var matchingSumiChar = checkspeedToss(my.game.chain[my.game.chain.length - 1], text);
 					if (matchingSumiChar) {
-						// 50% Bonus
-						var bonusScore = Math.round(baseScoreWithoutMission * 0.5);
+						var bonusScore = Math.round(baseScoreWithoutMission * 0.20);
 						if (my.opts.bbungtwigi) bonusScore *= 2; // 뻥튀기: 스피드토스 보너스 2배
 						speedTossBonus = bonusScore;
 						my.game.sumiChar = matchingSumiChar; // Store for turnStart highlighting
@@ -970,8 +969,8 @@ exports.submit = function (client, text) {
 						client.game.lastWordLen = currentLen;
 
 						if (client.game.straightStreak >= 2) {
-							var multiplier = (Math.log(client.game.straightStreak - 1) / Math.log(4)) + 0.5;
-							straightBonus = Math.round(baseScoreWithoutMission * multiplier);
+							var straightPct = Math.min(15 + (client.game.straightStreak - 2) * 5, 50);
+							straightBonus = Math.round(baseScoreWithoutMission * (straightPct / 100));
 							if (my.opts.bbungtwigi) straightBonus *= 2; // 뻥튀기: 스트레이트 보너스 2배
 						}
 					}
@@ -1261,7 +1260,7 @@ exports.submit = function (client, text) {
 								jp.streak = 0;
 							}
 							if (jp.streak >= 3) {
-								jackpotBonus = Math.round(baseScoreWithoutMission * 1.0);
+								jackpotBonus = Math.round(baseScoreWithoutMission * 0.80);
 							}
 						}
 
@@ -1409,7 +1408,7 @@ exports.submit = function (client, text) {
 							}
 
 							if (matchCount === prevChars.length) {
-								fullHouseBonus = Math.round(baseScoreWithoutMission * 1.5);
+								fullHouseBonus = Math.round(baseScoreWithoutMission * 0.60);
 								if (my.opts.bbungtwigi) fullHouseBonus *= 2; // 뻥튀기: 보너스 2배
 								fullHouseChars = matchedIndices;
 							}
@@ -1972,7 +1971,7 @@ exports.getScore = function (text, delay, ignoreMission) {
 				if (jamoStr[ci] === missionJamo) mCount++;
 			}
 			if (mCount > 0) {
-				var missionBonus = score * 0.5 * mCount;
+				var missionBonus = score * 0.30 * mCount;
 				if (my.opts.bbungtwigi) missionBonus *= 2;
 				score += missionBonus;
 				my.game.mission = true;
@@ -1999,7 +1998,7 @@ exports.getScore = function (text, delay, ignoreMission) {
 				}
 
 				if (matchCount > 0) {
-					var missionBonus = score * 0.5 * matchCount;
+					var missionBonus = score * 0.30 * matchCount;
 					if (my.opts.bbungtwigi) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
 					score += missionBonus;
 					my.game.mission = true;
@@ -2008,7 +2007,7 @@ exports.getScore = function (text, delay, ignoreMission) {
 		} else {
 			// 기본 미션 규칙
 			if (arr = text.match(new RegExp(my.game.mission, "g"))) {
-				var missionBonus = score * 0.5 * arr.length;
+				var missionBonus = score * 0.30 * arr.length;
 				if (my.opts.bbungtwigi) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
 				score += missionBonus;
 				my.game.mission = true;

@@ -18,6 +18,7 @@
 
 var Const = require('../../const');
 var Lizard = require('../../sub/lizard');
+var Shapes = require('./cw_shapes').MAPS;
 var DB;
 var DIC;
 
@@ -56,6 +57,11 @@ exports.init = function (_DB, _DIC) {
 	DIC = _DIC;
 };
 exports.getTitle = function () {
+	var my = this;
+	if (my.rule.calc) return getTitleCalc(my);
+	return getTitleWord.call(my);
+};
+function getTitleWord() {
 	var R = new Lizard.Tail();
 	var my = this;
 	var means = [];
@@ -127,7 +133,78 @@ exports.getTitle = function () {
 		return R;
 	}
 	return R;
-};
+}
+function getTitleCalc(my) {
+	var R = new Lizard.Tail();
+	var means = [], mdb = [], boards = [], answers = {};
+	var i;
+
+	my.game.started = false;
+	for (i = 0; i < my.round; i++) {
+		var round = buildCalcRound();
+		means.push({});
+		mdb.push({});
+		boards.push(round);
+		fillCalcMeaning(i, round, means, mdb);
+		round.forEach(function (item) {
+			answers[`${i},${item[0]},${item[1]},${item[2]}`] = item.pop();
+		});
+	}
+	my.game.numQ = boards.reduce(function (s, b) { return s + b.length; }, 0);
+	my.game.prisoners = {};
+	my.game.answers = answers;
+	my.game.boards = boards;
+	my.game.means = means;
+	my.game.mdb = mdb;
+	R.go("①②③④⑤⑥⑦⑧⑨⑩");
+	return R;
+}
+function fillCalcMeaning(round, board, means, mdb) {
+	board.forEach(function (item) {
+		var x = item[0], y = item[1], dir = item[2], len = item[3], digits = item[4];
+		var cx = x, cy = y, i, rk;
+		var o = means[round][`${x},${y},${dir}`] = {
+			count: 0, x: x, y: y,
+			dir: dir, len: len,
+			type: "", theme: "",
+			mean: Const.generateMathClue(digits)
+		};
+		for (i = 0; i < len; i++) {
+			rk = `${cx},${cy}`;
+			if (!mdb[round][rk]) mdb[round][rk] = [];
+			mdb[round][rk].push(o);
+			if (dir) cy++; else cx++;
+		}
+	});
+}
+function buildCalcRound() {
+	var shape = Shapes[Math.floor(Math.random() * Shapes.length)];
+	var queue = shape.queue.split(' ').map(function (s) { return s.split('').map(Number); });
+	var board = {}; // "x,y" -> 한 자리 숫자 문자
+	var starts = {}; // "x,y" -> 이 칸이 어떤 슬롯의 첫 칸이면 true(0 금지)
+	var x, y, i;
+
+	queue.forEach(function (slot) { starts[`${slot[0]},${slot[1]}`] = true; });
+	queue.forEach(function (slot) {
+		x = slot[0]; y = slot[1];
+		for (i = 0; i < slot[3]; i++) {
+			var rk = `${x},${y}`;
+			if (board[rk] === undefined) {
+				var d = starts[rk] ? (1 + Math.floor(Math.random() * 9)) : Math.floor(Math.random() * 10);
+				board[rk] = String(d);
+			}
+			if (slot[2]) y++; else x++;
+		}
+	});
+	return queue.map(function (slot) {
+		var digits = '', px = slot[0], py = slot[1];
+		for (var j = 0; j < slot[3]; j++) {
+			digits += board[`${px},${py}`];
+			if (slot[2]) py++; else px++;
+		}
+		return [slot[0], slot[1], slot[2], slot[3], digits];
+	});
+}
 exports.roundReady = function () {
 	var my = this;
 

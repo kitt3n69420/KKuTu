@@ -480,11 +480,14 @@ function checkAnswer(input, answer, aliases, topic, lang) {
 		return false;
 	}
 
-	// 한국어: 띄어쓰기 무시
-	if (input.replace(/\s/g, '') === answer.replace(/\s/g, '')) return true;
+	// 한국어: 띄어쓰기 무시, 영숫자 대소문자 무시
+	var normalizeKo = function (s) {
+		return s.replace(/\s/g, '').toLowerCase();
+	};
+	if (normalizeKo(input) === normalizeKo(answer)) return true;
 	if (aliases) {
 		for (var i = 0; i < aliases.length; i++) {
-			if (input.replace(/\s/g, '') === aliases[i].replace(/\s/g, '')) return true;
+			if (normalizeKo(input) === normalizeKo(aliases[i])) return true;
 		}
 	}
 	return false;

@@ -468,7 +468,7 @@ exports.getScore = function (text, delay, ignoreMission) {
 				}
 
 				if (matchCount > 0) {
-					var missionBonus = score * 0.5 * matchCount;
+					var missionBonus = score * 0.30 * matchCount;
 					if (my.opts.bbungtwigi) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
 					score += missionBonus;
 					my.game.mission = true;
@@ -477,7 +477,7 @@ exports.getScore = function (text, delay, ignoreMission) {
 		} else {
 			// 기본 미션 규칙
 			if (arr = text.match(new RegExp(my.game.mission, "g"))) {
-				var missionBonus = score * 0.5 * arr.length;
+				var missionBonus = score * 0.30 * arr.length;
 				if (my.opts.bbungtwigi) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
 				score += missionBonus;
 				my.game.mission = true;
