@@ -78,7 +78,7 @@ a {
 	text-decoration: inherit;
 }
 
-input,
+input:not([type="range"]),
 select,
 textarea {
 	display: block;
@@ -87,6 +87,10 @@ textarea {
 	border: 1px solid var(--color-bg-medium);
 	border-radius: 10px;
 	resize: none;
+}
+
+input[type="range"] {
+	display: block;
 }
 
 button {

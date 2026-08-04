@@ -810,8 +810,8 @@ $(document).ready(function () {
 		// 슬라이더 값 설정
 		var bgmVol = savedSettings.bgmVolume !== null ? savedSettings.bgmVolume : $data.BGMVolume;
 		var effVol = savedSettings.effectVolume !== null ? savedSettings.effectVolume : $data.EffectVolume;
-		$(".bgmVolume").val((bgmVol || 1) * 100);
-		$(".effectVolume").val((effVol || 1) * 100);
+		$(".bgmVolume").val((isFinite(bgmVol) ? bgmVol : 1) * 100);
+		$(".effectVolume").val((isFinite(effVol) ? effVol : 1) * 100);
 
 		// 음소거 체크박스 설정
 		var bgmMute = savedSettings.bgmMute !== null ? savedSettings.bgmMute : $data.muteBGM;
