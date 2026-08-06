@@ -74,7 +74,9 @@ function getTitleWord() {
 		var maps = [];
 		var left = my.round;
 		var pick, pi, i, j;
-		var mParser = [];
+		// 슬롯마다 findOne을 따로 날리던 것을 뜻 조회 단일 IN 쿼리로 묶기 위한 목록
+		var items = [];
+		var wordSet = {};
 
 		while (left) {
 			pick = $box[pi = Math.floor(Math.random() * $box.length)];
@@ -90,47 +92,53 @@ function getTitleWord() {
 		for (i in boards) {
 			for (j in boards[i]) {
 				pi = boards[i][j];
-				mParser.push(getMeaning(i, pi));
+				items.push({ round: i, bItem: pi, word: pi[4] });
+				wordSet[pi[4]] = true;
 				answers[`${i},${pi[0]},${pi[1]},${pi[2]}`] = pi.pop();
 			}
 		}
-		my.game.numQ = mParser.length;
-		Lizard.all(mParser).then(function () {
+		my.game.numQ = items.length;
+
+		var words = Object.keys(wordSet);
+		if (!words.length) return finish({});
+		DB.kkutu[my.rule.lang].find(['_id', { '$in': words }]).limit(['mean', true], ['type', true], ['theme', true]).on(function (rows) {
+			var byId = {};
+			rows.forEach(function (row) { byId[row._id] = row; });
+			finish(byId);
+		});
+
+		function finish(byId) {
+			items.forEach(function (item) {
+				applyMeaning(item.round, item.bItem, item.word, byId[item.word]);
+			});
 			my.game.prisoners = {};
 			my.game.answers = answers;
 			my.game.boards = boards;
 			my.game.means = means;
 			my.game.mdb = mdb;
 			R.go("①②③④⑤⑥⑦⑧⑨⑩");
-		});
+		}
 	});
-	function getMeaning(round, bItem) {
-		var R = new Lizard.Tail();
-		var word = bItem[4];
+	function applyMeaning(round, bItem, word, doc) {
+		if (!doc) return;
 		var x = Number(bItem[0]), y = Number(bItem[1]);
+		var rk = `${x},${y}`;
+		var i, o;
 
-		DB.kkutu[my.rule.lang].findOne(['_id', word]).limit(['mean', true], ['type', true], ['theme', true]).on(function ($doc) {
-			if (!$doc) return R.go(null);
-			var rk = `${x},${y}`;
-			var i, o;
-
-			means[round][`${rk},${bItem[2]}`] = o = {
-				count: 0,
-				x: x, y: y,
-				dir: Number(bItem[2]), len: Number(bItem[3]),
-				type: $doc.type,
-				theme: $doc.theme,
-				mean: $doc.mean.replace(new RegExp(word.split('').map(function (w) { return w + "\\s?"; }).join(''), "g"), "★")
-			};
-			for (i = 0; i < o.len; i++) {
-				rk = `${x},${y}`;
-				if (!mdb[round][rk]) mdb[round][rk] = [];
-				mdb[round][rk].push(o);
-				if (o.dir) y++; else x++;
-			}
-			R.go(true);
-		});
-		return R;
+		means[round][`${rk},${bItem[2]}`] = o = {
+			count: 0,
+			x: x, y: y,
+			dir: Number(bItem[2]), len: Number(bItem[3]),
+			type: doc.type,
+			theme: doc.theme,
+			mean: doc.mean.replace(new RegExp(word.split('').map(function (w) { return w + "\\s?"; }).join(''), "g"), "★")
+		};
+		for (i = 0; i < o.len; i++) {
+			rk = `${x},${y}`;
+			if (!mdb[round][rk]) mdb[round][rk] = [];
+			mdb[round][rk].push(o);
+			if (o.dir) y++; else x++;
+		}
 	}
 	return R;
 }

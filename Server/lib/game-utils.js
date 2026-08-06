@@ -275,19 +275,14 @@ exports.applySurvivalDamage = function (my, DIC, damage, currentTurn) {
 		found = p && p.game && p.game.alive;
 		if (found) my.game._survivalCachedTarget = nextTurn;
 	} else if (my.opts.randomturn) {
-		var orderLen = my.game.randomTurnOrder.length;
-		var startIdx = (my.game.randomTurnIndex + 1) % orderLen;
-		for (var ri = 0; ri < orderLen; ri++) {
-			var candidateIdx = (startIdx + ri) % orderLen;
-			var candidateTurn = my.game.randomTurnOrder[candidateIdx];
-			var rp = DIC[my.game.seq[candidateTurn]] || my.game.seq[candidateTurn];
-			if (rp && rp.game && rp.game.alive) {
-				nextTurn = candidateTurn;
-				found = true;
-				break;
-			}
+		// my._nextRandomTurnSlot()이 가방 포인터 전진/재셔플까지 전담해서 커밋하므로,
+		// turnNext는 그 결과(targetIndex)를 그대로 읽기만 하면 됨 (재조회로 인한 어긋남 방지).
+		var _slot = my._nextRandomTurnSlot();
+		if (_slot !== null && _slot !== undefined) {
+			nextTurn = _slot;
+			found = true;
+			my.game._survivalCachedTarget = nextTurn;
 		}
-		if (found) my.game._survivalCachedTarget = nextTurn;
 	} else {
 		nextTurn = currentTurn;
 		for (var attempts = 0; attempts < my.game.seq.length; attempts++) {

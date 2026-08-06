@@ -111,6 +111,26 @@ $(document).ready(function () {
 			setting: $("#SettingDiag"),
 			settingServer: $("#setting-server"),
 			settingOK: $("#setting-ok"),
+			theme: $("#ThemeDiag"),
+			themePreviewLight: $("#theme-preview-light"),
+			themePreviewDark: $("#theme-preview-dark"),
+			themePreset: $("#theme-preset"),
+			themeCPrimary: $("#theme-c-primary"),
+			themeCPrimaryHex: $("#theme-c-primary-hex"),
+			themeCMedium: $("#theme-c-medium"),
+			themeCMediumHex: $("#theme-c-medium-hex"),
+			themeCLight: $("#theme-c-light"),
+			themeCLightHex: $("#theme-c-light-hex"),
+			themeCDark: $("#theme-c-dark"),
+			themeCDarkHex: $("#theme-c-dark-hex"),
+			themeCode: $("#theme-code"),
+			themeCodeCopy: $("#theme-code-copy"),
+			themeContrastWarning: $("#theme-contrast-warning"),
+			themeLoad: $("#theme-load"),
+			themeCancel: $("#theme-cancel"),
+			themeOK: $("#theme-ok"),
+			themeSettingEdit: $("#theme-setting-edit"),
+			themePresetReset: $("#theme-preset-reset"),
 			community: $("#CommunityDiag"),
 			commFriends: $("#comm-friends"),
 			commFriendAdd: $("#comm-friend-add"),
@@ -751,6 +771,8 @@ $(document).ready(function () {
 
 		// 테마 설정
 		$("#theme-setting").val(savedSettings.theme || 'blue');
+		$data._themeSettingPrevValue = savedSettings.theme || 'blue';
+		updateThemeSettingEditIcon();
 
 		// 다크 모드 설정
 		$("#dark-mode-setting").val(savedSettings.darkMode || 'light');
@@ -1714,6 +1736,152 @@ $(document).ready(function () {
 			}
 		}
 	});
+
+	/* ---------- 커스텀 테마 에디터 (ThemeDiag) ---------- */
+	function themeReadInputs() {
+		return {
+			primary: $stage.dialog.themeCPrimaryHex.val(),
+			medium: $stage.dialog.themeCMediumHex.val(),
+			lightBase: $stage.dialog.themeCLightHex.val(),
+			darkBase: $stage.dialog.themeCDarkHex.val()
+		};
+	}
+	function themeSetInputs(inputs) {
+		$stage.dialog.themeCPrimary.val(inputs.primary); $stage.dialog.themeCPrimaryHex.val(inputs.primary);
+		$stage.dialog.themeCMedium.val(inputs.medium); $stage.dialog.themeCMediumHex.val(inputs.medium);
+		$stage.dialog.themeCLight.val(inputs.lightBase); $stage.dialog.themeCLightHex.val(inputs.lightBase);
+		$stage.dialog.themeCDark.val(inputs.darkBase); $stage.dialog.themeCDarkHex.val(inputs.darkBase);
+	}
+	function themeValidInputs(inputs) {
+		var re = /^#[0-9a-fA-F]{6}$/;
+		return re.test(inputs.primary) && re.test(inputs.medium) && re.test(inputs.lightBase) && re.test(inputs.darkBase);
+	}
+	function themeApplyPreviewVars(el, g) {
+		if (!el) return;
+		el.style.setProperty('--tp-primary', g.primary.hex);
+		el.style.setProperty('--tp-primary-dark', g.primaryDark.hex);
+		el.style.setProperty('--tp-bg-light', g.bgLight.hex);
+		el.style.setProperty('--tp-bg-medium', g.bgMedium.hex);
+		el.style.setProperty('--tp-border', g.border.hex);
+		el.style.setProperty('--tp-text', g.text.hex);
+	}
+	function themeUpdatePreview() {
+		if (!window.ThemeEngine) return;
+		var inputs = themeReadInputs();
+		if (!themeValidInputs(inputs)) return;
+		themeApplyPreviewVars($stage.dialog.themePreviewLight[0], window.ThemeEngine.genLight(inputs));
+		themeApplyPreviewVars($stage.dialog.themePreviewDark[0], window.ThemeEngine.genDark(inputs));
+		$stage.dialog.themeCode.val(window.ThemeEngine.encodeThemeCode([inputs.primary, inputs.medium, inputs.lightBase, inputs.darkBase]));
+		$stage.dialog.themeContrastWarning.toggle(window.ThemeEngine.checkContrast(inputs).length > 0);
+	}
+	function themeInputsForKey(key) {
+		if (!window.ThemeEngine) return null;
+		if (key === 'custom') {
+			var saved = loadVolumeSettings().customTheme;
+			if (saved && themeValidInputs(saved)) return saved;
+			key = 'blue';
+		}
+		var preset = window.ThemeEngine.PRESETS_BY_KEY[key] || window.ThemeEngine.PRESETS_BY_KEY.blue;
+		return { primary: preset.primary, medium: preset.medium, lightBase: preset.lightBase, darkBase: preset.darkBase };
+	}
+	function wireThemeColorInput(colorEl, hexEl) {
+		colorEl.on('input', function () {
+			hexEl.val(colorEl.val());
+			themeUpdatePreview();
+		});
+		hexEl.on('input', function () {
+			var v = hexEl.val().trim();
+			if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+				colorEl.val(v);
+				themeUpdatePreview();
+			}
+		});
+	}
+	wireThemeColorInput($stage.dialog.themeCPrimary, $stage.dialog.themeCPrimaryHex);
+	wireThemeColorInput($stage.dialog.themeCMedium, $stage.dialog.themeCMediumHex);
+	wireThemeColorInput($stage.dialog.themeCLight, $stage.dialog.themeCLightHex);
+	wireThemeColorInput($stage.dialog.themeCDark, $stage.dialog.themeCDarkHex);
+
+	function applyPresetToThemeDiag(key) {
+		var inputs = themeInputsForKey(key);
+		if (!inputs) return;
+		themeSetInputs(inputs);
+		themeUpdatePreview();
+	}
+	function openThemeEditor() {
+		if (!window.ThemeEngine) return;
+		applyPresetToThemeDiag('custom');
+		$stage.dialog.themePreset.val('blue');
+		showDialog($stage.dialog.theme, true);
+	}
+	// native <select> doesn't fire 'change' when the user re-picks the value it already had, and
+	// there's no reliable way to tell "re-picked the same option" apart from "opened the dropdown
+	// and clicked away without choosing anything" from blur/mousedown alone. So instead of guessing,
+	// #theme-setting-edit / #theme-preset-reset give an explicit, always-deterministic way back in.
+	function updateThemeSettingEditIcon() {
+		$stage.dialog.themeSettingEdit.toggle($("#theme-setting").val() === 'custom');
+	}
+
+	$stage.dialog.themePreset.on('change', function () { applyPresetToThemeDiag($(this).val()); });
+	$stage.dialog.themePresetReset.on('click', function () { applyPresetToThemeDiag($stage.dialog.themePreset.val()); });
+
+	$("#theme-setting").on('change', function () {
+		updateThemeSettingEditIcon();
+		if ($(this).val() === 'custom') openThemeEditor();
+	});
+	$stage.dialog.themeSettingEdit.on('click', function () { openThemeEditor(); });
+
+	$stage.dialog.themeCodeCopy.on('click', function () {
+		var code = $stage.dialog.themeCode.val();
+		if (code && navigator.clipboard) navigator.clipboard.writeText(code);
+	});
+
+	$stage.dialog.themeLoad.on('click', function () {
+		showPrompt(L['themeLoadPrompt'] || '테마 코드를 입력하세요', '', function (code) {
+			if (!code || !window.ThemeEngine) return;
+			var decoded = window.ThemeEngine.decodeThemeCode(code.trim());
+			if (!decoded) {
+				showAlert(L['themeLoadInvalid'] || '올바르지 않은 테마 코드입니다.');
+				return;
+			}
+			themeSetInputs(decoded);
+			themeUpdatePreview();
+		});
+	});
+
+	$stage.dialog.themeCancel.on('click', function () {
+		$("#theme-setting").val($data._themeSettingPrevValue || 'blue');
+		updateThemeSettingEditIcon();
+		$stage.dialog.theme.hide();
+	});
+
+	$stage.dialog.themeOK.on('click', function (e) {
+		e.preventDefault();
+		var inputs = themeReadInputs();
+		if (!window.ThemeEngine || !themeValidInputs(inputs)) return;
+
+		var commit = function () {
+			saveVolumeSettings({ theme: 'custom', customTheme: inputs });
+			$data._themeSettingPrevValue = 'custom';
+			// applyTheme() renders using $data._activeDarkMode, which is only synced by
+			// applyDarkMode() -- normally called from SettingDiag's own save button. ThemeDiag can be
+			// opened on top of an still-open, unsaved SettingDiag (e.g. user just flipped the dark
+			// mode dropdown to 'dark' but hasn't hit Save yet), so without this the theme would commit
+			// against the stale last-saved dark mode and visibly fall back to light.
+			$data._activeDarkMode = $("#dark-mode-setting").val() || $data._activeDarkMode || 'light';
+			applyTheme('custom');
+			$stage.dialog.theme.hide();
+		};
+		var problems = window.ThemeEngine.checkContrast(inputs);
+		if (problems.length > 0) {
+			showConfirm(L['themeContrastWarning'] || '글씨가 잘 안 보일 수 있습니다. 그래도 적용할까요?', function (ok) {
+				if (ok) commit();
+			});
+		} else {
+			commit();
+		}
+	});
+
 	$("#mute-bgm").on('click', function () {
 		$data.muteBGM = !$data.muteBGM;
 		saveVolumeSettings({ bgmMute: $data.muteBGM }); // localStorage에 즉시 저장

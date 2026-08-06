@@ -16,30 +16,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* ===== Theme Variables ===== */
-:root {
-	--color-primary: #1976D2;
-	--color-primary-dark: #1565C0;
-	--color-bg-light: #E3F2FD;
-	--color-bg-medium: #90CAF9;
-	--color-border: #BBDEFB;
-}
-
-body.theme-red {
-	--color-primary: #C62828;
-	--color-primary-dark: #B71C1C;
-	--color-bg-light: #FFEBEE;
-	--color-bg-medium: #EF9A9A;
-	--color-border: #FFCDD2;
-}
-
-body.theme-orange {
-	--color-primary: #e67300;
-	--color-primary-dark: #bf510c;
-	--color-bg-light: #FFF3E0;
-	--color-bg-medium: #FFCC80;
-	--color-border: #FFE0B2;
-}
+/* ===== Theme Variables =====
+   All --color-* and --theme-* variables are computed by /js/theme-engine.js and injected inline on
+   <body> (see m_style.css's top-of-file note) — m_style.css's :root already supplies the fallback. */
 
 equ {
 	font-family: consolas;
@@ -58,26 +37,7 @@ equ {
 
 #Intro img {
 	width: 100%;
-}
-
-body.theme-red #Intro img {
-	filter: hue-rotate(135deg);
-}
-
-body.theme-orange #Intro img {
-	filter: hue-rotate(-180deg) saturate(130%) brightness(110%);
-}
-
-body.theme-gray #Intro img {
-	filter: saturate(0);
-}
-
-body.theme-yellow #Intro img {
-	filter: hue-rotate(-167deg) saturate(130%) brightness(130%);
-}
-
-body.theme-green #Intro img {
-	filter: hue-rotate(-120deg) saturate(80%);
+	filter: var(--theme-filter, none);
 }
 
 #version {
@@ -183,7 +143,7 @@ body {
 	/* Unified Button Style */
 	font-weight: bold;
 	color: var(--color-primary) !important;
-	background-color: rgba(255, 255, 255, 0.9) !important;
+	background-color: rgba(var(--theme-menu-btn-rgb, 255, 255, 255), 0.9) !important;
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 	margin: 1px;
 	/* Spacing for touch */
@@ -208,7 +168,7 @@ body {
 }
 
 #ExitBtn {
-	background-color: white !important;
+	background-color: rgba(var(--theme-menu-btn-rgb, 255, 255, 255), 0.9) !important;
 	color: #EF5350 !important;
 	/* Red */
 	/* Border removed */
@@ -236,7 +196,7 @@ body {
 #ReadyBtn:active {
 	margin-top: 8.5px !important;
 	height: 22.5px !important;
-	background-color: var(--color-primary-dark) !important;
+	filter: brightness(85%);
 	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2) !important;
 }
 
@@ -264,9 +224,9 @@ body {
 	position: fixed;
 	padding: 5px;
 	border-radius: 10px;
-	color: #111111;
+	color: var(--theme-text, #111111);
 	box-shadow: 0px 1px 1px #141414;
-	background-color: #FFFFFF;
+	background-color: var(--theme-surface, #FFFFFF);
 	z-index: 10;
 }
 
@@ -346,7 +306,7 @@ body {
 	height: 12px;
 	color: var(--color-primary-dark);
 	font-size: 11px;
-	background-color: var(--color-bg-light);
+	background-color: color-mix(in srgb, var(--color-bg-light) 50%, var(--color-border) 50%);
 }
 
 .dialog-head .dialog-title {
@@ -401,16 +361,16 @@ body {
 	position: relative;
 	z-index: 1;
 	border-radius: 0px;
-	color: #111111;
+	color: var(--theme-text, #111111);
 	box-shadow: 0px 2px 1px #B0BEC5;
-	background-color: #FFFFFF;
+	background-color: var(--theme-surface, #FFFFFF);
 }
 
 .product-title {
 	border-bottom-color: var(--color-border);
 	border-radius: 5px;
 	color: var(--color-primary-dark);
-	background-color: var(--color-bg-light);
+	background-color: color-mix(in srgb, var(--color-bg-light) 50%, var(--color-border) 50%);
 	overflow: hidden;
 }
 
@@ -602,7 +562,7 @@ body {
 	height: 64px;
 	box-shadow: 0px 1px 1px #B0BEC5;
 	cursor: pointer;
-	background-color: #FFFFFF;
+	background-color: var(--theme-surface, #FFFFFF);
 	transition: all 300ms ease;
 }
 
@@ -862,7 +822,7 @@ body {
 	width: calc(100% - 10px);
 	height: 24px;
 	box-shadow: 0px 1px 1px #B0BEC5;
-	background-color: var(--color-bg-light);
+	background-color: color-mix(in srgb, var(--color-bg-light) 50%, var(--color-border) 50%);
 }
 
 .room-user div {
@@ -923,6 +883,23 @@ body {
 	box-sizing: border-box;
 }
 
+/* 스크롤바 색: 막대는 색깔 1, 트랙은 밝은 색 80%+색깔 2 20%(라이트)/어두운 색 80%+밝은 색 20%(다크) */
+::-webkit-scrollbar-thumb {
+	background: var(--color-primary, rgba(0, 0, 0, 0.2));
+}
+
+::-webkit-scrollbar-thumb:hover {
+	filter: brightness(1.15);
+}
+
+::-webkit-scrollbar-track {
+	background: var(--theme-scrollbar-track, transparent);
+}
+
+body {
+	scrollbar-color: var(--color-primary, rgba(0, 0, 0, 0.2)) var(--theme-scrollbar-track, transparent);
+}
+
 /* Small mode for 9+ players - compact layout */
 .room-users.small-mode .room-user {
 	height: 20px;
@@ -964,26 +941,7 @@ body {
 	background-image: url('/img/kkutu/gamebg.png');
 	z-index: -1;
 	pointer-events: none;
-}
-
-body.theme-red .GameBox::before {
-	filter: hue-rotate(135deg);
-}
-
-body.theme-orange .GameBox::before {
-	filter: hue-rotate(-180deg) saturate(130%) brightness(110%);
-}
-
-body.theme-gray .GameBox::before {
-	filter: saturate(0);
-}
-
-body.theme-yellow .GameBox::before {
-	filter: hue-rotate(-170deg) saturate(130%) brightness(130%);
-}
-
-body.theme-green .GameBox::before {
-	filter: hue-rotate(-120deg);
+	filter: var(--theme-filter, none);
 }
 
 .GameBox .product-title {
@@ -1336,7 +1294,7 @@ body.theme-green .GameBox::before {
 	width: 60px;
 	height: 30px;
 	font-size: 20px;
-	color: #2DBAFF;
+	color: #FFFFFF;
 	font-weight: bold;
 	text-align: center;
 	text-shadow: 0px 1px 5px #141414;
@@ -2244,7 +2202,7 @@ body.theme-green .GameBox::before {
 }
 
 .chat-notice {
-	background-color: var(--color-bg-light);
+	background-color: color-mix(in srgb, var(--color-bg-light) 50%, var(--color-border) 50%);
 }
 
 .chat-notice .chat-head {
@@ -2634,7 +2592,7 @@ body.theme-green .GameBox::before {
 }
 
 .kkutu-menu .ItemButton.item-available {
-	background-color: rgba(255, 255, 255, 0.9);
+	background-color: rgba(var(--theme-menu-btn-rgb, 255, 255, 255), 0.9);
 	color: var(--color-primary);
 }
 
@@ -2729,6 +2687,7 @@ body.theme-green .GameBox::before {
 	position: relative;
 	overflow: visible;
 	cursor: pointer;
+	background-color: rgba(var(--theme-menu-btn-rgb, 255, 255, 255), 0.9) !important;
 }
 
 .raingame-strategy-btn .StratIcon {
@@ -2755,53 +2714,12 @@ body.theme-green .GameBox::before {
 	z-index: 10001;
 }
 
-/* ===== Dark Mode ===== */
-
-body.dark-mode {
-	--color-primary: #90CAF9;
-	--color-primary-dark: #64B5F6;
-	--color-bg-light: #0f1a25;
-	--color-bg-medium: #090f18;
-	--color-border: #1a2e42;
-}
-body.dark-mode.theme-red {
-	--color-primary: #EF9A9A;
-	--color-primary-dark: #E57373;
-	--color-bg-light: #250f0f;
-	--color-bg-medium: #180909;
-	--color-border: #3a1414;
-}
-body.dark-mode.theme-orange {
-	--color-primary: #FFCC80;
-	--color-primary-dark: #FFB74D;
-	--color-bg-light: #251a0a;
-	--color-bg-medium: #180f05;
-	--color-border: #3a2510;
-}
-body.dark-mode.theme-gray {
-	--color-primary: #BDBDBD;
-	--color-primary-dark: #9E9E9E;
-	--color-bg-light: #1c1c1c;
-	--color-bg-medium: #111111;
-	--color-border: #2e2e2e;
-}
-body.dark-mode.theme-yellow {
-	--color-primary: #FFE082;
-	--color-primary-dark: #FFD54F;
-	--color-bg-light: #221e0a;
-	--color-bg-medium: #161206;
-	--color-border: #362e10;
-}
-body.dark-mode.theme-green {
-	--color-primary: #AED581;
-	--color-primary-dark: #9CCC65;
-	--color-bg-light: #0f1e0a;
-	--color-bg-medium: #0a1206;
-	--color-border: #182e10;
-}
+/* ===== Dark Mode =====
+   --color-* 와 --theme-* 변수는 /js/theme-engine.js가 계산해 <body>에 직접 주입한다(위 m_style.css 상단
+   메모 참고) — 여기서 클래스별로 재정의하던 5개 변수 블록은 삭제됨. */
 
 body.dark-mode .GameBox::before {
-	filter: invert(1) saturate(0%) brightness(0.45);
+	filter: var(--theme-filter-dark, invert(1) saturate(0%) brightness(0.45));
 }
 body.dark-mode .game-body.flip .GameBox::before {
 	filter: none !important;
@@ -2810,56 +2728,56 @@ body.dark-mode .game-body.flip .GameBox::before {
 }
 
 body.dark-mode .dialog {
-	background-color: #1E1E1E !important;
-	color: #E0E0E0 !important;
+	background-color: var(--theme-surface, #1E1E1E) !important;
+	color: var(--theme-text, #E0E0E0) !important;
 }
 body.dark-mode .Product {
-	background-color: #1E1E1E !important;
-	color: #E0E0E0 !important;
+	background-color: var(--theme-surface, #1E1E1E) !important;
+	color: var(--theme-text, #E0E0E0) !important;
 }
 body.dark-mode .rooms-item {
-	background-color: #1E1E1E !important;
+	background-color: var(--theme-surface, #1E1E1E) !important;
 }
 body.dark-mode .dress-type:hover {
 	background-color: rgba(255, 255, 255, 0.1) !important;
 }
 body.dark-mode .MobileItemOverlay {
-	background: #2C2C2C !important;
-	color: #E0E0E0 !important;
+	background: var(--theme-surface, #2C2C2C) !important;
+	color: var(--theme-text, #E0E0E0) !important;
 	border-color: #666 !important;
 }
-body.dark-mode .kkutu-menu button:not(.ItemButton) {
-	background-color: rgba(50, 50, 50, 0.9) !important;
+body.dark-mode #ReadyBtn,
+body.dark-mode #StartBtn {
+	color: #000000 !important;
 }
-body.dark-mode .kkutu-menu .ItemButton.item-available {
-	background-color: rgba(50, 50, 50, 0.9) !important;
+body.dark-mode #ReadyBtn.toggled {
+	/* toggled 상태는 배경이 --color-bg-medium(다크 모드에서 거의 검정)이라 검은 글씨를 강제하면 안 보임 */
+	color: #FFFFFF !important;
 }
-body.dark-mode #ExitBtn {
-	background-color: #2C2C2C !important;
+/* 입력창, 드롭박스: 라이트/다크 모두 kkutu-menu 버튼과 같은 색 공식(--theme-menu-btn)을 따라간다 */
+input:not([type='checkbox']):not([type='radio']):not([type='range']),
+select {
+	background-color: var(--theme-menu-btn, #FFFFFF);
 }
 body.dark-mode input:not([type='checkbox']):not([type='radio']):not([type='range']) {
-	background-color: #2C2C2C !important;
-	color: #E0E0E0 !important;
-	box-shadow: inset 0 0 0 1px #555 !important;
+	color: var(--theme-text, #E0E0E0) !important;
+	box-shadow: inset 0 0 0 1px var(--color-border, #555) !important;
 }
 body.dark-mode select {
-	background-color: #2C2C2C !important;
-	color: #E0E0E0 !important;
-	box-shadow: inset 0 0 0 1px #555 !important;
+	color: var(--theme-text, #E0E0E0) !important;
+	box-shadow: inset 0 0 0 1px var(--color-border, #555) !important;
 }
 body.dark-mode button:not(.closeBtn) {
-	background-color: #2C2C2C !important;
-	color: #E0E0E0 !important;
-	box-shadow: inset 0 0 0 1px #555 !important;
+	background-color: var(--theme-surface, #2C2C2C) !important;
+	color: var(--theme-text, #E0E0E0) !important;
+	box-shadow: inset 0 0 0 1px var(--color-border, #555) !important;
 }
-body.dark-mode ::-webkit-scrollbar-thumb {
-	background: rgba(255, 255, 255, 0.25) !important;
-}
-body.dark-mode ::-webkit-scrollbar-thumb:hover {
-	background: rgba(255, 255, 255, 0.4) !important;
-}
-body.dark-mode ::-webkit-scrollbar-track {
-	background: rgba(255, 255, 255, 0.05) !important;
+/* kkutu-menu/raingame-strategy 버튼: 위 규칙보다 specificity가 낮아 묻히므로 다시 명시해서 이긴다 */
+body.dark-mode .kkutu-menu button:not(.ItemButton),
+body.dark-mode .kkutu-menu .ItemButton.item-available,
+body.dark-mode .kkutu-menu .raingame-strategy-btn {
+	background-color: rgba(var(--theme-menu-btn-rgb, 50, 50, 50), 0.9) !important;
+	box-shadow: inset 0 0 0 1px var(--color-border, #555) !important;
 }
 body.dark-mode .product-title i {
 	color: #E0E0E0 !important;
@@ -2916,19 +2834,15 @@ body.dark-mode .team-4 {
 	background-color: #ecc756 !important;
 }
 
-body.dark-mode .room-users {
-	scrollbar-color: rgba(255, 255, 255, 0.25) transparent !important;
-}
-
 body.dark-mode .pq-canvas {
-	background: #1E1E1E !important;
+	background: var(--theme-surface, #1E1E1E) !important;
 }
 body.dark-mode .result-board-me {
 	background-color: #262626 !important;
 	border-color: #444 !important;
 }
 body.dark-mode .result-board-item {
-	background-color: #2C2C2C !important;
+	background-color: var(--theme-surface, #2C2C2C) !important;
 }
 body.dark-mode .result-me {
 	border-color: #444 !important;
@@ -2944,7 +2858,7 @@ body.dark-mode .chat-balloon {
 	color: #E0E0E0 !important;
 }
 body.dark-mode .chat-balloon h4 {
-	background-color: #2C2C2C !important;
+	background-color: var(--theme-surface, #2C2C2C) !important;
 	border-color: #444 !important;
 }
 body.dark-mode #Chat hr,
@@ -2952,9 +2866,6 @@ body.dark-mode #chat-log-board hr {
 	border-bottom-color: #555 !important;
 }
 
-body.dark-mode .raingame-strategy-btn {
-	background-color: rgba(50, 50, 50, 0.9) !important;
-}
 body.dark-mode .cfi-menu>i:hover,
 body.dark-mode .chat-head:hover,
 body.dark-mode .room-user:hover {

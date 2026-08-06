@@ -73,15 +73,15 @@ var BAD = new RegExp(["느으*[^가-힣]*금마?", "(?<!(밀레|심포|도미))�
 		"이[^가-힣]*승[^가-힣]*만", "윤[^가-힣]*보[^가-힣]*선", "박[^가-힣]*정[^가-힣]*희", "최[^가-힣]*규[^가-힣]*하", "전[^가-힣]*두[^가-힣]*환", "노[^가-힣]*태[^가-힣]*우", "김[^가-힣]*영[^가-힣]*삼", "김[^가-힣]*대[^가-힣]*중",
 		"이[^가-힣]*명[^가-힣]*박", "박[^가-힣]*근[^가-힣]*혜", "문[^가-힣]*재[^가-힣]*인", "자[^가-힣]*(살|해)", "찐[^가-힣]*따", "(민[^가-힣]*주|진[^가-힣]*보|개[^가-힣]*혁[^가-힣]*신)[^가-힣]*당", "국[^가-힣]*민[^가-힣]*의[^가-힣]*힘",
 		
-		"tlqkf", "torl", "tprtm", "wlfkf", "[mf][a4@][g]{2,}[o0][t+]", "f[a4@]g", "(r[e3]|[b8][a4@][s5])t[a4@]rd", "n[i1!]gg([e3]r|[a4@])", "b[i1!][t+0]ch", "sh[i1!][t+0]", "f[u*u](c|k){1,}", "p[u*u][s]{2}y",
-		"c(u|oo)m", "[s5][e3]x", "p[o0]rn", "k[^a-zA-Z0-9]*y[^a-zA-Z0-9]*s", "y[i1!|]ff", "d[i1!]ck", "[s5]u[i!1]c[i!1]d[e3]", "m[a@4][s5]tur[b8][a4]t([i1!][o0]n|[e3]|[o0]r)", "jerk([1i]n|[0f]ff).*",
-		"(h[a@4]nd|f[0o][0o]t|t[i1!]t|bl[0o]w)j[o0]b", "🤏", "🖕",
+		"tlqkf", "torl", "tprtm", "wlfkf", "\\b[mf][a4@][g]{2,}[o0][t+]", "\\bf[a4@]g", "\\b(r[e3]|[b8][a4@][s5])t[a4@]rd", "\\bn[i1!]gg([e3]r|[a4@])", "\\bb[i1!][t+0]ch", "\\bsh[i1!][t+0]", "\\bf[u*u](c|k){1,}", "\\bp[u*u][s]{2}y",
+		"\\bc(u|oo)m", "\\b[s5][e3]x", "\\bp[o0]rn", "k[^a-zA-Z0-9]*y[^a-zA-Z0-9]*s", "\\by[i1!|]ff", "\\bd[i1!]ck", "\\b[s5]u[i!1]c[i!1]d[e3]", "\\bm[a@4][s5]tur[b8][a4]t([i1!][o0]n|[e3]|[o0]r)", "\\bjerk([i1]ng?)?[^a-zA-Z0-9]*[o0]ff",
+		"\\b(h[a@4]nd|f[0o][0o]t|t[i1!]t|bl[0o]w)j[o0]b", "🤏", "🖕",
 		
 		"(염|옘|엠)[^가-힣]*병", "ㅂ[^가-힣]*ㅅ", "[개걔][^가-힣]*소[^가-힣]*리", "딜[^가-힣]*도", "오[^가-힣]*나[^가-힣]*홀", "ㅈ[^가-힣]*도", "조[^가-힣]*선[^가-힣]*족", "국[^가-힣]*뽕[^가-힣]*충", "[남북헬][^가-힣]*[조좆]선",
 		"꺼[^가-힣]*(져|저|지)", "쳐[^가-힣]*맞", "[씨시][^가-힣]*부[^가-힣]*(리|려|랄|럴)", "능[^가-힣]*지[^가-힣]*(딸|달)", "개[^가-힣]*돼[^가-힣]*지", "[또도][^가-힣]*라[^가-힣]*이", "[돌똘][^가-힣]*아[^가-힣]*이", "[씹십][^가-힣]*(덕|뜨[^가-힣]*억)",
 		"퐁퐁[^가-힣]*남", "방[^가-힣]*구[^가-힣]*석[^가-힣]*(여[^가-힣]*포|인[^가-힣]*생)", "어[^가-힣]*그[^가-힣]*로[^가-힣]", "긁[^가-힣]*힌", "[엠앰][^가-힣]*생", "보[^가-힣]*추", "종[^가-힣]*간[^가-힣]*나",
 		"1[789]금[^가-힣]*영[^가-힣]*상", "[ㅓㅗ]ㅜㅑ", "르[^가-힣]*가[^가-힣]*[즘슴]", "정[^가-힣]*신[^가-힣]*(병|이[^가-힣]*상|개[^가-힣]*쑊)", "(한[^가-힣]*국|나[^가-힣]*라)[^가-힣]*망", "[한H][^가-힣]*남[^대역동]",
-		"[한H][^가-힣]*[녀여]", "[그니너저샹썅][^가-힣]*년", "닥[^가-힣]*[치쳐처]", "(대|머|아)[^가-힣]*((갈[^가-힣]*[통빡])|가[^가-힣]*리)", "w[^가-힣]*l[^가-힣]*s", "찐[^가-힣]*(따|평)", "쿨[^가-힣]*찐"
+		"[한H][^가-힣]*[녀여]", "[그니너저샹썅][^가-힣]*년", "닥[^가-힣]*[치쳐처]", "(대|머|아)[^가-힣]*((갈[^가-힣]*[통빡])|가[^가-힣]*리)", "\\bwls\\b", "찐[^가-힣]*(따|평)", "쿨[^가-힣]*찐"
     ].join('|'), "g");
 
 var ws, rws;
@@ -230,6 +230,26 @@ $(document).ready(function () {
 			setting: $("#SettingDiag"),
 			settingServer: $("#setting-server"),
 			settingOK: $("#setting-ok"),
+			theme: $("#ThemeDiag"),
+			themePreviewLight: $("#theme-preview-light"),
+			themePreviewDark: $("#theme-preview-dark"),
+			themePreset: $("#theme-preset"),
+			themeCPrimary: $("#theme-c-primary"),
+			themeCPrimaryHex: $("#theme-c-primary-hex"),
+			themeCMedium: $("#theme-c-medium"),
+			themeCMediumHex: $("#theme-c-medium-hex"),
+			themeCLight: $("#theme-c-light"),
+			themeCLightHex: $("#theme-c-light-hex"),
+			themeCDark: $("#theme-c-dark"),
+			themeCDarkHex: $("#theme-c-dark-hex"),
+			themeCode: $("#theme-code"),
+			themeCodeCopy: $("#theme-code-copy"),
+			themeContrastWarning: $("#theme-contrast-warning"),
+			themeLoad: $("#theme-load"),
+			themeCancel: $("#theme-cancel"),
+			themeOK: $("#theme-ok"),
+			themeSettingEdit: $("#theme-setting-edit"),
+			themePresetReset: $("#theme-preset-reset"),
 			community: $("#CommunityDiag"),
 			commFriends: $("#comm-friends"),
 			commFriendAdd: $("#comm-friend-add"),
@@ -870,6 +890,8 @@ $(document).ready(function () {
 
 		// 테마 설정
 		$("#theme-setting").val(savedSettings.theme || 'blue');
+		$data._themeSettingPrevValue = savedSettings.theme || 'blue';
+		updateThemeSettingEditIcon();
 
 		// 다크 모드 설정
 		$("#dark-mode-setting").val(savedSettings.darkMode || 'light');
@@ -1833,6 +1855,152 @@ $(document).ready(function () {
 			}
 		}
 	});
+
+	/* ---------- 커스텀 테마 에디터 (ThemeDiag) ---------- */
+	function themeReadInputs() {
+		return {
+			primary: $stage.dialog.themeCPrimaryHex.val(),
+			medium: $stage.dialog.themeCMediumHex.val(),
+			lightBase: $stage.dialog.themeCLightHex.val(),
+			darkBase: $stage.dialog.themeCDarkHex.val()
+		};
+	}
+	function themeSetInputs(inputs) {
+		$stage.dialog.themeCPrimary.val(inputs.primary); $stage.dialog.themeCPrimaryHex.val(inputs.primary);
+		$stage.dialog.themeCMedium.val(inputs.medium); $stage.dialog.themeCMediumHex.val(inputs.medium);
+		$stage.dialog.themeCLight.val(inputs.lightBase); $stage.dialog.themeCLightHex.val(inputs.lightBase);
+		$stage.dialog.themeCDark.val(inputs.darkBase); $stage.dialog.themeCDarkHex.val(inputs.darkBase);
+	}
+	function themeValidInputs(inputs) {
+		var re = /^#[0-9a-fA-F]{6}$/;
+		return re.test(inputs.primary) && re.test(inputs.medium) && re.test(inputs.lightBase) && re.test(inputs.darkBase);
+	}
+	function themeApplyPreviewVars(el, g) {
+		if (!el) return;
+		el.style.setProperty('--tp-primary', g.primary.hex);
+		el.style.setProperty('--tp-primary-dark', g.primaryDark.hex);
+		el.style.setProperty('--tp-bg-light', g.bgLight.hex);
+		el.style.setProperty('--tp-bg-medium', g.bgMedium.hex);
+		el.style.setProperty('--tp-border', g.border.hex);
+		el.style.setProperty('--tp-text', g.text.hex);
+	}
+	function themeUpdatePreview() {
+		if (!window.ThemeEngine) return;
+		var inputs = themeReadInputs();
+		if (!themeValidInputs(inputs)) return;
+		themeApplyPreviewVars($stage.dialog.themePreviewLight[0], window.ThemeEngine.genLight(inputs));
+		themeApplyPreviewVars($stage.dialog.themePreviewDark[0], window.ThemeEngine.genDark(inputs));
+		$stage.dialog.themeCode.val(window.ThemeEngine.encodeThemeCode([inputs.primary, inputs.medium, inputs.lightBase, inputs.darkBase]));
+		$stage.dialog.themeContrastWarning.toggle(window.ThemeEngine.checkContrast(inputs).length > 0);
+	}
+	function themeInputsForKey(key) {
+		if (!window.ThemeEngine) return null;
+		if (key === 'custom') {
+			var saved = loadVolumeSettings().customTheme;
+			if (saved && themeValidInputs(saved)) return saved;
+			key = 'blue';
+		}
+		var preset = window.ThemeEngine.PRESETS_BY_KEY[key] || window.ThemeEngine.PRESETS_BY_KEY.blue;
+		return { primary: preset.primary, medium: preset.medium, lightBase: preset.lightBase, darkBase: preset.darkBase };
+	}
+	function wireThemeColorInput(colorEl, hexEl) {
+		colorEl.on('input', function () {
+			hexEl.val(colorEl.val());
+			themeUpdatePreview();
+		});
+		hexEl.on('input', function () {
+			var v = hexEl.val().trim();
+			if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+				colorEl.val(v);
+				themeUpdatePreview();
+			}
+		});
+	}
+	wireThemeColorInput($stage.dialog.themeCPrimary, $stage.dialog.themeCPrimaryHex);
+	wireThemeColorInput($stage.dialog.themeCMedium, $stage.dialog.themeCMediumHex);
+	wireThemeColorInput($stage.dialog.themeCLight, $stage.dialog.themeCLightHex);
+	wireThemeColorInput($stage.dialog.themeCDark, $stage.dialog.themeCDarkHex);
+
+	function applyPresetToThemeDiag(key) {
+		var inputs = themeInputsForKey(key);
+		if (!inputs) return;
+		themeSetInputs(inputs);
+		themeUpdatePreview();
+	}
+	function openThemeEditor() {
+		if (!window.ThemeEngine) return;
+		applyPresetToThemeDiag('custom');
+		$stage.dialog.themePreset.val('blue');
+		showDialog($stage.dialog.theme, true);
+	}
+	// native <select> doesn't fire 'change' when the user re-picks the value it already had, and
+	// there's no reliable way to tell "re-picked the same option" apart from "opened the dropdown
+	// and clicked away without choosing anything" from blur/mousedown alone. So instead of guessing,
+	// #theme-setting-edit / #theme-preset-reset give an explicit, always-deterministic way back in.
+	function updateThemeSettingEditIcon() {
+		$stage.dialog.themeSettingEdit.toggle($("#theme-setting").val() === 'custom');
+	}
+
+	$stage.dialog.themePreset.on('change', function () { applyPresetToThemeDiag($(this).val()); });
+	$stage.dialog.themePresetReset.on('click', function () { applyPresetToThemeDiag($stage.dialog.themePreset.val()); });
+
+	$("#theme-setting").on('change', function () {
+		updateThemeSettingEditIcon();
+		if ($(this).val() === 'custom') openThemeEditor();
+	});
+	$stage.dialog.themeSettingEdit.on('click', function () { openThemeEditor(); });
+
+	$stage.dialog.themeCodeCopy.on('click', function () {
+		var code = $stage.dialog.themeCode.val();
+		if (code && navigator.clipboard) navigator.clipboard.writeText(code);
+	});
+
+	$stage.dialog.themeLoad.on('click', function () {
+		showPrompt(L['themeLoadPrompt'] || '테마 코드를 입력하세요', '', function (code) {
+			if (!code || !window.ThemeEngine) return;
+			var decoded = window.ThemeEngine.decodeThemeCode(code.trim());
+			if (!decoded) {
+				showAlert(L['themeLoadInvalid'] || '올바르지 않은 테마 코드입니다.');
+				return;
+			}
+			themeSetInputs(decoded);
+			themeUpdatePreview();
+		});
+	});
+
+	$stage.dialog.themeCancel.on('click', function () {
+		$("#theme-setting").val($data._themeSettingPrevValue || 'blue');
+		updateThemeSettingEditIcon();
+		$stage.dialog.theme.hide();
+	});
+
+	$stage.dialog.themeOK.on('click', function (e) {
+		e.preventDefault();
+		var inputs = themeReadInputs();
+		if (!window.ThemeEngine || !themeValidInputs(inputs)) return;
+
+		var commit = function () {
+			saveVolumeSettings({ theme: 'custom', customTheme: inputs });
+			$data._themeSettingPrevValue = 'custom';
+			// applyTheme() renders using $data._activeDarkMode, which is only synced by
+			// applyDarkMode() -- normally called from SettingDiag's own save button. ThemeDiag can be
+			// opened on top of an still-open, unsaved SettingDiag (e.g. user just flipped the dark
+			// mode dropdown to 'dark' but hasn't hit Save yet), so without this the theme would commit
+			// against the stale last-saved dark mode and visibly fall back to light.
+			$data._activeDarkMode = $("#dark-mode-setting").val() || $data._activeDarkMode || 'light';
+			applyTheme('custom');
+			$stage.dialog.theme.hide();
+		};
+		var problems = window.ThemeEngine.checkContrast(inputs);
+		if (problems.length > 0) {
+			showConfirm(L['themeContrastWarning'] || '글씨가 잘 안 보일 수 있습니다. 그래도 적용할까요?', function (ok) {
+				if (ok) commit();
+			});
+		} else {
+			commit();
+		}
+	});
+
 	$("#mute-bgm").on('click', function () {
 		$data.muteBGM = !$data.muteBGM;
 		saveVolumeSettings({ bgmMute: $data.muteBGM }); // localStorage에 즉시 저장
@@ -8054,6 +8222,11 @@ var BONUS_COLORS = {
 Object.defineProperty(BONUS_COLORS, 'linking', {
 	get: function() {
 		var dark = document.body.classList.contains('dark-mode');
+		if (document.body.classList.contains('theme-grape')) return dark ? 'rgb(239, 205, 249)' : 'rgb(239, 205, 249)';
+		if (document.body.classList.contains('theme-slate')) return dark ? 'rgb(223, 233, 238)' : 'rgb(223, 233, 238)';
+		if (document.body.classList.contains('theme-sweetpotato')) return dark ? 'rgb(255, 239, 132)' : 'rgb(255, 239, 132)';
+		if (document.body.classList.contains('theme-cottoncandy')) return dark ? 'rgb(255, 215, 232)' : 'rgb(255, 215, 232)';
+		if (document.body.classList.contains('theme-watermelon')) return dark ? 'rgb(254, 226, 226)' : 'rgb(254, 226, 226)';
 		if (document.body.classList.contains('theme-red')) return dark ? 'rgb(239, 154, 154)' : 'rgb(239, 154, 154)';
 		if (document.body.classList.contains('theme-orange')) return dark ? 'rgb(255, 204, 128)' : 'rgb(255, 204, 128)';
 		if (document.body.classList.contains('theme-gray')) return dark ? 'rgb(189, 189, 189)' : 'rgb(189, 189, 189)';
@@ -8762,17 +8935,12 @@ function showPrompt(msg, value, callback) {
 	});
 }
 function applyTheme(theme) {
-	document.body.classList.remove('theme-red', 'theme-orange', 'theme-gray', 'theme-yellow', 'theme-green');
-	if (theme === 'red') document.body.classList.add('theme-red');
-	else if (theme === 'orange') document.body.classList.add('theme-orange');
-	else if (theme === 'gray') document.body.classList.add('theme-gray');
-	else if (theme === 'yellow') document.body.classList.add('theme-yellow');
-	else if (theme === 'green') document.body.classList.add('theme-green');
+	$data._activeTheme = theme || 'blue';
+	if (window.ThemeEngine) window.ThemeEngine.apply($data._activeTheme, $data._activeDarkMode || 'light');
 }
 function applyDarkMode(setting) {
-	var isDark = setting === 'dark' || (setting === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-	if (isDark) document.body.classList.add('dark-mode');
-	else document.body.classList.remove('dark-mode');
+	$data._activeDarkMode = setting || 'light';
+	if (window.ThemeEngine) window.ThemeEngine.apply($data._activeTheme || 'blue', $data._activeDarkMode);
 }
 function rebuildInjeongExplHTML(dict) {
 	function themeList(list) {

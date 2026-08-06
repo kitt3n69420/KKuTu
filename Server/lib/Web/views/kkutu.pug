@@ -171,12 +171,19 @@ block Middle
 		div.dialog-bar
 			h4(data-lang-key='theme')= L('theme')
 			select#theme-setting(style="width:70px")
+				option(value="custom", data-lang-key='themeCustom')= L('themeCustom')
+				option(value="grape", data-lang-key='themeGrape')= L('themeGrape')
 				option(value="blue", data-lang-key='themeBlue')= L('themeBlue')
 				option(value="green", data-lang-key='themeGreen')= L('themeGreen')
 				option(value="yellow", data-lang-key='themeYellow')= L('themeYellow')
 				option(value="orange", data-lang-key='themeOrange')= L('themeOrange')
 				option(value="red", data-lang-key='themeRed')= L('themeRed')
 				option(value="gray", data-lang-key='themeGray')= L('themeGray')
+				option(value="slate", data-lang-key='themeSlate')= L('themeSlate')
+				option(value="watermelon", data-lang-key='themeWatermelon')= L('themeWatermelon')
+				option(value="sweetpotato", data-lang-key='themeSweetpotato')= L('themeSweetpotato')
+				option(value="cottoncandy", data-lang-key='themeCottoncandy')= L('themeCottoncandy')
+			i.fa.fa-pencil#theme-setting-edit(style="cursor:pointer; margin:0 6px; vertical-align:middle; display:none;")
 			select#dark-mode-setting(style="width:70px")
 				option(value="light", data-lang-key='darkModeLight')= L('darkModeLight')
 				option(value="dark", data-lang-key='darkModeDark')= L('darkModeDark')
@@ -202,6 +209,64 @@ block Middle
 		div.dialog-bar.tail-button
 			button#setting-ok(data-lang-key='save')= L('save')
 			button#setting-server(data-lang-key='changeServer')= L('changeServer')
+	+Dialog('ThemeDiag', 300, 375, 'themeEditorTitle')
+		div.dialog-bar
+			div(style='display:flex; gap:6px;')
+				div#theme-preview-light(style='flex:1; min-width:0; position:relative; height:110px; border-radius:6px; overflow:hidden; background:var(--tp-bg-light,#FFFFFF); border:1px solid var(--tp-border,#BBDEFB);')
+					div(style='padding:6px 8px; font-size:10px; font-weight:bold; color:#fff; background:var(--tp-primary-dark,#1565C0);')
+						span(data-lang-key='darkModeLight')= L('darkModeLight')
+					div(style='padding:6px 8px;')
+						div(style='padding:4px 6px; margin-bottom:4px; border-radius:4px; background:var(--tp-bg-medium,#90CAF9); color:var(--tp-primary-dark,#1565C0); font-size:10px;') KKuTu-N
+						div(style='padding:4px 6px; border-radius:4px; border:1px solid var(--tp-border,#BBDEFB); color:var(--tp-text,#1A1A1A); font-size:10px;') Custom Theme
+				div#theme-preview-dark(style='flex:1; min-width:0; position:relative; height:110px; border-radius:6px; overflow:hidden; background:var(--tp-bg-light,#0f1a25); border:1px solid var(--tp-border,#1a2e42);')
+					div(style='padding:6px 8px; font-size:10px; font-weight:bold; color:#fff; background:var(--tp-primary-dark,#64B5F6);')
+						span(data-lang-key='darkModeDark')= L('darkModeDark')
+					div(style='padding:6px 8px;')
+						div(style='padding:4px 6px; margin-bottom:4px; border-radius:4px; background:var(--tp-bg-medium,#090f18); color:var(--tp-primary-dark,#64B5F6); font-size:10px;') KKuTu-N
+						div(style='padding:4px 6px; border-radius:4px; border:1px solid var(--tp-border,#1a2e42); color:var(--tp-text,#FFFFFF); font-size:10px;') Custom Theme
+		div.dialog-bar
+			h4(data-lang-key='themePreset')= L('themePreset')
+			select#theme-preset(style="width:150px")
+				option(value="grape", data-lang-key='themeGrape')= L('themeGrape')
+				option(value="blue", data-lang-key='themeBlue')= L('themeBlue')
+				option(value="green", data-lang-key='themeGreen')= L('themeGreen')
+				option(value="yellow", data-lang-key='themeYellow')= L('themeYellow')
+				option(value="orange", data-lang-key='themeOrange')= L('themeOrange')
+				option(value="red", data-lang-key='themeRed')= L('themeRed')
+				option(value="gray", data-lang-key='themeGray')= L('themeGray')
+				option(value="slate", data-lang-key='themeSlate')= L('themeSlate')
+				option(value="watermelon", data-lang-key='themeWatermelon')= L('themeWatermelon')
+				option(value="sweetpotato", data-lang-key='themeSweetpotato')= L('themeSweetpotato')
+				option(value="cottoncandy", data-lang-key='themeCottoncandy')= L('themeCottoncandy')
+			i.fa.fa-refresh#theme-preset-reset(style="cursor:pointer; margin-left:6px; vertical-align:middle;")
+		div.dialog-bar
+			h4(data-lang-key='themeColorPrimary')= L('themeColorPrimary')
+			input#theme-c-primary(type='color', style='float:left; width:32px; height:24px; padding:0; border:none;')
+			input#theme-c-primary-hex(type='text', maxlength=7, spellcheck='false', style='float:left; width:80px; margin-left:6px;')
+		div.dialog-bar
+			h4(data-lang-key='themeColorMedium')= L('themeColorMedium')
+			input#theme-c-medium(type='color', style='float:left; width:32px; height:24px; padding:0; border:none;')
+			input#theme-c-medium-hex(type='text', maxlength=7, spellcheck='false', style='float:left; width:80px; margin-left:6px;')
+		div.dialog-bar
+			h4(data-lang-key='themeColorLight')= L('themeColorLight')
+			input#theme-c-light(type='color', style='float:left; width:32px; height:24px; padding:0; border:none;')
+			input#theme-c-light-hex(type='text', maxlength=7, spellcheck='false', style='float:left; width:80px; margin-left:6px;')
+		div.dialog-bar
+			h4(data-lang-key='themeColorDark')= L('themeColorDark')
+			input#theme-c-dark(type='color', style='float:left; width:32px; height:24px; padding:0; border:none;')
+			input#theme-c-dark-hex(type='text', maxlength=7, spellcheck='false', style='float:left; width:80px; margin-left:6px;')
+		div.dialog-bar
+			h4(data-lang-key='themeCode')= L('themeCode')
+			input#theme-code(type='text', readonly, style='float:left; width:150px; font-family:monospace;')
+			button#theme-code-copy(style='float:left; width:50px; margin-left:6px;', data-lang-key='themeCodeCopy')= L('themeCodeCopy')
+		div.dialog-bar(style='height:auto; overflow:hidden;')
+			span#theme-contrast-warning(style='display:none; color:#FF8888; font-size:11px;', data-lang-key='themeContrastWarning')= L('themeContrastWarning')
+		div.dialog-bar(style='height:auto; overflow:hidden; font-size:10px; color:#888;')
+			span(data-lang-key='themeResetHint')= L('themeResetHint')
+		div.dialog-bar.tail-button
+			button#theme-ok(data-lang-key='OK')= L('OK')
+			button#theme-cancel(data-lang-key='NO')= L('NO')
+			button#theme-load(data-lang-key='themeLoad')= L('themeLoad')
 	+Dialog('CommunityDiag', 300, 300)
 		div.dialog-bar(style='height: 225px; overflow-y: scroll;')
 			div#comm-friends

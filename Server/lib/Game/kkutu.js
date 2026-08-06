@@ -44,6 +44,24 @@ const NUM_SLAVES = 4;
 const GUEST_IMAGE = "/img/kkutu/guest.png";
 const MAX_OKG = 63;
 const PER_OKG = 600000;
+const KST_OFFSET = 9 * 3600000;
+
+// 서버 프로세스의 로컬 타임존 설정과 무관하게, 항상 KST 기준 "날짜 일련번호"를 반환한다.
+function kstDayIndex(ts) {
+	return Math.floor(((ts || Date.now()) + KST_OFFSET) / 86400000);
+}
+// 오끄감 관련 상태(playTime/okgCount/connectDate)는 항상 이 함수를 통해서만 리셋한다.
+// (개별적으로 리셋하면 날짜 경계에서 필드끼리 어긋나는 문제가 생김)
+function resetOkgIfNewDay(my) {
+	if (!my.data || my.guest) return false;
+	var day = kstDayIndex(Date.now());
+
+	if (day === my.data.connectDate) return false;
+	my.data.connectDate = day;
+	my.data.playTime = 0;
+	my.okgCount = 0;
+	return true;
+}
 
 
 // ========== Aho-Corasick 욕설 필터 ==========
@@ -291,6 +309,23 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN, _DiscordRel
 			}
 		}
 	}, 60000);
+
+	// === 오끄감 버프 자정(KST) 리셋 ===
+	// onOKG/checkExpire는 유저 액션이 있을 때만 지연 평가되므로, 접속 중인 유저는
+	// 다음 액션까지 기다리지 않고 정확히 KST 00:00에 리셋되도록 별도로 예약한다.
+	(function scheduleOkgMidnightReset() {
+		var now = Date.now();
+		var nextMidnight = (kstDayIndex(now) + 1) * 86400000 - KST_OFFSET;
+
+		setTimeout(function () {
+			for (var id in DIC) {
+				var c = DIC[id];
+				if (!c || !c.data || c.guest) continue;
+				if (resetOkgIfNewDay(c)) c.send('okg', { time: c.data.playTime, count: c.okgCount });
+			}
+			scheduleOkgMidnightReset();
+		}, Math.max(nextMidnight - now, 1000));
+	})();
 };
 
 /* 망할 셧다운제
@@ -718,14 +753,8 @@ exports.Client = function (socket, profile, sid) {
 		};
 	} else {
 		my.onOKG = function (time) {
-			var d = (new Date()).getDate();
-
 			if (my.guest) return;
-			if (d != my.data.connectDate) {
-				my.data.connectDate = d;
-				my.data.playTime = 0;
-				my.okgCount = 0;
-			}
+			resetOkgIfNewDay(my);
 			my.data.playTime += time;
 
 			while (my.data.playTime >= PER_OKG * (my.okgCount + 1)) {
@@ -893,16 +922,11 @@ exports.Client = function (socket, profile, sid) {
 		}
 	};
 	my.checkExpire = function () {
-		var now = new Date();
-		var d = now.getDate();
+		var now = Date.now() * 0.001;
 		var i, expired = [];
 		var gr;
 
-		now = now.getTime() * 0.001;
-		if (d != my.data.connectDate) {
-			my.data.connectDate = d;
-			my.data.playTime = 0;
-		}
+		resetOkgIfNewDay(my);
 		for (i in my.box) {
 			if (!my.box[i]) {
 				delete my.box[i];

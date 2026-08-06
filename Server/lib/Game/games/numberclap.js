@@ -23,7 +23,7 @@ var DIC;
 
 const ROBOT_START_DELAY = [1200, 800, 400, 200, 0];
 const ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0];
-const ROBOT_THINK_COEF = [10, 5, 2, 1, 0];
+const ROBOT_THINK_COEF = [5, 3, 1, 0.5, 0];
 const ROBOT_ACCURACY_COEF = [0.8, 1, 1.5, 2, 1];
 
 var CLAP = '👏'; // 👏
@@ -88,18 +88,18 @@ exports.getTitle = function () {
 };
 
 exports.roundReady = function () {
-	var my = this;
+	var my = this; // 이건뭔지모름
 
-	clearTimeout(my.game.turnTimer);
-	my.game.round++;
-	my.game.roundTime = my.time * 1000;
-	my.resetChain();
+	clearTimeout(my.game.turnTimer); // 초기화 
+	my.game.round++; //실제로 라운드를 증가시킨
+	my.game.roundTime = my.time * 1000; //설정된 초를 밀리초로 바꾼다.
+	my.resetChain(); //1부터 다시 숫자를 시작한다.
 	my.game.n = 1;
 	if (my.game.round <= my.round) {
 		my.byMaster('roundReady', {
 			round: my.game.round
 		}, true);
-		my.game.turnTimer = setTimeout(my.turnStart, 2400);
+		my.game.turnTimer = setTimeout(my.turnStart, 2400); //라운드 준비 브금을 트는 것 같아.
 	} else {
 		my.roundEnd();
 	}
@@ -111,7 +111,7 @@ exports.turnStart = function (force) {
 	var si;
 
 	if (!my.game.chain) return;
-	my.game.roundTime = Math.min(my.game.roundTime, Math.max(10000, 150000 - my.game.chain.length * 1500));
+	my.game.roundTime = Math.min(my.game.roundTime, Math.max(10000, 150000 - my.game.chain.length * 400)); //여기가 핵심이다. 이 수치를 보정해야 함.
 	speed = my.getTurnSpeed(my.opts.speed ? my.game.roundTime / 2 : my.game.roundTime);
 	clearTimeout(my.game.turnTimer);
 	clearTimeout(my.game.robotTimer);
@@ -282,7 +282,7 @@ exports.readyRobot = function (robot) {
 	var correctText = claps > 0 ? clapString(claps) : String(n);
 	var accuracy, baseAccuracy, response, wrongCount;
 
-	delay += 500 * Math.log10(n + 1) * ROBOT_THINK_COEF[level];
+	delay += 100 * Math.log10(n + 100) * ROBOT_THINK_COEF[level];
 
 	if (level === 4) {
 		accuracy = 1;

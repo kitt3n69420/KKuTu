@@ -544,13 +544,11 @@ KKuTu.onClientMessage = function ($c, msg) {
     case "inviteRes":
       if (!validateInput(msg.from, "string", { maxLength: 50 })) return;
       if (!validateInput(msg.res, "boolean")) return;
-      if (!(temp = ROOM[msg.from])) return;
       if (!GUEST_PERMISSION.inviteRes) if ($c.guest) return;
-      if (msg.res) {
-        $c.enter({ id: msg.from }, false, true);
-      } else {
-        if (DIC[temp.master]) DIC[temp.master].send("inviteNo", { target: $c.id });
-      }
+      // worker는 이 클라이언트가 실제로 초대받았는지(_invited) 알 수 없다.
+      // 그 상태는 master만 갖고 있으므로, master에 위임해서 검증 후 처리하게 한다.
+      // (master의 "inviteRes" IPC 케이스가 실제 enter/거절 통지를 수행한다.)
+      process.send({ type: "inviteRes", id: $c.id, from: msg.from, res: msg.res });
       break;
     case "form":
       if (!validateInput(msg.mode, "string", { maxLength: 10 })) return;

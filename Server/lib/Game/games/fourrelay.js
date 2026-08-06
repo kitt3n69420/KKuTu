@@ -218,6 +218,7 @@ exports.submit = function (client, text, data) {
 		score = my.getScore(answer, t);
 		my.logChainWord(full, client);
 		my.game.roundTime -= t;
+		client.game.coopTurns = (client.game.coopTurns || 0) + 1;
 		client.game.score += score;
 		if (!client.robot) client.invokeWordPiece(full, 1);
 		nextProblem = my.game.problems[my.game.chain.length];

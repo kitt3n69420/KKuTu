@@ -140,17 +140,12 @@ function showPrompt(msg, value, callback) {
 	});
 }
 function applyTheme(theme) {
-	document.body.classList.remove('theme-red', 'theme-orange', 'theme-gray', 'theme-yellow', 'theme-green');
-	if (theme === 'red') document.body.classList.add('theme-red');
-	else if (theme === 'orange') document.body.classList.add('theme-orange');
-	else if (theme === 'gray') document.body.classList.add('theme-gray');
-	else if (theme === 'yellow') document.body.classList.add('theme-yellow');
-	else if (theme === 'green') document.body.classList.add('theme-green');
+	$data._activeTheme = theme || 'blue';
+	if (window.ThemeEngine) window.ThemeEngine.apply($data._activeTheme, $data._activeDarkMode || 'light');
 }
 function applyDarkMode(setting) {
-	var isDark = setting === 'dark' || (setting === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-	if (isDark) document.body.classList.add('dark-mode');
-	else document.body.classList.remove('dark-mode');
+	$data._activeDarkMode = setting || 'light';
+	if (window.ThemeEngine) window.ThemeEngine.apply($data._activeTheme || 'blue', $data._activeDarkMode);
 }
 function rebuildInjeongExplHTML(dict) {
 	function themeList(list) {

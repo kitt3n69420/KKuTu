@@ -1930,7 +1930,7 @@ iframe {
 }
 
 .chat-notice {
-	background-color: var(--color-bg-light);
+	background-color: color-mix(in srgb, var(--color-bg-light) 50%, var(--color-border) 50%);
 }
 
 .chat-notice .chat-head {
