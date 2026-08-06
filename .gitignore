@@ -6,6 +6,8 @@ Server/lib/Web/public/js/**
 !Server/lib/Web/public/js/jquery.js
 !Server/lib/Web/public/js/bad_apple_data.js
 !Server/lib/Web/public/js/lz-string.min.js
+!Server/lib/Web/public/js/theme-engine.js
+!Server/lib/Web/public/js/volume-persistence.js
 Server/lib/sub/auth.json
 Server/lib/sub/global.json
 .vscode
