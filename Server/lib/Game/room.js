@@ -17,7 +17,6 @@
  */
 
 var Cluster = require("cluster");
-var Lizard = require('../sub/lizard');
 var JLog = require('../sub/jjlog');
 var Const = require('../const');
 var DB, DIC, ROOM, CHAN, Rule, checkSwearWords, censorSwearWords, narrate, publish, Robot, getEventMults, DiscordRelay;
@@ -547,7 +546,7 @@ function Room(room, channel) {
 				if (Math.random() > 0.5) continue;
 				(function (_bot) {
 					setTimeout(function () {
-						if (!_bot._rageQuitting && !_bot._removed) _bot.chat(greetMsgs[Math.floor(Math.random() * greetMsgs.length)]);
+						if (!_bot._rageQuitting && !_bot._removed && typeof _bot.chat === 'function') _bot.chat(greetMsgs[Math.floor(Math.random() * greetMsgs.length)]);
 					}, 800 + Math.floor(Math.random() * 1000));
 				})(_pgp);
 			}
@@ -556,7 +555,7 @@ function Room(room, channel) {
 			my.checkJamsu();
 			if (!robot.muteLobby && Math.random() < 0.7) {
 				setTimeout(function () {
-					if (!robot._rageQuitting && !robot._removed) robot.chat(greetMsgs[Math.floor(Math.random() * greetMsgs.length)]);
+					if (!robot._rageQuitting && !robot._removed && typeof robot.chat === 'function') robot.chat(greetMsgs[Math.floor(Math.random() * greetMsgs.length)]);
 				}, 500 + Math.floor(Math.random() * 2000));
 			}
 		}
@@ -696,7 +695,7 @@ function Room(room, channel) {
 				if (Math.random() > 0.3) continue;
 				(function (_bot) {
 					setTimeout(function () {
-						if (!_bot._rageQuitting && !_bot._removed) _bot.chat(greetMsgs[Math.floor(Math.random() * greetMsgs.length)]);
+						if (!_bot._rageQuitting && !_bot._removed && typeof _bot.chat === 'function') _bot.chat(greetMsgs[Math.floor(Math.random() * greetMsgs.length)]);
 					}, 500 + Math.floor(Math.random() * 1000));
 				})(_gp);
 			}
@@ -855,15 +854,6 @@ function Room(room, channel) {
 
 				var seqIndex = my.game.seq.indexOf(client.id);
 				if (seqIndex != -1) {
-					// 이슈 4 진단: 자기 차례 사람이 나가는 경로 추적
-					try {
-						var _diag_isTurn = (my.game.turn == seqIndex);
-						JLog.warn(`[diag#4] leave: room=${my.id} client=${client.id} seqIndex=${seqIndex} ` +
-							`game.turn=${my.game.turn} isTurn=${_diag_isTurn} ` +
-							`survival=${!!my.opts.survival} rule=${my.rule && my.rule.rule} ` +
-							`seqLen=${my.game.seq.length} _wasAlive=${_wasAlive} ` +
-							`hasTurnTimer=${!!my.game.turnTimer} hasRobotTimer=${!!my.game.robotTimer} hasRRT=${!!my.game._rrt}`);
-					} catch (_e) { JLog.warn("[diag#4] leave log failed: " + _e); }
 					// 코옵 모드: 자기 턴에 이탈하면 즉시 전원 실패, 남의 턴이면 로테이션에서만 제외하고 계속 진행
 					if (my.rule.coop) {
 						var coopIsTurn = (my.game.turn == seqIndex);
@@ -955,12 +945,7 @@ function Room(room, channel) {
 								clearTimeout(my.game._rrt);
 								if (Cluster.isWorker) {
 									my.game._rrt = setTimeout(function () {
-										// 이슈 4 진단: 자기 차례 사람 KO 후 turnNext 진입 시 상태와 throw 캡처
 										try {
-											JLog.warn(`[diag#4] survival turnNext fire: room=${my.id} ` +
-												`turn=${my.game && my.game.turn} ` +
-												`seq=${my.game && my.game.seq && my.game.seq.length} ` +
-												`leaver=${client.id}`);
 											my.turnNext();
 										} catch (_e) {
 											JLog.error(`[diag#4] survival turnNext THREW: ${_e && _e.stack || _e}`);
@@ -983,14 +968,8 @@ function Room(room, channel) {
 								clearTimeout(my.game._rrt);
 								my.game.loading = false;
 								if (Cluster.isWorker) {
-									// 이슈 4 진단: turnEnd 직전/직후 상태와 throw 캡처
 									try {
-										JLog.warn(`[diag#4] non-survival turnEnd before splice: ` +
-											`seq[turn]=${my.game.seq[my.game.turn]} (leaver=${client.id}) ` +
-											`client.game.keys=[${Object.keys(client.game || {}).join(',')}] ` +
-											`my.game.char=${my.game.char} my.game.subChar=${my.game.subChar}`);
 										my.turnEnd();
-										JLog.warn(`[diag#4] non-survival turnEnd returned ok`);
 									} catch (_e) {
 										JLog.error(`[diag#4] non-survival turnEnd THREW: ${_e && _e.stack || _e}`);
 										throw _e;
@@ -1680,17 +1659,35 @@ function Room(room, channel) {
 		if (!my.game.chainLog) my.game.chainLog = [];
 		my.game.chainLog.push({ player: my.getPlayerName(target), event: event });
 	};
+	// DB/Redis 콜백이 끝내 호출되지 않아도(연결 끊김 등) 해당 유저 몫만 fallback으로 처리하고
+	// 나머지 유저는 정상 결과를 받을 수 있도록, tail 하나하나에 개별 타임아웃을 건다.
+	function withTimeout(tail, ms, fallback) {
+		return new Promise(function (resolve) {
+			var settled = false;
+			var timer = setTimeout(function () {
+				if (settled) return;
+				settled = true;
+				resolve(fallback);
+			}, ms);
+			try {
+				tail.then(function (data) {
+					if (settled) return;
+					settled = true;
+					clearTimeout(timer);
+					resolve(data);
+				});
+			} catch (_e) {
+				if (settled) return;
+				settled = true;
+				clearTimeout(timer);
+				resolve(fallback);
+			}
+		});
+	}
 	my.roundEnd = function (data) {
 		if (my._roundEnding) return;
 		if (!my.gaming) return;
 		my._roundEnding = true;
-		// 이슈 4 진단
-		try {
-			JLog.warn(`[diag#4] roundEnd enter: room=${my.id} ` +
-				`survival=${!!my.opts.survival} seqLen=${my.game && my.game.seq && my.game.seq.length} ` +
-				`playersLen=${my.players && my.players.length} ` +
-				`hasData=${!!data}`);
-		} catch (_) { }
 
 		var i, o, rw;
 		var res = [];
@@ -1929,7 +1926,7 @@ function Room(room, channel) {
 			}
 			users[o.id] = o.getData();
 
-			suv.push(o.flush(true));
+			suv.push(withTimeout(o.flush(true), 5000, { id: o.id, prev: 0 }));
 		}
 		// 봇 결과 참조 캡처 (비동기 콜백 안에서 사용)
 		var botResults = [];
@@ -1939,15 +1936,30 @@ function Room(room, channel) {
 			if (_bot) botResults.push({ bot: _bot, rank: res[_bi].rank, team: res[_bi].team || 0, teamScore: res[_bi].teamScore });
 		}
 
-		Lizard.all(suv).then(function (uds) {
+		// 위 개별 타임아웃(5초 + 5초) 덕분에 정상적으로는 항상 그 안에 끝난다.
+		// 이 타이머는 그래도 걸릴 경우를 대비한 최후 안전망이다.
+		var _roundEndSettled = false;
+		var _roundEndTimeoutTimer = setTimeout(function () {
+			if (_roundEndSettled) return;
+			_roundEndSettled = true;
+			JLog.error(`[roundEnd] DB flush/rank lookup timed out, sending fallback result: room=${my.id}`);
+			my.byMaster('roundEnd', { result: res, users: users, ranks: {}, data: data }, true);
+			my._roundEnding = false;
+		}, 11000);
+
+		Promise.all(suv).then(function (uds) {
+			if (_roundEndSettled) return;
 			var o = {};
 
 			suv = [];
 			for (i in uds) {
 				o[uds[i].id] = { prev: uds[i].prev };
-				suv.push(DB.redis.getSurround(uds[i].id));
+				suv.push(withTimeout(DB.redis.getSurround(uds[i].id), 5000, { target: uds[i].id, data: [] }));
 			}
-			Lizard.all(suv).then(function (ranks) {
+			Promise.all(suv).then(function (ranks) {
+				if (_roundEndSettled) return;
+				clearTimeout(_roundEndTimeoutTimer);
+				_roundEndSettled = true;
 				var i, j;
 
 				for (i in ranks) {
@@ -1978,7 +1990,7 @@ function Room(room, channel) {
 							: isLoser ? Const.ROBOT_GAME_LOSE_MESSAGES
 								: Const.ROBOT_GAME_MID_MESSAGES;
 						setTimeout(function () {
-							if (!_br.bot._rageQuitting && !_br.bot._removed) _br.bot.chat(msgs[Math.floor(Math.random() * msgs.length)]);
+							if (!_br.bot._rageQuitting && !_br.bot._removed && typeof _br.bot.chat === 'function') _br.bot.chat(msgs[Math.floor(Math.random() * msgs.length)]);
 						}, 1500 + Math.floor(Math.random() * 2000));
 					})(botResults[_ri]);
 				}
@@ -1992,7 +2004,7 @@ function Room(room, channel) {
 						var _t = setTimeout(function () {
 							var idx = my._botIdleTimers ? my._botIdleTimers.indexOf(_t) : -1;
 							if (idx !== -1) my._botIdleTimers.splice(idx, 1);
-							if (!my.gaming && !_br.bot._rageQuitting && !_br.bot._removed) {
+							if (!my.gaming && !_br.bot._rageQuitting && !_br.bot._removed && typeof _br.bot.chat === 'function') {
 								var msgs = Const.ROBOT_IDLE_MESSAGES;
 								_br.bot.chat(msgs[Math.floor(Math.random() * msgs.length)]);
 							}
@@ -2010,7 +2022,7 @@ function Room(room, channel) {
 						var _t2 = setTimeout(function () {
 							var idx = my._botIdleTimers ? my._botIdleTimers.indexOf(_t2) : -1;
 							if (idx !== -1) my._botIdleTimers.splice(idx, 1);
-							if (!my.gaming && !_br.bot._rageQuitting && !_br.bot._removed) {
+							if (!my.gaming && !_br.bot._rageQuitting && !_br.bot._removed && typeof _br.bot.chat === 'function') {
 								var msgs = Const.ROBOT_IDLE2_MESSAGES;
 								_br.bot.chat(msgs[Math.floor(Math.random() * msgs.length)]);
 							}
@@ -2261,6 +2273,45 @@ function Room(room, channel) {
 		}
 		return next;
 	};
+	// 랜덤턴 "2벌 가방" 셔플에서 다음 슬롯을 뽑아 전진하는 단일 창구.
+	// applySurvivalDamage(제출 경로)와 turnNext(타임아웃 경로) 둘 다 이 함수만 호출해서
+	// 가방 포인터를 갱신하므로, 두 경로가 각자 계산해서 어긋나는 일이 없음.
+	// (예전에는 turnNext가 indexOf()로 포인터를 "해당 인덱스의 첫 번째 사본" 위치로
+	// 되돌렸는데, 사본이 2개라 실제 스캔 위치와 달라져 포인터가 좁은 구간에 갇히는
+	// 버그가 있었음 — 특정 인원 사이만 반복되거나 한 사람만 계속 걸리는 원인)
+	my._nextRandomTurnSlot = function () {
+		var n = my.game.seq.length;
+		var maxAttempts = n * 2 + 4;
+		var attempts = 0;
+		while (attempts < maxAttempts) {
+			my.game.randomTurnIndex++;
+			if (!my.game.randomTurnOrder || my.game.randomTurnIndex >= my.game.randomTurnOrder.length) {
+				my.game.randomTurnIndex = 0;
+				my.game.randomTurnOrder = [];
+				for (var rt = 0; rt < n; rt++) {
+					if (my.opts.survival) {
+						var rp = DIC[my.game.seq[rt]] || my.game.seq[rt];
+						if (rp && rp.game && rp.game.alive) {
+							my.game.randomTurnOrder.push(rt);
+							my.game.randomTurnOrder.push(rt);
+						}
+					} else {
+						my.game.randomTurnOrder.push(rt);
+						my.game.randomTurnOrder.push(rt);
+					}
+				}
+				my.game.randomTurnOrder = shuffle(my.game.randomTurnOrder);
+				if (my.game.randomTurnOrder.length === 0) return null;
+			}
+			var candidate = my.game.randomTurnOrder[my.game.randomTurnIndex];
+			if (my.opts.survival) {
+				var cp = DIC[my.game.seq[candidate]] || my.game.seq[candidate];
+				if (!cp || !cp.game || !cp.game.alive) { attempts++; continue; }
+			}
+			return candidate;
+		}
+		return null;
+	};
 	my.calculateNextTurn = function (peek) {
 		var seq = my.game.seq;
 		var n = seq.length;
@@ -2408,13 +2459,6 @@ function Room(room, channel) {
 			// (예: 팀1만 남음 / 개인1명만 남음 / 아무도 없음)
 			var totalEntities = aliveTeams.size + individualCount;
 			var gameOver = totalEntities <= 1;
-			// 이슈 4 진단
-			try {
-				JLog.warn(`[diag#4] turnNext survival check: room=${my.id} ` +
-					`aliveCount=${aliveCount} indiv=${individualCount} teams=${aliveTeams.size} ` +
-					`totalEntities=${totalEntities} gameOver=${gameOver} turn=${my.game.turn} ` +
-					`seqLen=${my.game.seq.length}`);
-			} catch (_) { }
 			if (gameOver) {
 				try {
 					my.roundEnd();
@@ -2452,84 +2496,20 @@ function Room(room, channel) {
 				my.game.turn = my.calculateNextTurn();
 			}
 		} else if (my.opts.randomturn) {
+			var _slot;
 			if (my.game.hasOwnProperty('_survivalCachedTarget')) {
-				// applySurvivalDamage가 미리 확정한 타겟 사용 — 재셔플 후 불일치 방지
-				var _cachedSeqIdx = my.game._survivalCachedTarget;
+				// applySurvivalDamage가 _nextRandomTurnSlot으로 이미 가방 포인터까지 커밋한 타겟
+				_slot = my.game._survivalCachedTarget;
 				delete my.game._survivalCachedTarget;
-				// 인덱스 전진 + 필요 시 재셔플 (상태 일관성 유지)
-				my.game.randomTurnIndex++;
-				if (my.game.randomTurnIndex >= my.game.randomTurnOrder.length) {
-					my.game.randomTurnIndex = 0;
-					my.game.randomTurnOrder = [];
-					for (var rt = 0; rt < my.game.seq.length; rt++) {
-						if (my.opts.survival) {
-							var rp = DIC[my.game.seq[rt]] || my.game.seq[rt];
-							if (rp && rp.game && rp.game.alive) {
-								my.game.randomTurnOrder.push(rt);
-								my.game.randomTurnOrder.push(rt);
-							}
-						} else {
-							my.game.randomTurnOrder.push(rt);
-							my.game.randomTurnOrder.push(rt);
-						}
-					}
-					my.game.randomTurnOrder = shuffle(my.game.randomTurnOrder);
-				}
-				my.game.turn = _cachedSeqIdx;
-				var _pos = my.game.randomTurnOrder.indexOf(_cachedSeqIdx);
-				if (_pos !== -1) my.game.randomTurnIndex = _pos;
-				if (my.opts.survival) {
-					var _rcp = DIC[my.game.seq[_cachedSeqIdx]] || my.game.seq[_cachedSeqIdx];
-					if (!_rcp || !_rcp.game || !_rcp.game.alive) {
-						my.game.turn = my._defaultNextTurn();
-					}
-				}
 			} else {
-				// 타임아웃 등 일반 경로
-				my.game.randomTurnIndex++;
-
-				// 배열 끝에 도달하면 재셔플
-				if (my.game.randomTurnIndex >= my.game.randomTurnOrder.length) {
-					my.game.randomTurnIndex = 0;
-
-					// 플레이어 인덱스를 2벌 만들기 (서바이벌: 살아있는 플레이어만)
-					my.game.randomTurnOrder = [];
-					for (var rt = 0; rt < my.game.seq.length; rt++) {
-						if (my.opts.survival) {
-							var rp = DIC[my.game.seq[rt]] || my.game.seq[rt];
-							if (rp && rp.game && rp.game.alive) {
-								my.game.randomTurnOrder.push(rt);
-								my.game.randomTurnOrder.push(rt);  // 2벌
-							}
-						} else {
-							my.game.randomTurnOrder.push(rt);
-							my.game.randomTurnOrder.push(rt);  // 2벌
-						}
-					}
-
-					// 재셔플
-					my.game.randomTurnOrder = shuffle(my.game.randomTurnOrder);
-				}
-
-				// 랜덤 턴 배열에서 다음 플레이어 선택
-				my.game.turn = my.game.randomTurnOrder[my.game.randomTurnIndex];
-
-				// 서바이벌 모드: 선택된 플레이어가 KO된 경우 다시 선택
-				if (my.opts.survival) {
-					var attempts = 0;
-					var maxAttempts = my.game.seq.length * 2;
-					while (attempts < maxAttempts) {
-						var nextPlayer = DIC[my.game.seq[my.game.turn]] || my.game.seq[my.game.turn];
-						if (nextPlayer && nextPlayer.game && nextPlayer.game.alive) {
-							break;
-						}
-						my.game.randomTurnIndex++;
-						if (my.game.randomTurnIndex >= my.game.randomTurnOrder.length) {
-							my.game.randomTurnIndex = 0;
-						}
-						my.game.turn = my.game.randomTurnOrder[my.game.randomTurnIndex];
-						attempts++;
-					}
+				// 타임아웃 등 일반 경로: 같은 가방에서 이어서 추첨 (제출 경로와 동일한 창구)
+				_slot = my._nextRandomTurnSlot();
+			}
+			my.game.turn = (_slot !== null && _slot !== undefined) ? _slot : my._defaultNextTurn();
+			if (my.opts.survival) {
+				var _tp = DIC[my.game.seq[my.game.turn]] || my.game.seq[my.game.turn];
+				if (!_tp || !_tp.game || !_tp.game.alive) {
+					my.game.turn = my._defaultNextTurn();
 				}
 			}
 		} else {

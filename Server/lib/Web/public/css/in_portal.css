@@ -26,12 +26,52 @@
 	margin-top: -20px;
 }
 
+body.theme-grape #logo {
+	filter: hue-rotate(68deg) saturate(120%) brightness(102%);
+}
+
+body.theme-slate #logo {
+	filter: hue-rotate(-23deg) saturate(23%) brightness(109%);
+}
+
+body.theme-sweetpotato #logo {
+	filter: hue-rotate(-160deg) saturate(193%) brightness(113%);
+}
+
+body.theme-cottoncandy #logo {
+	filter: hue-rotate(105deg) saturate(86%) brightness(107%);
+}
+
+body.theme-watermelon #logo {
+	filter: hue-rotate(134deg) saturate(55%) brightness(110%);
+}
+
 body.theme-red #logo {
 	filter: hue-rotate(135deg);
 }
 
 body.theme-orange #logo {
 	filter: hue-rotate(-180deg) saturate(130%) brightness(110%);
+}
+
+body.theme-grape #Background {
+	filter: hue-rotate(68deg) saturate(120%) brightness(102%);
+}
+
+body.theme-slate #Background {
+	filter: hue-rotate(-23deg) saturate(23%) brightness(109%);
+}
+
+body.theme-sweetpotato #Background {
+	filter: hue-rotate(-160deg) saturate(193%) brightness(113%);
+}
+
+body.theme-cottoncandy #Background {
+	filter: hue-rotate(105deg) saturate(86%) brightness(107%);
+}
+
+body.theme-watermelon #Background {
+	filter: hue-rotate(134deg) saturate(55%) brightness(110%);
 }
 
 body.theme-red #Background {
@@ -64,6 +104,14 @@ body.theme-green #logo {
 
 body.theme-green #Background {
 	filter: hue-rotate(-120deg) saturate(80%);
+}
+
+body.theme-custom #logo {
+	filter: var(--theme-filter);
+}
+
+body.theme-custom #Background {
+	filter: var(--theme-filter);
 }
 #kkutu-bulletin{
 	border: 0px;

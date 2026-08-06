@@ -2190,6 +2190,12 @@ function getIjpName(code) {
     return code;
 }
 
+// 설정 변경 알림 디바운스: 같은 방(봇)의 설정이 짧은 시간 안에 연속으로 여러 번 오면
+// (예: 클라이언트가 같은 요청을 중복 전송하는 경우) 마지막 상태 1건만 전송해 디스코드 도배를 막는다.
+const _pendingRoomSettings = {};
+const _pendingBotSettings = {};
+const SETTINGS_DEBOUNCE_DELAY = 3000;
+
 /**
  * Notify room settings change - called when room master changes room settings
  * @param {number} roomId - Room ID
@@ -2201,6 +2207,14 @@ exports.notifyRoomSettings = function (roomId, room) {
         return;
     }
 
+    if (_pendingRoomSettings[roomId]) clearTimeout(_pendingRoomSettings[roomId]);
+    _pendingRoomSettings[roomId] = setTimeout(() => {
+        delete _pendingRoomSettings[roomId];
+        sendRoomSettings(roomId, room);
+    }, SETTINGS_DEBOUNCE_DELAY);
+};
+
+function sendRoomSettings(roomId, room) {
     safeExecute(async () => {
         const modeName = getModeName(room.mode);
         const passwordDisplay = room.password ? `||${room.password}||` : '없음';
@@ -2245,7 +2259,7 @@ exports.notifyRoomSettings = function (roomId, room) {
         embed.setTimestamp();
         await channel.send({ embeds: [embed] });
     }, 'notifyRoomSettings');
-};
+}
 
 /**
  * Notify bot settings change - called when room master changes a bot's settings
@@ -2258,6 +2272,15 @@ exports.notifyBotSettings = function (roomId, botInfo) {
         return;
     }
 
+    const key = roomId + ':' + (botInfo && botInfo.name);
+    if (_pendingBotSettings[key]) clearTimeout(_pendingBotSettings[key]);
+    _pendingBotSettings[key] = setTimeout(() => {
+        delete _pendingBotSettings[key];
+        sendBotSettings(roomId, botInfo);
+    }, SETTINGS_DEBOUNCE_DELAY);
+};
+
+function sendBotSettings(roomId, botInfo) {
     safeExecute(async () => {
         const levelName = Const.BOT_LEVEL_NAMES[botInfo.level] || `레벨 ${botInfo.level}`;
 
@@ -2285,7 +2308,7 @@ exports.notifyBotSettings = function (roomId, botInfo) {
 
         await channel.send({ embeds: [embed] });
     }, 'notifyBotSettings');
-};
+}
 
 /**
  * Notify player joined a room (including bots)

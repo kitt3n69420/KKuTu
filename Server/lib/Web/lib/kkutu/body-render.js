@@ -848,6 +848,11 @@ var BONUS_COLORS = {
 Object.defineProperty(BONUS_COLORS, 'linking', {
 	get: function() {
 		var dark = document.body.classList.contains('dark-mode');
+		if (document.body.classList.contains('theme-grape')) return dark ? 'rgb(239, 205, 249)' : 'rgb(239, 205, 249)';
+		if (document.body.classList.contains('theme-slate')) return dark ? 'rgb(223, 233, 238)' : 'rgb(223, 233, 238)';
+		if (document.body.classList.contains('theme-sweetpotato')) return dark ? 'rgb(255, 239, 132)' : 'rgb(255, 239, 132)';
+		if (document.body.classList.contains('theme-cottoncandy')) return dark ? 'rgb(255, 215, 232)' : 'rgb(255, 215, 232)';
+		if (document.body.classList.contains('theme-watermelon')) return dark ? 'rgb(254, 226, 226)' : 'rgb(254, 226, 226)';
 		if (document.body.classList.contains('theme-red')) return dark ? 'rgb(239, 154, 154)' : 'rgb(239, 154, 154)';
 		if (document.body.classList.contains('theme-orange')) return dark ? 'rgb(255, 204, 128)' : 'rgb(255, 204, 128)';
 		if (document.body.classList.contains('theme-gray')) return dark ? 'rgb(189, 189, 189)' : 'rgb(189, 189, 189)';

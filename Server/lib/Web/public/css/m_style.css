@@ -16,7 +16,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* ===== Theme Variables ===== */
+/* ===== Theme Variables =====
+   The 5 --color-* variables (and --theme-text/--theme-surface/--theme-filter, consumed further
+   down) are now computed at runtime by /js/theme-engine.js from 4 base colors (see ThemeEngine.apply,
+   called from body.js's applyTheme/applyDarkMode) and injected as an inline style on <body>, for
+   every theme including the 6 built-in presets and any user-defined custom theme. The block below
+   is only a no-JS/pre-hydration fallback (blue preset, light mode). */
 :root {
 	--color-primary: #1976D2;
 	--color-primary-dark: #1565C0;
@@ -25,41 +30,6 @@
 	--color-border: #BBDEFB;
 	/* CSS variable for viewport height, updated by JavaScript for keyboard handling */
 	--vh: 1vh;
-}
-body.theme-red {
-	--color-primary: #C62828;
-	--color-primary-dark: #B71C1C;
-	--color-bg-light: #FFEBEE;
-	--color-bg-medium: #EF9A9A;
-	--color-border: #FFCDD2;
-}
-body.theme-orange {
-	--color-primary: #e67300;
-	--color-primary-dark: #bf510c;
-	--color-bg-light: #FFF3E0;
-	--color-bg-medium: #FFCC80;
-	--color-border: #FFE0B2;
-}
-body.theme-gray {
-	--color-primary: #616161;
-	--color-primary-dark: #424242;
-	--color-bg-light: #F5F5F5;
-	--color-bg-medium: #BDBDBD;
-	--color-border: #E0E0E0;
-}
-body.theme-yellow {
-	--color-primary: #F9A825;
-	--color-primary-dark: #F57F17;
-	--color-bg-light: #FFFDE7;
-	--color-bg-medium: #FFE082;
-	--color-border: #FFF9C4;
-}
-body.theme-green {
-	--color-primary: #558B2F;
-	--color-primary-dark: #33691E;
-	--color-bg-light: #F1F8E9;
-	--color-bg-medium: #AED581;
-	--color-border: #DCEDC8;
 }
 
 html,
@@ -105,7 +75,7 @@ button {
 	padding: 5px;
 	border: 1px solid var(--color-bg-medium);
 	border-radius: 10px;
-	background-color: #FFFFFF;
+	background-color: var(--theme-surface, #FFFFFF);
 	transition: all 200ms ease;
 }
 
@@ -345,7 +315,7 @@ span {
 }
 
 .product-title {
-	color: #CCCCCC;
+	color: var(--color-border);
 	padding: 3px;
 	border-bottom: 1px solid #333333;
 	margin-bottom: 5px;
@@ -471,13 +441,19 @@ span {
 	z-index: 5;
 }
 
+body.theme-grape #Top,
+body.theme-slate #Top,
+body.theme-sweetpotato #Top,
+body.theme-cottoncandy #Top,
+body.theme-watermelon #Top,
 body.theme-red #Top,
 body.theme-orange #Top,
 body.theme-gray #Top,
 body.theme-yellow #Top,
-body.theme-green #Top {
+body.theme-green #Top,
+body.theme-custom #Top {
 	background-image: none;
-	background-color: var(--color-primary);
+	background-color: var(--color-primary-dark);
 }
 
 #Middle {

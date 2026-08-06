@@ -107,6 +107,15 @@ exports.run = (Server, page) => {
     if (global.isPublic) {
       page(req, res, "login", { _id: req.session.id, text: req.query.desc, loginList: strategyList });
     } else {
+      // 비공개(OAuth 미사용) 모드의 무인증 로그인은 로컬 개발 전용이다.
+      // req.ip는 CF-Connecting-IP 헤더로 누구나 위조할 수 있으므로(main.js 참고),
+      // 위조 불가능한 실제 TCP 소켓 주소로 로컬 접속인지 확인한다.
+      const remoteAddr = req.socket.remoteAddress;
+      const isLoopback = remoteAddr === "127.0.0.1" || remoteAddr === "::1" || remoteAddr === "::ffff:127.0.0.1";
+      if (!isLoopback) {
+        JLog.warn(`[SECURITY] Blocked non-loopback access to dev /login from ${remoteAddr}`);
+        return res.sendStatus(403);
+      }
       let now = Date.now();
       let id = req.query.id || "ADMIN";
       let lp = {

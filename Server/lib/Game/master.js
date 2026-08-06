@@ -590,6 +590,20 @@ Cluster.on("message", function (worker, msg) {
       DIC[msg.target]._invited = msg.place;
       DIC[msg.target].send("invited", { from: msg.place });
       break;
+    case "inviteRes":
+      // worker에서 위임받은 초대 응답. 실제로 초대받은 상태(_invited)인지는
+      // master만 판단할 수 있으므로 여기서 검증한 뒤에만 입장을 허용한다.
+      if (!DIC[msg.id]) break;
+      if (!(temp = ROOM[msg.from])) break;
+      if (!GUEST_PERMISSION.inviteRes) if (DIC[msg.id].guest) break;
+      if (DIC[msg.id]._invited != msg.from) break;
+      if (msg.res) {
+        DIC[msg.id].enter({ id: DIC[msg.id]._invited }, false, true);
+      } else {
+        if (DIC[temp.master]) DIC[temp.master].send("inviteNo", { target: msg.id });
+      }
+      delete DIC[msg.id]._invited;
+      break;
     case "room-new":
       if (ROOM[msg.room.id] || !DIC[msg.target]) {
         // 이미 그런 ID의 방이 있다... 그 방은 없던 걸로 해라.
