@@ -2825,3 +2825,18 @@ ReferenceError: censorSwearWords is not defined
     at Receiver.startLoop (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\Receiver.js:165:16)
     at Receiver.add (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\Receiver.js:139:10)
     at TLSSocket.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\WebSocket.js:138:22)
+:2053 [2026. 8. 5. 오후 10:36:16] MASTER_ERROR: TypeError: _bot.chat is not a function
+TypeError: _bot.chat is not a function
+    at Timeout._onTimeout (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:699:55)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7)
+:2053 [2026. 8. 5. 오후 10:44:51] MASTER_ERROR: TypeError: _bot.chat is not a function
+TypeError: _bot.chat is not a function
+    at Timeout._onTimeout (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:699:55)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7)
+:2053 [2026. 8. 5. 오후 10:44:51] MASTER_ERROR: TypeError: _bot.chat is not a function
+TypeError: _bot.chat is not a function
+    at Timeout._onTimeout (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:699:55)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7)
