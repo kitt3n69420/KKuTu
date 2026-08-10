@@ -1596,7 +1596,6 @@ function updateUI(myRoom, refresh) {
 		$(".ChatBox").width(1000).height(140);
 		$stage.chat.height(70);
 		updateRoom(true);
-		initItemUI();
 	}
 	if (only !== 'for-gaming') {
 		$('.ItemBar').hide();

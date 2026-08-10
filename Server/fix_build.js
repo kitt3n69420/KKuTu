@@ -19,7 +19,18 @@ const KKUTU_LIST = [
     "lib/Web/lib/kkutu/rule_daneo.js",
     "lib/Web/lib/kkutu/rule_free.js",
     "lib/Web/lib/kkutu/rule_sock.js",
+    "lib/Web/lib/kkutu/rule_shuk.js",
     "lib/Web/lib/kkutu/rule_picture.js",
+    "lib/Web/lib/kkutu/rule_calcrelay.js",
+    "lib/Web/lib/kkutu/rule_fourrelay.js",
+    "lib/Web/lib/kkutu/rule_numberclap.js",
+    "lib/Web/lib/kkutu/rule_chainbattle.js",
+    "lib/Web/lib/kkutu/rule_calcbattle.js",
+    "lib/Web/lib/kkutu/rule_quiz.js",
+    "lib/Web/lib/kkutu/rule_flip.js",
+    "lib/Web/lib/kkutu/rule_raingame.js",
+    "lib/Web/lib/kkutu/rule_wordstack.js",
+    "lib/Web/lib/kkutu/body-render.js",
     "lib/Web/lib/kkutu/body.js",
     "lib/Web/lib/kkutu/tail.js"
 ];
