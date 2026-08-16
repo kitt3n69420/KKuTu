@@ -263,7 +263,7 @@ function resolveActiveBeat(beatMode, packName) {
 	if (beatMode === 'mid') return BEAT_Mid;
 	if (beatMode === 'default') return BEAT;
 	// auto: 팩 이름 기반 자동 선택
-	if (packName === '오리지널' || packName === '테크노' || packName === '병맛') return BEAT_Mid;
+	if (packName === '오리지널' || packName === '테크노' || packName === '병맛' || packName === '피아노') return BEAT_Mid;
 	return BEAT;
 }
 
