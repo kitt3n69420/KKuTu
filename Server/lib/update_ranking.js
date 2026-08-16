@@ -20,6 +20,12 @@ DB.ready = function(Redis, Pg) {
 				DB.redis.putGlobal(u._id, u.kkutu.score);
 				count++;
 			}
+			if (u.kkutu && u.kkutu.record && u.kkutu.record.KSH && typeof u.kkutu.record.KSH[2] === 'number') {
+				DB.redis_ksh.putGlobal(u._id, u.kkutu.record.KSH[2]);
+			}
+			if (!isNaN(Number(u.money))) {
+				DB.redis_money.putGlobal(u._id, Number(u.money));
+			}
 		}
 		
 		JLog.log("Sent update commands for " + count + " users.");

@@ -260,11 +260,9 @@ function applyOptions(opt) {
 }
 
 function resolveActiveBeat(beatMode, packName) {
-	if (beatMode === 'km') return BEAT_KM;
 	if (beatMode === 'mid') return BEAT_Mid;
 	if (beatMode === 'default') return BEAT;
 	// auto: 팩 이름 기반 자동 선택
-	if (packName === '키뮤') return BEAT_KM;
 	if (packName === '오리지널' || packName === '테크노' || packName === '병맛') return BEAT_Mid;
 	return BEAT;
 }
@@ -698,6 +696,7 @@ function onMessage(data) {
 			$('.survival-ko').removeClass('survival-ko');
 			$('.survival-ko-score').removeClass('survival-ko-score');
 			initItemUI();
+			$data.mission = null;
 			route("roundReady", data);
 			break;
 		case 'turnStart':

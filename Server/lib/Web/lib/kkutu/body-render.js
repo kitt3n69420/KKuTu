@@ -451,6 +451,11 @@ function drawLeaderboard(data) {
 	var $board = $stage.dialog.lbTable.empty();
 	var fr = data.data[0] ? data.data[0].rank : 0;
 	var page = (data.page || Math.floor(fr / 20)) + 1;
+	var type = $data._lbtype || 'exp';
+	var scoreLabelKey = { exp: 'recordScore', ksh: 'rankScoreKsh', money: 'rankScoreMoney' }[type];
+
+	$stage.dialog.leaderboard.removeClass('rank-type-exp rank-type-ksh rank-type-money').addClass('rank-type-' + type);
+	$stage.dialog.lbScoreHeader.text(L[scoreLabelKey]);
 
 	data.data.forEach(function (item, index) {
 		var profile = $data.users[item.id];
@@ -459,12 +464,13 @@ function drawLeaderboard(data) {
 		else profile = L['hidden'];
 
 		item.score = Number(item.score);
+		item.expScore = Number(item.expScore);
 		$board.append($("<tr>").attr('id', "ranking-" + item.id)
 			.addClass("ranking-" + (item.rank + 1))
 			.append($("<td>").html(item.rank + 1))
 			.append($("<td>")
-				.append(getLevelImage(item.score).addClass("ranking-image"))
-				.append($("<label>").css('padding-top', 2).html(getLevel(item.score)))
+				.append(getLevelImage(item.expScore).addClass("ranking-image"))
+				.append($("<label>").css('padding-top', 2).html(getLevel(item.expScore)))
 			)
 			.append($("<td>").text(profile))
 			.append($("<td>").html(commify(item.score)))

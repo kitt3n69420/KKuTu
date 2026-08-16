@@ -222,7 +222,7 @@ exports.turnEnd = function () {
 		cellCounts[o.id] = 0;
 		var team = o.robot ? (o.game.team || 0) : (o.team || 0);
 		if (team) {
-			if (!teamCells[team]) { teamCells[team] = 0; teamMembers[team] = []; }
+			if (!teamMembers[team]) { teamCells[team] = 0; teamMembers[team] = []; }
 			teamMembers[team].push(o.id);
 		}
 	});

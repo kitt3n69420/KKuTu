@@ -178,6 +178,8 @@ $(document).ready(function () {
 			replayView: $("#replay-view"),
 			leaderboard: $("#LeaderboardDiag"),
 			lbTable: $("#ranking tbody"),
+			lbTabs: $(".ranking-tab"),
+			lbScoreHeader: $("#ranking thead td:last-child"),
 			lbPage: $("#lb-page"),
 			lbNext: $("#lb-next"),
 			lbMe: $("#lb-me"),
@@ -265,10 +267,6 @@ $(document).ready(function () {
 		var $sel = $("#sound-pack");
 		packs.forEach(function (pack) {
 			$sel.append($("<option>").val(pack.name).text(pack.name));
-		});
-		$sel.on('change', function() {
-			var tip = PACK_TOOLTIP[$(this).val()];
-			$('#sound-pack-info').toggle(!!tip).text(tip || '');
 		});
 
 		var cookieVal = $.cookie('kks');
@@ -724,8 +722,6 @@ $(document).ready(function () {
 
 		// 사운드팩 선택 설정
 		$("#sound-pack").val(savedSettings.soundPack || "");
-		var _spTip = PACK_TOOLTIP[$("#sound-pack").val()];
-		$('#sound-pack-info').toggle(!!_spTip).text(_spTip || '');
 
 		// 레벨 아이콘 팩 선택 설정
 		$("#level-pack").val(savedSettings.levelPack || "");
@@ -1548,26 +1544,36 @@ $(document).ready(function () {
 		$data._lbpage = 0;
 		if ($stage.dialog.leaderboard.is(":visible")) {
 			$stage.dialog.leaderboard.hide();
-		} else $.get("/ranking", function (res) {
+		} else $.get("/ranking?type=" + ($data._lbtype || 'exp'), function (res) {
 			drawLeaderboard(res);
 			showDialog($stage.dialog.leaderboard);
 		});
 	});
+	$stage.dialog.lbTabs.on('click', function (e) {
+		var type = $(e.currentTarget).data('rankType');
+		if ($data._lbtype === type) return;
+		$data._lbtype = type;
+		$stage.dialog.lbTabs.removeClass('active');
+		$(e.currentTarget).addClass('active');
+		$.get("/ranking?type=" + type, function (res) {
+			drawLeaderboard(res);
+		});
+	});
 	$stage.dialog.lbPrev.on('click', function (e) {
 		$(e.currentTarget).attr('disabled', true);
-		$.get("/ranking?p=" + ($data._lbpage - 1), function (res) {
+		$.get("/ranking?type=" + ($data._lbtype || 'exp') + "&p=" + ($data._lbpage - 1), function (res) {
 			drawLeaderboard(res);
 		});
 	});
 	$stage.dialog.lbMe.on('click', function (e) {
 		$(e.currentTarget).attr('disabled', true);
-		$.get("/ranking?id=" + $data.id, function (res) {
+		$.get("/ranking?type=" + ($data._lbtype || 'exp') + "&id=" + $data.id, function (res) {
 			drawLeaderboard(res);
 		});
 	});
 	$stage.dialog.lbNext.on('click', function (e) {
 		$(e.currentTarget).attr('disabled', true);
-		$.get("/ranking?p=" + ($data._lbpage + 1), function (res) {
+		$.get("/ranking?type=" + ($data._lbtype || 'exp') + "&p=" + ($data._lbpage + 1), function (res) {
 			drawLeaderboard(res);
 		});
 	});

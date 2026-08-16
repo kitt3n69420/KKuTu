@@ -327,16 +327,6 @@ iframe {
 	outline: none;
 }
 
-#sound-pack-info {
-	clear: both;
-	width: 100%;
-	padding-left: 100px;
-	font-size: 11px;
-	color: #aaa;
-	box-sizing: border-box;
-	line-height: 1.8;
-}
-
 .dialog-bar label {
 	font-size: 13px;
 }
@@ -438,6 +428,28 @@ iframe {
 
 #ranking {
 	font-size: 13px;
+}
+
+.ranking-tabs {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 6px;
+}
+
+.ranking-tab {
+	flex: 1;
+	padding: 4px 0;
+	cursor: pointer;
+	border: 1px solid var(--color-border);
+	border-radius: 4px;
+	background-color: var(--theme-surface, #FFFFFF);
+	color: var(--theme-text, #111111);
+}
+
+.ranking-tab.active {
+	background-color: var(--color-primary) !important;
+	border-color: var(--color-primary);
+	color: #FFFFFF !important;
 }
 
 .ranking-me {

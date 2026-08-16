@@ -554,7 +554,10 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 		if (my._rageQuitting) return;
 		my._rageQuitting = true;
 		var msg = Const.ROBOT_FINAL_MESSAGES[Math.floor(Math.random() * Const.ROBOT_FINAL_MESSAGES.length)];
-		my.chat(msg);
+		var lines = msg.split("\n").filter(function (line) { return line.trim() !== ""; });
+		lines.forEach(function (line, idx) {
+			setTimeout(function () { my.chat(line); }, idx * 100);
+		});
 		setTimeout(function () {
 			var room = ROOM[place] || (DIC[my.target] && DIC[my.target].pracRoom);
 			if (!room) return;
@@ -649,7 +652,7 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 			} else {
 				room.removeAI(my.id);
 			}
-		}, 500);
+		}, 500 + (lines.length - 1) * 100);
 	};
 	my.profile = {
 		id: my.id,
@@ -1063,6 +1066,8 @@ exports.Client = function (socket, profile, sid) {
 		).on(function (__res) {
 			var prevRank = DB.redis.getGlobal(my.id);
 			DB.redis.putGlobal(my.id, my.data.score);
+			DB.redis_ksh.putGlobal(my.id, (my.data.record['KSH'] && my.data.record['KSH'][2]) || 0);
+			DB.redis_money.putGlobal(my.id, my.money || 0);
 			prevRank.then(function (_res) {
 				R.go({ id: my.id, prev: _res });
 			});

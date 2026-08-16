@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Rule the words! KKuTu Online
  * Copyright (C) 2017 JJoriping(op@jjo.kr)
  * 
@@ -17,7 +17,6 @@
  */
 
 var MODE;
-var PACK_TOOLTIP = { '키뮤': 'Kimu-Nowchira 제공 · CC BY-NC 4.0' };
 var BEAT = [null,
 	"10000000",
 	"10001000",
@@ -26,16 +25,6 @@ var BEAT = [null,
 	"11111000",
 	"11111010",
 	"11111110",
-	"11111111"
-];
-var BEAT_KM = [null,
-	"10000000",
-	"10000010",
-	"10000011",
-	"10011010",
-	"11011010",
-	"11011110",
-	"11011111",
 	"11111111"
 ];
 var BEAT_Mid = [null,
@@ -297,6 +286,8 @@ $(document).ready(function () {
 			replayView: $("#replay-view"),
 			leaderboard: $("#LeaderboardDiag"),
 			lbTable: $("#ranking tbody"),
+			lbTabs: $(".ranking-tab"),
+			lbScoreHeader: $("#ranking thead td:last-child"),
 			lbPage: $("#lb-page"),
 			lbNext: $("#lb-next"),
 			lbMe: $("#lb-me"),
@@ -384,10 +375,6 @@ $(document).ready(function () {
 		var $sel = $("#sound-pack");
 		packs.forEach(function (pack) {
 			$sel.append($("<option>").val(pack.name).text(pack.name));
-		});
-		$sel.on('change', function() {
-			var tip = PACK_TOOLTIP[$(this).val()];
-			$('#sound-pack-info').toggle(!!tip).text(tip || '');
 		});
 
 		var cookieVal = $.cookie('kks');
@@ -843,8 +830,6 @@ $(document).ready(function () {
 
 		// 사운드팩 선택 설정
 		$("#sound-pack").val(savedSettings.soundPack || "");
-		var _spTip = PACK_TOOLTIP[$("#sound-pack").val()];
-		$('#sound-pack-info').toggle(!!_spTip).text(_spTip || '');
 
 		// 레벨 아이콘 팩 선택 설정
 		$("#level-pack").val(savedSettings.levelPack || "");
@@ -1667,26 +1652,36 @@ $(document).ready(function () {
 		$data._lbpage = 0;
 		if ($stage.dialog.leaderboard.is(":visible")) {
 			$stage.dialog.leaderboard.hide();
-		} else $.get("/ranking", function (res) {
+		} else $.get("/ranking?type=" + ($data._lbtype || 'exp'), function (res) {
 			drawLeaderboard(res);
 			showDialog($stage.dialog.leaderboard);
 		});
 	});
+	$stage.dialog.lbTabs.on('click', function (e) {
+		var type = $(e.currentTarget).data('rankType');
+		if ($data._lbtype === type) return;
+		$data._lbtype = type;
+		$stage.dialog.lbTabs.removeClass('active');
+		$(e.currentTarget).addClass('active');
+		$.get("/ranking?type=" + type, function (res) {
+			drawLeaderboard(res);
+		});
+	});
 	$stage.dialog.lbPrev.on('click', function (e) {
 		$(e.currentTarget).attr('disabled', true);
-		$.get("/ranking?p=" + ($data._lbpage - 1), function (res) {
+		$.get("/ranking?type=" + ($data._lbtype || 'exp') + "&p=" + ($data._lbpage - 1), function (res) {
 			drawLeaderboard(res);
 		});
 	});
 	$stage.dialog.lbMe.on('click', function (e) {
 		$(e.currentTarget).attr('disabled', true);
-		$.get("/ranking?id=" + $data.id, function (res) {
+		$.get("/ranking?type=" + ($data._lbtype || 'exp') + "&id=" + $data.id, function (res) {
 			drawLeaderboard(res);
 		});
 	});
 	$stage.dialog.lbNext.on('click', function (e) {
 		$(e.currentTarget).attr('disabled', true);
-		$.get("/ranking?p=" + ($data._lbpage + 1), function (res) {
+		$.get("/ranking?type=" + ($data._lbtype || 'exp') + "&p=" + ($data._lbpage + 1), function (res) {
 			drawLeaderboard(res);
 		});
 	});
@@ -5651,6 +5646,7 @@ function getFourrelayClueHtml(clue) {
 
 $lib.Fourrelay.roundReady = function (data) {
 	clearBoard();
+	$stage.game.items.css('opacity', 0).html('');
 	$data._roundTime = $data.room.time * 1000;
 	$stage.game.display.html($data._question = getFourrelayClueHtml(data.clue));
 	$data.chain = 0;
@@ -7372,7 +7368,7 @@ $(document).off("click.wordstack").on("click.wordstack", ".raingame-strategy-btn
 	$lib.Wordstack._updateStrategyUI();
 });
 
-﻿/**
+/**
  * Rule the words! KKuTu Online
  * Copyright (C) 2017 JJoriping(op@jjo.kr)
  * 
@@ -7825,6 +7821,11 @@ function drawLeaderboard(data) {
 	var $board = $stage.dialog.lbTable.empty();
 	var fr = data.data[0] ? data.data[0].rank : 0;
 	var page = (data.page || Math.floor(fr / 20)) + 1;
+	var type = $data._lbtype || 'exp';
+	var scoreLabelKey = { exp: 'recordScore', ksh: 'rankScoreKsh', money: 'rankScoreMoney' }[type];
+
+	$stage.dialog.leaderboard.removeClass('rank-type-exp rank-type-ksh rank-type-money').addClass('rank-type-' + type);
+	$stage.dialog.lbScoreHeader.text(L[scoreLabelKey]);
 
 	data.data.forEach(function (item, index) {
 		var profile = $data.users[item.id];
@@ -7833,12 +7834,13 @@ function drawLeaderboard(data) {
 		else profile = L['hidden'];
 
 		item.score = Number(item.score);
+		item.expScore = Number(item.expScore);
 		$board.append($("<tr>").attr('id', "ranking-" + item.id)
 			.addClass("ranking-" + (item.rank + 1))
 			.append($("<td>").html(item.rank + 1))
 			.append($("<td>")
-				.append(getLevelImage(item.score).addClass("ranking-image"))
-				.append($("<label>").css('padding-top', 2).html(getLevel(item.score)))
+				.append(getLevelImage(item.expScore).addClass("ranking-image"))
+				.append($("<label>").css('padding-top', 2).html(getLevel(item.expScore)))
 			)
 			.append($("<td>").text(profile))
 			.append($("<td>").html(commify(item.score)))
@@ -8793,7 +8795,7 @@ function changeSoundPack(newPackName, callback) {
 		}, true);
 	});
 }
-﻿/**
+/**
  * Rule the words! KKuTu Online
  * Copyright (C) 2017 JJoriping(op@jjo.kr)
  * 
@@ -9055,11 +9057,9 @@ function applyOptions(opt) {
 }
 
 function resolveActiveBeat(beatMode, packName) {
-	if (beatMode === 'km') return BEAT_KM;
 	if (beatMode === 'mid') return BEAT_Mid;
 	if (beatMode === 'default') return BEAT;
 	// auto: 팩 이름 기반 자동 선택
-	if (packName === '키뮤') return BEAT_KM;
 	if (packName === '오리지널' || packName === '테크노' || packName === '병맛') return BEAT_Mid;
 	return BEAT;
 }
@@ -9493,6 +9493,7 @@ function onMessage(data) {
 			$('.survival-ko').removeClass('survival-ko');
 			$('.survival-ko-score').removeClass('survival-ko-score');
 			initItemUI();
+			$data.mission = null;
 			route("roundReady", data);
 			break;
 		case 'turnStart':

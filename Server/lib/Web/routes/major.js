@@ -18,6 +18,7 @@
 
 var Web = require("request");
 var MainDB = require("../db");
+var Lizard = require("../../sub/lizard");
 var JLog = require("../../sub/jjlog");
 var GLOBAL = require("../../sub/global.json");
 var Const = require("../../const");
@@ -80,6 +81,9 @@ exports.run = function (Server, page) {
   Server.get("/ranking", function (req, res) {
     var pg = Number(req.query.p);
     var id = req.query.id;
+    var RANK_TABLES = { exp: MainDB.redis, ksh: MainDB.redis_ksh, money: MainDB.redis_money };
+    var type = RANK_TABLES.hasOwnProperty(req.query.type) ? req.query.type : 'exp';
+    var table = RANK_TABLES[type];
 
     // 입력 검증
     if (id && !validateInput(id, "string", { maxLength: 50, noSpecialChars: true })) {
@@ -89,14 +93,35 @@ exports.run = function (Server, page) {
       return res.send({ error: 400, message: "Invalid page number" });
     }
 
+    // 한끝/부자 랭킹의 LEVEL 표시는 해당 탭의 점수(모드별 점수/money)가 아니라
+    // 유저의 전체 경험치 점수를 기준으로 해야 하므로 exp 랭킹에서 별도 조회한다.
+    function withExpScore($body) {
+      var R = new Lizard.Tail();
+
+      if (type === 'exp' || !$body.data.length) {
+        $body.data.forEach(function (item) { item.expScore = item.score; });
+        R.go($body);
+        return R;
+      }
+      Lizard.all($body.data.map(function (item) { return MainDB.redis.getScore(item.id); })).then(function (scores) {
+        $body.data.forEach(function (item, i) { item.expScore = scores[i] || 0; });
+        R.go($body);
+      });
+      return R;
+    }
+
     if (id) {
-      MainDB.redis.getSurround(id, 12).then(function ($body) {
-        res.send($body);
+      table.getSurround(id, 12).then(function ($body) {
+        withExpScore($body).then(function ($body) {
+          res.send($body);
+        });
       });
     } else {
       if (isNaN(pg)) pg = 0;
-      MainDB.redis.getPage(pg, 12).then(function ($body) {
-        res.send($body);
+      table.getPage(pg, 12).then(function ($body) {
+        withExpScore($body).then(function ($body) {
+          res.send($body);
+        });
       });
     }
   });

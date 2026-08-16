@@ -219,8 +219,16 @@ exports.Agent = function(type, origin){
 		};
 		my.getGlobal = function(id){
 			var R = new Lizard.Tail();
-			
+
 			origin.zrevrank([ key, id ], function(err, res){
+				R.go(res);
+			});
+			return R;
+		};
+		my.getScore = function(id){
+			var R = new Lizard.Tail();
+
+			origin.zscore([ key, id ], function(err, res){
 				R.go(res);
 			});
 			return R;

@@ -31,6 +31,7 @@ function getFourrelayClueHtml(clue) {
 
 $lib.Fourrelay.roundReady = function (data) {
 	clearBoard();
+	$stage.game.items.css('opacity', 0).html('');
 	$data._roundTime = $data.room.time * 1000;
 	$stage.game.display.html($data._question = getFourrelayClueHtml(data.clue));
 	$data.chain = 0;

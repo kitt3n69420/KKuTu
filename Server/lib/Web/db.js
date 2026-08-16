@@ -34,6 +34,7 @@ const FAKE_REDIS_FUNC = () => {
 const FAKE_REDIS = {
 	putGlobal: FAKE_REDIS_FUNC,
 	getGlobal: FAKE_REDIS_FUNC,
+	getScore: FAKE_REDIS_FUNC,
 	getPage: FAKE_REDIS_FUNC,
 	getSurround: FAKE_REDIS_FUNC
 };
@@ -80,6 +81,8 @@ Pub.ready = function (isPub) {
 			DB.kkutu_cw = {};
 
 			DB.redis = noRedis ? FAKE_REDIS : new redisAgent.Table("KKuTu_Score");
+			DB.redis_ksh = noRedis ? FAKE_REDIS : new redisAgent.Table("KKuTu_Score_KSH");
+			DB.redis_money = noRedis ? FAKE_REDIS : new redisAgent.Table("KKuTu_Money");
 			for (i in LANG) {
 				DB.kkutu[LANG[i]] = new mainAgent.Table("kkutu_" + LANG[i]);
 				DB.kkutu_cw[LANG[i]] = new mainAgent.Table("kkutu_cw_" + LANG[i]);

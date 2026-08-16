@@ -698,6 +698,9 @@ Cluster.on("message", function (worker, msg) {
       }
       // 로비 복귀 유저에게 최신 방 목록 전송 (방에 있는 동안 놓친 업데이트 보상)
       if (DIC[msg.target] && DIC[msg.target].place == 0) {
+        // 버그 수정: 방에 있는 동안 _lastActivity가 갱신되지 않아(슬레이브 프로세스가 처리)
+        // 로비 복귀 즉시 잠수 경고가 뜨던 문제 -> 복귀 시점을 활동으로 간주
+        DIC[msg.target]._lastActivity = Date.now();
         DIC[msg.target].send("roomSync", { rooms: KKuTu.getRoomList() });
       }
       break;

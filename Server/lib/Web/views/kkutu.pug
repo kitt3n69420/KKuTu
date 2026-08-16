@@ -199,9 +199,7 @@ block Middle
 			select#beat-setting(style="width:70px")
 				option(value="auto", data-lang-key='beatModeAuto')= L('beatModeAuto')
 				option(value="default", data-lang-key='beatModeDefault')= L('beatModeDefault')
-				option(value="km", data-lang-key='beatModeKM')= L('beatModeKM')
 				option(value="mid", data-lang-key='beatModeMid')= L('beatModeMid')
-			span#sound-pack-info(style="display:none")
 		div.dialog-bar
 			h4(data-lang-key='lobbyBgm')= L('lobbyBgm')
 			select#lobby-bgm(style="width: 150px;")
@@ -272,8 +270,12 @@ block Middle
 			div#comm-friends
 		div.dialog-bar.tail-button
 			button#comm-friend-add(data-lang-key='friendAdd')= L('friendAdd')
-	+Dialog('LeaderboardDiag', 300, 440, 'leaderboard')
-		div.dialog-bar(style='height: 340px;'): table#ranking(style='text-align: center;')
+	+Dialog('LeaderboardDiag', 300, 470, 'leaderboard')
+		div.dialog-bar.ranking-tabs
+			button.ranking-tab.active(data-rank-type='exp', data-lang-key='rankTabExp')= L('rankTabExp')
+			button.ranking-tab(data-rank-type='ksh', data-lang-key='rankTabKsh')= L('rankTabKsh')
+			button.ranking-tab(data-rank-type='money', data-lang-key='rankTabMoney')= L('rankTabMoney')
+		div.dialog-bar(style='height: 310px;'): table#ranking(style='text-align: center;')
 			thead(style='font-weight: bold; background-color: #DDDDDD;'): tr
 				td(width=30) #
 				td(width=55, data-lang-key='LEVEL')= L('LEVEL')
