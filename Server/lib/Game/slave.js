@@ -450,6 +450,11 @@ KKuTu.onClientMessage = function ($c, msg) {
             msg.code = 433;
             stable = false;
           }
+        } else if (_coopRule && (_coopRule.rule === "Jaqwi" || _coopRule.rule === "Quiz")) {
+          if (msg.round < 1 || msg.round > 20) {
+            msg.code = 433;
+            stable = false;
+          }
         } else if (msg.round < 1 || msg.round > 10) {
           msg.code = 433;
           stable = false;

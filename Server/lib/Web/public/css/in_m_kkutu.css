@@ -338,6 +338,28 @@ body {
 	font-size: 13px;
 }
 
+.ranking-tabs {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 6px;
+}
+
+.ranking-tab {
+	flex: 1;
+	padding: 4px 0;
+	cursor: pointer;
+	border: 1px solid var(--color-border);
+	border-radius: 4px;
+	background-color: var(--theme-surface, #FFFFFF);
+	color: var(--theme-text, #111111);
+}
+
+.ranking-tab.active {
+	background-color: var(--color-primary) !important;
+	border-color: var(--color-primary);
+	color: #FFFFFF !important;
+}
+
 .ranking-me {
 	font-weight: bold;
 	background-color: var(--color-bg-light);
@@ -603,19 +625,19 @@ body {
 }
 
 .rooms-gaming {
-	background-color: #FFBBBB;
+	background-color: var(--color-border);
 }
 
 .rooms-gaming .rooms-number {
-	border-color: #CC9999;
+	border-color: var(--color-border);
 }
 
 .rooms-item:hover {
-	background-color: var(--color-bg-light);
+	background-color: color-mix(in srgb, var(--theme-surface) 50%, var(--color-border) 50%);
 }
 
 .rooms-gaming:hover {
-	background-color: #FFCCCC;
+	background-color: color-mix(in srgb, var(--theme-surface) 50%, var(--color-border) 50%);
 }
 
 .rooms-create:hover {
@@ -1312,6 +1334,10 @@ body {
 	margin-top: -380px;
 	position: relative;
 	z-index: 101;
+}
+
+.rounds.rounds-2row {
+	margin-top: -185px;
 }
 
 .rounds label {
@@ -2737,6 +2763,9 @@ body.dark-mode .Product {
 }
 body.dark-mode .rooms-item {
 	background-color: var(--theme-surface, #1E1E1E) !important;
+}
+body.dark-mode .rooms-gaming {
+	background-color: color-mix(in srgb, var(--color-border) 90%, white 10%) !important;
 }
 body.dark-mode .dress-type:hover {
 	background-color: rgba(255, 255, 255, 0.1) !important;

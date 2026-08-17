@@ -46,6 +46,7 @@ const RECONNECT_DELAY = 30000; // 30s before manual reconnect attempt
 let _queryOnlineUser = null; // (query) => Promise<{profile, data}|null>
 let _sendRoomMsg = null;     // (roomId, message) => Promise<{exists, sent}>
 let _kickUser = null;        // (userId) => Promise<{found}|null>
+let _listOnlineUsers = null; // () => Promise<{total, lobby, rooms}|null>
 
 /**
  * Safe wrapper for async operations
@@ -73,7 +74,7 @@ function scheduleReconnect() {
             client = null;
             channel = null;
             await Promise.race([
-                exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN, queryOnlineUser: _queryOnlineUser, sendRoomMsg: _sendRoomMsg, kickUser: _kickUser }),
+                exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN, queryOnlineUser: _queryOnlineUser, sendRoomMsg: _sendRoomMsg, kickUser: _kickUser, listOnlineUsers: _listOnlineUsers }),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Reconnect timeout (35s)')), 35000))
             ]);
         } catch (err) {
@@ -228,6 +229,7 @@ exports.init = async function (token, db, dic, options = {}) {
     _queryOnlineUser = options.queryOnlineUser || null;
     _sendRoomMsg = options.sendRoomMsg || null;
     _kickUser = options.kickUser || null;
+    _listOnlineUsers = options.listOnlineUsers || null;
 
     try {
         client = new Client({
@@ -541,11 +543,19 @@ async function registerCommands(token) {
                 ),
 
             new SlashCommandBuilder()
+                .setName('users')
+                .setNameLocalizations({ ko: '접속자' })
+                .setDescription('Show total online user count grouped by room')
+                .setDescriptionLocalizations({
+                    ko: '총 접속자 수와 방별 접속자 현황을 확인해요.'
+                }),
+
+            new SlashCommandBuilder()
                 .setName('id')
                 .setNameLocalizations({ ko: '아이디' })
-                .setDescription('Look up a user ID by nickname (admin only)')
+                .setDescription('Look up a user ID by nickname (admin only, guests must be online)')
                 .setDescriptionLocalizations({
-                    ko: '별명으로 유저 아이디를 조회해요. (관리자 전용)'
+                    ko: '별명으로 유저 아이디를 조회해요. (관리자 전용, 손님은 접속 중일 때만 가능)'
                 })
                 .addStringOption(opt =>
                     opt.setName('nickname')
@@ -703,6 +713,9 @@ async function handleCommand(interaction) {
             case 'roommsg':
                 await handleRoomMsg(interaction);
                 break;
+            case 'users':
+                await handleUsers(interaction);
+                break;
             case 'id':
                 await handleId(interaction);
                 break;
@@ -815,8 +828,13 @@ async function handleHelp(interaction) {
                 inline: false
             },
             {
+                name: '🧑‍🤝‍🧑 /users (접속자)',
+                value: '총 접속자 수와 방별 접속자 현황 확인\n예: `/users`',
+                inline: false
+            },
+            {
                 name: '🆔 /id (아이디) `<별명>`',
-                value: '별명으로 유저 아이디 조회 (관리자 전용, 오프라인 가능)\n예: `/id 홍길동`',
+                value: '별명으로 유저 아이디 조회 (관리자 전용, 가입 유저는 오프라인도 가능/손님은 접속 중일 때만)\n예: `/id 홍길동`',
                 inline: false
             },
             {
@@ -1459,6 +1477,115 @@ async function handleRoomMsg(interaction) {
 }
 
 /**
+ * Build a comma-separated, length-capped name list for an embed field value
+ */
+function formatNameList(names) {
+    if (!names || names.length === 0) return '없음';
+    let text = names.join(', ');
+    if (text.length > 1000) text = text.slice(0, 1000) + '...';
+    return text;
+}
+
+/**
+ * Collect online user counts grouped by room, directly from DIC/ROOM (same-process mode)
+ */
+function buildOnlineUserSummary() {
+    const roomsMap = {};
+    const lobby = [];
+    let total = 0;
+
+    for (const id in DIC) {
+        const c = DIC[id];
+        if (!c) continue;
+        total++;
+
+        const name = getDisplayName(c.profile);
+        if (!c.place) {
+            lobby.push(name);
+            continue;
+        }
+
+        if (!roomsMap[c.place]) {
+            roomsMap[c.place] = {
+                id: c.place,
+                title: (ROOM && ROOM[c.place] && ROOM[c.place].title) || null,
+                users: []
+            };
+        }
+        roomsMap[c.place].users.push(name);
+    }
+
+    const rooms = Object.keys(roomsMap)
+        .map(k => roomsMap[k])
+        .sort((a, b) => a.id - b.id);
+
+    return { total, lobby, rooms };
+}
+
+/**
+ * /users command - Show total online user count grouped by room
+ */
+async function handleUsers(interaction) {
+    await interaction.deferReply();
+
+    try {
+        let summary = null;
+
+        if (_listOnlineUsers) {
+            // Separate process mode: proxy to master
+            summary = await _listOnlineUsers();
+        } else if (DIC) {
+            // Same process mode: direct DIC/ROOM access
+            summary = buildOnlineUserSummary();
+        }
+
+        if (!summary) {
+            await interaction.editReply({ content: '❌ 접속자 정보를 가져올 수 없습니다.' });
+            return;
+        }
+
+        const embed = new EmbedBuilder()
+            .setTitle('🧑‍🤝‍🧑 접속자 현황')
+            .setColor(0x1ABC9C)
+            .setTimestamp();
+
+        if (summary.total === 0) {
+            embed.setDescription('현재 접속자가 없습니다.');
+            await interaction.editReply({ embeds: [embed] });
+            return;
+        }
+
+        embed.setDescription(`총 **${summary.total}**명 접속 중`);
+
+        if (summary.lobby && summary.lobby.length > 0) {
+            embed.addFields({
+                name: `🛋️ 로비 (${summary.lobby.length}명)`,
+                value: formatNameList(summary.lobby)
+            });
+        }
+
+        const rooms = summary.rooms || [];
+        const MAX_ROOM_FIELDS = 24;
+        rooms.slice(0, MAX_ROOM_FIELDS).forEach(room => {
+            const label = room.title ? `${room.id}번 방: ${room.title}` : `${room.id}번 방`;
+            embed.addFields({
+                name: `🚪 ${label} (${room.users.length}명)`,
+                value: formatNameList(room.users)
+            });
+        });
+
+        if (rooms.length > MAX_ROOM_FIELDS) {
+            embed.addFields({ name: '​', value: `...외 ${rooms.length - MAX_ROOM_FIELDS}개 방 더 있음` });
+        }
+
+        await interaction.editReply({ embeds: [embed] });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Users error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 접속자 조회 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
+/**
  * Check whether the interacting user is a registered bot admin
  */
 function isAdmin(interaction) {
@@ -1466,7 +1593,9 @@ function isAdmin(interaction) {
 }
 
 /**
- * /id command - Look up a user's account ID by nickname (admin only, works offline)
+ * /id command - Look up a user's account ID by nickname (admin only)
+ * - Registered accounts: looked up via DB.users (works offline)
+ * - Guests have no DB.users row, so fall back to searching online users (DIC) by title/name
  */
 async function handleId(interaction) {
     if (!isAdmin(interaction)) {
@@ -1481,13 +1610,35 @@ async function handleId(interaction) {
     try {
         if (!DB || !DB.users) throw new Error('데이터베이스가 준비되지 않았습니다.');
 
+        let userId = null;
+
         const user = await dbFindOne(DB.users, ['nickname', nickname]);
-        if (!user) {
-            await interaction.editReply({ content: `❌ 별명 "${nickname}"을(를) 가진 유저를 찾을 수 없습니다.` });
+        if (user) {
+            userId = user._id;
+        } else if (_queryOnlineUser) {
+            // Separate process mode: proxy to master (also matches guests by title/name)
+            const found = await _queryOnlineUser(nickname);
+            if (found && found.profile) userId = found.profile.id;
+        } else if (DIC) {
+            // Same process mode: direct DIC access
+            for (const id in DIC) {
+                const client = DIC[id];
+                if (!client) continue;
+                const title = client.profile && client.profile.title;
+                const name = client.profile && client.profile.name;
+                if ((title && title === nickname) || (name && name === nickname)) {
+                    userId = client.id;
+                    break;
+                }
+            }
+        }
+
+        if (!userId) {
+            await interaction.editReply({ content: `❌ 별명 "${nickname}"을(를) 가진 유저를 찾을 수 없습니다. (손님은 접속 중일 때만 조회할 수 있어요)` });
             return;
         }
 
-        await interaction.editReply({ content: `🆔 "${nickname}"의 아이디: \`${user._id}\`` });
+        await interaction.editReply({ content: `🆔 "${nickname}"의 아이디: \`${userId}\`` });
     } catch (err) {
         JLog.error(`[Discord Bot] Id lookup error: ${err.message}`);
         await interaction.editReply({ content: `❌ 조회 중 오류가 발생했습니다: ${err.message}` });

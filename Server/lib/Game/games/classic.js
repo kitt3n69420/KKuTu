@@ -1565,7 +1565,8 @@ exports.submit = function (client, text) {
 					// 빨간 글씨 표시용: 항상 사용된 단어를 차감한 값 사용
 					my.game.nextCharWordCount = displayRemaining;
 
-					if ((firstMove || isMannerLike(my.opts)) && totalRemaining >= mannerMinRemaining) {
+					// KJM(자모이어가기)은 일반 음절 체인이 아니므로 매너/첫턴 체크를 적용하지 않음
+					if (gameType !== 'KJM' && (firstMove || isMannerLike(my.opts)) && totalRemaining >= mannerMinRemaining) {
 						// Stack Kill Prevention for Manner Mode/First Turn (SafeGuard)
 						// Shield 모드는 깊은 체크 생략
 						if (shouldDeepCheck(my.opts) && totalRemaining <= 10) {
@@ -1733,7 +1734,7 @@ exports.submit = function (client, text) {
 							approved();
 						}
 					}
-					else if (firstMove || isMannerLike(my.opts)) {
+					else if (gameType !== 'KJM' && (firstMove || isMannerLike(my.opts))) {
 						denied(firstMove ? 402 : 403);
 					} else {
 						approved();

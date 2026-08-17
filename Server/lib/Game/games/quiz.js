@@ -91,7 +91,7 @@ exports.getTitle = function () {
 		my.game.themeQueue = [];
 	}
 	setTimeout(function () {
-		R.go("①②③④⑤⑥⑦⑧⑨⑩");
+		R.go("①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳");
 	}, 500);
 	return R;
 };
@@ -390,15 +390,45 @@ function getQuestion(topic, difficulty, ignoreDone) {
 	return R;
 }
 
-// 주제별 문제 조회 재시도 — 최대 attemptsLeft번 시도 후 MATH 폴백
+// 난이도가 부족할 때 대신 시도할 순서 (보통을 우선 거치고, 마지막으로 남은 난이도까지)
+var DIFFICULTY_FALLBACK_ORDER = {
+	'qz1': ['qz2', 'qz3'],
+	'qz2': ['qz1', 'qz3'],
+	'qz3': ['qz2', 'qz1']
+};
+
+// 같은 주제 안에서 difficultyOrder를 순서대로 시도해 "안 나온" 문제를 찾는다. 다 떨어지면 onExhausted 호출.
+function tryDifficulties(topic, difficultyOrder, index, onExhausted) {
+	var my = this;
+
+	if (index >= difficultyOrder.length) {
+		onExhausted();
+		return;
+	}
+
+	var diff = difficultyOrder[index];
+	getQuestion.call(my, topic, diff).then(function ($q) {
+		if (!my.game.done) return;
+		if ($q) {
+			if (diff !== my.game.difficulty) {
+				my.game.difficulty = diff;
+				my.game.difficultyBonus = DIFFICULTY_BONUS[diff] || 30;
+			}
+			processQuestion.call(my, $q, false);
+			return;
+		}
+		tryDifficulties.call(my, topic, difficultyOrder, index + 1, onExhausted);
+	});
+}
+
+// 주제별 문제 조회 재시도 — 같은 주제 내 난이도 대체 → 중복 허용 → 최대 attemptsLeft번 다른 주제로 폴백 → MATH 폴백
 function tryQuizTopic(triedTopics, candidates, attemptsLeft) {
 	var my = this;
 	var topic = my.game.topic;
+	var difficultyOrder = [my.game.difficulty].concat(DIFFICULTY_FALLBACK_ORDER[my.game.difficulty] || []);
 
-	getQuestion.call(my, topic, my.game.difficulty).then(function($q) {
-		if (!my.game.done) return;
-		if ($q) { processQuestion.call(my, $q, false); return; }
-
+	tryDifficulties.call(my, topic, difficultyOrder, 0, function () {
+		// 이 주제는 모든 난이도의 새 문제가 바닥남 → 원래 난이도로 중복 허용
 		getQuestion.call(my, topic, my.game.difficulty, true).then(function($q2) {
 			if (!my.game.done) return;
 			if ($q2) { processQuestion.call(my, $q2, false); return; }
@@ -445,6 +475,55 @@ function processQuestion($q, isFallback) {
 	setTimeout(my.turnStart, 2400);
 }
 
+var CHOSUNG_LIST = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+
+// 완성형 한글 음절이면 초성을, 아니면 null을 반환
+function toChosung(ch) {
+	var code = ch.charCodeAt(0) - 0xAC00;
+	if (code < 0 || code > 11171) return null;
+	return CHOSUNG_LIST[Math.floor(code / 588)];
+}
+
+// 정답을 부분 공개 힌트로 변환: 한글은 초성, 영어/숫자는 무작위 절반(올림) 공개하고 나머지는 '?', 공백은 그대로 둔다.
+function buildPartialHint(answer) {
+	var chars = answer.split('');
+	var alnumIndices = [];
+	var result = new Array(chars.length);
+
+	for (var i = 0; i < chars.length; i++) {
+		var ch = chars[i];
+		if (ch === ' ') {
+			result[i] = ch;
+			continue;
+		}
+		var chosung = toChosung(ch);
+		if (chosung) {
+			result[i] = chosung;
+			continue;
+		}
+		if (/[A-Za-z0-9]/.test(ch)) {
+			alnumIndices.push(i);
+			continue;
+		}
+		result[i] = ch;
+	}
+
+	var revealCount = Math.ceil(alnumIndices.length / 2);
+	var shuffled = alnumIndices.slice();
+	for (var k = shuffled.length - 1; k > 0; k--) {
+		var r = Math.floor(Math.random() * (k + 1));
+		var tmp = shuffled[k]; shuffled[k] = shuffled[r]; shuffled[r] = tmp;
+	}
+	var revealSet = new Set(shuffled.slice(0, revealCount));
+
+	for (var j = 0; j < alnumIndices.length; j++) {
+		var idx = alnumIndices[j];
+		result[idx] = revealSet.has(idx) ? chars[idx] : '?';
+	}
+
+	return result.join('');
+}
+
 // 힌트 생성 함수
 function getHints(answer, lang) {
 	var hints = [];
@@ -452,8 +531,8 @@ function getHints(answer, lang) {
 	// 1차 힌트: N글자
 	hints.push(answer.replace(/\s/g, '').length + (lang === 'ko' ? '글자' : ' letters'));
 
-	// 2차 힌트: 첫 글자
-	hints.push(answer.charAt(0).toUpperCase());
+	// 2차 힌트: 한글은 초성, 영어/숫자는 절반 공개
+	hints.push(buildPartialHint(answer));
 	return hints;
 }
 

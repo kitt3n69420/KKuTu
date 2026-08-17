@@ -2592,9 +2592,14 @@ function clearBoard() {
 }
 function drawRound(round) {
 	var i;
+	var total = $data.room.round;
+	var isTwoRow = mobile && total > 10;
+	var topCount = isTwoRow ? Math.ceil(total / 2) : total;
 
+	$stage.game.round.toggleClass("rounds-2row", isTwoRow);
 	$stage.game.round.empty();
-	for (i = 0; i < $data.room.round; i++) {
+	for (i = 0; i < total; i++) {
+		if (i == topCount) $stage.game.round.append($("<br>"));
 		$stage.game.round.append($l = $("<label>").html($data.room.game.title[i]));
 		if ((i + 1) == round) $l.addClass("rounds-current");
 	}

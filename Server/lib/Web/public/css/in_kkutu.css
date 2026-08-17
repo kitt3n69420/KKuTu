@@ -788,7 +788,7 @@ iframe {
 }
 
 .rooms-gaming {
-	background-color: var(--color-bg-light);
+	background-color: var(--color-border);
 }
 
 .rooms-gaming .rooms-number {
@@ -796,11 +796,11 @@ iframe {
 }
 
 .rooms-item:hover {
-	background-color: var(--color-bg-light);
+	background-color: color-mix(in srgb, var(--theme-surface) 50%, var(--color-border) 50%);
 }
 
 .rooms-gaming:hover {
-	background-color: var(--color-border);
+	background-color: color-mix(in srgb, var(--theme-surface) 50%, var(--color-border) 50%);
 }
 
 .rooms-create:hover {
@@ -3073,6 +3073,9 @@ body.dark-mode .Product {
 }
 body.dark-mode .rooms-item {
 	background-color: var(--theme-surface, #1E1E1E) !important;
+}
+body.dark-mode .rooms-gaming {
+	background-color: color-mix(in srgb, var(--color-border) 90%, white 10%) !important;
 }
 body.dark-mode .pq-canvas {
 	background: var(--theme-surface, #1E1E1E) !important;

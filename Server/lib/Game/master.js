@@ -258,6 +258,40 @@ function handleDiscordProcessMessage(msg) {
       } catch (e) {}
       break;
     }
+    case "list-online-users": {
+      var luRoomsMap = {};
+      var luLobby = [];
+      var luTotal = 0;
+
+      for (var luId in DIC) {
+        var $lu = DIC[luId];
+        if (!$lu) continue;
+        luTotal++;
+
+        var luName = discordDisplayName($lu.profile);
+        if (!$lu.place) {
+          luLobby.push(luName);
+        } else {
+          if (!luRoomsMap[$lu.place]) {
+            luRoomsMap[$lu.place] = {
+              id: $lu.place,
+              title: (ROOM[$lu.place] && ROOM[$lu.place].title) || null,
+              users: []
+            };
+          }
+          luRoomsMap[$lu.place].users.push(luName);
+        }
+      }
+
+      var luRooms = Object.keys(luRoomsMap)
+        .map(function (k) { return luRoomsMap[k]; })
+        .sort(function (a, b) { return a.id - b.id; });
+
+      try {
+        discordProcess.send({ type: "list-online-users-result", _reqId: msg._reqId, total: luTotal, lobby: luLobby, rooms: luRooms });
+      } catch (e) {}
+      break;
+    }
   }
 }
 
@@ -1287,6 +1321,11 @@ function processClientRequest($c, msg) {
         var _coopRule = Const.getRule(msg.mode);
         if (_coopRule && _coopRule.coop) {
           if (msg.round < 5 || msg.round > 50) {
+            msg.code = 433;
+            stable = false;
+          }
+        } else if (_coopRule && (_coopRule.rule === "Jaqwi" || _coopRule.rule === "Quiz")) {
+          if (msg.round < 1 || msg.round > 20) {
             msg.code = 433;
             stable = false;
           }

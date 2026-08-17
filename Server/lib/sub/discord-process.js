@@ -32,13 +32,19 @@ function ipcRequest(type, data) {
 
 const proxyCallbacks = {
     queryOnlineUser: function (query) {
-        return ipcRequest('query-online-user', { query: query });
+        // discord-bot.js expects {profile, data}|null, but the IPC result nests it under `user`
+        return ipcRequest('query-online-user', { query: query }).then(function (msg) {
+            return msg ? msg.user : null;
+        });
     },
     sendRoomMsg: function (roomId, message) {
         return ipcRequest('send-roommsg', { roomId: roomId, message: message });
     },
     kickUser: function (userId) {
         return ipcRequest('kick-user', { userId: userId });
+    },
+    listOnlineUsers: function () {
+        return ipcRequest('list-online-users', {});
     }
 };
 
@@ -127,6 +133,7 @@ MainDB.ready = function () {
         ADMIN: GLOBAL.ADMIN,
         queryOnlineUser: proxyCallbacks.queryOnlineUser,
         sendRoomMsg: proxyCallbacks.sendRoomMsg,
-        kickUser: proxyCallbacks.kickUser
+        kickUser: proxyCallbacks.kickUser,
+        listOnlineUsers: proxyCallbacks.listOnlineUsers
     });
 };

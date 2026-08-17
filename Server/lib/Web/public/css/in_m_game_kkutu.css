@@ -491,19 +491,23 @@ iframe {
 }
 
 .rooms-gaming {
-	background-color: #FFBBBB;
+	background-color: var(--color-border);
 }
 
 .rooms-gaming .rooms-number {
-	border-color: #CC9999;
+	border-color: var(--color-border);
 }
 
 .rooms-item:hover {
-	background-color: #F4F4F4;
+	background-color: color-mix(in srgb, var(--color-bg-light) 50%, var(--color-border) 50%);
 }
 
 .rooms-gaming:hover {
-	background-color: #FFCCCC;
+	background-color: color-mix(in srgb, var(--color-bg-light) 50%, var(--color-border) 50%);
+}
+
+body.dark-mode .rooms-gaming {
+	background-color: color-mix(in srgb, var(--color-border) 90%, white 10%) !important;
 }
 
 .rooms-create:hover {
@@ -1135,6 +1139,10 @@ body.theme-green .GameBox::before {
 
 .cw.rounds {
 	margin-top: -380px;
+}
+
+.rounds.rounds-2row {
+	margin-top: -185px;
 }
 
 .rounds label {

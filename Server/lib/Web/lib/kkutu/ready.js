@@ -570,19 +570,21 @@ $(document).ready(function () {
 			$target.css('color', "");
 		}
 	});
-	$("#room-round").on('change', function (e) {
-		var $target = $(e.currentTarget);
+	window.updateRoundColor = function () {
+		var $target = $("#room-round");
 		var value = $target.val();
 		var currentRule = RULE[MODE[$("#room-mode").val()]];
 		var isCoopMode = currentRule && currentRule.coop;
-		var outOfRange = isCoopMode ? (value < 5 || value > 50) : (value < 1 || value > 10);
+		var isQuizMode = currentRule && (currentRule.rule === "Jaqwi" || currentRule.rule === "Quiz");
+		var outOfRange = isCoopMode ? (value < 5 || value > 50) : isQuizMode ? (value < 1 || value > 20) : (value < 1 || value > 10);
 
 		if (outOfRange) {
 			$target.css('color', "#FF4444");
 		} else {
 			$target.css('color', "");
 		}
-	});
+	};
+	$("#room-round").on('change', window.updateRoundColor);
 	$stage.game.here.on('click', function (e) {
 		// 모바일에서도 게임 입력창 클릭 시 포커스
 		if (mobile) {
@@ -1194,7 +1196,7 @@ $(document).ready(function () {
 		// Hide Special Rules Panel if empty
 		if (!$data._injpick) $data._injpick = [];
 		if (!$data._quizpick) $data._quizpick = [];
-		if (rule.rule == "Typing") $("#room-round").val(3);
+		if (rule.rule == "Typing" || rule.rule == "Chainbattle" || rule.rule == "Flip") $("#room-round").val(3);
 		$("#room-time").children("option").each(function (i, o) {
 			$(o).html(Number($(o).val()) * rule.time + L['SECOND']);
 		});
@@ -1217,10 +1219,14 @@ $(document).ready(function () {
 		if (rule.coop) {
 			$("#room-round").attr({ min: 5, max: 50 }).val(Math.max(5, Math.min(50, Number($("#room-round").val()) || 5)));
 			$("#room-round-label").text(L['coopTurns']);
+		} else if (rule.rule === "Jaqwi" || rule.rule === "Quiz") {
+			$("#room-round").attr({ min: 1, max: 20 }).val(Math.max(1, Math.min(20, Number($("#room-round").val()) || 5)));
+			$("#room-round-label").text(mobile ? L['numRound'] : L['roundSetting']);
 		} else {
 			$("#room-round").attr({ min: 1, max: 10 });
 			$("#room-round-label").text(mobile ? L['numRound'] : L['roundSetting']);
 		}
+		if (window.updateRoundColor) window.updateRoundColor();
 		if (window.updateViewAllRulesBtn) setTimeout(window.updateViewAllRulesBtn, 10);
 	});
 	// 나락-무적 상호배타: 나락 체크시 무적 해제

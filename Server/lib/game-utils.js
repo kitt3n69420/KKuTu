@@ -136,13 +136,27 @@ var _JAMO_INITIALS = ['ㄱ', 'ㄱㄱ', 'ㄴ', 'ㄷ', 'ㄷㄷ', 'ㄹ', 'ㅁ', '�
 var _JAMO_MEDIALS = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅑㅣ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅕㅣ', 'ㅗ', 'ㅗㅏ', 'ㅗㅐ', 'ㅗㅣ', 'ㅛ', 'ㅜ', 'ㅜㅓ', 'ㅜㅔ', 'ㅜㅣ', 'ㅠ', 'ㅡ', 'ㅡㅣ', 'ㅣ'];
 var _JAMO_FINALS = ['', 'ㄱ', 'ㄱㄱ', 'ㄱㅅ', 'ㄴ', 'ㄴㅈ', 'ㄴㅎ', 'ㄷ', 'ㄹ', 'ㄹㄱ', 'ㄹㅁ', 'ㄹㅂ', 'ㄹㅅ', 'ㄹㅌ', 'ㄹㅍ', 'ㄹㅎ', 'ㅁ', 'ㅂ', 'ㅂㅅ', 'ㅅ', 'ㅅㅅ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
 var _NUM_KO = { '0': '영', '1': '일', '2': '이', '3': '삼', '4': '사', '5': '오', '6': '육', '7': '칠', '8': '팔', '9': '구' };
+// 음절 블록이 아닌, 단독으로 등장하는 겹자음/겹모음(호환 자모)을 구성 자모로 분리
+var _COMPAT_JAMO_DECOMPOSE = {
+	'ㄲ': 'ㄱㄱ', 'ㄳ': 'ㄱㅅ',
+	'ㄵ': 'ㄴㅈ', 'ㄶ': 'ㄴㅎ',
+	'ㄸ': 'ㄷㄷ',
+	'ㄺ': 'ㄹㄱ', 'ㄻ': 'ㄹㅁ', 'ㄼ': 'ㄹㅂ', 'ㄽ': 'ㄹㅅ', 'ㄾ': 'ㄹㅌ', 'ㄿ': 'ㄹㅍ', 'ㅀ': 'ㄹㅎ',
+	'ㅃ': 'ㅂㅂ', 'ㅄ': 'ㅂㅅ',
+	'ㅆ': 'ㅅㅅ',
+	'ㅉ': 'ㅈㅈ',
+	'ㅒ': 'ㅑㅣ', 'ㅖ': 'ㅕㅣ',
+	'ㅘ': 'ㅗㅏ', 'ㅙ': 'ㅗㅐ', 'ㅚ': 'ㅗㅣ',
+	'ㅝ': 'ㅜㅓ', 'ㅞ': 'ㅜㅔ', 'ㅟ': 'ㅜㅣ',
+	'ㅢ': 'ㅡㅣ'
+};
 
 exports.decomposeToJamo = function (text) {
 	text = text.replace(/[0-9]/g, function (d) { return _NUM_KO[d]; });
 	var result = '';
 	for (var i = 0; i < text.length; i++) {
 		var code = text.charCodeAt(i) - 0xAC00;
-		if (code < 0 || code > 11171) { result += text[i]; continue; }
+		if (code < 0 || code > 11171) { result += _COMPAT_JAMO_DECOMPOSE[text[i]] || text[i]; continue; }
 		result += _JAMO_INITIALS[Math.floor(code / 588)]
 			+ _JAMO_MEDIALS[Math.floor((code % 588) / 28)]
 			+ _JAMO_FINALS[code % 28];
