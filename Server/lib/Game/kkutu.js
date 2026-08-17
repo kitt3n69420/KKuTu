@@ -32,6 +32,7 @@ var Room = require('./room');
 // 망할 셧다운제 var Ajae = require("../sub/ajae");
 var DB;
 var SHOP;
+var SHOP_GROUPS; // group(head/eye/...) -> 상점에 현재 등록된 아이템 ID 목록. 봇 착용 아이템 풀로 사용.
 var DIC;
 var ROOM;
 var _rid;
@@ -209,9 +210,15 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN, _DiscordRel
 	// 망할 셧다운제 if(Cluster.isMaster) setInterval(exports.processAjae, 60000);
 	DB.kkutu_shop.find().on(function ($shop) {
 		SHOP = {};
+		SHOP_GROUPS = {};
 
 		$shop.forEach(function (item) {
 			SHOP[item._id] = item;
+
+			if (item.group) {
+				if (!SHOP_GROUPS[item.group]) SHOP_GROUPS[item.group] = [];
+				SHOP_GROUPS[item.group].push(item._id);
+			}
 		});
 	});
 	// stats 테이블 전체 메모리 로드 (서버 실행 중 변하지 않는 정적 데이터)
@@ -436,39 +443,36 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 	my.data.anger = my.anger;
 	my.data.fastMode = my.fastMode;
 
-	// Randomly equip items
+	// Randomly equip items currently available in the shop
+	// kkutu_shop.group 값은 카테고리명이 아니라 장착 슬롯 키 자체이다(Mhead/Meye/.../NIK).
+	// BDG*(배지)/CNS/PIX/eventcol 등은 아바타에 착용되는 슬롯이 아니므로 제외한다.
 	(function () {
+		var EQUIP_GROUPS = ["Mhead", "Meye", "Mmouth", "Mclothes", "Mshoes", "Mhand", "Mback", "Mfront", "NIK"];
+		var groups = SHOP_GROUPS || {};
+		var pool = [];
+		var g;
+
+		for (g = 0; g < EQUIP_GROUPS.length; g++) {
+			if (groups[EQUIP_GROUPS[g]]) pool = pool.concat(groups[EQUIP_GROUPS[g]]);
+		}
+
 		var count = Math.floor(Math.random() * 5) + 2; // 2 ~ 6
-		var shuffled = Const.AVAIL_EQUIP.slice().sort(function (a, b) {
+		var shuffled = pool.sort(function (a, b) {
 			var wa = Const.BOT_ITEM_WEIGHTS[a] || 10;
 			var wb = Const.BOT_ITEM_WEIGHTS[b] || 10;
 
 			// Weighted random shuffle: Math.random() ^ (1 / weight) descending
 			return Math.pow(Math.random(), 1 / wb) - Math.pow(Math.random(), 1 / wa);
 		});
-		var i, group;
+		var i;
 
 		for (i = 0; i < count; i++) {
 			var item = shuffled[i];
-			// Skip default items (starting with 'M') and Badges (starting with 'BDG') to prevent client-side errors
-			if (item.charAt(0) === 'M' || item.substring(0, 3) === 'BDG') continue;
+			if (!item) continue;
 
-			for (var group in Const.GROUPS) {
-				if (Const.GROUPS[group].indexOf(item) !== -1) {
-					if (group === 'hs') {
-						var HAND_ITEMS = ["bluecandy", "bokjori", "choco_ice", "lemoncandy", "melon_ice", "pinkcandy", "purple_ice", "rio_seonghwa", "spanner"];
-						var SHOES_ITEMS = ["black_oxford", "black_shoes", "brown_oxford", "loosesocks"];
-						if (HAND_ITEMS.indexOf(item) !== -1) my.equip['Mrhand'] = item; // Assign to Right Hand by default
-						else if (SHOES_ITEMS.indexOf(item) !== -1) my.equip['Mshoes'] = item;
-					} else if (group === 'skin') {
-						my.equip['NIK'] = item;
-					} else {
-						var key = (group === 'badge') ? 'BDG' : ('M' + group);
-						my.equip[key] = item;
-					}
-					break;
-				}
-			}
+			var part = SHOP[item].group;
+			if (part === 'Mhand') part = (Math.random() < 0.5) ? 'Mlhand' : 'Mrhand';
+			my.equip[part] = item;
 		}
 	})();
 

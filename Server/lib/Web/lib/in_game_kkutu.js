@@ -1304,7 +1304,7 @@ $(document).ready(function () {
 		// Hide Special Rules Panel if empty
 		if (!$data._injpick) $data._injpick = [];
 		if (!$data._quizpick) $data._quizpick = [];
-		if (rule.rule == "Typing") $("#room-round").val(3);
+		if (rule.rule == "Typing" || rule.rule == "Chainbattle" || rule.rule == "Flip") $("#room-round").val(3);
 		$("#room-time").children("option").each(function (i, o) {
 			$(o).html(Number($(o).val()) * rule.time + L['SECOND']);
 		});
