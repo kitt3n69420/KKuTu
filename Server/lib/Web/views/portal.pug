@@ -30,12 +30,14 @@ block Middle
 		div(style='float: left; padding-left: 70px;')
 			h3#holder= L('title').replace(/\[.+?\]/g, "")
 			img#logo(src='/img/kkutu/short_logo.png')
-		div#menu-bar(style='float: right; margin-top: 119px; margin-bottom: -50px; width: 378px; display: flex; flex-wrap: wrap; position: relative;')
-			a(href='/legal/privacy', target='_blank', style='background-color: #3E7BC4;')= L('privacy')
+		div#menu-bar(style='float: right; margin-top: 119px; margin-bottom: -50px; width: 432px; display: flex; flex-wrap: wrap; position: relative;')
 			a(href='/legal/terms', target='_blank', style='background-color: #3E9C5C;')= L('terms')
+			a(href='/legal/privacy', target='_blank', style='background-color: #3E7BC4;')= L('privacy')
 			a(href='/legal/operation', target='_blank', style='background-color: #C4823E;')= L('operation')
-			a(href='/legal/copyright', target='_blank', style='background-color: #7B5FC4;')= L('copyright')
 			a(href='/legal/punishment', target='_blank', style='background-color: #C43E3E;')= L('punishment')
+			a(href='/legal/copyright', target='_blank', style='background-color: #7B5FC4;')= L('copyright')
+			a(href='/legal/word-sources', target='_blank', style='background-color: #4CAF93;')= L('wordSources')
+			a(href='/kkutu_bulletin.html', target='_blank', style='background-color: #C4B23E;')= L('updateLog')
 			a(href='https://discord.gg/z6TZgyTZUj', target='_blank', style='background-color: #5865F2;')= L('DISCORD')
 			if activeEventBanner
 				a#event-banner(href=activeEventBanner.link, target='_blank')
@@ -45,7 +47,7 @@ block Middle
 			img.jjoObj.jjoNose(src='/img/jjonose.png', style='left: -170px;')
 			img.jjoObj.jjoEyeR(src='/img/jjoeyeR.png', style='left: -70px;')
 			div.jjoDisplayBar(style='width: 325px; height: 85px;')
-				button#game-start.jjo-display= L('gameStart')
+				button#game-start.jjo-display(data-guest-blocked=(!SESSION.profile && locals.GUEST_CONNECT_ALLOWED === false))= (!SESSION.profile && locals.GUEST_CONNECT_ALLOWED === false) ? L('loginToStart') : L('gameStart')
 	div(style='float: right; margin-top: -120px; width: 50%;')
 		div.server-list-box
 			h3.server-list-title

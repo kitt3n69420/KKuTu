@@ -54,6 +54,9 @@
 		$stage.start.prop('disabled', true).on('click', function(e){
 			var i, j;
 
+			if($stage.start.attr('data-guest-blocked') === 'true'){
+				return location.href = "/login?desc=login_kkutu";
+			}
 			if($("#account-info").html() === L['LOGIN']){
 				return $("#server-0").trigger('click');
 			}

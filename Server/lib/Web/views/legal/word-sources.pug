@@ -1,0 +1,253 @@
+extends ../layout
+
+block CSS
+	style.
+		.legal-box { line-height: 1.8; word-break: keep-all; }
+		.legal-box h1 { margin-bottom: 20px; border-bottom: 2px solid #fff; padding-bottom: 10px; }
+		.legal-box h3 { margin-top: 40px; margin-bottom: 15px; font-size: 1.3em; font-weight: bold; color: #81D4FA; }
+		.legal-box p { margin-bottom: 12px; font-size: 1.05em; color: #eee; }
+		.legal-box a { color: #B3E5FC; }
+		.legal-box a:hover { color: #fff; }
+
+		.table-wrap { overflow-x: auto; margin-bottom: 20px; }
+		.legal-box table { width: 100%; border-collapse: collapse; min-width: 320px; }
+		.legal-box th, .legal-box td { border: 1px solid rgba(255,255,255,0.15); padding: 10px 14px; font-size: 0.95em; color: #ddd; text-align: left; }
+		.legal-box th { background: rgba(129, 212, 250, 0.12); color: #81D4FA; white-space: nowrap; }
+		.legal-box td:first-child { color: #eee; white-space: nowrap; }
+
+block Subject
+	title 단어 데이터 출처 안내 - 끄투엔
+
+block Middle
+	div.legal-box(style='padding: 20px; color: white; overflow-y: scroll; height: 100%;')
+		h1 단어 데이터 출처 안내
+
+		p
+			| 이 페이지는 끄투엔에서 사용하는 단어 데이터베이스가 주제별로 어디에서 왔는지 안내합니다.
+			br
+			| 단어 뜻(사전) 정보의 출처 및 전체 라이선스 개요는 #[a(href='/legal/copyright', target='_blank') 저작권 안내] 페이지를 참고하세요.
+
+		h3 기본 단어(끝말잇기) 데이터베이스
+		p 국립국어원 표준국어대사전·우리말샘 및 끄코유틸 오픈DB의 데이터를 함께 활용하여 구성되어 있습니다.
+
+		h3 어인정(주제어) 단어 목록별 출처
+		p 아래 표는 주제(어인정)별 단어 목록의 출처를 정리한 것입니다. "확인 중"은 출처 조사가 아직 끝나지 않은 주제로, 확인되는 대로 갱신합니다.
+		div.table-wrap
+			table
+				thead
+					tr
+						th 주제
+						th 출처
+				tbody
+					tr
+						td 개구리 중사 케로로
+						td 초기에 포함됨
+					tr
+						td 국내 디스코드 서버
+						td 직접 조사
+					tr
+						td 국내 방송 프로그램
+						td 끄코유틸 오픈DB
+					tr
+						td 국내 버스정류장
+						td 직접 조사
+					tr
+						td 국내 특허
+						td @cjh14084로부터 받음
+					tr
+						td 국내 학교
+						td 직접 조사
+					tr
+						td 국내 행정구역
+						td 직접 조사
+					tr
+						td 끝말잇기
+						td 직접 조사
+					tr
+						td 냥코 대전쟁
+						td 끄코유틸 오픈DB
+					tr
+						td 니세코이
+						td 초기에 포함됨
+					tr
+						td 대한민국 철도역
+						td 초기에 포함됨
+					tr
+						td 도타 2
+						td 초기에 포함됨
+					tr
+						td 동물의 숲 시리즈
+						td 끄코유틸 오픈DB
+					tr
+						td 듀라라라!!
+						td 초기에 포함됨
+					tr
+						td 디지몬
+						td 초기에 포함됨
+					tr
+						td 라면/간식
+						td 끄코유틸 오픈DB
+					tr
+						td 라이트 노벨
+						td 끄코유틸 오픈DB
+					tr
+						td 러브 라이브!
+						td 초기에 포함됨
+					tr
+						td 리그 오브 레전드
+						td 끄코유틸 오픈DB
+					tr
+						td 리듬천국
+						td 직접 조사
+					tr
+						td 마법소녀 리리컬 나노하
+						td 초기에 포함됨
+					tr
+						td 마법소녀 마도카☆마기카
+						td 초기에 포함됨
+					tr
+						td 마인크래프트
+						td 직접 모음
+					tr
+						td 만화/애니메이션
+						td 끄코유틸 오픈DB
+					tr
+						td 메이플스토리
+						td 끄코유틸 오픈DB
+					tr
+						td 메카쿠시티 액터즈
+						td 초기에 포함됨
+					tr
+						td 모노가타리 시리즈
+						td 초기에 포함됨
+					tr
+						td 모바일 어플
+						td 끄코유틸 오픈DB(모바일 게임)
+					tr
+						td 발로란트
+						td 끄코유틸 오픈DB
+					tr
+						td 붕괴: 스타레일
+						td 끄코유틸 오픈DB
+					tr
+						td 브롤스타즈
+						td 끄코유틸 오픈DB
+					tr
+						td 블루 아카이브
+						td 끄코유틸 오픈DB
+					tr
+						td 비디오 게임
+						td 끄코유틸 오픈DB + 직접 조사
+					tr
+						td 빙과(애니메이션)
+						td 초기에 포함됨
+					tr
+						td 사건사고
+						td 끄코유틸 오픈DB
+					tr
+						td 사이퍼즈
+						td 초기에 포함됨
+					tr
+						td 색깔 이름
+						td squared님으로부터 수령
+					tr
+						td 소드 아트 온라인
+						td 끄코유틸 오픈DB
+					tr
+						td 스즈미야 하루히
+						td 초기에 포함됨
+					tr
+						td 스타크래프트
+						td 끄코유틸 오픈DB
+					tr
+						td 신조어
+						td 초기에 포함됨
+					tr
+						td 아지랑이 프로젝트
+						td 초기에 포함됨
+					tr
+						td 아케이드 게임
+						td 직접 조사
+					tr
+						td 앙상블 스타즈!
+						td 끄코유틸 오픈DB
+					tr
+						td 엘소드
+						td 초기에 포함됨
+					tr
+						td 영화
+						td 끄코유틸 오픈DB
+					tr
+						td 오레이모
+						td 초기에 포함됨
+					tr
+						td 오버워치
+						td 끄코유틸 오픈DB
+					tr
+						td 원신
+						td 끄코유틸 오픈DB
+					tr
+						td 웹툰
+						td 끄코유틸 오픈DB
+					tr
+						td 유네스코 유산
+						td 끄코유틸 오픈DB
+					tr
+						td 유루유리
+						td 초기에 포함됨
+					tr
+						td 유명인
+						td 끄코유틸 오픈DB
+					tr
+						td 음성 합성 엔진
+						td 끄코유틸 오픈DB
+					tr
+						td 이터널 리턴
+						td 초기에 포함됨
+					tr
+						td 일본 철도역
+						td squared님으로부터 수령
+					tr
+						td 젤다의 전설
+						td 끄코유틸 오픈DB
+					tr
+						td 쿠키런
+						td 끄코유틸 오픈DB
+					tr
+						td 퍼슈트
+						td 직접 조사
+					tr
+						td 포켓몬스터
+						td 끄코유틸 오픈DB
+					tr
+						td 프랜차이즈/체인점
+						td 직접 조사
+					tr
+						td 프로젝트 세카이
+						td 끄코유틸 오픈DB
+					tr
+						td 하스스톤
+						td 끄코유틸 오픈DB
+					tr
+						td 하이큐!!
+						td 초기에 포함됨
+					tr
+						td 한국 대중음악
+						td 끄코유틸 오픈DB
+					tr
+						td 함대 컬렉션
+						td 초기에 포함됨
+					tr
+						td 해리포터 시리즈
+						td squared님으로부터 수령
+					tr
+						td 히어로즈 오브 더 스톰
+						td 끄코유틸 오픈DB
+					tr
+						td THE iDOLM@STER
+						td 초기에 포함됨
+
+		h3 끄코유틸 오픈DB 라이선스
+		p
+			| 위 표에서 #[strong 끄코유틸 오픈DB]로 표시된 데이터는 끄투엔의 서버 소스코드(GPLv3)와는 별도로 CC BY-NC-SA 4.0(저작자표시-비영리-동일조건변경허락)
+			|  및 끄코유틸이 부여한 별도 이용허가 조건에 따라 이용하고 있으며, 해당 데이터에는 GPLv3이 적용되지 않습니다.

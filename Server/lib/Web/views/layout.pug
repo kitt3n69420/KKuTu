@@ -72,7 +72,9 @@ html
 			+Menu()
 			div#global-notice
 				div#gn-content
-					if activeEventNotice
+					if !SESSION.profile && locals.GUEST_CONNECT_ALLOWED === false
+						| #{L('guestBlockedNotice')}
+					else if activeEventNotice
 						| !{activeEventNotice}
 					else
 						include ../public/global_notice.html
@@ -94,10 +96,11 @@ html
 				a.bottom-contact(href='https://discord.gg/z6TZgyTZUj', target='_blank')= '디스코드'
 				a.bottom-contact(href='mailto:kitt3n69420@gmail.com', target='_blank')= '이메일 문의'
 				br
-				a.bottom-contact(href='/legal/privacy', target='_blank')= '개인정보처리방침'
+				a.bottom-contact(href='/legal/privacy', target='_blank')= '개인정보 처리방침'
 				a.bottom-contact(href='/legal/terms', target='_blank')= '이용약관'
 				a.bottom-contact(href='/legal/operation', target='_blank')= '운영 정책'
 				a.bottom-contact(href='/legal/copyright', target='_blank')= '저작권 안내'
+				a.bottom-contact(href='/legal/word-sources', target='_blank')= '단어 출처 안내'
 				a.bottom-contact(href='/legal/punishment', target='_blank')= '처벌 내역'
 			div.bottom-legal!= L('GPL')
 			+separator(10)

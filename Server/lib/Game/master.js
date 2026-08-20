@@ -50,10 +50,19 @@ var CHAN_DIC = {};
 var WDIC = {};
 
 const DEVELOP = (exports.DEVELOP = global.test || false);
+// 실시간 토글 값은 global.json(DB 비번/토큰 등 비밀값 포함)이 아니라
+// 비밀값이 없는 별도 파일(guest-state.json)에만 저장한다. 그 파일이 없으면
+// (최초 실행 등) global.json의 값을 기본값으로 사용한다. Web 서버(main.js)도
+// 같은 파일을 읽어서 포털 페이지에 반영한다.
+var GuestState = require("../sub/guest-state");
+var RUNTIME_GUEST = GuestState.read({
+  connect: GLOBAL.GUEST_CONNECT_ALLOWED !== false,
+  chat: GLOBAL.GUEST_CHAT_ALLOWED !== false,
+});
 const GUEST_PERMISSION = (exports.GUEST_PERMISSION = {
   create: true,
   enter: true,
-  talk: true,
+  talk: RUNTIME_GUEST.chat,
   practice: true,
   ready: true,
   start: true,
@@ -528,6 +537,30 @@ function processAdmin(id, value) {
       }
       return null;
     /* Enhanced User Block System [E] */
+    case "guestconnect":
+      temp = value.trim().toLowerCase();
+      if (temp !== "on" && temp !== "off") {
+        if (DIC[id]) DIC[id].send("notice", { value: "사용법: #guestconnect on|off" });
+        return null;
+      }
+      RUNTIME_GUEST.connect = temp === "on";
+      GuestState.write(RUNTIME_GUEST);
+      JLog.info(`[Admin] 게스트 접속이 ${RUNTIME_GUEST.connect ? "허용" : "차단"}으로 변경되었습니다.`);
+      if (DIC[id]) DIC[id].send("notice", { value: `게스트 접속이 ${RUNTIME_GUEST.connect ? "허용" : "차단"}되었습니다.` });
+      return null;
+    case "guestchat":
+      temp = value.trim().toLowerCase();
+      if (temp !== "on" && temp !== "off") {
+        if (DIC[id]) DIC[id].send("notice", { value: "사용법: #guestchat on|off" });
+        return null;
+      }
+      RUNTIME_GUEST.chat = temp === "on";
+      GUEST_PERMISSION.talk = RUNTIME_GUEST.chat;
+      GuestState.write(RUNTIME_GUEST);
+      for (var _gch in CHAN_DIC) CHAN_DIC[_gch].send({ type: "guest-permission", key: "talk", value: GUEST_PERMISSION.talk });
+      JLog.info(`[Admin] 게스트 채팅이 ${GUEST_PERMISSION.talk ? "허용" : "차단"}으로 변경되었습니다.`);
+      if (DIC[id]) DIC[id].send("notice", { value: `게스트 채팅이 ${GUEST_PERMISSION.talk ? "허용" : "차단"}되었습니다.` });
+      return null;
   }
   return value;
 }
@@ -958,6 +991,11 @@ exports.init = function (_SID, CHAN) {
             return;
           }
           if ($c.guest) {
+            if (!RUNTIME_GUEST.connect) {
+              $c.sendError(420);
+              $c.socket.close();
+              return;
+            }
             if (SID != "0") {
               $c.sendError(402);
               $c.socket.close();
@@ -1209,7 +1247,7 @@ function processClientRequest($c, msg) {
       if (!msg.value.substr) return;
       if (!GUEST_PERMISSION.talk)
         if ($c.guest) {
-          $c.send("error", { code: 401 });
+          $c.send("chat", { notice: true, code: 401 });
           return;
         }
       msg.value = msg.value.substr(0, 500);

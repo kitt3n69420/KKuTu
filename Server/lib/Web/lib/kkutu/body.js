@@ -895,6 +895,14 @@ function onMessage(data) {
 					}
 				});
 				return;
+			} else if (data.code == 420) {
+				// 게스트 접속 차단
+				showConfirm(L['error_420'], function (res) {
+					if (res) {
+						location.href = "/login?desc=login_kkutu";
+					}
+				});
+				return;
 			} else if (data.code == 413) {
 				$stage.dialog.room.hide();
 				$stage.menu.setRoom.trigger('click');

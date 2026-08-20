@@ -23,6 +23,23 @@
 
 (function(){
 	$(document).ready(function(){
-		//볕뉘 수정 구문삭제(21~105)
+		try {
+			var savedLang = localStorage.getItem('kkutu_lang');
+			var match = location.href.match(/[?&]locale=([^&#]+)/);
+			var urlLang = match ? match[1] : null;
+			var currentLang = urlLang || "ko_KR";
+			if (savedLang && savedLang !== currentLang) {
+				var search = location.search;
+				if (search.indexOf('locale=') >= 0) {
+					search = search.replace(/locale=[^&]+/, 'locale=' + savedLang);
+				} else {
+					search = search + (search ? '&' : '?') + 'locale=' + savedLang;
+				}
+				location.replace(location.pathname + search);
+				return;
+			} else if (!savedLang && urlLang) {
+				localStorage.setItem('kkutu_lang', urlLang);
+			}
+		} catch (e) {}
 	});
 })();

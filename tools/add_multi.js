@@ -209,8 +209,32 @@ async function main() {
         }
     }
 
+    await applyMinimumHit();
+
     console.log("\n=== All done ===");
     pool.end();
+}
+
+// =============================================
+// 테마가 'KPT' 단독이 아닌 모든 단어에 대해 hit 최소값(100) 보정
+// =============================================
+async function applyMinimumHit() {
+    var tables = ['kkutu_ko', 'kkutu_en'];
+
+    for (var table of tables) {
+        var client;
+        try {
+            client = await pool.connect();
+            var res = await client.query(
+                "UPDATE " + table + " SET hit = 100 WHERE theme IS DISTINCT FROM 'KPT' AND hit < 100"
+            );
+            console.log("\n[" + table + "] hit < 100 보정 (테마가 'KPT' 단독인 경우 제외): " + res.rowCount + "건 -> 100");
+        } catch (e) {
+            console.error("  hit 보정 중 오류 (" + table + "):", e.message);
+        } finally {
+            if (client) client.release();
+        }
+    }
 }
 
 // =============================================

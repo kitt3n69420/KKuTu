@@ -25,8 +25,9 @@ function fitQuizDisplay() {
 	if (!el) return;
 	var maxSize = 20;
 	var minSize = 10;
+	var BUFFER = 5; // scrollWidth/clientWidth는 정수로 반올림되어 실제 폭과 오차가 생길 수 있어 여유값을 둠
 	$el.css({ 'font-size': maxSize + 'px', 'white-space': 'nowrap' });
-	while (el.scrollWidth > el.clientWidth && maxSize > minSize) {
+	while (el.scrollWidth > el.clientWidth - BUFFER && maxSize > minSize) {
 		maxSize -= 1;
 		$el.css('font-size', maxSize + 'px');
 	}

@@ -792,7 +792,7 @@ exports.KO_INJEONG = [
 	"GNS", "WEB", "UNE", "KPO", 
 	"VOC", "ETR", "JAT", "ZEL",	"CKR", "TPW", 
     "FUR", "POK", "FRC", "PSK", "HSS",
-	"HAI", "KPM", "HDC", "HAR", "HOS", "IMS"
+	"HAI", "KPM", "HDC", "HAR", "HOS", "IMS", "MED"
 
 ];
 exports.EN_INJEONG = [
@@ -950,10 +950,71 @@ exports.isEventActive = function (ev) {
 
 exports.BOT_ITEM_WEIGHTS = {
 	// "item_id": weight (default: 10)
-	"nekomimi": 20,
-	"cuspidal": 3,
-	"black_mask": 3,
-	"white_mask": 3
+	"nekomimi": 30,
+	"black_mask": 5,
+	"white_mask": 5,
 
+	"rio_seonghwa": 1,
+	"bokjori": 1,
+	"spanner": 1,
+	"rainbowcandy": 2,
+	"rgb_headphone": 2,
+	"gundaebere": 2,
+	"invaderm": 2,
+	"samsaekbere": 2,
+	"brokenled": 2,
+	"seawave_cloth": 1,
+	"flamingo_tube": 1,
+	"beach": 1,
+	"melted_icecream": 1,
+	"ice_bucket": 1,
+	"bingsu": 1,
+	"kkn_genbg": 1,
+	"kkn_hat": 1,
+	"kkn_triname": 0,
+	"kkn_hangulbg": 1,
+	"kkn_springbg": 1,
+	"kkn_hexbg": 1,
+
+	// die10, trypophobiabg 배경: 봇 미착용
+	"die10": 0,
+	"trypophobiabg": 0,
+
+	// 색깔 이름: 일반 색이름 5, 그라데이션 색이름 1
+	"blue_name": 5,
+	"red_name": 5,
+	"purple_name": 5,
+	"orange_name": 5,
+	"indigo_name": 5,
+	"green_name": 5,
+	"pink_name": 5,
+	"gradientname_blueblue": 1,
+	"gradientname_greengreen": 1,
+	"gradientname_indigoindigo": 1,
+	"gradientname_orangeorange": 1,
+	"gradientname_pinkpink": 1,
+	"gradientname_purplepurple": 1,
+	"gradientname_redred": 1,
+	"gradientname_bluegreen": 1,
+	"gradientname_blueindigo": 1,
+	"gradientname_blueorange": 1,
+	"gradientname_bluepink": 1,
+	"gradientname_bluepurple": 1,
+	"gradientname_bluered": 1,
+	"gradientname_greenindigo": 1,
+	"gradientname_greenorange": 1,
+	"gradientname_greenpink": 1,
+	"gradientname_greenpurple": 1,
+	"gradientname_greenred": 1,
+	"gradientname_indigoorange": 1,
+	"gradientname_indigopink": 1,
+	"gradientname_indigopurple": 1,
+	"gradientname_indigored": 1,
+	"gradientname_orangepink": 1,
+	"gradientname_orangepurple": 1,
+	"gradientname_orangered": 1,
+	"gradientname_pinkpurple": 1,
+	"gradientname_pinkred": 1,
+	"gradientname_purplered": 1
 };
 Object.assign(exports, require('./game-utils'));

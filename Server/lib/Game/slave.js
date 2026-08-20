@@ -147,6 +147,9 @@ process.on("message", function (msg) {
     case "room-invalid":
       delete ROOM[msg.room.id];
       break;
+    case "guest-permission":
+      GUEST_PERMISSION[msg.key] = msg.value;
+      break;
     case "room-go":
       // master에서 소켓이 끊겨 퇴장 처리된 경우, slave에서도 동기화
       if (ROOM[msg.id]) {
@@ -341,7 +344,7 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (!msg.value.substr) return;
       if (!GUEST_PERMISSION.talk)
         if ($c.guest) {
-          $c.send("error", { code: 401 });
+          $c.send("chat", { notice: true, code: 401 });
           return;
         }
       msg.value = msg.value.substr(0, 500);

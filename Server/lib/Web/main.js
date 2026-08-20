@@ -32,6 +32,7 @@ var DB = require("./db");
 var JLog = require("../sub/jjlog");
 var WebInit = require("../sub/webinit");
 var GLOBAL = require("../sub/global.json");
+var GuestState = require("../sub/guest-state");
 var Secure = require("../sub/secure");
 //볕뉘 수정
 var passport = require("passport");
@@ -378,6 +379,10 @@ Server.get("/", function (req, res) {
     RULE: Const.RULE,
     OPTIONS: Const.OPTIONS,
     NICKNAME_LIMIT: GLOBAL.NICKNAME_LIMIT,
+    GUEST_CONNECT_ALLOWED: GuestState.read({
+      connect: GLOBAL.GUEST_CONNECT_ALLOWED !== false,
+      chat: GLOBAL.GUEST_CHAT_ALLOWED !== false,
+    }).connect,
     KO_INJEONG: Const.KO_INJEONG,
     EN_INJEONG: Const.EN_INJEONG,
     KO_THEME: Const.KO_THEME,

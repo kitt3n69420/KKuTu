@@ -6454,8 +6454,9 @@ function fitQuizDisplay() {
 	if (!el) return;
 	var maxSize = 20;
 	var minSize = 10;
+	var BUFFER = 5; // scrollWidth/clientWidth는 정수로 반올림되어 실제 폭과 오차가 생길 수 있어 여유값을 둠
 	$el.css({ 'font-size': maxSize + 'px', 'white-space': 'nowrap' });
-	while (el.scrollWidth > el.clientWidth && maxSize > minSize) {
+	while (el.scrollWidth > el.clientWidth - BUFFER && maxSize > minSize) {
 		maxSize -= 1;
 		$el.css('font-size', maxSize + 'px');
 	}
@@ -9695,6 +9696,14 @@ function onMessage(data) {
 						$data._spectate = true;
 						$data._gaming = true;
 						send('enter', { id: data.target, password: $data._pw, spectate: true }, true);
+					}
+				});
+				return;
+			} else if (data.code == 420) {
+				// 게스트 접속 차단
+				showConfirm(L['error_420'], function (res) {
+					if (res) {
+						location.href = "/login?desc=login_kkutu";
 					}
 				});
 				return;
