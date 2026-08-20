@@ -248,8 +248,8 @@ span {
 
 #menu-bar #event-banner {
 	position: absolute;
-	top: -65px;
-	right: calc(100% + 125px);
+	top: -35px;
+	right: calc(100% + 71px);
 	box-shadow: none;
 }
 
