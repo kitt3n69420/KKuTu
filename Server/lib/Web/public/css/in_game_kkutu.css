@@ -943,16 +943,16 @@ body.dark-mode .rooms-gaming {
 }
 
 .bb.many-cols .bb-char {
-	width: 9px;
+	width: 8px;
 	padding: 1px;
 	font-size: 10px;
 }
 
 .bb-char {
-	padding: 2px;
+	padding: 1px;
 	border-radius: 5px;
 	margin: 1px;
-	width: 10px;
+	width: 9px;
 	text-align: center;
 	background-color: #111111;
 }

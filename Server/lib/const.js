@@ -84,6 +84,8 @@ exports.OPTIONS = {
 	'rdu': { name: "RobloxDuum" },
 	'spd': { name: "Speed" },
 	'drg': { name: "Drg" },
+	'dic': { name: "Dic" },   // 기초사전: 크로스워드에 한국어기초사전 명사 출처 사용 (KCW 전용)
+	'arc': { name: "Arc" },   // 아케이드: 크로스워드에 아케이드 단어 목록 출처 사용 (KCW 전용)
 	'spt': { name: "SpeedToss" },
 	'stt': { name: "Straight" },
 	'fho': { name: "FullHouse" },  // 풀하우스: 이전 단어의 문자를 포함하면 보너스
@@ -296,7 +298,7 @@ exports.RULE = {
 	'KCW': {
 		lang: "ko",
 		rule: "Crossword",
-		opts: ["drg"],
+		opts: ["drg", "dic", "arc"],
 		time: 2,
 		ai: true,
 		big: true,
@@ -677,7 +679,7 @@ exports.RULE = {
 		rule: "Shuk",
 		opts: ["drg", "stp"],
 		time: 1,
-		ai: false,
+		ai: true,
 		big: true,
 		ewq: false,
 		survival: false
@@ -687,7 +689,7 @@ exports.RULE = {
 		rule: "Shuk",
 		opts: ["drg", "stp"],
 		time: 1,
-		ai: false,
+		ai: true,
 		big: true,
 		ewq: false,
 		survival: false
@@ -735,6 +737,16 @@ exports.RULE = {
 		big: false,
 		ewq: true,
 		survival: false
+	},
+	'KLG': {
+		lang: "ko",
+		rule: "Landgrab",
+		opts: ["drg", "no2"],
+		time: 2,
+		ai: true,
+		big: true,
+		ewq: false,
+		survival: false
 	}
 
 };
@@ -749,7 +761,7 @@ exports.GAME_CATEGORIES = {
 	},
 	'board': {
 		name: 'GameCategoryBoard',
-		modes: ['KPF', 'EPF', 'KWR', 'EWR', 'KWS', 'EWS', 'KSS', 'ESS', 'KSK', 'ESK']
+		modes: ['KPF', 'EPF', 'KWR', 'EWR', 'KWS', 'EWS', 'KSS', 'ESS', 'KSK', 'ESK', 'KLG']
 	},
 	'speed': {
 		name: 'GameCategorySpeed',

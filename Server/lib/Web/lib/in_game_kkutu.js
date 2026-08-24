@@ -653,16 +653,21 @@ $(document).ready(function () {
 			}
 		});
 
-		// focusout: cwcmd 영역 외부로 나갈 때만 숨김
-		$cwInput.on('focusout', function (e) {
-			// relatedTarget이 cwcmd 내부이면 숨기지 않음
-			var $related = $(e.relatedTarget);
-			if ($related.closest($stage.game.cwcmd).length > 0) {
-				return;
-			}
-			// cwcmd 외부로 포커스가 나가면 숨김
+		// 보드(칸) 및 cwcmd 영역 밖을 클릭/터치하면 선택 해제
+		// 모바일에서는 blur 시 relatedTarget이 비어있는 경우가 많아 focusout으로는
+		// "입력창을 누른 것"과 "다른 곳을 누른 것"을 구분할 수 없다.
+		// 대신 mousedown/touchstart 시점의 실제 클릭 대상(e.target)으로 안/밖을 판정한다.
+		$(document).on('mousedown touchstart', function (e) {
+			if (!$stage.game.cwcmd.is(':visible')) return;
+			if ($stage.game.cwcmd.css('opacity') == 0) return;
+			var $target = $(e.target);
+			if ($target.closest($stage.game.cwcmd).length > 0) return;
+			if ($target.closest($stage.game.display).length > 0) return;
+			$data._sel = null;
 			$(".cw-q-body").empty();
 			$stage.game.cwcmd.css('opacity', 0);
+			if ($data._boards) $lib.Crossword.drawDisplay();
+			else if ($data._board) $lib.Landgrab.drawDisplay();
 		});
 
 		// HTML 속성 설정
@@ -1139,8 +1144,8 @@ $(document).ready(function () {
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
-		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
-		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg', 'flu', 'jkp', 'dfb'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp', 'dic', 'arc'];
+		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg', 'flu', 'jkp', 'dfb'];
 		var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'lng', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'chs', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf', 'stp'];
 
 		if (showCategory) {
@@ -1410,6 +1415,162 @@ $(document).ready(function () {
 	});
 
 	// View All Rules Dialog 버튼 핸들러
+	// 랜덤 방 설정 버튼: 모드 → 규칙 → 라운드/서바이벌 설정 순서로 랜덤화
+	$("#room-random-btn").on('click', function () {
+		showConfirm(L['randomRoomWarning'], function (res) {
+			if (res) applyRandomRoomSettings();
+		});
+	});
+	function applyRandomRoomSettings() {
+		var i, k;
+
+		// 1. 모드를 랜덤으로 선택
+		var $modeOptions = $("#room-mode option:not(:disabled)");
+		var modeVal = $modeOptions.eq(Math.floor(Math.random() * $modeOptions.length)).val();
+		$("#room-mode").val(modeVal).trigger('change');
+
+		var rule = RULE[MODE[modeVal]];
+		var opts = rule.opts || [];
+		var has = function (c) { return opts.indexOf(c) !== -1; };
+		var nameOf = function (c) { return OPTIONS[c].name.toLowerCase(); };
+
+		// 2. 규칙을 랜덤으로 선택 (상호배제/의존관계를 순서대로 반영)
+		var target = {};   // name -> boolean
+		var decided = {};  // name -> true (그룹 처리로 이미 값이 정해짐)
+
+		// 그룹 내 유효한 옵션 중 하나(또는 없음)를 균등 확률로 선택
+		function pickRadio(codes) {
+			var names = codes.filter(has).map(nameOf);
+			if (!names.length) return null;
+			var idx = Math.floor(Math.random() * (names.length + 1)); // names.length = "없음"
+			var winner = idx < names.length ? names[idx] : null;
+			names.forEach(function (n) { target[n] = (n === winner); decided[n] = true; });
+			return winner;
+		}
+		// blocked가 참이면 강제로 끄고, 아니면 주어진 확률(기본 1/2)로 켜는 규칙
+		function pickUnlessBlocked(code, blocked, prob) {
+			if (!has(code)) return;
+			var n = nameOf(code);
+			target[n] = blocked ? false : Math.random() < (prob === undefined ? 0.5 : prob);
+			decided[n] = true;
+		}
+
+		// 연결 방식: 가온잇기/첫말잇기/랜덤잇기 (3자 상호배제)
+		var link = pickRadio(['mid', 'fir', 'ran']);
+		// 도돌이금지·플러시: 첫말잇기/랜덤잇기와 상호배제 (가온잇기·없음과는 호환)
+		pickUnlessBlocked('dod', link === 'first' || link === 'random');
+		pickUnlessBlocked('flu', link === 'first' || link === 'random');
+		// 세컨드·스피드토스: 랜덤잇기와만 상호배제 (둘끼리는 서로 호환)
+		pickUnlessBlocked('sch', link === 'random');
+		pickUnlessBlocked('spt', link === 'random');
+
+		// 글자수 제한 (10자 상호배제)
+		var lenName = pickRadio(['ln2', 'k32', 'k22', 'k44', 'k43', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7']);
+		// 속담·장문: 서로 상호배제, 2글자/5글자 제한과도 상호배제 (그 외 글자수 제한과는 호환)
+		if (lenName === 'length2' || lenName === 'length5') {
+			pickUnlessBlocked('prv', true);
+			pickUnlessBlocked('lng', true);
+		} else {
+			pickRadio(['prv', 'lng']);
+		}
+
+		// 나락/무적, 순서대로/공정랜덤, 매너 그룹 (각각 상호배제)
+		pickRadio(['nar', 'god']);
+		pickRadio(['ord', 'shf']);
+		pickRadio(['man', 'gen', 'shi', 'etq']);
+
+		// 단문금지: 장문금지/2글자금지 모두와 상호배제 (장문금지·2글자금지는 서로 호환)
+		var noshortOn = false;
+		if (has('nos')) {
+			noshortOn = Math.random() < 0.5;
+			target['noshort'] = noshortOn;
+			decided['noshort'] = true;
+		}
+		pickUnlessBlocked('nol', noshortOn);
+		pickUnlessBlocked('no2', noshortOn);
+
+		// 아이템전: 카오스/랜덤턴 모두와 상호배제 (카오스·랜덤턴은 서로 호환)
+		var itemOn = false;
+		if (has('itm')) {
+			itemOn = Math.random() < 0.5;
+			target['item'] = itemOn;
+			decided['item'] = true;
+		}
+		pickUnlessBlocked('chs', itemOn);
+		pickUnlessBlocked('rnt', itemOn);
+
+		// 미션: 켜져 있을 때만 이지미션/랜덤미션/미션플러스 선택 가능
+		var missionOn = false;
+		if (has('mis')) {
+			missionOn = Math.random() < 0.5;
+			target['mission'] = missionOn;
+			decided['mission'] = true;
+		}
+		['eam', 'rdm', 'mpl'].forEach(function (c) {
+			if (!has(c)) return;
+			var n = nameOf(c);
+			target[n] = missionOn && Math.random() < 0.5;
+			decided[n] = true;
+		});
+
+		// drg 규칙은 다른 단독 규칙과 달리 10% 확률로만 켜짐
+		pickUnlessBlocked('drg', false, 0.1);
+
+		// 나머지 단독 규칙은 1/2 확률로 독립적으로 선택
+		for (i in OPTIONS) {
+			if (!has(i)) continue;
+			k = nameOf(i);
+			if (decided[k]) continue;
+			target[k] = Math.random() < 0.5;
+		}
+
+		// 3. 체크박스에 반영 (기본 뷰만 갱신하면 상호배제 핸들러가 나머지 뷰를 동기화함)
+		for (i in OPTIONS) {
+			k = nameOf(i);
+			var $primary = $("#room-" + k);
+			if (!$primary.length) continue;
+			var val = has(i) ? !!target[k] : false;
+			if ($primary.is(':checked') !== val) {
+				$primary.prop('checked', val).trigger('change');
+			}
+		}
+
+		// 3.5 어인정/퀴즈 주제를 랜덤으로 선택 (주제 하나는 반드시 선택되고, 나머지는 각각 확률적으로 추가 선택됨)
+		function sampleTopics($inputs, prefixLen, extraProb) {
+			var ids = $inputs.map(function (idx, o) { return $(o).attr('id').slice(prefixLen); }).get();
+			if (!ids.length) return [];
+			var guaranteedIdx = Math.floor(Math.random() * ids.length);
+			var list = [];
+			ids.forEach(function (id, idx) {
+				if (idx === guaranteedIdx || Math.random() < extraProb) list.push(id);
+			});
+			return list;
+		}
+		if (has('ijp')) {
+			var ijListSel = rule.lang == "en" ? "#en-pick-list" : "#ko-pick-list";
+			$data._injpick = sampleTopics($(ijListSel + " input"), 8, ( rule.lang == "en" ? 0.2 : 0.1 ));
+		}
+		if (has('qij')) {
+			applyQuizTopicLang(rule.lang);
+			$data._quizpick = sampleTopics($("#quizpick-list div:visible input"), 10, 0.2);
+		}
+
+		// 4. 라운드/서바이벌 설정을 규칙이 허용하는 범위 내에서 랜덤화
+		var survivalOn = !!rule.survival || !!target['survival'];
+		if (survivalOn) {
+			var hpOptions = [200, 500, 1000, 2000];
+			$("#room-sur-hp").val(hpOptions[Math.floor(Math.random() * hpOptions.length)]);
+		} else {
+			var min = Number($("#room-round").attr('min')) || 1;
+			var max = Number($("#room-round").attr('max')) || 10;
+			$("#room-round").val(min + Math.floor(Math.random() * (max - min + 1)));
+		}
+		// 라운드 시간도 랜덤으로 선택
+		var $timeOptions = $("#room-time option");
+		var timeVal = $timeOptions.eq(Math.floor(Math.random() * $timeOptions.length)).val();
+		$("#room-time").val(timeVal);
+		if (window.updateRoundColor) window.updateRoundColor();
+	}
 	$("#view-all-rules-btn").on('click', function () {
 		var v = $("#room-mode").val();
 		var rule = RULE[MODE[v]];
@@ -1425,8 +1586,8 @@ $(document).ready(function () {
 		var mannerOpts = ['man', 'gen', 'shi', 'etq'];
 		var linkOpts = ['mid', 'fir', 'ran', 'sch'];
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
-		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
-		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'bbg', 'flu', 'jkp', 'dfb'];
+		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp', 'dic', 'arc'];
+		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg', 'flu', 'jkp', 'dfb'];
 
 		if (showCategory) {
 			// Categorized view - hide flat panel, show category panels
@@ -2907,21 +3068,41 @@ $(document).ready(function () {
 		}
 	});
 
-	// 5. 속담 vs 장문
+	// 5. 속담 vs 장문 vs 2글자 vs 5글자 (타자 대회 단어 범위 - 4자 상호 배제)
 	$("#room-proverb, #view-all-proverb, #view-all-flat-proverb").on('change', function () {
 		if ($(this).is(':checked')) {
-			$("#room-long").prop('checked', false);
-			$("#room-flat-long").prop('checked', false);
-			$("#room-simple-long").prop('checked', false);
-			$("#view-all-long, #view-all-flat-long").prop('checked', false);
+			$("#room-long, #room-length2, #room-length5").prop('checked', false);
+			$("#room-flat-long, #room-flat-length2, #room-flat-length5").prop('checked', false);
+			$("#room-simple-long, #room-simple-length2, #room-simple-length5").prop('checked', false);
+			$("#view-all-long, #view-all-length2, #view-all-length5").prop('checked', false);
+			$("#view-all-flat-long, #view-all-flat-length2, #view-all-flat-length5").prop('checked', false);
 		}
 	});
 	$("#room-long, #view-all-long, #view-all-flat-long").on('change', function () {
 		if ($(this).is(':checked')) {
-			$("#room-proverb").prop('checked', false);
-			$("#room-flat-proverb").prop('checked', false);
-			$("#room-simple-proverb").prop('checked', false);
-			$("#view-all-proverb, #view-all-flat-proverb").prop('checked', false);
+			$("#room-proverb, #room-length2, #room-length5").prop('checked', false);
+			$("#room-flat-proverb, #room-flat-length2, #room-flat-length5").prop('checked', false);
+			$("#room-simple-proverb, #room-simple-length2, #room-simple-length5").prop('checked', false);
+			$("#view-all-proverb, #view-all-length2, #view-all-length5").prop('checked', false);
+			$("#view-all-flat-proverb, #view-all-flat-length2, #view-all-flat-length5").prop('checked', false);
+		}
+	});
+	$("#room-length2, #view-all-length2, #view-all-flat-length2").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-proverb, #room-long").prop('checked', false);
+			$("#room-flat-proverb, #room-flat-long").prop('checked', false);
+			$("#room-simple-proverb, #room-simple-long").prop('checked', false);
+			$("#view-all-proverb, #view-all-long").prop('checked', false);
+			$("#view-all-flat-proverb, #view-all-flat-long").prop('checked', false);
+		}
+	});
+	$("#room-length5, #view-all-length5, #view-all-flat-length5").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-proverb, #room-long").prop('checked', false);
+			$("#room-flat-proverb, #room-flat-long").prop('checked', false);
+			$("#room-simple-proverb, #room-simple-long").prop('checked', false);
+			$("#view-all-proverb, #view-all-long").prop('checked', false);
+			$("#view-all-flat-proverb, #view-all-flat-long").prop('checked', false);
 		}
 	});
 
@@ -2983,7 +3164,67 @@ $(document).ready(function () {
 		}
 	});
 
-	// 8. 서바이벌 모드 UI 변경
+	// 8. 십자말풀이 기초사전 vs 아케이드 (상호 배제 - 둘 다 안 켜면 기존 공용 사전 출처)
+	$("#room-dic, #view-all-dic, #view-all-flat-dic").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-arc").prop('checked', false);
+			$("#room-flat-arc").prop('checked', false);
+			$("#room-simple-arc").prop('checked', false);
+			$("#view-all-arc, #view-all-flat-arc").prop('checked', false);
+		}
+	});
+	$("#room-arc, #view-all-arc, #view-all-flat-arc").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-dic").prop('checked', false);
+			$("#room-flat-dic").prop('checked', false);
+			$("#room-simple-dic").prop('checked', false);
+			$("#view-all-dic, #view-all-flat-dic").prop('checked', false);
+		}
+	});
+
+	// 9. 뻥튀기: 다른 보너스 규칙이 하나도 켜져 있지 않으면 켤 수 없음
+	var bbungBonusKeys = ['mission', 'easymission', 'rndmission', 'missionplus', 'speedtoss', 'straight', 'fullhouse', 'flush', 'jackpot', 'defensebonus'];
+	function hasOtherBonusOn() {
+		return bbungBonusKeys.some(function (key) {
+			return $("#room-" + key).is(':checked') || $("#view-all-" + key).is(':checked') || $("#view-all-flat-" + key).is(':checked');
+		});
+	}
+	function disableBbungtwigi() {
+		$("#room-bbungtwigi").prop('checked', false);
+		$("#room-flat-bbungtwigi").prop('checked', false);
+		$("#room-simple-bbungtwigi").prop('checked', false);
+		$("#view-all-bbungtwigi, #view-all-flat-bbungtwigi").prop('checked', false);
+	}
+	$("#room-bbungtwigi, #view-all-bbungtwigi, #view-all-flat-bbungtwigi").on('change', function () {
+		if ($(this).is(':checked') && !hasOtherBonusOn()) disableBbungtwigi();
+	});
+	var bbungWatchSel = bbungBonusKeys.map(function (n) { return "#room-" + n; })
+		.concat(bbungBonusKeys.map(function (n) { return "#view-all-" + n; }))
+		.concat(bbungBonusKeys.map(function (n) { return "#view-all-flat-" + n; }))
+		.join(", ");
+	$(bbungWatchSel).on('change', function () {
+		if ($("#room-bbungtwigi").is(':checked') && !hasOtherBonusOn()) disableBbungtwigi();
+	});
+
+	// 10. 아이템전 vs 카오스 (상호 배제 - 카오스는 아이템전과 함께 사용 불가)
+	$("#room-item, #view-all-item, #view-all-flat-item").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-chaos").prop('checked', false);
+			$("#room-flat-chaos").prop('checked', false);
+			$("#room-simple-chaos").prop('checked', false);
+			$("#view-all-chaos, #view-all-flat-chaos").prop('checked', false);
+		}
+	});
+	$("#room-chaos, #view-all-chaos, #view-all-flat-chaos").on('change', function () {
+		if ($(this).is(':checked')) {
+			$("#room-item").prop('checked', false);
+			$("#room-flat-item").prop('checked', false);
+			$("#room-simple-item").prop('checked', false);
+			$("#view-all-item, #view-all-flat-item").prop('checked', false);
+		}
+	});
+
+	// 11. 서바이벌 모드 UI 변경
 	function updateSurvivalUI(isSurvival) {
 		// 현재 선택된 게임 모드가 서바이벌을 지원하는지 확인
 		var currentMode = $("#room-mode").val();
@@ -4456,10 +4697,29 @@ $lib.Sock.turnEnd = function (id, data) {
 		playSound('horr');
 	}
 };
+// 단어 수가 100개를 넘어가면 재렌더를 200ms 간격으로 몰아서 실행 (봇이 빠르게 연속 제출할 때 매번 전체 목록을 다시 그리며 버벅이는 것을 완화)
 $lib.Sock.drawMaps = function () {
+	if ($data._maps.length > 100) {
+		if ($data._bbThrottleTimer) return;
+		var wait = Math.max(0, 200 - (Date.now() - ($data._bbLastDraw || 0)));
+		$data._bbThrottleTimer = setTimeout(function () {
+			$data._bbThrottleTimer = null;
+			$data._bbLastDraw = Date.now();
+			$lib.Sock._renderMaps();
+		}, wait);
+		return;
+	}
+	$lib.Sock._renderMaps();
+};
+$lib.Sock._renderMaps = function () {
 	var len = $data._maps.length;
-
-	var cols = Math.max(2, Math.ceil(len / 18));
+	// 컬럼(=줄) 증가 간격(STEP)과 축소 시작 시점(MAX_COLS): 모바일은 표시 공간이 훨씬 좁으므로 데스크톱보다 촘촘하게 잡음
+	// SWITCH 이전엔 STEP개당 1컬럼씩, 그 이후는 MAX_COLS²*DIVISOR, (MAX_COLS+1)²*DIVISOR ... 식으로 늘어남
+	var STEP = mobile ? 12 : 18;
+	var MAX_COLS = mobile ? 2 : 6;
+	var SWITCH = STEP * MAX_COLS;
+	var DIVISOR = STEP / MAX_COLS;
+	var cols = (len <= SWITCH) ? Math.max(2, Math.ceil(len / STEP)) : Math.ceil(Math.sqrt(len / DIVISOR));
 
 	$stage.game.bb.empty();
 	// $stage.game.bb.css('--bb-cols', cols); // Removed CSS var approach
@@ -4471,8 +4731,34 @@ $lib.Sock.drawMaps = function () {
 	$data._maps.sort(function (a, b) { return b.length - a.length; }).forEach(function (item) {
 		$stage.game.bb.append($word(item));
 	});
+
+	// 컬럼(줄) 수가 MAX_COLS를 넘으면 그 비율만큼 셀 크기(너비/글자/여백)를 통째로 줄임
+	// padding·margin도 같이 줄여야 칸 너비 대비 여백 비중이 커지지 않아, 줄이 늘어도 한 줄에 들어가는 글자 수가 유지됨
+	if (cols > MAX_COLS) {
+		var $chars = $stage.game.bb.find(".bb-char");
+		var $sample = $chars.first();
+		if ($sample.length) {
+			var MIN_FONT = 3;
+			var baseWidth = parseFloat($sample.css('width'));
+			var baseFont = parseFloat($sample.css('font-size'));
+			var basePadding = parseFloat($sample.css('padding-left'));
+			var baseMargin = parseFloat($sample.css('margin-left'));
+			// 모바일은 원래 크기의 절반(0.5) 밑으로는 더 안 줄어들게 축소 하한을 둠
+			var floor = MIN_FONT / baseFont;
+			if (mobile) floor = Math.max(floor, 0.5);
+			var scale = Math.max(MAX_COLS / cols, floor);
+			$chars.css({
+				'width': (baseWidth * scale) + 'px',
+				'font-size': (baseFont * scale) + 'px',
+				'padding': (basePadding * scale) + 'px',
+				'margin': (baseMargin * scale) + 'px'
+			});
+		}
+	}
 	function $word(text) {
-		var $R = $("<div>").addClass("bb-word").css('width', widthPct);
+		// 모바일은 컬럼 폭 대신 일반 텍스트처럼 가로로 흐르다 줄바꿈되게 폭을 지정하지 않음
+		var $R = $("<div>").addClass("bb-word");
+		if (!mobile) $R.css('width', widthPct);
 		var i, len = text.length;
 		var $c;
 
@@ -4573,6 +4859,7 @@ $lib.Shuk.roundReady = function (data, spec) {
 	$data._relay = true;
 	$(".jjoriping,.rounds,.game-body").addClass("cw");
 	$data._maps = [];
+	$lib.Shuk.drawMaps(); // clearBoard()는 .bb를 숨기기만 할 뿐 비우지 않으므로, 이전 라운드 단어 DOM이 그대로 남아있지 않도록 여기서 명시적으로 다시 그림
 	if (data.totalRound) $data.room.round = data.totalRound;
 	if (data.time) $data.room.time = data.time;
 	$data._roundTime = $data.room.time * 1000;
@@ -4614,9 +4901,29 @@ $lib.Shuk.turnEnd = function (id, data) {
 		playSound('horr');
 	}
 };
+// 단어 수가 100개를 넘어가면 재렌더를 200ms 간격으로 몰아서 실행 (봇이 빠르게 연속 제출할 때 매번 전체 목록을 다시 그리며 버벅이는 것을 완화)
 $lib.Shuk.drawMaps = function () {
+	if ($data._maps.length > 100) {
+		if ($data._bbThrottleTimer) return;
+		var wait = Math.max(0, 200 - (Date.now() - ($data._bbLastDraw || 0)));
+		$data._bbThrottleTimer = setTimeout(function () {
+			$data._bbThrottleTimer = null;
+			$data._bbLastDraw = Date.now();
+			$lib.Shuk._renderMaps();
+		}, wait);
+		return;
+	}
+	$lib.Shuk._renderMaps();
+};
+$lib.Shuk._renderMaps = function () {
 	var len = $data._maps.length;
-	var cols = Math.max(2, Math.ceil(len / 18));
+	// 컬럼(=줄) 증가 간격(STEP)과 축소 시작 시점(MAX_COLS): 모바일은 표시 공간이 훨씬 좁으므로 데스크톱보다 촘촘하게 잡음
+	// SWITCH 이전엔 STEP개당 1컬럼씩, 그 이후는 MAX_COLS²*DIVISOR, (MAX_COLS+1)²*DIVISOR ... 식으로 늘어남
+	var STEP = mobile ? 12 : 18;
+	var MAX_COLS = mobile ? 2 : 6;
+	var SWITCH = STEP * MAX_COLS;
+	var DIVISOR = STEP / MAX_COLS;
+	var cols = (len <= SWITCH) ? Math.max(2, Math.ceil(len / STEP)) : Math.ceil(Math.sqrt(len / DIVISOR));
 	var widthPct = (100 / cols) + "%";
 
 	$stage.game.bb.empty();
@@ -4626,8 +4933,34 @@ $lib.Shuk.drawMaps = function () {
 	$data._maps.sort(function (a, b) { return b.length - a.length; }).forEach(function (item) {
 		$stage.game.bb.append($word(item));
 	});
+
+	// 컬럼(줄) 수가 MAX_COLS를 넘으면 그 비율만큼 셀 크기(너비/글자/여백)를 통째로 줄임
+	// padding·margin도 같이 줄여야 칸 너비 대비 여백 비중이 커지지 않아, 줄이 늘어도 한 줄에 들어가는 글자 수가 유지됨
+	if (cols > MAX_COLS) {
+		var $chars = $stage.game.bb.find(".bb-char");
+		var $sample = $chars.first();
+		if ($sample.length) {
+			var MIN_FONT = 3;
+			var baseWidth = parseFloat($sample.css('width'));
+			var baseFont = parseFloat($sample.css('font-size'));
+			var basePadding = parseFloat($sample.css('padding-left'));
+			var baseMargin = parseFloat($sample.css('margin-left'));
+			// 모바일은 원래 크기의 절반(0.5) 밑으로는 더 안 줄어들게 축소 하한을 둠
+			var floor = MIN_FONT / baseFont;
+			if (mobile) floor = Math.max(floor, 0.5);
+			var scale = Math.max(MAX_COLS / cols, floor);
+			$chars.css({
+				'width': (baseWidth * scale) + 'px',
+				'font-size': (baseFont * scale) + 'px',
+				'padding': (basePadding * scale) + 'px',
+				'margin': (baseMargin * scale) + 'px'
+			});
+		}
+	}
 	function $word(text) {
-		var $R = $("<div>").addClass("bb-word").css('width', widthPct);
+		// 모바일은 컬럼 폭 대신 일반 텍스트처럼 가로로 흐르다 줄바꿈되게 폭을 지정하지 않음
+		var $R = $("<div>").addClass("bb-word");
+		if (!mobile) $R.css('width', widthPct);
 		var i, len = text.length;
 		var $c;
 
@@ -6844,6 +7177,315 @@ $lib.Flip.drawDisplay = function () {
 };
 $lib.Flip.turnGoing = $lib.Jaqwi.turnGoing;
 $lib.Flip.turnHint = function (data) {
+	playSound('fail');
+};
+
+/**
+ * Rule the words! KKuTu Online
+ * Copyright (C) 2017 JJoriping(op@jjo.kr)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+$lib.Landgrab = {};
+
+// 플레이어 배경색 (인덱스 0 = 미소유) — rule_flip.js와 동일한 팔레트
+$lib.Landgrab._PLAYER_COLORS = [
+	'#42341a', '#fffea4', '#b7f3f1', '#fda09b', '#d0bcfe', '#cfcfcf',
+	'#dfbb9c', '#8ce7a1', '#F7b1e6', '#feb482', '#a1cafe', '#e178c2', '#11bdce'
+];
+$lib.Landgrab._PLAYER_COLORS_DARK = [
+	'#000000', '#979516', '#2ca09a', '#b72018', '#592ac6', '#808080',
+	'#957a4d', '#2fa54b', '#a131a3', '#d1741d', '#2265be', '#cd678c', '#93c757'
+];
+$lib.Landgrab._TEAM_COLORS = ['', '#8CA6FF', '#9575CD', '#F06292', '#FFCA28'];
+$lib.Landgrab._TEAM_COLORS_DARK = ['', '#11319b', '#8263b8', '#d42e66', '#ecc756'];
+
+// 게임 시작 시 컬러맵 생성 (게임마다 1회, 라운드마다 아님)
+$lib.Landgrab._buildColorMap = function () {
+	var seq = $data.room.game.seq;
+	var n = seq.length;
+	var map = {};
+	var i, id, colors, offset;
+
+	if (n >= 11) {
+		colors = [];
+		for (i = 1; i <= 12; i++) colors.push(i);
+		for (i = colors.length - 1; i > 0; i--) {
+			var j = Math.floor(Math.random() * (i + 1));
+			var t = colors[i]; colors[i] = colors[j]; colors[j] = t;
+		}
+		for (i = 0; i < n; i++) {
+			if (!seq[i]) continue;
+			id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
+			map[id] = colors[i];
+		}
+	} else {
+		offset = Math.floor(Math.random() * 10);
+		for (i = 0; i < n; i++) {
+			if (!seq[i]) continue;
+			id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
+			map[id] = ((i + offset) % 10) + 1;
+		}
+	}
+	$data._landgrabColorMap = map;
+};
+// 게임 도중 나간 플레이어/제거된 봇의 색 배정이 맵에 그대로 남아있으면, 실제 동시 인원이
+// 12명 이하여도 누적된 고유 id 수가 12개를 넘어 아래 폴백이 겹친 색을 내놓을 수 있다.
+// 그래서 색을 새로 배정하기 전에, 지금 seq에 없는(=더 이상 활성 상태가 아닌) id는 먼저 지운다.
+$lib.Landgrab._pruneColorMap = function () {
+	if (!$data._landgrabColorMap) return;
+	var seq = $data.room && $data.room.game && $data.room.game.seq;
+	var active = {};
+	if (seq) {
+		for (var i = 0; i < seq.length; i++) {
+			if (!seq[i]) continue;
+			active[(typeof seq[i] === 'string') ? seq[i] : seq[i].id] = true;
+		}
+	}
+	for (var id in $data._landgrabColorMap) {
+		if (!active[id]) delete $data._landgrabColorMap[id];
+	}
+};
+$lib.Landgrab._assignFallbackColor = function (ownerId) {
+	$lib.Landgrab._pruneColorMap();
+	var used = {};
+	for (var id in $data._landgrabColorMap) used[$data._landgrabColorMap[id]] = true;
+	for (var c = 1; c <= 12; c++) {
+		if (!used[c]) { $data._landgrabColorMap[ownerId] = c; return; }
+	}
+	// 활성 인원이 실제로 12명을 넘는 예외적인 경우에만 여기 도달한다 — 색 12개로는 원래 불가능한 상황.
+	$data._landgrabColorMap[ownerId] = (Object.keys($data._landgrabColorMap).length % 12) + 1;
+};
+$lib.Landgrab._getPlayerColor = function (ownerId) {
+	var colors = document.body.classList.contains('dark-mode') ? $lib.Landgrab._PLAYER_COLORS_DARK : $lib.Landgrab._PLAYER_COLORS;
+	if (!ownerId) return colors[0];
+	if (!$data._landgrabColorMap) $data._landgrabColorMap = {};
+	if (!$data._landgrabColorMap[ownerId]) $lib.Landgrab._assignFallbackColor(ownerId);
+	return colors[$data._landgrabColorMap[ownerId]];
+};
+$lib.Landgrab._applyUserCardColors = function () {
+	if (!$data._landgrabColorMap) return;
+	var colors = document.body.classList.contains('dark-mode') ? $lib.Landgrab._PLAYER_COLORS_DARK : $lib.Landgrab._PLAYER_COLORS;
+	var seq = $data.room && $data.room.game && $data.room.game.seq;
+	if (seq) {
+		for (var i = 0; i < seq.length; i++) {
+			if (!seq[i]) continue;
+			var seqId = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
+			if (!$data._landgrabColorMap[seqId]) $lib.Landgrab._assignFallbackColor(seqId);
+		}
+	}
+	for (var id in $data._landgrabColorMap) {
+		var color = colors[$data._landgrabColorMap[id]];
+		$("#game-user-" + id).css('background-color', color);
+	}
+};
+// hex 색상을 밝게(+)/어둡게(-) 보정. percent: -1 ~ 1
+$lib.Landgrab._shadeColor = function (hex, percent) {
+	var f = parseInt(hex.slice(1), 16);
+	var t = percent < 0 ? 0 : 255;
+	var p = percent < 0 ? -percent : percent;
+	var R = f >> 16, G = f >> 8 & 0x00FF, B = f & 0x0000FF;
+	return '#' + (0x1000000 +
+		(Math.round((t - R) * p) + R) * 0x10000 +
+		(Math.round((t - G) * p) + G) * 0x100 +
+		(Math.round((t - B) * p) + B)
+	).toString(16).slice(1);
+};
+$lib.Landgrab._getOwnerTeam = function (ownerId) {
+	if (!ownerId || !$data.room || !$data.room.game || !$data.room.game.seq) return 0;
+	var seq = $data.room.game.seq;
+	for (var i = 0; i < seq.length; i++) {
+		var item = seq[i];
+		if (typeof item === 'string') {
+			var u = $data.users[item];
+			if (item === ownerId && u && u.game) return u.game.team || 0;
+		} else {
+			if (item.id === ownerId && item.game) return item.game.team || 0;
+		}
+	}
+	return 0;
+};
+
+$lib.Landgrab.roundReady = function (data, spec) {
+	clearBoard();
+	// 랜드그랩은 턴 단위가 아니라 칸 선택으로 답을 제출하므로(#cw-q-input, submitCwAnswer 참고)
+	// _relay를 항상 켜두면 #Talk 채팅이 매번 서버로 relay-submit되어 사라진다(칸 데이터가 없어 서버가 무시함).
+	// 채팅은 항상 일반 채팅으로 보내지도록 relay를 켜지 않는다.
+	$data._relay = false;
+	$(".jjoriping,.rounds,.game-body").addClass("cw");
+	$(".jjoriping,.game-body").addClass("landgrab");
+	$data._board = data.board;
+	$data._owners = data.owners;
+	$data._homes = data.homes;
+	$data._roundTime = $data.room.time * 1000;
+	$data._fastTime = 10000;
+	$data._sel = null;
+	$stage.game.items.hide();
+	$stage.game.bb.hide();
+	$stage.game.cwcmd.show().css('opacity', 0);
+	$stage.game.here.hide();
+	if (!$data._landgrabColorMap) {
+		$lib.Landgrab._buildColorMap();
+	}
+	$lib.Landgrab._applyUserCardColors();
+	$lib.Landgrab.drawDisplay();
+	drawRound(data.round);
+	if (!spec) playSound('round_start');
+	clearInterval($data._tTime);
+};
+$lib.Landgrab.turnStart = function (data) {
+	clearInterval($data._tTime);
+	$data._roundTime = data.roundTime;
+	$data._tTime = addInterval(turnGoing, TICK);
+	playBGM('jaqwi');
+};
+$lib.Landgrab.turnEnd = function (id, data) {
+	var $sc, $uc;
+
+	if (data.error) {
+		playSound('fail');
+		// 선택해 둔 칸을 그 사이 다른 플레이어가 가져가 서버가 거부한 경우 — 입력창을 닫는다
+		if (data.deselect) {
+			$data._sel = null;
+			$stage.game.cwcmd.css('opacity', 0);
+			$lib.Landgrab.drawDisplay();
+		}
+		return;
+	}
+
+	// 라운드 종료 — 점수 표시
+	if (data.ok === false) {
+		$data._relay = false;
+		clearInterval($data._tTime);
+		stopBGM();
+		playSound('horr');
+
+		if (data.scores) {
+			for (var pid in data.scores) {
+				var sc = data.scores[pid];
+				if (sc > 0) {
+					$uc = $("#game-user-" + pid);
+					$sc = $("<div>").addClass("deltaScore").html("+" + sc);
+					addScore(pid, sc, getScore(pid) + sc);
+					updateScore(pid, getScore(pid));
+					drawObtainedScore($uc, $sc);
+				}
+			}
+		}
+		return;
+	}
+
+	// 칸 점령 성공
+	if (data.changes) {
+		var stolenFromMe = false;
+		var selectionLost = false;
+
+		data.changes.forEach(function (ch) {
+			$data._owners[ch.index] = ch.owner;
+			if (ch.previousOwner === $data.id && ch.owner !== $data.id) stolenFromMe = true;
+			// 지금 선택(입력) 중인 칸을 다른 플레이어가 가져간 경우 — 서버 응답을 기다리지 않고 즉시 반영
+			if ($data._sel && $data._sel[0] === ch.index && ch.owner !== $data.id) selectionLost = true;
+		});
+
+		if (id === $data.id) {
+			playSound('success');
+			// 정답을 입력해도 입력창은 닫지 않고 계속 같은 칸에서 이어서 입력할 수 있게 둔다
+		} else if (stolenFromMe) {
+			playSound('mission');
+		}
+
+		if (selectionLost) {
+			$data._sel = null;
+			$stage.game.cwcmd.css('opacity', 0);
+		}
+
+		$lib.Landgrab.drawDisplay();
+	}
+};
+$lib.Landgrab.onCell = function (e) {
+	var idx = Number($(e.currentTarget).attr('data-idx'));
+
+	if ($data._owners[idx] !== $data.id) return;
+	$data._sel = [idx];
+	$stage.game.cwcmd.css('opacity', 1);
+	$(".cw-q-head").html(L['landgrabPrompt']);
+	$(".cw-q-body").html("");
+	$("#cw-q-input").val("").focus();
+	$lib.Landgrab.drawDisplay();
+};
+$lib.Landgrab.drawDisplay = function () {
+	var COLS = 12;
+	var ROWS = 12;
+	var CELL = 100 / COLS;
+	var $pane = $stage.game.display.empty();
+	var i, row, col, chosung, owner, isHome, playerColor, bgColor, border, teamId;
+	var $cell;
+	var isDark = document.body.classList.contains('dark-mode');
+	var teamColors = isDark ? $lib.Landgrab._TEAM_COLORS_DARK : $lib.Landgrab._TEAM_COLORS;
+
+	for (i = 0; i < COLS * ROWS; i++) {
+		row = Math.floor(i / COLS);
+		col = i % COLS;
+		chosung = $data._board[i] || "";
+		owner = $data._owners[i];
+		isHome = $data._homes && $data._homes[i];
+		playerColor = $lib.Landgrab._getPlayerColor(owner);
+
+		bgColor = playerColor;
+		border = isDark ? '1px solid #333' : '1px solid #888';
+		if (owner) {
+			teamId = $lib.Landgrab._getOwnerTeam(owner);
+			if (teamId) {
+				bgColor = teamColors[teamId] || playerColor;
+				border = '2px solid ' + playerColor;
+			}
+		}
+		// 시작 칸(자신 포함)은 그 소유자의 원래 색보다 라이트 모드에서 더 진하게, 다크 모드에서 더 연하게 표시
+		if (isHome && owner) {
+			bgColor = $lib.Landgrab._shadeColor(bgColor, isDark ? 0.25 : -0.25);
+		}
+		// 자신의 시작 칸만 두꺼운 테두리로 표시 (라이트: 흰색 / 다크: 연한색)
+		if (isHome && owner === $data.id) {
+			border = isDark ? '3px solid #eee' : '3px solid #FFF';
+		}
+
+		$pane.append($cell = $("<div>").addClass("landgrab-cell")
+			.attr('data-idx', i)
+			.css({
+				top: (row * CELL) + "%",
+				left: (col * CELL) + "%",
+				width: CELL + "%",
+				height: CELL + "%",
+				'background-color': bgColor,
+				'border': border,
+				'color': ($data.room.opts.drg ? getRandomColor() : (isDark ? '#FFF' : (owner ? '#000' : '#FFF')))
+			})
+			.html(chosung)
+		);
+		if (owner === $data.id) $cell.addClass("landgrab-mine").on('click', $lib.Landgrab.onCell);
+		// 지금 선택(입력) 중인 칸 강조 — 배경색이 원래 색과 흰색(다크모드는 검정과 원래 색) 사이를 1초 주기로 오간다
+		if ($data._sel && $data._sel[0] === i) {
+			// jQuery.css()는 CSS 커스텀 프로퍼티(--*)를 정상적으로 설정하지 못하므로 DOM API를 직접 사용
+			$cell.addClass("landgrab-selected");
+			$cell[0].style.setProperty('--lg-pulse-a', isDark ? '#000' : bgColor);
+			$cell[0].style.setProperty('--lg-pulse-b', isDark ? bgColor : '#FFF');
+		}
+	}
+};
+$lib.Landgrab.turnGoing = $lib.Jaqwi.turnGoing;
+$lib.Landgrab.turnHint = function (data) {
 	playSound('fail');
 };
 
@@ -10286,6 +10928,21 @@ function processRoom(data) {
 					$lib.Crossword.roundReady(data, true);
 					$lib.Crossword.turnStart(data, true);
 				}
+				if (data.board) {
+					// board/owners 필드는 Flip과 초성 땅따먹기가 같은 모양을 쓰므로 실제 모드로 구분해서 라우팅
+					var specRule = RULE[MODE[data.room.mode]];
+					if (specRule && specRule.rule === 'Landgrab') {
+						$lib.Landgrab.roundReady(data, true);
+						if (typeof data.roundTime === 'number') {
+							$lib.Landgrab.turnStart({ roundTime: data.roundTime });
+						}
+					} else if (specRule && specRule.rule === 'Flip') {
+						$lib.Flip.roundReady(data, true);
+						if (typeof data.roundTime === 'number') {
+							$lib.Flip.turnStart({ roundTime: data.roundTime });
+						}
+					}
+				}
 			}
 		}
 		if (!data.modify && data.target == $data.id) forkChat();
@@ -11361,6 +12018,7 @@ function recordEvent(data) {
 }
 function clearBoard() {
 	$data._relay = false;
+	$data._sel = null;
 	// APL (Bad Apple) 정리
 	if ($data._aplInterval) {
 		clearInterval($data._aplInterval);
@@ -11387,6 +12045,7 @@ function clearBoard() {
 	$stage.dialog.charFactory.hide();
 	$(".jjoriping,.rounds,.game-body").removeClass("cw");
 	$(".jjoriping,.game-body").removeClass("flip");
+	$(".jjoriping,.rounds,.game-body").removeClass("landgrab");
 	$(".jjoriping").css({ "float": "", "margin": "" });
 	// Small-mode class is managed by updateRoom() based on player count, don't remove it here
 	$stage.game.display.removeClass("raingame-board").empty();

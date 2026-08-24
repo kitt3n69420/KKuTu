@@ -1441,6 +1441,36 @@ body {
 	text-align: center;
 }
 
+.landgrab-cell {
+	position: absolute;
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background-color 0.3s ease;
+	user-select: none;
+	cursor: default;
+	font-size: 12px;
+	font-weight: bold;
+	text-align: center;
+}
+
+.landgrab-cell.landgrab-mine {
+	cursor: pointer;
+}
+
+@keyframes landgrab-pulse {
+	0%, 100% { background-color: var(--lg-pulse-a); }
+	50% { background-color: var(--lg-pulse-b); }
+}
+
+.landgrab-cell.landgrab-selected {
+	/* base .landgrab-cell의 background-color transition과 겹치면 모바일(iOS Safari 등)에서
+	   애니메이션이 멈춘 것처럼 보이는 경우가 있어 선택 상태에서는 transition을 끈다 */
+	transition: none;
+	animation: landgrab-pulse 1s ease-in-out infinite;
+}
+
 .sock-char {
 	text-align: center;
 }
@@ -2778,6 +2808,17 @@ body {
 #room-simple-rules-panel .dialog-opt label {
 	font-size: 13px;
 	letter-spacing: 0;
+}
+
+/* 방 만들기 확인 버튼 - 랜덤 버튼 추가로 인해 가로 길이를 70%로 축소 */
+#room-ok {
+	width: 56px;
+}
+
+/* 랜덤 버튼 - 축소된 확인 버튼과 동일한 치수/모양 */
+#room-random-btn {
+	width: 56px;
+	height: 20px;
 }
 
 /* View All Rules 버튼 */

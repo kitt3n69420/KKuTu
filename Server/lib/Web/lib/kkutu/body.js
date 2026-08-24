@@ -1482,6 +1482,21 @@ function processRoom(data) {
 					$lib.Crossword.roundReady(data, true);
 					$lib.Crossword.turnStart(data, true);
 				}
+				if (data.board) {
+					// board/owners 필드는 Flip과 초성 땅따먹기가 같은 모양을 쓰므로 실제 모드로 구분해서 라우팅
+					var specRule = RULE[MODE[data.room.mode]];
+					if (specRule && specRule.rule === 'Landgrab') {
+						$lib.Landgrab.roundReady(data, true);
+						if (typeof data.roundTime === 'number') {
+							$lib.Landgrab.turnStart({ roundTime: data.roundTime });
+						}
+					} else if (specRule && specRule.rule === 'Flip') {
+						$lib.Flip.roundReady(data, true);
+						if (typeof data.roundTime === 'number') {
+							$lib.Flip.turnStart({ roundTime: data.roundTime });
+						}
+					}
+				}
 			}
 		}
 		if (!data.modify && data.target == $data.id) forkChat();
@@ -2557,6 +2572,7 @@ function recordEvent(data) {
 }
 function clearBoard() {
 	$data._relay = false;
+	$data._sel = null;
 	// APL (Bad Apple) 정리
 	if ($data._aplInterval) {
 		clearInterval($data._aplInterval);
@@ -2583,6 +2599,7 @@ function clearBoard() {
 	$stage.dialog.charFactory.hide();
 	$(".jjoriping,.rounds,.game-body").removeClass("cw");
 	$(".jjoriping,.game-body").removeClass("flip");
+	$(".jjoriping,.rounds,.game-body").removeClass("landgrab");
 	$(".jjoriping").css({ "float": "", "margin": "" });
 	// Small-mode class is managed by updateRoom() based on player count, don't remove it here
 	$stage.game.display.removeClass("raingame-board").empty();

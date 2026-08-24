@@ -918,6 +918,7 @@ exports.Client = function (socket, profile, sid) {
 	};
 	my.chat = function (msg, code) {
 		if (my.noChat) return my.send('chat', { notice: true, code: 443 });
+		if (my.guest && GUEST_PERMISSION && !GUEST_PERMISSION.talk) return my.send('chat', { notice: true, code: 401 });
 		my.publish('chat', { value: msg, notice: code ? true : false, code: code });
 		// Log chat to Discord
 		if (!code) {
@@ -941,6 +942,7 @@ exports.Client = function (socket, profile, sid) {
 			}
 			if (!my.box[i].expire) continue;
 			if (my.box[i].expire < now) {
+				if (!SHOP || !SHOP[i]) continue;
 				gr = SHOP[i].group;
 
 				if (gr.substr(0, 3) == "BDG") gr = "BDG";

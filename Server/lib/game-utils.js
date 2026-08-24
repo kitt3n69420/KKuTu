@@ -215,6 +215,30 @@ exports.getKjmStartRegex = function (jamo) {
 	return new RegExp('^[' + chars + ']');
 };
 
+function _producible(entry, poolSet) {
+	for (var i = 0; i < entry.length; i++) if (!poolSet.has(entry[i])) return false;
+	return true;
+}
+// 주어진 자모 집합(Set)만으로 조립 가능한 모든 완성형 음절 문자를 나열 (사전 존재 여부는 따지지 않음)
+exports.buildSyllablesFromJamo = function (poolSet) {
+	var chos = [], jungs = [], jongs = [];
+	var i;
+
+	for (i = 0; i < _JAMO_INITIALS.length; i++) if (_producible(_JAMO_INITIALS[i], poolSet)) chos.push(i);
+	for (i = 0; i < _JAMO_MEDIALS.length; i++) if (_producible(_JAMO_MEDIALS[i], poolSet)) jungs.push(i);
+	for (i = 0; i < _JAMO_FINALS.length; i++) if (_producible(_JAMO_FINALS[i], poolSet)) jongs.push(i);
+
+	var result = [];
+	for (var c = 0; c < chos.length; c++) {
+		for (var v = 0; v < jungs.length; v++) {
+			for (var f = 0; f < jongs.length; f++) {
+				result.push(String.fromCharCode(0xAC00 + (chos[c] * 21 + jungs[v]) * 28 + jongs[f]));
+			}
+		}
+	}
+	return result;
+};
+
 exports.getPreScoreJamo = function (text, chain, tr) {
 	var jamoLen = exports.decomposeToJamo(text || '').length;
 	return 2 * (Math.pow(5 + 7 * jamoLen, 0.74) + 1.18 * (chain || []).length) * (0.5 + 0.5 * tr);

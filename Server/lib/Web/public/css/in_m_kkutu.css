@@ -1070,6 +1070,12 @@ body {
 	text-shadow: 0px 1px 1px #000000;
 }
 
+#cw-q-input {
+	/* .b-left(.cwcmd)의 pointer-events: none 때문에 그대로 두면
+	   모바일에서 입력창을 눌러도 탭이 뒤 요소로 통과해 칸 선택이 해제된다 */
+	pointer-events: auto;
+}
+
 .cw-q-body {
 	padding: 5px;
 	border-radius: 10px;
@@ -1263,6 +1269,33 @@ body {
 	font-size: 12px;
 	font-weight: bold;
 	text-align: center;
+}
+
+.landgrab-cell {
+	position: absolute;
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background-color 0.3s ease;
+	user-select: none;
+	cursor: default;
+	font-size: 12px;
+	font-weight: bold;
+	text-align: center;
+}
+
+.landgrab-cell.landgrab-mine {
+	cursor: pointer;
+}
+
+@keyframes landgrab-pulse {
+	0%, 100% { background-color: var(--lg-pulse-a); }
+	50% { background-color: var(--lg-pulse-b); }
+}
+
+.landgrab-cell.landgrab-selected {
+	animation: landgrab-pulse 1s ease-in-out infinite;
 }
 
 .sock-char {
@@ -2531,6 +2564,17 @@ body {
 
 #room-simple-rules-panel .dialog-opt label {
 	font-size: 12px;
+}
+
+/* 방 만들기 확인 버튼 - 랜덤 버튼 추가로 인해 가로 길이를 70%로 축소 */
+#room-ok {
+	width: 56px;
+}
+
+/* 랜덤 버튼 - 축소된 확인 버튼과 동일한 치수/모양 */
+#room-random-btn {
+	width: 56px;
+	height: 20px;
 }
 
 /* View All Rules 버튼 - 기본 버튼 스타일 사용 (확인 버튼과 동일) */

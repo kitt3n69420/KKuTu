@@ -2117,6 +2117,25 @@ function Room(room, channel) {
 				obj.prisoners = my.game.prisoners;
 				obj.boards = my.game.boards;
 				obj.means = my.game.means;
+			} else if (my.rule.rule == "Landgrab") {
+				if (my.game.board) {
+					obj.board = my.game.board.map(function (c) { return c.chosung; });
+					obj.owners = my.game.board.map(function (c) { return c.owner; });
+					obj.homes = my.game.board.map(function (c) { return c.isHome; });
+					obj.round = my.game.round;
+					if (!my.game.late && my.game.roundAt) {
+						obj.roundTime = Math.max(0, my.game.roundTime - ((new Date()).getTime() - my.game.roundAt));
+					}
+				}
+			} else if (my.rule.rule == "Flip") {
+				if (my.game.board) {
+					obj.board = my.game.board.map(function (c) { return c.word; });
+					obj.owners = my.game.board.map(function (c) { return c.owner; });
+					obj.round = my.game.round;
+					if (!my.game.late && my.game.roundAt) {
+						obj.roundTime = Math.max(0, my.game.roundTime - ((new Date()).getTime() - my.game.roundAt));
+					}
+				}
 			}
 			obj.spec = {};
 			for (i in my.game.seq) {
@@ -2736,6 +2755,9 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 		case 'KPF':
 		case 'EPF':
 			rw.score += score * 1.3;
+			break;
+		case 'KLG':
+			rw.score += score * 0.8;
 			break;
 		case 'KQZ':
 			rw.score += score * 1.0;

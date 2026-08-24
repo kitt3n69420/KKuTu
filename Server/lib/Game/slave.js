@@ -342,7 +342,7 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (!msg.value) return;
       if (!validateInput(msg.value, "string", { maxLength: 500 })) return;
       if (!msg.value.substr) return;
-      if (!GUEST_PERMISSION.talk)
+      if (!msg.relay && !GUEST_PERMISSION.talk)
         if ($c.guest) {
           $c.send("chat", { notice: true, code: 401 });
           return;

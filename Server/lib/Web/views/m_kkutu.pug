@@ -373,6 +373,7 @@ block Middle
 						option(value=34, data-lang-key='modeKWR')= L('modeKWR')
 						option(value=36, data-lang-key='modeKWS')= L('modeKWS')
 						option(value=44, data-lang-key='modeK4R')= L('modeK4R')
+						option(value=48, data-lang-key='modeKLG')= L('modeKLG')
 					optgroup(label=L('mcEnglish'), data-lang-attr-label='mcEnglish')
 						option(value=1, data-lang-key='modeESH')= L('modeESH')
 						option(value=19, data-lang-key='modeEKK')= L('modeEKK')
@@ -430,7 +431,7 @@ block Middle
 			div.dialog-bar#room-word-settings-wrapper(style='height: auto; overflow: hidden; display: none;')
 				h4(data-lang-key='wordScope')= L('wordScope')
 				div(style='float: left; width: 200px;')
-					- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp'];
+					- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp', 'dic', 'arc'];
 					- for(var i in locals.OPTIONS)
 						- if(scopeOpts.indexOf(i) === -1) continue;
 						+GameOption(i, 'room')
@@ -460,7 +461,7 @@ block Middle
 				div(style='float: left; width: 200px;')
 					- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg', 'flu', 'jkp', 'dfb'];
 					- for(var i in locals.OPTIONS)
-						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'lng', 'prv', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp'].indexOf(i) !== -1) continue;
+						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'lng', 'prv', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp', 'dic', 'arc'].indexOf(i) !== -1) continue;
 						- if(bonusOpts.indexOf(i) !== -1) continue;
 						+GameOption(i, 'room')
 				div.dialog-opt#room-injpick-panel
@@ -508,6 +509,7 @@ block Middle
 		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; left: 10px; right: 10px; width: auto;')
 			button#room-ok(style='float: right;', data-lang-key='OK')= L('OK')
 			button#view-all-rules-btn(style='float: right; margin-right: 10px; display: none; min-width: 120px;', data-lang-key='viewAllRules')= L('viewAllRules')
+			button#room-random-btn(style='float: right; margin-right: 10px;', data-lang-key='randomRoomSetting')= L('randomRoomSetting')
 	+Dialog('InjPickDiag', 200, 400, 'pickInjeong')
 		h4(data-lang-key='explInjPick')= L('explInjPick')
 		div.dialog-bar
@@ -560,7 +562,7 @@ block Middle
 			div.dialog-bar#view-all-word-settings-wrapper(style='height: auto; overflow: hidden; display: none;')
 				h4(data-lang-key='wordScope')= L('wordScope')
 				div(style='float: left; width: calc(100% - 90px);')
-					- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ret', 'obo', 'alp'];
+					- var scopeOpts = ['ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ret', 'obo', 'alp', 'dic', 'arc'];
 					- for(var i in locals.OPTIONS)
 						- if(scopeOpts.indexOf(i) === -1) continue;
 						+GameOptionFull(i, 'view-all')
@@ -590,7 +592,7 @@ block Middle
 				div(style='float: left; width: calc(100% - 90px);')
 					- var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg', 'flu', 'jkp', 'dfb'];
 					- for(var i in locals.OPTIONS)
-						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp'].indexOf(i) !== -1) continue;
+						- if(['man', 'gen', 'shi', 'etq', 'mid', 'fir', 'ran', 'sch', 'no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'nol', 'nos', 'ext', 'loa', 'str', 'unk', 'prv', 'lng', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'ret', 'obo', 'alp', 'dic', 'arc'].indexOf(i) !== -1) continue;
 						- if(bonusOpts.indexOf(i) !== -1) continue;
 						+GameOptionFull(i, 'view-all')
 				div.dialog-opt#view-all-injpick-panel

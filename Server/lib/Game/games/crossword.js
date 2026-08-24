@@ -66,9 +66,11 @@ function getTitleWord() {
 	var my = this;
 	var means = [];
 	var mdb = [];
+	// 아케이드/기초사전 옵션은 서로 배타적이며 main과도 배타적 - 클라이언트가 뭘 보내든 서버가 최종 결정.
+	var source = my.opts.dic ? 'dic' : (my.opts.arc ? 'arcade' : 'main');
 
 	my.game.started = false;
-	DB.kkutu_cw[my.rule.lang].find().on(function ($box) {
+	DB.kkutu_cw[my.rule.lang].find(['source', source]).on(function ($box) {
 		var answers = {};
 		var boards = [];
 		var maps = [];
@@ -101,11 +103,19 @@ function getTitleWord() {
 
 		var words = Object.keys(wordSet);
 		if (!words.length) return finish({});
-		DB.kkutu[my.rule.lang].find(['_id', { '$in': words }]).limit(['mean', true], ['type', true], ['theme', true]).on(function (rows) {
-			var byId = {};
-			rows.forEach(function (row) { byId[row._id] = row; });
-			finish(byId);
-		});
+		if (source === 'main') {
+			DB.kkutu[my.rule.lang].find(['_id', { '$in': words }]).limit(['mean', true], ['type', true], ['theme', true]).on(function (rows) {
+				var byId = {};
+				rows.forEach(function (row) { byId[row._id] = row; });
+				finish(byId);
+			});
+		} else {
+			DB.kkutu_cw_mean.find(['source', source], ['word', { '$in': words }]).on(function (rows) {
+				var byId = {};
+				rows.forEach(function (row) { byId[row.word] = { mean: row.mean, type: '', theme: '' }; });
+				finish(byId);
+			});
+		}
 
 		function finish(byId) {
 			items.forEach(function (item) {
@@ -124,6 +134,9 @@ function getTitleWord() {
 		var x = Number(bItem[0]), y = Number(bItem[1]);
 		var rk = `${x},${y}`;
 		var i, o;
+		// 아케이드 클루는 이미 자체적으로 정답을 가려서 쓰므로(○○ 표기) 마스킹하지 않음. 기초사전/main은 기존대로 ★ 마스킹.
+		var mean = (source === 'arcade') ? doc.mean :
+			doc.mean.replace(new RegExp(word.split('').map(function (w) { return w + "\\s?"; }).join(''), "g"), "★");
 
 		means[round][`${rk},${bItem[2]}`] = o = {
 			count: 0,
@@ -131,7 +144,7 @@ function getTitleWord() {
 			dir: Number(bItem[2]), len: Number(bItem[3]),
 			type: doc.type,
 			theme: doc.theme,
-			mean: doc.mean.replace(new RegExp(word.split('').map(function (w) { return w + "\\s?"; }).join(''), "g"), "★")
+			mean: mean
 		};
 		for (i = 0; i < o.len; i++) {
 			rk = `${x},${y}`;
