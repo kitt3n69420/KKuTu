@@ -2854,3 +2854,21 @@ TypeError: _bot.chat is not a function
 Error: read ECONNRESET
     at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20)
 >>>>>>> f016b0338ff5e29e15bbe810e3d097482a57ed58
+:2083 [2026. 8. 26. 오후 9:04:36] MASTER_ERROR: TypeError: Converting circular structure to JSON
+    --> starting at object with constructor 'Timeout'
+    |     property '_idlePrev' -> object with constructor 'TimersList'
+    --- property '_idleNext' closes the circle
+TypeError: Converting circular structure to JSON
+    --> starting at object with constructor 'Timeout'
+    |     property '_idlePrev' -> object with constructor 'TimersList'
+    --- property '_idleNext' closes the circle
+    at stringify (<anonymous>)
+    at writeChannelMessage (node:internal/child_process/serialization:164:20)
+    at target._send (node:internal/child_process:851:17)
+    at target.send (node:internal/child_process:751:19)
+    at exports.publish (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:400:12)
+    at Room.my.export (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:2159:4)
+    at Room.my.spectate (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:730:13)
+    at my.enter (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:1185:20)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\slave.js:255:16
+    at exports.Tail.go (C:\myKKuTu\KKuTu-master\Server\lib\sub\lizard.js:43:16)
