@@ -30,6 +30,7 @@ const ROBOT_SOCK_MAX_WORDS = [10, 20, 30, 50, 999];
 const BOT_SOCK_CPM = [30, 60, 120, 300, 800];
 const ROBOT_SOCK_MAX_LEN_KO = [3, 2, 3, 4, 8];
 const ROBOT_SOCK_MAX_LEN_EN = [4, 5, 7, 10, 20];
+const ROBOT_SOCK_MAX_LEN_JA = [3, 2, 3, 4, 8];
 
 function buildFreqMap(str) {
 	var map = {};
@@ -62,7 +63,7 @@ function fetchRobotWords(my) {
 	var sortedChars = Object.keys(freq).filter(function (ch) { return freq[ch] > 0; }).sort().join('');
 	var lenMatch = conf.reg.source.match(/\{(\d+),(\d+)\}/);
 	var minLen = lenMatch ? parseInt(lenMatch[1]) : 2;
-	var maxLen = Math.max.apply(null, my.rule.lang === 'ko' ? ROBOT_SOCK_MAX_LEN_KO : ROBOT_SOCK_MAX_LEN_EN);
+	var maxLen = Math.max.apply(null, my.rule.lang === 'ko' ? ROBOT_SOCK_MAX_LEN_KO : my.rule.lang === 'ja' ? ROBOT_SOCK_MAX_LEN_JA : ROBOT_SOCK_MAX_LEN_EN);
 	if (my.opts.no2 && minLen < 3) minLen = 3;
 
 	var cacheKey = my.rule.lang + ':' + minLen + ':' + maxLen + ':' + sortedChars;
@@ -169,7 +170,7 @@ function fetchRobotWordsFallback(my) {
 }
 
 function pickForRobot(my, level) {
-	var maxLen = (my.rule.lang === 'ko') ? ROBOT_SOCK_MAX_LEN_KO[level] : ROBOT_SOCK_MAX_LEN_EN[level];
+	var maxLen = (my.rule.lang === 'ko') ? ROBOT_SOCK_MAX_LEN_KO[level] : (my.rule.lang === 'ja') ? ROBOT_SOCK_MAX_LEN_JA[level] : ROBOT_SOCK_MAX_LEN_EN[level];
 	var claimed = my.game.robotClaimed;
 	var submitted = my.game.words;
 	var freq = my.game.robotBoardFreq;
@@ -235,6 +236,10 @@ const LANG_STATS = {
 		reg: /^[a-z]{4,10}$/,
 		len: 100,
 		min: 10
+	}, 'ja': {
+		reg: /^[ぁ-ん]{2,5}$/,
+		len: 100,
+		min: 5
 	}
 };
 

@@ -201,11 +201,13 @@ function drawCharFactory() {
 		$rew.empty();
 		$stage.dialog.cfCompose.removeClass("cf-composable");
 		$cost.html("");
-		tryDict(word, function (res) {
+		// 공백 글자 조각('　')은 매칭에서 항상 제외 — 서버 /cf 로직과 동일하게 처리(보상은 word 전체 길이 기준 유지)
+		var matchWord = word.replace(/[　★]/g, "");
+		tryDict(matchWord, function (res) {
 			var blend = false;
 
 			if (res.error) {
-				if (word.length == 3) {
+				if (matchWord.length == 3) {
 					blend = true;
 					$dict.html(L['cfBlend']);
 				} else return $dict.html(L['wpFail_' + res.error]);
@@ -652,12 +654,16 @@ function requestProfile(id) {
 	$stage.dialog.profileWhisper.hide();
 	$stage.dialog.profileHandover.hide();
 	$stage.dialog.profileReport.hide();
+	$stage.dialog.profileFriendAdd.hide();
 
 	if ($data.id == id) $stage.dialog.profileDress.show();
 	else if (!o.robot) {
 		$stage.dialog.profileShut.show();
 		$stage.dialog.profileWhisper.show();
-		if (!$data.guest) $stage.dialog.profileReport.show();
+		if (!$data.guest) {
+			$stage.dialog.profileReport.show();
+			$stage.dialog.profileFriendAdd.show();
+		}
 	}
 	if ($data.room) {
 		if ($data.id != id && $data.id == $data.room.master) {
@@ -872,8 +878,8 @@ Object.defineProperty(BONUS_COLORS, 'linking', {
 function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars, historyOverride, isAttack, isDefense, isFlush, isJackpot, onComplete) {
 	var len;
 	var mode = MODE[$data.room.mode];
-	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK";
-	var isRev = (mode == "KAP" || mode == "KAK" || mode == "EAP" || mode == "EAK");
+	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK" || mode == "JKT";
+	var isRev = (mode == "KAP" || mode == "KAK" || mode == "EAP" || mode == "EAK" || mode == "JAP");
 	var beat = (ACTIVE_BEAT || BEAT)[len = text.length];
 	var ta, kkt;
 	var i, j = 0;

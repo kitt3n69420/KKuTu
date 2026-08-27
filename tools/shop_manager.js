@@ -63,7 +63,9 @@ const pool = new pg.Pool({
 async function runMigration() {
   await pool.query(`ALTER TABLE kkutu_shop_desc ADD COLUMN IF NOT EXISTS "name_nya" text`);
   await pool.query(`ALTER TABLE kkutu_shop_desc ADD COLUMN IF NOT EXISTS "desc_nya" text`);
-  console.log('[마이그레이션] kkutu_shop_desc nya 컬럼 확인 완료');
+  await pool.query(`ALTER TABLE kkutu_shop_desc ADD COLUMN IF NOT EXISTS "name_ja_JP" text`);
+  await pool.query(`ALTER TABLE kkutu_shop_desc ADD COLUMN IF NOT EXISTS "desc_ja_JP" text`);
+  console.log('[마이그레이션] kkutu_shop_desc nya/ja_JP 컬럼 확인 완료');
 }
 
 // moremi 하위 폴더 스캔 → Map<id, {folders, ext}>
@@ -180,16 +182,18 @@ async function saveItems(items) {
 
       await pool.query(
         `INSERT INTO kkutu_shop_desc
-           (_id, "name_ko_KR", "desc_ko_KR", "name_en_US", "desc_en_US", "name_nya", "desc_nya")
-         VALUES ($1,$2,$3,$4,$5,$6,$7)
+           (_id, "name_ko_KR", "desc_ko_KR", "name_en_US", "desc_en_US", "name_nya", "desc_nya", "name_ja_JP", "desc_ja_JP")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
          ON CONFLICT (_id) DO UPDATE SET
            "name_ko_KR"=$2, "desc_ko_KR"=$3,
            "name_en_US"=$4, "desc_en_US"=$5,
-           "name_nya"=$6,   "desc_nya"=$7`,
+           "name_nya"=$6,   "desc_nya"=$7,
+           "name_ja_JP"=$8, "desc_ja_JP"=$9`,
         [item.id,
          item.name_ko || '', item.desc_ko || '',
          item.name_en || '', item.desc_en || '',
-         item.name_nya || '', item.desc_nya || '']
+         item.name_nya || '', item.desc_nya || '',
+         item.name_ja || '', item.desc_ja || '']
       );
 
       results.push({ id: item.id, ok: true });
@@ -511,6 +515,7 @@ function buildRow(item) {
   const langs = [
     {key:'ko', label:'한국어'},
     {key:'en', label:'English'},
+    {key:'ja', label:'日本語'},
     {key:'nya', label:'Nya'},
   ];
   const tabBar = document.createElement('div');
@@ -589,6 +594,8 @@ function collectItem(id) {
     desc_ko:  (document.getElementById('dc-ko-'  + id) || {}).value || '',
     name_en:  (document.getElementById('nm-en-'  + id) || {}).value || '',
     desc_en:  (document.getElementById('dc-en-'  + id) || {}).value || '',
+    name_ja:  (document.getElementById('nm-ja-'  + id) || {}).value || '',
+    desc_ja:  (document.getElementById('dc-ja-'  + id) || {}).value || '',
     name_nya: (document.getElementById('nm-nya-' + id) || {}).value || '',
     desc_nya: (document.getElementById('dc-nya-' + id) || {}).value || '',
   };

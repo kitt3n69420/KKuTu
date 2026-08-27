@@ -8,6 +8,8 @@ Server/lib/Web/public/js/**
 !Server/lib/Web/public/js/lz-string.min.js
 !Server/lib/Web/public/js/theme-engine.js
 !Server/lib/Web/public/js/volume-persistence.js
+!Server/lib/Web/public/js/lib
+!Server/lib/Web/public/js/lib/wanakana.min.js
 Server/lib/sub/auth.json
 Server/lib/sub/global.json
 .vscode

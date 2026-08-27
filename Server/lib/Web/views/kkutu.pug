@@ -46,6 +46,7 @@ block Subject
 
 block JS
 	script(src='https://www.google.com/recaptcha/api.js')
+	script(src='/js/lib/wanakana.min.js')
 
 block CSS
 	- var v = locals.appVersion || '1.0.0'
@@ -64,6 +65,7 @@ block Jungle
 	span#GAME_CATEGORIES= JSON.stringify(locals.GAME_CATEGORIES)
 	span#KO_INJEONG= JSON.stringify(locals.KO_INJEONG)
 	span#EN_INJEONG= JSON.stringify(locals.EN_INJEONG)
+	span#JA_INJEONG= JSON.stringify(locals.JA_INJEONG)
 	div#Yell
 	div#Loading(data-lang-key='LOADING')= L('LOADING')
 	div#NickBlockOverlay
@@ -73,7 +75,9 @@ block Jungle
 			<h5 style='margin-top: 2px; border-top: 1px dashed #444444; padding-top: 2px; color: #BBBBBB;'>${L('explInjeongListTitle')}</h5>\
 			<h5>${locals.KO_INJEONG.map(function(item){ return L('theme_' + item); })}</h5>\
 			<h5 style='margin-top: 2px; border-top: 1px dashed #444444; padding-top: 2px; color: #BBBBBB;'>${L('explInjeongListTitle')} (${L('modeEKT')}, ${L('modeESH')})</h5>\
-			<h5>${locals.EN_INJEONG.map(function(item){ return L('theme_' + item); })}</h5>`;
+			<h5>${locals.EN_INJEONG.map(function(item){ return L('theme_' + item); })}</h5>\
+			<h5 style='margin-top: 2px; border-top: 1px dashed #444444; padding-top: 2px; color: #BBBBBB;'>${L('explInjeongListTitle')} (${L('modeJSH')}, ${L('modeJAP')}, ${L('modeJKT')})</h5>\
+			<h5>${locals.JA_INJEONG.map(function(item){ return L('theme_' + item); })}</h5>`;
 
 block Middle
 	- var VERSION = L('version');
@@ -143,7 +147,9 @@ block Middle
 			h4(data-lang-key='ingames')= L('ingames')
 			+SettingOption('auto-ready', 'autoReady')
 			+SettingOption('ai-auto-apply', 'aiAutoApply')
-			
+			h4
+			+SettingOption('ja-auto-convert', 'jaAutoConvert', "width: 190px;")
+
 		div.dialog-bar
 			h4(data-lang-key='visual')= L('visual')
 			+SettingOption('simple-room-view', 'simpleRoomView', "width: 200px;")
@@ -167,6 +173,7 @@ block Middle
 			select#language-setting(style="width: 150px;")
 				option(value="ko_KR") 한국어
 				option(value="en_US") English
+				option(value="ja_JP") 日本語
 				option(value="nya") ???
 		div.dialog-bar
 			h4(data-lang-key='theme')= L('theme')
@@ -339,6 +346,14 @@ block Middle
 						option(value=32, data-lang-key='modeEPF')= L('modeEPF')
 						option(value=35, data-lang-key='modeEWR')= L('modeEWR')
 						option(value=37, data-lang-key='modeEWS')= L('modeEWS')
+					optgroup(label=L('mcJapanese'), data-lang-attr-label='mcJapanese')
+						option(value=49, data-lang-key='modeJSH')= L('modeJSH')
+						option(value=51, data-lang-key='modeJKT')= L('modeJKT')
+						option(value=50, data-lang-key='modeJAP')= L('modeJAP')
+						option(value=52, data-lang-key='modeJTY')= L('modeJTY')
+						option(value=53, data-lang-key='modeJDA')= L('modeJDA')
+						option(value=55, data-lang-key='modeJSS')= L('modeJSS')
+						option(value=54, data-lang-key='modeJFR')= L('modeJFR')
 					optgroup(label=L('mcEtc'), data-lang-attr-label='mcEtc')
 						option(value=24, data-lang-key='modeCRL')= L('modeCRL')
 						option(value=27, data-lang-key='modeCAL')= L('modeCAL')
@@ -422,6 +437,14 @@ block Middle
 					option(value=35, data-lang-key='modeEWR')= L('modeEWR')
 					option(value=37, data-lang-key='modeEWS')= L('modeEWS')
 					option(value=45, data-lang-key='modeECW')= L('modeECW')
+				optgroup(label=L('mcJapanese'), data-lang-attr-label='mcJapanese')
+					option(value=49, data-lang-key='modeJSH')= L('modeJSH')
+					option(value=51, data-lang-key='modeJKT')= L('modeJKT')
+					option(value=50, data-lang-key='modeJAP')= L('modeJAP')
+					option(value=52, data-lang-key='modeJTY')= L('modeJTY')
+					option(value=53, data-lang-key='modeJDA')= L('modeJDA')
+					option(value=55, data-lang-key='modeJSS')= L('modeJSS')
+					option(value=54, data-lang-key='modeJFR')= L('modeJFR')
 				optgroup(label=L('mcEtc'), data-lang-attr-label='mcEtc')
 					option(value=24, data-lang-key='modeCRL')= L('modeCRL')
 					option(value=27, data-lang-key='modeCAL')= L('modeCAL')
@@ -532,6 +555,14 @@ block Middle
 			div.dialog-opt#en-pick-list(style='width: 100%;')
 				- locals.EN_THEME.concat(locals.EN_INJEONG).forEach(function(item){
 					- var name = "en-pick-" + item;
+					- if(locals.IJP_EXCEPT.indexOf(item) != -1) return;
+					div(style='float: left; width: 100%;')
+						input(id=name, type='checkbox', style='width: auto;')
+						label(for=name, data-lang-key=('theme_' + item))= L('theme_' + item)
+				- });
+			div.dialog-opt#ja-pick-list(style='width: 100%;')
+				- locals.JA_THEME.concat(locals.JA_INJEONG).forEach(function(item){
+					- var name = "ja-pick-" + item;
 					- if(locals.IJP_EXCEPT.indexOf(item) != -1) return;
 					div(style='float: left; width: 100%;')
 						input(id=name, type='checkbox', style='width: auto;')
@@ -703,7 +734,7 @@ block Middle
 			div#ri-players(style='width: 100%;')
 		div.dialog-bar.tail-button
 			button#room-info-join(data-lang-key='join')= L('join')
-	+Dialog('ProfileDiag', 300, 365)
+	+Dialog('ProfileDiag', 300, 400)
 		div.dialog-bar.profile-head
 		div.dialog-bar
 			h4(style='width: 83px;', data-lang-key='place')= L('place')
@@ -715,9 +746,10 @@ block Middle
 				div.profile-field-score(data-lang-key='recordScore')= L('recordScore')
 			div#profile-record
 		div.dialog-bar.tail-button
-			button#profile-report(data-lang-key='report')= L('report')
 			button#profile-whisper(data-lang-key='whisper')= L('whisper')
 			button#profile-shut(data-lang-key='shut')= L('shut')
+			button#profile-report(data-lang-key='report')= L('report')
+			button#profile-friend-add(data-lang-key='friendAdd')= L('friendAdd')
 			button#profile-kick(data-lang-key='kick')= L('kick')
 			button#profile-level(data-lang-key='aiSetting')= L('aiSetting')
 			button#profile-dress(data-lang-key='dress')= L('dress')

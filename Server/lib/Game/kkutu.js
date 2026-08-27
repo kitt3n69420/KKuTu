@@ -1085,7 +1085,7 @@ exports.Client = function (socket, profile, sid) {
 		var v;
 		if (Math.random() <= Const.WORD_PIECE_CHANCE * coef) {
 			v = text.charAt(Math.floor(Math.random() * text.length));
-			if (!v.match(/[a-z가-힣]/)) return;
+			if (!v.match(/[a-z가-힣ぁ-ん]/)) return;
 			my.game.wpc.push(v);
 		}
 	};

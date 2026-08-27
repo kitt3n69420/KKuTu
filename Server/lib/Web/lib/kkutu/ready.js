@@ -161,6 +161,7 @@ $(document).ready(function () {
 			profileDress: $("#profile-dress"),
 			profileWhisper: $("#profile-whisper"),
 			profileReport: $("#profile-report"),
+			profileFriendAdd: $("#profile-friend-add"),
 			report: $("#ReportDiag"),
 			reportTarget: $("#report-target"),
 			reportReason: $("#report-reason"),
@@ -378,6 +379,7 @@ $(document).ready(function () {
 	GAME_CATEGORIES = JSON.parse($("#GAME_CATEGORIES").html());
 	KO_INJEONG = JSON.parse($("#KO_INJEONG").html() || "[]");
 	EN_INJEONG = JSON.parse($("#EN_INJEONG").html() || "[]");
+	JA_INJEONG = JSON.parse($("#JA_INJEONG").html() || "[]");
 	MODE = Object.keys(RULE);
 	mobile = $("#mobile").html() == "true";
 	if (mobile) TICK = 60;
@@ -598,13 +600,164 @@ $(document).ready(function () {
 			$stage.talk.focus();
 		}
 	});
+	// 일본어(JSH/JAP) 방일 때만 로마자를 실시간으로 히라가나로 변환 (WanaKana, IMEMode: true — 일본어 IME 조합 중에도 자연스럽게 동작)
+	// 커서 위치 보정까지는 하지 않음 — 변환 후 커서가 끝으로 이동하는 정도는 v1에서 감수 (알려진 제약)
+	function isJaRoom() {
+		var rule = $data.room ? RULE[MODE[$data.room.mode]] : null;
+		if (!($data.room && $data.room.gaming && rule && rule.lang === 'ja')) return false;
+		return loadVolumeSettings().jaAutoConvert !== false; // 설정에서 끄지 않았으면 기본 켜짐
+	}
+	// 일부 기호는 WanaKana가 일본어 문장부호로 자동 변환하므로, 원래 기호 그대로 유지되도록 예외 처리
+	var WANAKANA_SYMBOL_PASSTHROUGH = { '[': '[', ']': ']', '.': '.', ',': ',', '?': '?', ':': ':', '/': '/', '{': '{', '}': '}', '(': '(', ')': ')', '!': '!', '~': '~' };
+	function applyWanaKana($input) {
+		if (!isJaRoom() || typeof wanakana === 'undefined') return;
+		var v = $input.val();
+		var converted = wanakana.toKana(v, { IMEMode: true, customKanaMapping: WANAKANA_SYMBOL_PASSTHROUGH });
+		if (converted !== v) $input.val(converted);
+		// 변환으로 늘어난 글자수를 checkInput의 붙여넣기 감지 기준선에도 반영 (그래야 다음 입력에서 오탐 안 함)
+		$data._kd = $input.val();
+	}
+	// ===== 두벌식 한글 → 히라가나 변환 테이블 (일본어 모드 전용) =====
+	// 서버(classic-util.js의 normalizeJaText/convertHangulToKana)와 동일한 표를 사용한다.
+	// 표를 고칠 때는 반드시 양쪽을 같이 수정할 것.
+	var HG_CHO = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+	var HG_JUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
+	var HG_JONG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+	// 유니코드 종성 인덱스 그대로 조회해야 하므로 HG_JONG은 반드시 28칸 전체를 유지한다(축약 금지).
+	// 비음(ㄴㅁㅇ)→ん, ㄱㄷㅅㅆ→っ, 그 외 받침은 미변환 — 정밀 표기법이 아닌 게임 매칭용 근사치.
+	var HG_JONG_NASAL = { 'ㄴ': true, 'ㅁ': true, 'ㅇ': true };
+	var HG_JONG_SOKUON = { 'ㄱ': true, 'ㄷ': true, 'ㅅ': true, 'ㅆ': true };
+	function decomposeHangul(ch) {
+		var code = ch.charCodeAt(0) - 0xAC00;
+		if (code < 0 || code > 11171) return null;
+		return {
+			cho: HG_CHO[Math.floor(code / 588)],
+			jung: HG_JUNG[Math.floor((code % 588) / 28)],
+			jong: HG_JONG[code % 28]
+		};
+	}
+	var HG_CHO_TO_ROW = {
+		'ㄱ': 'ga', 'ㅋ': 'ka', 'ㄲ': 'ka',
+		'ㄴ': 'na', 'ㄷ': 'da', 'ㄹ': 'ra', 'ㅁ': 'ma',
+		'ㅂ': 'ba', 'ㅍ': 'pa', 'ㅃ': 'pa',
+		'ㅅ': 'sa', 'ㅆ': 'sa',
+		'ㅇ': 'a0',
+		'ㅈ': 'ja',
+		'ㅊ': 'ta_ch', 'ㅉ': 'ta_ch',
+		'ㅌ': 'ta_t',
+		'ㄸ': 'ta_t',
+		'ㅎ': 'ha'
+	};
+	// ㅐ/ㅔ, ㅒ/ㅖ, ㅙ/ㅚ/ㅞ는 현대 한국어 발음이 사실상 합류되어 있어 각각 같은 목표음으로 묶는다.
+	// ㅢ는 비어두 위치에서 흔히 [i]로 약화 발음되므로 'i'로 근사.
+	var HG_JUNG_TO_DAN = {
+		'ㅏ': 'a', 'ㅐ': 'e', 'ㅔ': 'e', 'ㅣ': 'i', 'ㅓ': 'o', 'ㅗ': 'o', 'ㅜ': 'u', 'ㅡ': 'u',
+		'ㅑ': 'ya', 'ㅛ': 'yo', 'ㅠ': 'yu', 'ㅕ': 'yo', 'ㅒ': 'ye', 'ㅖ': 'ye',
+		'ㅘ': 'wa', 'ㅟ': 'wi', 'ㅞ': 'we', 'ㅝ': 'wo', 'ㅙ': 'we', 'ㅚ': 'we', 'ㅢ': 'i'
+	};
+	var ROW_TABLE = {
+		ka: { a: 'か', i: 'き', u: 'く', e: 'け', o: 'こ' },
+		ga: { a: 'が', i: 'ぎ', u: 'ぐ', e: 'げ', o: 'ご' },
+		sa: { a: 'さ', i: 'し', u: 'す', e: 'せ', o: 'そ' },
+		ja: { a: 'ざ', i: 'じ', u: 'ず', e: 'ぜ', o: 'ぞ' },
+		na: { a: 'な', i: 'に', u: 'ぬ', e: 'ね', o: 'の' },
+		ha: { a: 'は', i: 'ひ', u: 'ふ', e: 'へ', o: 'ほ' },
+		ba: { a: 'ば', i: 'び', u: 'ぶ', e: 'べ', o: 'ぼ' },
+		pa: { a: 'ぱ', i: 'ぴ', u: 'ぷ', e: 'ぺ', o: 'ぽ' },
+		ma: { a: 'ま', i: 'み', u: 'む', e: 'め', o: 'も' },
+		ra: { a: 'ら', i: 'り', u: 'る', e: 'れ', o: 'ろ' },
+		a0: { a: 'あ', i: 'い', u: 'う', e: 'え', o: 'お' }
+	};
+	// 완성형 한글 음절 1개를 히라가나로. 매핑에 없는 조합은 null 반환 → 원문 유지
+	function hangulSyllableToKana(ch) {
+		var d = decomposeHangul(ch);
+		if (!d) return null;
+		var row = HG_CHO_TO_ROW[d.cho];
+		if (!row) return null;
+		var dan = HG_JUNG_TO_DAN[d.jung];
+		if (!dan) return null;
+
+		var base = null;
+		if (row === 'ta_t') {
+			base = { a: 'た', e: 'て', o: 'と', i: 'てぃ', u: 'とぅ' }[dan] || null;
+		} else if (row === 'da') {
+			// ㄷ+ㅣ/ㅜ는 ぢ/づ 대신 でぃ/どぅ(외래어 표기용)로 배정 — ぢ/づ는 じ/ず와 발음이 같아(よつがな)
+			// 지/주 입력으로도 도달 가능(서버 normalizeJaText의 JA_YOTSUGANA_FOLD가 매칭 키에서 접어줌).
+			base = { a: 'だ', e: 'で', o: 'ど', i: 'でぃ', u: 'どぅ' }[dan] || null;
+		} else if (row === 'ta_ch') {
+			// ち/つ는 파찰음이라 단모음이어도 요음화된 형태로 표기(차→ちゃ, 체→ちぇ, 초→ちょ)
+			base = {
+				a: 'ちゃ', e: 'ちぇ', o: 'ちょ', i: 'ち', u: 'つ',
+				ya: 'ちゃ', yu: 'ちゅ', yo: 'ちょ', ye: 'ちぇ',
+				wi: 'つぃ', we: 'つぇ', wo: 'つぉ', wa: 'つぁ'
+			}[dan] || null;
+		} else {
+			var r = ROW_TABLE[row];
+			if (dan === 'a' || dan === 'i' || dan === 'u' || dan === 'e' || dan === 'o') {
+				base = r[dan];
+			} else if (dan === 'ya' || dan === 'yu' || dan === 'yo') {
+				base = (row === 'a0')
+					? { ya: 'や', yu: 'ゆ', yo: 'よ' }[dan]
+					: r.i + { ya: 'ゃ', yu: 'ゅ', yo: 'ょ' }[dan];
+			} else if (dan === 'ye') {
+				base = (row === 'a0') ? 'いぇ' : r.i + 'ぇ';
+			} else if (dan === 'wa') {
+				base = (row === 'a0') ? 'わ' : (r.u + 'ぁ');
+			} else {
+				base = r.u + { wi: 'ぃ', we: 'ぇ', wo: 'ぉ' }[dan];
+			}
+		}
+		if (base === null) return null;
+
+		var suffix = '';
+		if (d.jong) {
+			if (HG_JONG_NASAL[d.jong]) suffix = 'ん';
+			else if (HG_JONG_SOKUON[d.jong]) suffix = 'っ';
+			else return null; // 미지원 받침: 음절 전체를 원문 그대로 유지
+		}
+		return base + suffix;
+	}
+	function convertHangulToKana(text) {
+		if (!text) return text;
+		var out = [];
+		for (var i = 0; i < text.length; i++) {
+			var kana = hangulSyllableToKana(text[i]);
+			out.push(kana !== null ? kana : text[i]);
+		}
+		return out.join('');
+	}
+	function applyHangulToKana($input) {
+		if (!isJaRoom()) return;
+		var v = $input.val();
+		var converted = convertHangulToKana(v);
+		if (converted !== v) $input.val(converted);
+		// 변환으로 늘어난 글자수를 checkInput의 붙여넣기 감지 기준선에도 반영 (그래야 다음 입력에서 오탐 안 함)
+		$data._kd = $input.val();
+	}
 	// 양방향 실시간 입력 동기화
 	$stage.talk.on('input', function (e) {
 		if (checkInput($(this))) { $stage.game.hereText.val(""); return; }
+		if (!(e.originalEvent && e.originalEvent.isComposing)) {
+			applyWanaKana($(this));
+			applyHangulToKana($(this));
+		}
 		$stage.game.hereText.val($stage.talk.val());
 	});
 	$stage.game.hereText.on('input', function (e) {
 		if (checkInput($(this))) { $stage.talk.val(""); return; }
+		if (!(e.originalEvent && e.originalEvent.isComposing)) {
+			applyWanaKana($(this));
+			applyHangulToKana($(this));
+		}
+		$stage.talk.val($stage.game.hereText.val());
+	});
+	// 한글 IME 조합이 끝나는 시점에 한글→가나 변환 실행 (조합 중에는 .val()을 건드리면 안 되므로 여기서만)
+	$stage.talk.on('compositionend', function () {
+		applyHangulToKana($(this));
+		$stage.game.hereText.val($stage.talk.val());
+	});
+	$stage.game.hereText.on('compositionend', function () {
+		applyHangulToKana($(this));
 		$stage.talk.val($stage.game.hereText.val());
 	});
 	// 모바일 가상 키보드 엔터 제출 처리
@@ -752,6 +905,8 @@ $(document).ready(function () {
 		$("#no-easter-egg").prop('checked', savedSettings.noEasterEgg === true);
 		// 봇 설정 자동 적용 (기본 꺼짐)
 		$("#ai-auto-apply").prop('checked', savedSettings.aiAutoApply === true);
+		// 일본어 자동 변환 설정 (기본 켜짐)
+		$("#ja-auto-convert").prop('checked', savedSettings.jaAutoConvert !== false);
 
 		// 현재 로드된 언어 감지
 		// L 객체로부터 실제 언어 감지 시도
@@ -760,6 +915,7 @@ $(document).ready(function () {
 			// 한국어 체크
 			if (L && L('language') === '한국어') detectedLang = 'ko_KR';
 			else if (L && L('language') === 'English') detectedLang = 'en_US';
+			else if (L && L('language') === '言語') detectedLang = 'ja_JP';
 			else if (L && L('language') === '???') detectedLang = 'nya';
 		} catch (e) { }
 
@@ -874,15 +1030,8 @@ $(document).ready(function () {
 			$("#room-sur-hp").val($data.room.opts.surHP);
 		}
 
-		// 미션 상태에 따라 관련 옵션 활성화/비활성화
-		var missionEnabled = $data.room.opts.mission;
-		if (!missionEnabled) {
-			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', true);
-			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', true);
-		} else {
-			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', false);
-			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', false);
-		}
+		// 미션/뻥튀기/랜덤잇기 등 서로 종속된 규칙들의 disabled 표시를 현재 체크 상태에 맞게 동기화
+		syncRoomDialogDisabledStates();
 
 		showDialog($d = $stage.dialog.room);
 		$d.find(".dialog-title").html(L['setRoom']);
@@ -1038,7 +1187,7 @@ $(document).ready(function () {
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp', 'dic', 'arc'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg', 'flu', 'jkp', 'dfb'];
-		var keyRules = ['man', 'gen', 'ext', 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'lng', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'chs', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf', 'stp'];
+		var keyRules = ['man', 'gen', 'ext', "jre", "jdk", 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'lng', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'chs', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf', 'stp'];
 
 		if (showCategory) {
 			// Categorized view - hide flat panel, show category panels
@@ -1206,15 +1355,8 @@ $(document).ready(function () {
 			$(o).html(Number($(o).val()) * rule.time + L['SECOND']);
 		});
 
-		// 미션 상태에 따라 관련 옵션 활성화/비활성화
-		var missionEnabled = $("#room-mission").is(':checked');
-		if (!missionEnabled) {
-			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', true);
-			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', true);
-		} else {
-			$("#room-easymission, #room-rndmission, #room-missionplus").prop('disabled', false);
-			$("#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus").prop('disabled', false);
-		}
+		// 미션/뻥튀기/랜덤잇기 등 서로 종속된 규칙들의 disabled 표시를 현재 체크 상태에 맞게 동기화
+		syncRoomDialogDisabledStates();
 
 		// 게임 모드 변경 시 서바이벌 UI 업데이트
 		var survivalChecked = $("#room-survival").is(':checked') || $("#room-flat-survival").is(':checked');
@@ -1439,8 +1581,9 @@ $(document).ready(function () {
 			return list;
 		}
 		if (has('ijp')) {
-			var ijListSel = rule.lang == "en" ? "#en-pick-list" : "#ko-pick-list";
-			$data._injpick = sampleTopics($(ijListSel + " input"), 8, ( rule.lang == "en" ? 0.2 : 0.1 ));
+			var ijListSel = rule.lang == "en" ? "#en-pick-list" : rule.lang == "ja" ? "#ja-pick-list" : "#ko-pick-list";
+			var ijExtraProb = rule.lang == "en" ? 0.2 : rule.lang == "ja" ? 0.15 : 0.1;
+			$data._injpick = sampleTopics($(ijListSel + " input"), 8, ijExtraProb);
 		}
 		if (has('qij')) {
 			applyQuizTopicLang(rule.lang);
@@ -1793,6 +1936,7 @@ $(document).ready(function () {
 			lobbyBGM: newLobbyBGM,
 			noEasterEgg: $("#no-easter-egg").is(":checked"),
 			aiAutoApply: $("#ai-auto-apply").is(":checked"),
+			jaAutoConvert: $("#ja-auto-convert").is(":checked"),
 			theme: newTheme,
 			darkMode: newDarkMode,
 			beatMode: newBeatMode
@@ -2256,7 +2400,7 @@ $(document).ready(function () {
 		var t;
 		if ($stage.dialog.wordPlusOK.hasClass("searching")) return;
 		if (!(t = $("#wp-input").val())) return;
-		t = t.replace(/[^a-z가-힣]/g, "");
+		t = t.replace(/[^a-z가-힣あ-ん]/g, "");
 		if (t.length < 2) return;
 
 		$("#wp-input").val("");
@@ -2294,6 +2438,12 @@ $(document).ready(function () {
 	});
 	$stage.dialog.profileReport.on('click', function (e) {
 		openReportDialog($data._profiled);
+	});
+	$stage.dialog.profileFriendAdd.on('click', function (e) {
+		var o = $data.users[$data._profiled];
+
+		send('friendAdd', { target: $data._profiled }, true);
+		notice(L['cmd_fa_sent'] + (o.profile.title || o.profile.name));
 	});
 	$stage.dialog.reportSubmit.on('click', function (e) {
 		var reasonCode = parseInt($stage.dialog.reportReason.val());
@@ -2582,6 +2732,9 @@ $(document).ready(function () {
 		} else if (rule.lang == "en") {
 			$data._ijkey = "#en-pick-";
 			$("#en-pick-list").show();
+		} else if (rule.lang == "ja") {
+			$data._ijkey = "#ja-pick-";
+			$("#ja-pick-list").show();
 		}
 		$stage.dialog.injPickNo.trigger('click');
 		for (i in $data._injpick) {
@@ -2600,6 +2753,9 @@ $(document).ready(function () {
 		} else if (rule.lang == "en") {
 			$data._ijkey = "#en-pick-";
 			$("#en-pick-list").show();
+		} else if (rule.lang == "ja") {
+			$data._ijkey = "#ja-pick-";
+			$("#ja-pick-list").show();
 		}
 		$stage.dialog.injPickNo.trigger('click');
 		for (i in $data._injpick) {
@@ -2676,6 +2832,9 @@ $(document).ready(function () {
 		} else if (rule.lang == "en") {
 			$data._ijkey = "#en-pick-";
 			$("#en-pick-list").show();
+		} else if (rule.lang == "ja") {
+			$data._ijkey = "#ja-pick-";
+			$("#ja-pick-list").show();
 		}
 		$stage.dialog.injPickNo.trigger('click');
 		for (i in $data._injpick) {
@@ -2855,10 +3014,10 @@ $(document).ready(function () {
 			$("#room-simple-middle, #room-simple-random").prop('checked', false);
 			$("#view-all-middle, #view-all-random").prop('checked', false);
 			$("#view-all-flat-middle, #view-all-flat-random").prop('checked', false);
-			$("#room-flush, #view-all-flush, #view-all-flat-flush").prop('checked', false).prop('disabled', true);
+			$("#room-flush, #room-flat-flush, #room-simple-flush, #view-all-flush, #view-all-flat-flush").prop('checked', false).prop('disabled', true);
 		} else {
 			if (!$("#room-random").is(':checked')) {
-				$("#room-flush, #view-all-flush, #view-all-flat-flush").prop('disabled', false);
+				$("#room-flush, #room-flat-flush, #room-simple-flush, #view-all-flush, #view-all-flat-flush").prop('disabled', false);
 			}
 		}
 	});
@@ -2876,7 +3035,7 @@ $(document).ready(function () {
 			$("#room-simple-second, #room-simple-speedtoss").prop('checked', false).prop('disabled', true);
 			$("#view-all-second, #view-all-speedtoss").prop('checked', false).prop('disabled', true);
 			$("#view-all-flat-second, #view-all-flat-speedtoss").prop('checked', false).prop('disabled', true);
-			$("#room-flush, #view-all-flush, #view-all-flat-flush").prop('checked', false).prop('disabled', true);
+			$("#room-flush, #room-flat-flush, #room-simple-flush, #view-all-flush, #view-all-flat-flush").prop('checked', false).prop('disabled', true);
 		} else {
 			$("#room-second, #room-speedtoss").prop('disabled', false);
 			$("#room-flat-second, #room-flat-speedtoss").prop('disabled', false);
@@ -2884,7 +3043,7 @@ $(document).ready(function () {
 			$("#view-all-second, #view-all-speedtoss").prop('disabled', false);
 			$("#view-all-flat-second, #view-all-flat-speedtoss").prop('disabled', false);
 			if (!$("#room-first").is(':checked')) {
-				$("#room-flush, #view-all-flush, #view-all-flat-flush").prop('disabled', false);
+				$("#room-flush, #room-flat-flush, #room-simple-flush, #view-all-flush, #view-all-flat-flush").prop('disabled', false);
 			}
 		}
 	});
@@ -3087,6 +3246,12 @@ $(document).ready(function () {
 		$("#room-simple-bbungtwigi").prop('checked', false);
 		$("#view-all-bbungtwigi, #view-all-flat-bbungtwigi").prop('checked', false);
 	}
+	// 체크 여부뿐 아니라 disabled 표시도 항상 최신 상태로 맞춘다 (방만들기/설정 진입 시 초기화 포함)
+	function updateBbungtwigiAvailability() {
+		var enabled = hasOtherBonusOn();
+		if (!enabled) disableBbungtwigi();
+		$("#room-bbungtwigi, #room-flat-bbungtwigi, #room-simple-bbungtwigi, #view-all-bbungtwigi, #view-all-flat-bbungtwigi").prop('disabled', !enabled);
+	}
 	$("#room-bbungtwigi, #view-all-bbungtwigi, #view-all-flat-bbungtwigi").on('change', function () {
 		if ($(this).is(':checked') && !hasOtherBonusOn()) disableBbungtwigi();
 	});
@@ -3094,9 +3259,48 @@ $(document).ready(function () {
 		.concat(bbungBonusKeys.map(function (n) { return "#view-all-" + n; }))
 		.concat(bbungBonusKeys.map(function (n) { return "#view-all-flat-" + n; }))
 		.join(", ");
-	$(bbungWatchSel).on('change', function () {
-		if ($("#room-bbungtwigi").is(':checked') && !hasOtherBonusOn()) disableBbungtwigi();
-	});
+	$(bbungWatchSel).on('change', updateBbungtwigiAvailability);
+
+	// 미션 서브옵션(이지미션/랜덤미션/미션플러스), 랜덤잇기<->세컨드/부메랑, 첫말잇기/랜덤잇기->플러시도
+	// 마찬가지로 체크 상태에 종속된 disabled 표시가 있는데, 지금까지는 변경 이벤트에서만 갱신되고
+	// 방만들기/설정 다이얼로그를 처음 열 때는 갱신되지 않아 시각적으로 어긋났다. 진입 시점에 한 번에 동기화한다.
+	function updateMissionSubAvailability() {
+		var missionOn = $("#room-mission").is(':checked') || $("#view-all-mission").is(':checked') || $("#view-all-flat-mission").is(':checked');
+		var sel = "#room-easymission, #room-rndmission, #room-missionplus, " +
+			"#room-flat-easymission, #room-flat-rndmission, #room-flat-missionplus, " +
+			"#room-simple-easymission, #room-simple-rndmission, #room-simple-missionplus, " +
+			"#view-all-easymission, #view-all-rndmission, #view-all-missionplus, " +
+			"#view-all-flat-easymission, #view-all-flat-rndmission, #view-all-flat-missionplus";
+		if (!missionOn) $(sel).prop('checked', false);
+		$(sel).prop('disabled', !missionOn);
+	}
+	function updateLinkExclusionAvailability() {
+		var randomOn = $("#room-random").is(':checked') || $("#view-all-random").is(':checked') || $("#view-all-flat-random").is(':checked');
+		var secondSpeedSel = "#room-second, #room-speedtoss, #room-flat-second, #room-flat-speedtoss, " +
+			"#room-simple-second, #room-simple-speedtoss, #view-all-second, #view-all-speedtoss, " +
+			"#view-all-flat-second, #view-all-flat-speedtoss";
+		if (randomOn) $(secondSpeedSel).prop('checked', false);
+		$(secondSpeedSel).prop('disabled', randomOn);
+
+		var secondSpeedOn = $("#room-second").is(':checked') || $("#room-speedtoss").is(':checked') ||
+			$("#view-all-second").is(':checked') || $("#view-all-speedtoss").is(':checked') ||
+			$("#view-all-flat-second").is(':checked') || $("#view-all-flat-speedtoss").is(':checked');
+		var randomSel = "#room-random, #room-flat-random, #room-simple-random, #view-all-random, #view-all-flat-random";
+		if (secondSpeedOn) $(randomSel).prop('checked', false);
+		$(randomSel).prop('disabled', secondSpeedOn);
+
+		var firstOn = $("#room-first").is(':checked') || $("#view-all-first").is(':checked') || $("#view-all-flat-first").is(':checked');
+		var flushSel = "#room-flush, #room-flat-flush, #room-simple-flush, #view-all-flush, #view-all-flat-flush";
+		var flushDisabled = firstOn || randomOn;
+		if (flushDisabled) $(flushSel).prop('checked', false);
+		$(flushSel).prop('disabled', flushDisabled);
+	}
+	// 방만들기/설정 다이얼로그가 열릴 때 호출해 체크박스 disabled 표시를 현재 상태에 맞게 초기화
+	function syncRoomDialogDisabledStates() {
+		updateMissionSubAvailability();
+		updateLinkExclusionAvailability();
+		updateBbungtwigiAvailability();
+	}
 
 	// 10. 아이템전 vs 카오스 (상호 배제 - 카오스는 아이템전과 함께 사용 불가)
 	$("#room-item, #view-all-item, #view-all-flat-item").on('change', function () {

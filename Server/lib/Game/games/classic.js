@@ -120,6 +120,14 @@ exports.getTitle = function () {
 			ja = 44032 + 588 * Math.floor(Math.random() * 18);
 			eng = "[\\u" + ja.toString(16) + "-\\u" + (ja + 587).toString(16) + "]$";
 			break;
+		case 'JKT':
+			my.game.wordLength = 3;
+		case 'JSH':
+		case 'JAP':
+			// 가나는 한글처럼 초성 블록으로 묶이지 않으므로 시작/끝 글자 제한 없이 길이만 맞춤
+			// "^."로 1글자를 소비해야 뒤의 ".{round-1}$"와 합쳐 총 길이가 round와 일치함
+			eng = "^.";
+			break;
 	}
 
 	// DB 오류나 타임아웃 시 항상 결과를 반환하도록 보장하는 단일 resolve 래퍼
@@ -175,7 +183,7 @@ exports.getTitle = function () {
 			}
 			_fillTitlePool(_rev, 'ko', _wl);
 		}
-		var titleTypeFilter = (l.lang == "ko") ? (my.opts.allpos ? null : ['type', Const.KOR_GROUP]) : ['_id', Const.ENG_ID];
+		var titleTypeFilter = (l.lang == "ko") ? (my.opts.allpos ? null : ['type', Const.KOR_GROUP]) : (l.lang == "ja") ? null : ['_id', Const.ENG_ID];
 		var titleArgs = [['_id', new RegExp(eng + ".{" + Math.max(1, my.round - 1) + "}$")]];
 		if (titleTypeFilter) titleArgs.push(titleTypeFilter);
 		DB.kkutu[l.lang].find.apply(DB.kkutu[l.lang], titleArgs
@@ -232,6 +240,20 @@ exports.getTitle = function () {
 		var uniqueChars = new Set(title.split('')).size;
 		if (title.length - uniqueChars >= 2) {
 			R.go(false);
+			return R;
+		}
+
+		// 일본어는 아직 kkutu_stats_ja가 없어 연결 가능 단어 수 휴리스틱을 적용할 수 없음 — 길이/중복 검증만으로 통과
+		// 옛 가나(ゐ/ゑ)는 현대 표기로, 작은 가나(っゃゅょぁぃぅぇぉ)는 큰 가나로 정규화 (라운드 시작 글자로 그대로 쓰이므로)
+		if (l.lang === 'ja') {
+			var _jaTitle = util.expandJaSmallKana(util.normalizeJaText(title));
+			// JSH/JKT(끝말잇기 계열): title의 각 글자가 라운드별 시작 글자로 쓰이는데, ん으로 시작하는 단어는 없으므로
+			// title에 ん이 포함되면 그 라운드가 진행 불가능해짐 — 애초에 제시어로 뽑히지 않도록 차단
+			if ((Const.GAME_TYPE[my.mode] === 'JSH' || Const.GAME_TYPE[my.mode] === 'JKT') && _jaTitle.indexOf('ん') !== -1) {
+				R.go(false);
+				return R;
+			}
+			R.go(_jaTitle);
 			return R;
 		}
 
@@ -478,7 +500,9 @@ exports.turnStart = function (force) {
 	// 한방 체크: 매너 체크에서 저장된 값 재사용 또는 새로 계산
 	if (typeof my.game.nextCharWordCount !== 'undefined') {
 		// 매너 체크에서 저장된 값이 있으면 재사용 (중복 쿼리 방지)
-		var isHanbang = (my.game.nextCharWordCount === 0);
+		// 일본어(JSH/JAP)는 한방 개념이 없음
+		var isJa = Const.GAME_TYPE[my.mode] === 'JSH' || Const.GAME_TYPE[my.mode] === 'JAP' || Const.GAME_TYPE[my.mode] === 'JKT';
+		var isHanbang = !isJa && (my.game.nextCharWordCount === 0);
 		my.game.isHanbang = isHanbang; // 억까 방지용 저장
 		delete my.game.nextCharWordCount; // 사용 후 삭제
 
@@ -537,8 +561,9 @@ exports.turnStart = function (force) {
 				});
 			}
 
-			// 남은 단어가 0개면 한방
-			var isHanbang = (count - used === 0);
+			// 남은 단어가 0개면 한방 (일본어(JSH/JAP)는 한방 개념이 없음)
+			var isJa = Const.GAME_TYPE[my.mode] === 'JSH' || Const.GAME_TYPE[my.mode] === 'JAP' || Const.GAME_TYPE[my.mode] === 'JKT';
+			var isHanbang = !isJa && (count - used === 0);
 			my.game.isHanbang = isHanbang; // 억까 방지용 저장
 
 			my.byMaster('turnStart', {
@@ -787,6 +812,10 @@ exports.submit = function (client, text) {
 	// Turn check: Only the current turn owner can submit words
 	if (getPlayerId(mgt) !== getPlayerId(client)) return client.chat(text);
 	if (!my.game.char) return;
+	// JSH/JAP/JKT: 가타카나→히라가나, 장음(ー)→직전 모음 정규화 (사전 _id와 동일 정규화를 적용해야 매칭됨)
+	if (Const.GAME_TYPE[my.mode] === 'JSH' || Const.GAME_TYPE[my.mode] === 'JAP' || Const.GAME_TYPE[my.mode] === 'JKT') {
+		text = util.normalizeJaText(text);
+	}
 	if (!isChainable(text, my.mode, my.game.char, my.game.subChar)) return client.chat(text);
 	text = text.replace(/\s/g, '');
 	// noLong/noShort/no2 길이 검증 (통과 못하면 채팅으로 처리)
@@ -900,7 +929,11 @@ exports.submit = function (client, text) {
 			my.opts.second = _loSaved.second;
 		}
 
-
+		// JSH/JKT(일본어 끝말잇기 계열): ん으로 끝나는 단어는 다음 사람이 이을 방법이 없으므로 옵션과 무관하게 항상 제출 금지
+		if ((gameType === 'JSH' || gameType === 'JKT') && preChar === 'ん') {
+			denied(413);
+			return;
+		}
 
 		function preApproved() {
 			function approved() {
@@ -1068,8 +1101,8 @@ exports.submit = function (client, text) {
 					// 최적화: 매너 체크에서 저장된 nextCharWordCount를 재사용하여 중복 쿼리 방지
 					// 매너 모드 활성화 시 한방 단어는 이미 거부되었으므로 isHanbang = false
 
-					if (my.opts.unknown || gameType === 'KJM') {
-						// Unknown 모드와 KJM(자모이어가기)은 한방 개념이 없음
+					if (my.opts.unknown || gameType === 'KJM' || gameType === 'JSH' || gameType === 'JAP' || gameType === 'JKT') {
+						// Unknown 모드, KJM(자모이어가기), 일본어(끝말잇기/앞말잇기/쿵쿵따)는 한방 개념이 없음
 						finalizeTurn(false);
 						return;
 					}
@@ -1292,8 +1325,8 @@ exports.submit = function (client, text) {
 						}
 						// ====================================================
 
-						// KJM 모드: 공격/방어 효과 비활성화
-						if (gameType === 'KJM') {
+						// KJM/일본어 모드: 공격/방어 효과 비활성화
+						if (gameType === 'KJM' || gameType === 'JSH' || gameType === 'JAP' || gameType === 'JKT') {
 							isAttack = false;
 							defenseBonus = 0;
 							defenseType = null;
@@ -1489,11 +1522,11 @@ exports.submit = function (client, text) {
 			var isRandomMode = my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second;
 			if (my.opts.unknown && isRandomMode) {
 				// unknown 단어는 DB 조회 없이 글자 중 무작위 선택
-				var isKo = my.rule.lang === 'ko';
+				var langCharRegex = my.rule.lang === 'ko' ? /[가-힣ㄱ-ㅣ0-9]/ : my.rule.lang === 'ja' ? /[ぁ-ん0-9]/ : /[a-zA-Z0-9]/;
 				var validIndices = [];
 				for (var i = 0; i < text.length; i++) {
 					var ch = text.charAt(i);
-					if (isKo ? /[가-힣ㄱ-ㅣ0-9]/.test(ch) : /[a-zA-Z0-9]/.test(ch)) {
+					if (langCharRegex.test(ch)) {
 						validIndices.push(i);
 					}
 				}
@@ -1566,7 +1599,7 @@ exports.submit = function (client, text) {
 					my.game.nextCharWordCount = displayRemaining;
 
 					// KJM(자모이어가기)은 일반 음절 체인이 아니므로 매너/첫턴 체크를 적용하지 않음
-					if (gameType !== 'KJM' && (firstMove || isMannerLike(my.opts)) && totalRemaining >= mannerMinRemaining) {
+					if (gameType !== 'KJM' && gameType !== 'JSH' && gameType !== 'JAP' && gameType !== 'JKT' && (firstMove || isMannerLike(my.opts)) && totalRemaining >= mannerMinRemaining) {
 						// Stack Kill Prevention for Manner Mode/First Turn (SafeGuard)
 						// Shield 모드는 깊은 체크 생략
 						if (shouldDeepCheck(my.opts) && totalRemaining <= 10) {
@@ -1734,7 +1767,7 @@ exports.submit = function (client, text) {
 							approved();
 						}
 					}
-					else if (gameType !== 'KJM' && (firstMove || isMannerLike(my.opts))) {
+					else if (gameType !== 'KJM' && gameType !== 'JSH' && gameType !== 'JAP' && gameType !== 'JKT' && (firstMove || isMannerLike(my.opts))) {
 						denied(firstMove ? 402 : 403);
 					} else {
 						approved();
@@ -1800,6 +1833,8 @@ exports.submit = function (client, text) {
 				if (isMannerLike(my.opts) && !isRandomMode) {
 					if (my.rule.lang == "ko") {
 						if (!preChar.match(/[가-힣ㄱ-ㅎㅏ-ㅣ0-9]/)) valid = false;
+					} else if (my.rule.lang == "ja") {
+						if (!/^[ぁ-ん0-9]+$/.test(preChar)) valid = false;
 					} else {
 						if (!/^[a-zA-Z0-9]+$/.test(preChar)) valid = false;
 					}
@@ -1923,6 +1958,15 @@ exports.submit = function (client, text) {
 				return lastChar == sc;
 			});
 		}
+		if (type == "JAP") {
+			// 앞말잇기: 타겟(char)은 이전 단어의 첫 글자 — 작은 가나로 시작하는 단어는 체인 조회에서 제외되므로 항상 큰 가나.
+			// 제출된 새 단어의 마지막 글자는 작은 가나일 수 있어 jaEdgeChar로 전처리 후 비교.
+			return util.jaCharMatch(util.jaEdgeChar(text, my), char, my);
+		}
+		if (type == "JSH" || type == "JKT") {
+			// 끝말잇기/쿵쿵따: 타겟(char)은 이전 단어의 마지막 글자를 jaEdgeChar로 이미 전처리한 값 (getChar 참고)
+			return util.jaCharMatch(text.charAt(0), char, my);
+		}
 
 		if (text.indexOf(char) === 0) return true;
 		if (subChars.some(function (sc) {
@@ -1931,7 +1975,9 @@ exports.submit = function (client, text) {
 
 		return false;
 	}
-	var typeFilter = (l == "ko") ? (my.opts.allpos ? null : ['type', Const.KOR_GROUP]) : ['_id', Const.ENG_ID];
+	// ja: 작은 가나로 시작하는 표제어도 사전엔 있지만, jaCharMatch가 항상 "정상 글자"만 타겟/비교값으로
+	// 쓰도록 보장하므로 체인 후보로는 애초에 매칭될 수 없음 — 별도 쿼리 필터 불필요 (단어대결 등에서는 그대로 조회 가능)
+	var typeFilter = (l == "ko") ? (my.opts.allpos ? null : ['type', Const.KOR_GROUP]) : (l == "ja") ? null : ['_id', Const.ENG_ID];
 	var findArgs = [['_id', text]];
 	if (typeFilter) findArgs.push(typeFilter);
 	DB.kkutu[l].findOne.apply(DB.kkutu[l], findArgs

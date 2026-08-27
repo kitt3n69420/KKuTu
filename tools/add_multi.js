@@ -6,8 +6,12 @@
  * .txt 파일: 기존 방식 - 파일명 앞 3자리로 주제 결정, 나머지는 단어 목록
  * .tsv 파일: 파일명 앞 3자리로 주제 결정, TSV에서 단어 정보(품사, 플래그, 뜻 등) 추출
  *
- * 파일명 앞 3자리가 KO_THEME/EN_THEME/KO_INJEONG에 매칭되면 해당 주제로 추가됩니다.
- * 예: 530_화학단어.txt -> 주제 530(화학), 190동물.tsv -> 주제 190(동물)
+ * 파일명 앞 3자리가 KO_THEME/EN_THEME/JA_THEME/KO_INJEONG/EN_INJEONG/JA_INJEONG에 매칭되면 해당 주제로 추가됩니다.
+ * 예: 530_화학단어.txt -> 주제 530(화학), 190동물.tsv -> 주제 190(동물), j01경제.tsv -> 주제 j01(일본어 경제)
+ *
+ * 일본어(kkutu_ja)는 headword(표제어)와 _id(입력어, 히라가나 정규화)가 분리되어 있습니다.
+ * .txt: 각 줄의 텍스트를 표제어로 넣고, jmdict_etl.js와 동일한 방식으로 히라가나 정규화한 값을 입력어로 사용합니다.
+ * .tsv: 표제어는 TSV의 headword 컬럼에서 그대로 가져오고, input_word 컬럼이 비어 있으면 표제어를 정규화해 입력어를 채웁니다.
  */
 
 var fs = require('fs');
@@ -31,6 +35,14 @@ try {
     GLOBAL = require('../Server/lib/sub/global.json');
 } catch (e) {
     console.error("Error loading const.js or global.json:", e.message);
+    process.exit(1);
+}
+
+var normalizeJaText;
+try {
+    normalizeJaText = require('../Server/lib/Game/games/classic-util.js').normalizeJaText;
+} catch (e) {
+    console.error("Error loading classic-util.js:", e.message);
     process.exit(1);
 }
 
@@ -138,19 +150,31 @@ function resolveTopicFromFilename(filename) {
         tableName = 'kkutu_en';
         topic = prefix;
     }
-    // 3. KO_INJEONG에서 직접 매칭 (3글자 코드: IMS, VOC, LOL 등)
+    // 3. JA_THEME에서 직접 매칭 (j01, j02 등)
+    else if (CONST.JA_THEME.includes(prefix)) {
+        lang = 'ja';
+        tableName = 'kkutu_ja';
+        topic = prefix;
+    }
+    // 4. KO_INJEONG에서 직접 매칭 (3글자 코드: IMS, VOC, LOL 등)
     else if (CONST.KO_INJEONG.includes(prefix)) {
         lang = 'ko';
         tableName = 'kkutu_ko';
         topic = prefix;
     }
-    // 4. EN_INJEONG에서 직접 매칭
+    // 5. EN_INJEONG에서 직접 매칭
     else if (CONST.EN_INJEONG.includes(prefix)) {
         lang = 'en';
         tableName = 'kkutu_en';
         topic = prefix;
     }
-    // 5. THEME_MAP을 통한 변환 시도
+    // 6. JA_INJEONG에서 직접 매칭 (PLC, EKI 등)
+    else if (CONST.JA_INJEONG.includes(prefix)) {
+        lang = 'ja';
+        tableName = 'kkutu_ja';
+        topic = prefix;
+    }
+    // 7. THEME_MAP을 통한 변환 시도 (한국어 전용)
     else if (THEME_MAP[prefix] !== undefined && THEME_MAP[prefix] !== '0') {
         var mapped = THEME_MAP[prefix];
         if (CONST.KO_THEME.includes(mapped)) {
@@ -219,7 +243,7 @@ async function main() {
 // 테마가 'KPT' 단독이 아닌 모든 단어에 대해 hit 최소값(100) 보정
 // =============================================
 async function applyMinimumHit() {
-    var tables = ['kkutu_ko', 'kkutu_en'];
+    var tables = ['kkutu_ko', 'kkutu_en', 'kkutu_ja'];
 
     for (var table of tables) {
         var client;
@@ -266,12 +290,19 @@ async function processTxtFile(filename) {
     console.log("  Topic: " + topic + " (" + lang + ") -> Table: " + tableName);
 
     // 모든 줄에서 단어 수집 (기존 첫 줄 주제 방식 제거)
+    // 일본어(ja)는 원문을 표제어로 두고, 히라가나로 정규화한 값을 입력어(_id)로 사용 (jmdict_etl.js와 동일 정규화)
     var words = [];
     for (var i = 0; i < lines.length; i++) {
         var lineParts = lines[i].split(',');
         for (var part of lineParts) {
             var w = part.trim();
-            if (w) words.push(w);
+            if (!w) continue;
+            if (lang === 'ja') {
+                var jaId = normalizeJaText(w);
+                if (jaId) words.push({ id: jaId, headword: w });
+            } else {
+                words.push(w);
+            }
         }
     }
 
@@ -313,6 +344,8 @@ async function processTsvFile(filename) {
 
     // TSV 파싱: headword, input_word, pos, flag, theme, meaning
     // 같은 단어가 여러 행에 나올 수 있으므로 집계
+    // 일본어(ja)는 표제어를 TSV의 headword 컬럼에서 그대로 얻고, input_word 컬럼이 비어 있으면
+    // 표제어를 히라가나로 정규화한 값을 입력어(_id)로 사용 (jmdict_etl.js와 동일 정규화)
     var wordsData = {};
 
     for (var i = 0; i < lines.length; i++) {
@@ -327,17 +360,26 @@ async function processTsvFile(filename) {
 
         var headword = cols[0].trim();
         var inputWord = cols[1].trim();
-        var targetWord = inputWord || headword;
         var flagStr = cols[3].trim();
         var themeStr = cols[4].trim();
+
+        var targetWord, headwordVal;
+        if (lang === 'ja') {
+            headwordVal = headword;
+            targetWord = normalizeJaText(inputWord || headword);
+        } else {
+            headwordVal = inputWord || headword;
+            targetWord = headwordVal;
+        }
+        if (!targetWord) continue;
 
         // Flag 계산
         var userFlag = parseInt(flagStr) || 0;
         var dbFlag = 2; // 어인정 기본
         if (userFlag === 1) dbFlag |= 1; // 외래어
 
-        // Theme 결정: 글로벌 주제 우선, 없으면 TSV 행의 theme 사용
-        var finalTheme = globalTopic || getMappedTheme(themeStr);
+        // Theme 결정: 글로벌 주제 우선, 없으면 TSV 행의 theme 사용 (ja는 THEME_MAP 없이 코드 그대로 사용)
+        var finalTheme = lang === 'ja' ? (globalTopic || themeStr || '0') : (globalTopic || getMappedTheme(themeStr));
 
         if (finalTheme.split(',').includes('1001')) {
             dbFlag |= 2;
@@ -345,6 +387,7 @@ async function processTsvFile(filename) {
 
         if (!wordsData[targetWord]) {
             wordsData[targetWord] = {
+                headword: headwordVal,
                 themes: new Set(),
                 flag: dbFlag
             };
@@ -363,7 +406,10 @@ async function processTsvFile(filename) {
 
     console.log("  Parsed " + wordKeys.length + " unique words. Updating DB...");
     for (var theme of Array.from(new Set(Object.values(wordsData).flatMap(function (d) { return Array.from(d.themes); })))) {
-        var wordsForTheme = Object.keys(wordsData).filter(function (w) { return wordsData[w].themes.has(theme); });
+        var idsForTheme = Object.keys(wordsData).filter(function (w) { return wordsData[w].themes.has(theme); });
+        var wordsForTheme = lang === 'ja'
+            ? idsForTheme.map(function (id) { return { id: id, headword: wordsData[id].headword }; })
+            : idsForTheme;
         await updateDatabaseSimple(tableName, theme, wordsForTheme);
     }
 }
@@ -372,13 +418,16 @@ async function processTsvFile(filename) {
 // DB 업데이트: .txt 단어 (기존 로직 + 덮어씌우기)
 // =============================================
 async function updateDatabaseSimple(table, theme, words) {
+    var isJa = (table === 'kkutu_ja');
     var client;
     try {
         client = await pool.connect();
 
         var stats = { inserted: 0, updated: 0, skipped: 0, overwritten: 0, error: 0 };
 
-        for (var word of words) {
+        for (var entry of words) {
+            var word = isJa ? entry.id : entry;
+            var headword = isJa ? entry.headword : entry;
             if (/^\d|\d$/.test(word)) {
                 console.log("    ! 오류: '" + word + "' - 숫자로 시작하거나 끝나는 단어는 추가할 수 없습니다.");
                 stats.error++;
@@ -390,19 +439,33 @@ async function updateDatabaseSimple(table, theme, words) {
                 );
 
                 if (res.rowCount === 0) {
-                    await client.query(
-                        "INSERT INTO " + table + " (_id, type, theme, mean, flag, hit) VALUES ($1, 'INJEONG', $2, $3, 2, 0)",
-                        [word, theme, "\uFF021\uFF02"]
-                    );
+                    if (isJa) {
+                        await client.query(
+                            "INSERT INTO kkutu_ja (_id, headword, type, theme, mean, flag, hit) VALUES ($1, $2, 'INJEONG', $3, $4, 2, 0)",
+                            [word, headword, theme, "\uFF021\uFF02"]
+                        );
+                    } else {
+                        await client.query(
+                            "INSERT INTO " + table + " (_id, type, theme, mean, flag, hit) VALUES ($1, 'INJEONG', $2, $3, 2, 0)",
+                            [word, theme, "\uFF021\uFF02"]
+                        );
+                    }
                     stats.inserted++;
                 } else {
                     var row = res.rows[0];
 
                     if (shouldOverwrite(row.mean, row.theme)) {
-                        await client.query(
-                            "UPDATE " + table + " SET type = $1, theme = $2, mean = $3, flag = $4 WHERE _id = $5",
-                            ['INJEONG', theme, "\uFF021\uFF02", 2, word]
-                        );
+                        if (isJa) {
+                            await client.query(
+                                "UPDATE kkutu_ja SET headword = $1, type = $2, theme = $3, mean = $4, flag = $5 WHERE _id = $6",
+                                [headword, 'INJEONG', theme, "\uFF021\uFF02", 2, word]
+                            );
+                        } else {
+                            await client.query(
+                                "UPDATE " + table + " SET type = $1, theme = $2, mean = $3, flag = $4 WHERE _id = $5",
+                                ['INJEONG', theme, "\uFF021\uFF02", 2, word]
+                            );
+                        }
                         stats.overwritten++;
                     } else {
                         var existingTheme = row.theme || "";

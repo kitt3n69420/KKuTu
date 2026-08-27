@@ -61,6 +61,7 @@ block Subject
 	meta(name='google' content='notranslate')
 block JS
 	script(src='https://www.google.com/recaptcha/api.js')
+	script(src='/js/lib/wanakana.min.js')
 	script.
 		$(document).ready(function() {
 			if (!mobile) return;
@@ -167,7 +168,8 @@ block Middle
 			h4(data-lang-key='ingames')= L('ingames')
 			+SettingOption('auto-ready', 'autoReady')
 			+SettingOption('ai-auto-apply', 'aiAutoApply')
-			
+			+SettingOption('ja-auto-convert', 'jaAutoConvert', "clear: both; margin-left: 80px; width: 190px;")
+
 		div.dialog-bar
 			h4(data-lang-key='visual')= L('visual')
 			+SettingOption('simple-room-view', 'simpleRoomView', "width: 100px;")
@@ -188,6 +190,7 @@ block Middle
 			select#language-setting(style="width: 150px;")
 				option(value="ko_KR") 한국어
 				option(value="en_US") English
+				option(value="ja_JP") 日本語
 				option(value="nya") ???
 		div.dialog-bar
 			h4(data-lang-key='theme')= L('theme')
@@ -395,6 +398,14 @@ block Middle
 						option(value=32, data-lang-key='modeEPF')= L('modeEPF')
 						option(value=35, data-lang-key='modeEWR')= L('modeEWR')
 						option(value=37, data-lang-key='modeEWS')= L('modeEWS')
+					optgroup(label=L('mcJapanese'), data-lang-attr-label='mcJapanese')
+						option(value=49, data-lang-key='modeJSH')= L('modeJSH')
+						option(value=51, data-lang-key='modeJKT')= L('modeJKT')
+						option(value=50, data-lang-key='modeJAP')= L('modeJAP')
+						option(value=52, data-lang-key='modeJTY')= L('modeJTY')
+						option(value=53, data-lang-key='modeJDA')= L('modeJDA')
+						option(value=55, data-lang-key='modeJSS')= L('modeJSS')
+						option(value=54, data-lang-key='modeJFR')= L('modeJFR')
 					optgroup(label=L('mcEtc'), data-lang-attr-label='mcEtc')
 						option(value=24, data-lang-key='modeCRL')= L('modeCRL')
 						option(value=27, data-lang-key='modeCAL')= L('modeCAL')
@@ -705,7 +716,7 @@ block Middle
 			div#ri-players(style='width: 100%;')
 		div.dialog-bar.tail-button
 			button#room-info-join(data-lang-key='join')= L('join')
-	+Dialog('ProfileDiag', 300, 390)
+	+Dialog('ProfileDiag', 300, 420)
 		div.dialog-bar.profile-head
 		div.dialog-bar
 			h4(style='width: 83px;', data-lang-key='place')= L('place')
@@ -717,9 +728,10 @@ block Middle
 				div.profile-field-score(data-lang-key='recordScore')= L('recordScore')
 			div#profile-record
 		div.dialog-bar.tail-button
-			button#profile-report(data-lang-key='report')= L('report')
 			button#profile-whisper(data-lang-key='whisper')= L('whisper')
 			button#profile-shut(data-lang-key='shut')= L('shut')
+			button#profile-report(data-lang-key='report')= L('report')
+			button#profile-friend-add(data-lang-key='friendAdd')= L('friendAdd')
 			button#profile-kick(data-lang-key='kick')= L('kick')
 			button#profile-level(data-lang-key='aiSetting')= L('aiSetting')
 			button#profile-dress(data-lang-key='dress')= L('dress')

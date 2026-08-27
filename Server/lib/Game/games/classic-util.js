@@ -370,7 +370,7 @@ function getMission(l, opts, gameType) {
 	}
 
 	// 기본 미션 로직
-	var arr = (l == "ko") ? Const.MISSION_ko : Const.MISSION_en;
+	var arr = (l == "ko") ? Const.MISSION_ko : (l == "ja") ? Const.MISSION_ja : Const.MISSION_en;
 
 	if (!arr) return "-";
 	return arr[Math.floor(Math.random() * arr.length)];
@@ -474,13 +474,38 @@ function getAuto(char, subc, type, limit, sort) {
 			adv = Const.getKjmStartRegex(char).source;
 			break;
 		}
+		case 'JSH':
+			if (my.opts.noshort) {
+				adv = `^(${adc}).{8,}`;  // 9글자 이상
+			} else if (my.opts.nolong) {
+				adv = `^(${adc}).{1,7}`;  // 2~8글자
+			} else if (my.opts.no2) {
+				adv = `^(${adc}).{2,}`;  // 3글자 이상
+			} else {
+				adv = `^(${adc}).`;
+			}
+			break;
+		case 'JKT':
+			adv = `^(${adc}).{${my.game.wordLength - char.length}}$`;
+			break;
+		case 'JAP':
+			if (my.opts.noshort) {
+				adv = `.{8,}(${adc})$`; // 9글자 이상
+			} else if (my.opts.nolong) {
+				adv = `.{1,7}(${adc})$`; // 2~8글자
+			} else if (my.opts.no2) {
+				adv = `.{2,}(${adc})$`; // 3글자 이상
+			} else {
+				adv = `.(${adc})$`;
+			}
+			break;
 	}
 	if (!char) {
 	}
 
 	// type=1 (존재 여부 확인 Check): kkutu_stats table check
-	// KKU/KJM은 통계 테이블이 없으므로 DB 직접 쿼리로 fallback
-	if (bool && char && gameType !== 'KKU' && gameType !== 'KJM') {
+	// KKU/KJM/JSH/JAP/JKT은 통계 테이블이 없으므로 DB 직접 쿼리로 fallback
+	if (bool && char && gameType !== 'KKU' && gameType !== 'KJM' && gameType !== 'JSH' && gameType !== 'JAP' && gameType !== 'JKT') {
 		// Bitmask State (bit0=noInjeong, bit1=strict, bit2=noLoan, bit3=allpos)
 		var state = getMannerState(my.opts);
 
@@ -582,7 +607,7 @@ function getAuto(char, subc, type, limit, sort) {
 			} else {
 				aqs.push(['type', Const.KOR_GROUP]);
 			}
-		} else {
+		} else if (my.rule.lang == "en") {
 			aqs.push(['_id', Const.ENG_ID]);
 		}
 		// noLong/noShort/no2 길이 필터 함수
@@ -809,6 +834,9 @@ function getChar(text) {
 		case 'KKT':
 		case 'KSH':
 			return text.slice(-1);
+		case 'JSH':
+		case 'JKT':
+			return jaEdgeChar(text, my);
 		case 'KJM':
 			// KJM: 자모 분해 후 마지막 자모 반환
 			return Const.decomposeToJamo(text).slice(-1);
@@ -816,6 +844,7 @@ function getChar(text) {
 		case 'EAP':
 		case 'KAK':
 		case 'EAK':
+		case 'JAP':
 			return text.charAt(0);
 	}
 };
@@ -920,6 +949,11 @@ function getLinkIndex(text) {
 		case 'KKT':
 		case 'KSH':
 			return len - 1;
+		case 'JSH':
+		case 'JKT':
+			// 제거 규칙(기본, jaexpand 꺼짐)이고 마지막 글자가 작은 가나면 그 앞 글자를 하이라이트
+			if (!my.opts.jaexpand && len >= 2 && JA_SMALL_KANA.indexOf(text.slice(-1)) !== -1) return len - 2;
+			return len - 1;
 		case 'KJM':
 			// KJM: 자모 분해 문자열에서 마지막 자모의 인덱스
 			return Const.decomposeToJamo(text).length - 1;
@@ -927,9 +961,260 @@ function getLinkIndex(text) {
 		case 'EAP':
 		case 'KAK':
 		case 'EAK':
+		case 'JAP':
 			return 0;
 	}
 	return -1;
+}
+
+// ===== 일본어(JSH/JAP) 문자잇기 헬퍼 =====
+// v1은 모라 파싱 없이 순수 문자 단위로 연결 (설계문서 §문자잇기 참고)
+var JA_SMALL_KANA = "ゃゅょぁぃぅぇぉっゎ";
+var JA_SMALL_TO_LARGE = { "ゃ": "や", "ゅ": "ゆ", "ょ": "よ", "ぁ": "あ", "ぃ": "い", "ぅ": "う", "ぇ": "え", "ぉ": "お", "っ": "つ", "ゎ": "わ" };
+var JA_VOWEL_OF = {};
+(function () {
+	var rows = [
+		"あかがさざただなはばぱまやらわ", // a
+		"いきぎしじちぢにひびぴみり",     // i
+		"うくぐすずつづぬふぶぷむゆる",   // u
+		"えけげせぜてでねへべぺめれ",     // e
+		"おこごそぞとどのほぼぽもよろを"  // o
+	];
+	var vowels = ['a', 'i', 'u', 'e', 'o'];
+	rows.forEach(function (row, i) {
+		for (var j = 0; j < row.length; j++) JA_VOWEL_OF[row[j]] = vowels[i];
+	});
+	JA_VOWEL_OF['ゐ'] = 'i'; JA_VOWEL_OF['ゑ'] = 'e'; JA_VOWEL_OF['ゔ'] = 'u';
+	JA_VOWEL_OF['ぁ'] = 'a'; JA_VOWEL_OF['ぃ'] = 'i'; JA_VOWEL_OF['ぅ'] = 'u'; JA_VOWEL_OF['ぇ'] = 'e'; JA_VOWEL_OF['ぉ'] = 'o';
+	JA_VOWEL_OF['ゃ'] = 'a'; JA_VOWEL_OF['ゅ'] = 'u'; JA_VOWEL_OF['ょ'] = 'o';
+	JA_VOWEL_OF['ゎ'] = 'a';
+})();
+var JA_CHOON_VOWEL_CHAR = { a: 'あ', i: 'い', u: 'う', e: 'え', o: 'お' };
+var JA_DAKUTEN_PAIRS = [
+	['か', 'が'], ['き', 'ぎ'], ['く', 'ぐ'], ['け', 'げ'], ['こ', 'ご'],
+	['さ', 'ざ'], ['し', 'じ'], ['す', 'ず'], ['せ', 'ぜ'], ['そ', 'ぞ'],
+	['た', 'だ'], ['ち', 'ぢ'], ['つ', 'づ'], ['て', 'で'], ['と', 'ど'],
+	['は', 'ば', 'ぱ'], ['ひ', 'び', 'ぴ'], ['ふ', 'ぶ', 'ぷ'], ['へ', 'べ', 'ぺ'], ['ほ', 'ぼ', 'ぽ']
+];
+var JA_DAKUTEN_GROUP_OF = {};
+JA_DAKUTEN_PAIRS.forEach(function (group, i) {
+	group.forEach(function (ch) { JA_DAKUTEN_GROUP_OF[ch] = i; });
+});
+// 청음(각 그룹의 0번째 글자) → 탁음(1번째 글자) 역방향 맵. 반복부호 ゞ(직전 글자를 탁음화해서 반복) 확장에 사용.
+var JA_SEION_TO_DAKUTEN = {};
+JA_DAKUTEN_PAIRS.forEach(function (group) { JA_SEION_TO_DAKUTEN[group[0]] = group[1]; });
+
+// 역사적/희귀 가나(ゐ/ゑ, 카타카나 ヰ/ヱ 포함)를 현대 오십음도 기준으로 치환. ゔ(vu)는 잘 쓰이지 않는 가나라
+// 실질적으로 이을 상대가 없으므로 ば행의 ぶ와 항상 동일하게 취급(무조건 정규화).
+var JA_ARCHAIC_TO_MODERN = { 'ゐ': 'い', 'ゑ': 'え', 'ゔ': 'ぶ' };
+
+// よつがな(ぢ/づ)는 현대 표준어에서 じ/ず와 발음이 완전히 같아 한글 입력으로 구별 불가능 —
+// 매칭 키(normalizeJaText 결과)에서만 じ/ず로 접는다. headword(표시용 원문)는 그대로 ぢ/づ 유지.
+var JA_YOTSUGANA_FOLD = { 'ぢ': 'じ', 'づ': 'ず' };
+
+// 반각 가나(U+FF61~FF9F) → 전각 가나. 탁점(ﾞ)/반탁점(ﾟ)은 바로 앞 글자와 결합해 탁음/반탁음으로 변환.
+var JA_HALFWIDTH_KANA = {
+	'ｦ': 'ヲ', 'ｧ': 'ァ', 'ｨ': 'ィ', 'ｩ': 'ゥ', 'ｪ': 'ェ', 'ｫ': 'ォ', 'ｬ': 'ャ', 'ｭ': 'ュ', 'ｮ': 'ョ', 'ｯ': 'ッ', 'ｰ': 'ー',
+	'ｱ': 'ア', 'ｲ': 'イ', 'ｳ': 'ウ', 'ｴ': 'エ', 'ｵ': 'オ',
+	'ｶ': 'カ', 'ｷ': 'キ', 'ｸ': 'ク', 'ｹ': 'ケ', 'ｺ': 'コ',
+	'ｻ': 'サ', 'ｼ': 'シ', 'ｽ': 'ス', 'ｾ': 'セ', 'ｿ': 'ソ',
+	'ﾀ': 'タ', 'ﾁ': 'チ', 'ﾂ': 'ツ', 'ﾃ': 'テ', 'ﾄ': 'ト',
+	'ﾅ': 'ナ', 'ﾆ': 'ニ', 'ﾇ': 'ヌ', 'ﾈ': 'ネ', 'ﾉ': 'ノ',
+	'ﾊ': 'ハ', 'ﾋ': 'ヒ', 'ﾌ': 'フ', 'ﾍ': 'ヘ', 'ﾎ': 'ホ',
+	'ﾏ': 'マ', 'ﾐ': 'ミ', 'ﾑ': 'ム', 'ﾒ': 'メ', 'ﾓ': 'モ',
+	'ﾔ': 'ヤ', 'ﾕ': 'ユ', 'ﾖ': 'ヨ',
+	'ﾗ': 'ラ', 'ﾘ': 'リ', 'ﾙ': 'ル', 'ﾚ': 'レ', 'ﾛ': 'ロ',
+	'ﾜ': 'ワ', 'ﾝ': 'ン',
+	'｡': '。', '｢': '「', '｣': '」', '､': '、', '･': '・'
+};
+var JA_HALFWIDTH_DAKUTEN = { 'ｶ': 'ガ', 'ｷ': 'ギ', 'ｸ': 'グ', 'ｹ': 'ゲ', 'ｺ': 'ゴ', 'ｻ': 'ザ', 'ｼ': 'ジ', 'ｽ': 'ズ', 'ｾ': 'ゼ', 'ｿ': 'ゾ', 'ﾀ': 'ダ', 'ﾁ': 'ヂ', 'ﾂ': 'ヅ', 'ﾃ': 'デ', 'ﾄ': 'ド', 'ﾊ': 'バ', 'ﾋ': 'ビ', 'ﾌ': 'ブ', 'ﾍ': 'ベ', 'ﾎ': 'ボ', 'ｳ': 'ヴ' };
+var JA_HALFWIDTH_HANDAKUTEN = { 'ﾊ': 'パ', 'ﾋ': 'ピ', 'ﾌ': 'プ', 'ﾍ': 'ペ', 'ﾎ': 'ポ' };
+function expandJaHalfwidthKana(text) {
+	var out = [];
+	for (var i = 0; i < text.length; i++) {
+		var ch = text[i], next = text[i + 1];
+		if (JA_HALFWIDTH_KANA[ch]) {
+			if (next === 'ﾞ' && JA_HALFWIDTH_DAKUTEN[ch]) { out.push(JA_HALFWIDTH_DAKUTEN[ch]); i++; continue; }
+			if (next === 'ﾟ' && JA_HALFWIDTH_HANDAKUTEN[ch]) { out.push(JA_HALFWIDTH_HANDAKUTEN[ch]); i++; continue; }
+			out.push(JA_HALFWIDTH_KANA[ch]);
+			continue;
+		}
+		out.push(ch);
+	}
+	return out.join('');
+}
+
+// ===== 두벌식 한글 → 히라가나 보정 (일본어 모드 전용) =====
+// 클라이언트(kkutu/ready.js)에서 실시간 변환을 시도하지만 IME 조합 타이밍이나 매핑 누락으로
+// 한글이 섞인 채 제출될 수 있어, 서버에서 한 번 더 동일 계열의 변환을 적용해 보정한다.
+// 클라이언트판과 동일한 표를 사용함(ㅕ 등 중성 누락 보완, 받침은 비음(ㄴㅁㅇ)→ん, ㄱㄷㅅㅆ→っ,
+// 그 외 받침은 미변환 — 정밀 표기법이 아닌 게임 매칭용 근사치).
+var HG_CHO = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+var HG_JUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
+var HG_JONG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+// 유니코드 종성 인덱스 그대로 조회해야 하므로 HG_JONG은 반드시 28칸 전체를 유지한다(축약 금지).
+// 비음(ㄴㅁㅇ)→ん, ㄱㄷㅅㅆ→っ, 그 외(겹받침·ㄹ·ㅂ·ㅈ·ㅊ 등 미지원 받침)는 음절 전체를 미변환 처리(null → 원문 유지).
+var HG_JONG_NASAL = { 'ㄴ': true, 'ㅁ': true, 'ㅇ': true };
+var HG_JONG_SOKUON = { 'ㄱ': true, 'ㄷ': true, 'ㅅ': true, 'ㅆ': true };
+function decomposeHangul(ch) {
+	var code = ch.charCodeAt(0) - 0xAC00;
+	if (code < 0 || code > 11171) return null;
+	return {
+		cho: HG_CHO[Math.floor(code / 588)],
+		jung: HG_JUNG[Math.floor((code % 588) / 28)],
+		jong: HG_JONG[code % 28]
+	};
+}
+var HG_CHO_TO_ROW = {
+	'ㄱ': 'ga', 'ㅋ': 'ka', 'ㄲ': 'ka',
+	'ㄴ': 'na', 'ㄷ': 'da', 'ㄹ': 'ra', 'ㅁ': 'ma',
+	'ㅂ': 'ba', 'ㅍ': 'pa', 'ㅃ': 'pa',
+	'ㅅ': 'sa', 'ㅆ': 'sa',
+	'ㅇ': 'a0',
+	'ㅈ': 'ja',
+	'ㅊ': 'ta_ch', 'ㅉ': 'ta_ch',
+	'ㅌ': 'ta_t',
+	'ㄸ': 'ta_t',
+	'ㅎ': 'ha'
+};
+// ㅐ/ㅔ, ㅒ/ㅖ, ㅙ/ㅚ/ㅞ는 현대 한국어 발음이 사실상 합류되어 있어 각각 같은 목표음으로 묶는다.
+// ㅢ는 비어두 위치에서 흔히 [i]로 약화 발음되므로 'i'로 근사.
+var HG_JUNG_TO_DAN = {
+	'ㅏ': 'a', 'ㅐ': 'e', 'ㅔ': 'e', 'ㅣ': 'i', 'ㅓ': 'o', 'ㅗ': 'o', 'ㅜ': 'u', 'ㅡ': 'u',
+	'ㅑ': 'ya', 'ㅛ': 'yo', 'ㅠ': 'yu', 'ㅕ': 'yo', 'ㅒ': 'ye', 'ㅖ': 'ye',
+	'ㅘ': 'wa', 'ㅟ': 'wi', 'ㅞ': 'we', 'ㅝ': 'wo', 'ㅙ': 'we', 'ㅚ': 'we', 'ㅢ': 'i'
+};
+var ROW_TABLE = {
+	ka: { a: 'か', i: 'き', u: 'く', e: 'け', o: 'こ' },
+	ga: { a: 'が', i: 'ぎ', u: 'ぐ', e: 'げ', o: 'ご' },
+	sa: { a: 'さ', i: 'し', u: 'す', e: 'せ', o: 'そ' },
+	ja: { a: 'ざ', i: 'じ', u: 'ず', e: 'ぜ', o: 'ぞ' },
+	na: { a: 'な', i: 'に', u: 'ぬ', e: 'ね', o: 'の' },
+	ha: { a: 'は', i: 'ひ', u: 'ふ', e: 'へ', o: 'ほ' },
+	ba: { a: 'ば', i: 'び', u: 'ぶ', e: 'べ', o: 'ぼ' },
+	pa: { a: 'ぱ', i: 'ぴ', u: 'ぷ', e: 'ぺ', o: 'ぽ' },
+	ma: { a: 'ま', i: 'み', u: 'む', e: 'め', o: 'も' },
+	ra: { a: 'ら', i: 'り', u: 'る', e: 'れ', o: 'ろ' },
+	a0: { a: 'あ', i: 'い', u: 'う', e: 'え', o: 'お' }
+};
+// 완성형 한글 음절 1개를 히라가나로. 매핑에 없는 조합은 null 반환 → 원문 유지
+function hangulSyllableToKana(ch) {
+	var d = decomposeHangul(ch);
+	if (!d) return null;
+	var row = HG_CHO_TO_ROW[d.cho];
+	if (!row) return null;
+	var dan = HG_JUNG_TO_DAN[d.jung];
+	if (!dan) return null;
+
+	var base = null;
+	if (row === 'ta_t') {
+		base = { a: 'た', e: 'て', o: 'と', i: 'てぃ', u: 'とぅ' }[dan] || null;
+	} else if (row === 'da') {
+		// ㄷ+ㅣ/ㅜ는 ぢ/づ 대신 でぃ/どぅ(외래어 표기용, ち/つ로 파찰음화되지 않는 소리)로 배정.
+		// ぢ/づ는 현대 표준어에서 じ/ず와 발음이 완전히 같아(よつがな) 지/주 입력으로도 도달 가능
+		// (normalizeJaText의 JA_YOTSUGANA_FOLD가 매칭 키에서 접어줌) — 한글 자음 2개(ㄷ/ㅈ)로
+		// 서로 다른 소리인 じ/ぢ/でぃ 3개를 모두 커버하기 위한 배정.
+		base = { a: 'だ', e: 'で', o: 'ど', i: 'でぃ', u: 'どぅ' }[dan] || null;
+	} else if (row === 'ta_ch') {
+		// ち/つ는 파찰음이라 단모음이어도 요음화된 형태로 표기(차→ちゃ, 체→ちぇ, 초→ちょ)
+		base = {
+			a: 'ちゃ', e: 'ちぇ', o: 'ちょ', i: 'ち', u: 'つ',
+			ya: 'ちゃ', yu: 'ちゅ', yo: 'ちょ', ye: 'ちぇ',
+			wi: 'つぃ', we: 'つぇ', wo: 'つぉ', wa: 'つぁ'
+		}[dan] || null;
+	} else {
+		var r = ROW_TABLE[row];
+		if (dan === 'a' || dan === 'i' || dan === 'u' || dan === 'e' || dan === 'o') {
+			base = r[dan];
+		} else if (dan === 'ya' || dan === 'yu' || dan === 'yo') {
+			base = (row === 'a0')
+				? { ya: 'や', yu: 'ゆ', yo: 'よ' }[dan]
+				: r.i + { ya: 'ゃ', yu: 'ゅ', yo: 'ょ' }[dan];
+		} else if (dan === 'ye') {
+			base = (row === 'a0') ? 'いぇ' : r.i + 'ぇ';
+		} else if (dan === 'wa') {
+			base = (row === 'a0') ? 'わ' : (r.u + 'ぁ');
+		} else {
+			base = r.u + { wi: 'ぃ', we: 'ぇ', wo: 'ぉ' }[dan];
+		}
+	}
+	if (base === null) return null;
+
+	var suffix = '';
+	if (d.jong) {
+		if (HG_JONG_NASAL[d.jong]) suffix = 'ん';
+		else if (HG_JONG_SOKUON[d.jong]) suffix = 'っ';
+		else return null; // 미지원 받침: 음절 전체를 원문 그대로 유지
+	}
+	return base + suffix;
+}
+function convertHangulToKana(text) {
+	if (!text) return text;
+	var out = [];
+	for (var i = 0; i < text.length; i++) {
+		var kana = hangulSyllableToKana(text[i]);
+		out.push(kana !== null ? kana : text[i]);
+	}
+	return out.join('');
+}
+
+// 반각 가나→전각 가나, 가타카나→히라가나, 장음(ー/〜/～)→직전 모음으로 치환, 나카구로(・) 제거, 반복부호(ゝ/ゞ, 카타카나 ヽ/ヾ)→
+// 직전 글자(ゞ는 탁음화해서) 반복으로 치환, 역사적/희귀 가나(ゐ/ゑ/ゔ)→현대 가나 치환.
+// 완성형 한글이 섞여 있으면 먼저 가나로 보정한다(위 변환 실패분은 원문 유지).
+// 서버가 받는 모든 일본어 입력(JSH/JAP 제출, DB 조회)에 공통 적용.
+function normalizeJaText(text) {
+	if (!text) return text;
+	text = convertHangulToKana(text);
+	text = expandJaHalfwidthKana(text);
+	var out = [];
+	for (var i = 0; i < text.length; i++) {
+		var ch = text[i];
+		if (ch === 'ー' || ch === '〜' || ch === '～') {
+			var prev = out.length ? out[out.length - 1] : '';
+			var vowel = JA_VOWEL_OF[prev];
+			out.push(vowel ? JA_CHOON_VOWEL_CHAR[vowel] : ch);
+			continue;
+		}
+		if (ch === '・') continue; // 나카구로: 그냥 제거
+		var c = ch.charCodeAt(0);
+		var hira = ((c >= 0x30A1 && c <= 0x30FA) || c === 0x30FD || c === 0x30FE) ? String.fromCharCode(c - 0x60) : ch;
+		hira = JA_ARCHAIC_TO_MODERN[hira] || hira;
+		hira = JA_YOTSUGANA_FOLD[hira] || hira;
+		if (hira === 'ゝ') { out.push(out.length ? out[out.length - 1] : hira); continue; }
+		if (hira === 'ゞ') { var last = out.length ? out[out.length - 1] : ''; var dak = JA_SEION_TO_DAKUTEN[last]; out.push(dak ? (JA_YOTSUGANA_FOLD[dak] || dak) : hira); continue; }
+		out.push(hira);
+	}
+	return out.join('');
+}
+
+// 작은 가나(っゃゅょぁぃぅぇぉ)를 대응하는 큰 가나로 치환 — 제시어(라운드 시작 글자)가 작은 가나가 되지 않도록 보정
+function expandJaSmallKana(text) {
+	if (!text) return text;
+	var out = [];
+	for (var i = 0; i < text.length; i++) {
+		var ch = text[i];
+		out.push(JA_SMALL_TO_LARGE[ch] || ch);
+	}
+	return out.join('');
+}
+
+// 연결에 실제로 쓰이는 글자 반환 — 작은 가나는 제거(기본, 앞 글자로 대체) 또는 확대(jaexpand 옵션)
+function jaEdgeChar(text, my) {
+	if (!text) return '';
+	var last = text.slice(-1);
+	if (JA_SMALL_KANA.indexOf(last) === -1) return last;
+	if (my && my.opts && my.opts.jaexpand) return JA_SMALL_TO_LARGE[last] || last;
+	return text.length >= 2 ? text.charAt(text.length - 2) : last;
+}
+
+// 두 글자가 연결 가능한지 — 기본은 완전 일치, jadakuten 옵션 켜지면 같은 청탁 그룹도 허용
+function jaCharMatch(a, b, my) {
+	if (a === b) return true;
+	if (my && my.opts && my.opts.jadakuten) {
+		var ga = JA_DAKUTEN_GROUP_OF[a], gb = JA_DAKUTEN_GROUP_OF[b];
+		if (ga !== undefined && ga === gb) return true;
+	}
+	return false;
 }
 
 function getSubChar(char) {
@@ -1068,6 +1353,16 @@ function getSubChar(char) {
 
 			if (resSet.size > 0) r = Array.from(resSet).join("|");
 			break;
+		case "JSH":
+		case "JAP":
+		case "JKT":
+			// jadakuten 옵션 켜졌을 때 청탁 그룹의 다른 글자를 두음법칙처럼 subChar로 클라이언트에 노출
+			if (!my.opts.jadakuten) break;
+			var jaGroupIdx = JA_DAKUTEN_GROUP_OF[char];
+			if (jaGroupIdx === undefined) break;
+			var jaOthers = JA_DAKUTEN_PAIRS[jaGroupIdx].filter(function (ch) { return ch !== char; });
+			if (jaOthers.length > 0) r = jaOthers.join("|");
+			break;
 		case "ESH":
 		default:
 			break;
@@ -1078,7 +1373,7 @@ function getSubChar(char) {
 function isDodoli(text) {
 	var my = this;
 	var type = Const.GAME_TYPE[my.mode];
-	var isRev = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK');
+	var isRev = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK' || type === 'JAP');
 
 	// 인덱스 비교: 이을 글자 인덱스 == 이어지는 글자 인덱스면 항상 같은 글자 → skip
 	var entryIndex = isRev ? text.length - 1 : 0;
@@ -1380,6 +1675,10 @@ exports.shuffle = shuffle;
 exports.getChar = getChar;
 exports.getLinkIndex = getLinkIndex;
 exports.getSubChar = getSubChar;
+exports.normalizeJaText = normalizeJaText;
+exports.expandJaSmallKana = expandJaSmallKana;
+exports.jaEdgeChar = jaEdgeChar;
+exports.jaCharMatch = jaCharMatch;
 exports.isDodoli = isDodoli;
 exports.getReverseDueumChars = getReverseDueumChars;
 exports.getRandomChar = getRandomChar;

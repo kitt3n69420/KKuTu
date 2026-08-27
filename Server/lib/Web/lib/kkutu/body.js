@@ -156,7 +156,9 @@ function rebuildInjeongExplHTML(dict) {
 		+ "<h5 style='margin-top: 2px; border-top: 1px dashed #444444; padding-top: 2px; color: #BBBBBB;'>" + (dict['explInjeongListTitle'] || '') + "</h5>"
 		+ "<h5>" + themeList(KO_INJEONG) + "</h5>"
 		+ "<h5 style='margin-top: 2px; border-top: 1px dashed #444444; padding-top: 2px; color: #BBBBBB;'>" + (dict['explInjeongListTitle'] || '') + " (" + (dict['modeEKT'] || '') + ", " + (dict['modeESH'] || '') + ")</h5>"
-		+ "<h5>" + themeList(EN_INJEONG) + "</h5>";
+		+ "<h5>" + themeList(EN_INJEONG) + "</h5>"
+		+ "<h5 style='margin-top: 2px; border-top: 1px dashed #444444; padding-top: 2px; color: #BBBBBB;'>" + (dict['explInjeongListTitle'] || '') + " (" + (dict['modeJSH'] || '') + ", " + (dict['modeJAP'] || '') + ", " + (dict['modeJKT'] || '') + ")</h5>"
+		+ "<h5>" + themeList(JA_INJEONG) + "</h5>";
 }
 function retranslatePage(dict) {
 	function faReplace(raw) {
@@ -269,9 +271,9 @@ function resolveActiveBeat(beatMode, packName) {
 
 function loadVolumeSettings() {
 	try {
-		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMuteGame: null, aiMuteLobby: null, aiRageQuit: null, aiFastMode: null, theme: null, darkMode: null, beatMode: null };
+		return JSON.parse(localStorage.getItem('kkutu_volume')) || { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, jaAutoConvert: null, levelPack: null, aiMuteGame: null, aiMuteLobby: null, aiRageQuit: null, aiFastMode: null, theme: null, darkMode: null, beatMode: null };
 	} catch (e) {
-		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null, theme: null, darkMode: null };
+		return { bgmMute: null, effectMute: null, bgmVolume: null, effectVolume: null, soundPack: null, lobbyBGM: null, noEasterEgg: null, aiAutoApply: null, jaAutoConvert: null, levelPack: null, aiMute: null, aiRageQuit: null, aiFastMode: null, theme: null, darkMode: null };
 	}
 }
 
@@ -1362,8 +1364,8 @@ function toggleShutBlock(target) {
 	}
 }
 function tryDict(text, callback) {
-	var text = text.replace(/[^\sa-zA-Zㄱ-ㅎ0-9가-힣]/g, "");
-	var lang = text.match(/[ㄱ-ㅎ가-힣]/) ? 'ko' : 'en';
+	var text = text.replace(/[^\sa-zA-Zㄱ-ㅎ0-9가-힣ぁ-んァ-ヶ]/g, "");
+	var lang = text.match(/[ㄱ-ㅎ가-힣]/) ? 'ko' : (text.match(/[ぁ-んァ-ヶ]/) ? 'ja' : 'en');
 
 	if (text.length < 1) return callback({ error: 404 });
 	$.get("/dict/" + text + "?lang=" + lang, callback);

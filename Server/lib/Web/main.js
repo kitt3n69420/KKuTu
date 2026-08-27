@@ -46,6 +46,7 @@ var path = require("path");
 var Language = {
   ko_KR: require("./lang/ko_KR.json"),
   en_US: require("./lang/en_US.json"),
+  ja_JP: require("./lang/ja_JP.json"),
   nya: require("./lang/nya.json"),
 };
 //볕뉘 수정
@@ -385,8 +386,10 @@ Server.get("/", function (req, res) {
     }).connect,
     KO_INJEONG: Const.KO_INJEONG,
     EN_INJEONG: Const.EN_INJEONG,
+    JA_INJEONG: Const.JA_INJEONG,
     KO_THEME: Const.KO_THEME,
     EN_THEME: Const.EN_THEME,
+    JA_THEME: Const.JA_THEME,
     IJP_EXCEPT: Const.IJP_EXCEPT,
     QUIZ_TOPIC: Const.QUIZ_TOPIC,
     ogImage: "https://kkutu-n.xyz/img/kkutu/logo.png",
