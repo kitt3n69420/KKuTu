@@ -48,7 +48,7 @@ exports.readyRobot = function (robot) {
 	var ended = {};
 	var w, text, i;
 	var lmax;
-	var isRev = (Const.GAME_TYPE[my.mode] == "KAP" || Const.GAME_TYPE[my.mode] == "KAK" || Const.GAME_TYPE[my.mode] == "EAP" || Const.GAME_TYPE[my.mode] == "EAK");
+	var isRev = (Const.GAME_TYPE[my.mode] == "KAP" || Const.GAME_TYPE[my.mode] == "KAK" || Const.GAME_TYPE[my.mode] == "EAP" || Const.GAME_TYPE[my.mode] == "EAK" || Const.GAME_TYPE[my.mode] == "JAP");
 	var personality = robot.data.personality || 0;
 	var preferredChar = robot.data.preferredChar;
 	var isKKU = (Const.GAME_TYPE[my.mode] === "KKU");
@@ -431,7 +431,8 @@ exports.readyRobot = function (robot) {
 		var proceed = Promise.resolve(true);
 
 		// Safety Check: On the first turn, ensure the preferred char doesn't lead to a dead end
-		if (my.game.chain.length === 0) {
+		// 일본어는 통계 테이블이 없어 countNextWords가 항상 0을 반환하므로 이 체크를 건너뜀
+		if (my.game.chain.length === 0 && my.rule.lang !== 'ja') {
 			proceed = countNextWords(preferredChar).then(function (count) {
 				if (count === 0) {
 					return false;
@@ -535,7 +536,7 @@ exports.readyRobot = function (robot) {
 						'$nand': flagMask
 					}]);
 				}
-			} else {
+			} else if (my.rule.lang == "en") {
 				// English rules
 				query.push(['_id', Const.ENG_ID]);
 			}
@@ -625,6 +626,7 @@ exports.readyRobot = function (robot) {
 
 		var strategy = "NORMAL";
 		var isKKT = (Const.GAME_TYPE[my.mode] == "KKT" || Const.GAME_TYPE[my.mode] == "EKK" || Const.GAME_TYPE[my.mode] == "KAK" || Const.GAME_TYPE[my.mode] == "EAK");
+		var isJa = my.rule.lang === 'ja';
 		var decided = false;
 
 		// 첫 턴: 매너 체크와 같은 이유로 Attack 전략 금지
@@ -633,14 +635,15 @@ exports.readyRobot = function (robot) {
 			decided = true;
 		}
 
-		// Force Retry Logic
-		if (!decided && robot.data.retryCount > 0) {
+		// Force Retry Logic (일본어는 공격 통계가 없으므로 ATTACK을 강제하지 않음 — 이후 우선순위에서 NORMAL/LONG으로 결정됨)
+		if (!decided && robot.data.retryCount > 0 && !isJa) {
 			decided = true;
 			strategy = "ATTACK";
 		}
 
 		// Mode Constraints
-		var mannerMode = isMannerLike(my.opts); // 매너모드: 공격만 금지 (LONG은 허용)
+		// 일본어는 공격 성향 자체가 없으므로 매너모드와 동일하게 취급 (공격만 금지, LONG은 허용)
+		var mannerMode = isMannerLike(my.opts) || isJa;
 
 		// 젠틀 모드: 공격만 금지 (LONG 전략은 매너/젠틀에 영향받지 않음)
 		// mannerMode가 이미 isMannerLike(my.opts)로 설정되어 allowAttack에서 처리됨
@@ -780,6 +783,8 @@ exports.readyRobot = function (robot) {
 					if (robot._done.has(w._id)) return false;
 					if (my.opts.nododoli && isDodoli.call(my, w._id)) return false;
 					if (my.opts.noswear && ctx.checkSwearWords && ctx.checkSwearWords(w._id).length > 0) return false;
+					// JSH/JKT(일본어 끝말잇기 계열): ん으로 끝나는 단어는 다음 사람이 이을 수 없으므로 봇도 제출 금지
+					if ((Const.GAME_TYPE[my.mode] === 'JSH' || Const.GAME_TYPE[my.mode] === 'JKT') && w._id.slice(-1) === 'ん') return false;
 					return true;
 				});
 
@@ -1307,7 +1312,8 @@ exports.readyRobot = function (robot) {
 					}
 
 					var isEKT = Const.GAME_TYPE[my.mode] === 'EKT';
-					var needsMannerFilter = isMannerLike(my.opts) || isNextTeammate;
+					// 일본어는 매너 통계 테이블이 없고 매너/한방 개념 자체가 없으므로 매너 필터를 적용하지 않음
+					var needsMannerFilter = my.rule.lang !== 'ja' && (isMannerLike(my.opts) || isNextTeammate);
 					var useEKTManner = needsMannerFilter && isEKT && my.game.ektTrigramMode;
 					var useGeneralManner = needsMannerFilter && !useEKTManner;
 

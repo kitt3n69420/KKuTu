@@ -20,7 +20,7 @@ const MAX_REGEX_LENGTH = 200;
 const MAX_RANDOM_COUNT = 50;
 const MAX_REGEX_GROUPS = 5;
 const MAX_REGEX_QUANTIFIERS = 5;
-const VALID_WORD_CHARS = /^[0-9a-zㄱ-ㅣ가-힣]+$/;
+const VALID_WORD_CHARS = /^[0-9a-zㄱ-ㅣ가-힣ぁ-んァ-ヶ]+$/;
 const DB_TIMEOUT = 8000;
 const logToFile = FallbackLog.logToFile;
 
@@ -194,6 +194,8 @@ function formatWord(word, flag, type) {
 function detectLanguage(query) {
     // Check if query contains Korean characters
     if (/[가-힣]/.test(query)) return 'ko';
+    // Check if query contains Japanese characters
+    if (/[ぁ-んァ-ヶ]/.test(query)) return 'ja';    
     // Check if query contains only English letters
     if (/^[a-zA-Z]+$/.test(query)) return 'en';
     // Default to Korean

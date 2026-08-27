@@ -798,7 +798,7 @@ function getMission(l, opts) {
 	}
 
 	// 기본 미션 로직
-	var arr = (l == "ko") ? Const.MISSION_ko : Const.MISSION_en;
+	var arr = (l == "ko") ? Const.MISSION_ko : (l == "ja") ? Const.MISSION_ja : Const.MISSION_en;
 
 	if (!arr) return "-";
 	return arr[Math.floor(Math.random() * arr.length)];

@@ -14,6 +14,17 @@ const ROBOT_THINK_COEF = [4, 2, 1, 0, 0];
 const ROBOT_HIT_LIMIT = [4, 3, 2, 1, 0];
 const ROBOT_LENGTH_LIMIT = [3, 7, 15, 31, 80];
 const ROBOT_CANDIDATE_LIMIT = [10, 20, 40, 80, 40];
+// ん(어떤 단어도 이 글자로 시작하지 않음)/작은 가나/고어(ゐゑ)는 봇의 무작위 시작 글자로 뽑히면
+// 사전 조회 결과가 거의 항상 0건이 되어 봇이 부당하게 ROBOT_DEFEAT_MESSAGES_2를 보내게 됨 — 제외.
+const JA_ROBOT_START_CHARS = (function () {
+    var exclude = "ぃぅぇぉっゃゅょゎゐゑん";
+    var chars = [];
+    for (var c = 0x3042; c <= 0x3093; c++) {
+        var ch = String.fromCharCode(c);
+        if (exclude.indexOf(ch) === -1) chars.push(ch);
+    }
+    return chars;
+})();
 
 // Helper function to get player ID (supports both robot objects and player ID strings)
 function getPlayerId(player) {
@@ -38,7 +49,7 @@ exports.getTitle = function () {
 
     setTimeout(function () {
         var mc = Const.GAME_TYPE[my.mode];
-        if (mc === 'KFR' || mc === 'EFR' || mc === 'KTF' || mc === 'ETF') {
+        if (mc === 'KFR' || mc === 'EFR' || mc === 'JFR' || mc === 'KTF' || mc === 'ETF') {
             R.go("①②③④⑤⑥⑦⑧⑨⑩");
         } else {
             R.go(Const.EXAMPLE_TITLE[my.rule.lang]);
@@ -573,7 +584,7 @@ exports.submit = function (client, text) {
         }
     }
     var findArgs = [['_id', text]];
-    if (l != "ko") findArgs.push(['_id', Const.ENG_ID]);
+    if (l == "en") findArgs.push(['_id', Const.ENG_ID]);
     DB.kkutu[l].findOne.apply(DB.kkutu[l], findArgs
     ).limit(['mean', true], ['theme', true], ['type', true], ['hit', true], ['flag', true]).on(onDB);
 };
@@ -686,6 +697,8 @@ exports.readyRobot = function (robot) {
                 } else {
                     if (my.rule.lang == "ko") {
                         gen += String.fromCharCode(0xAC00 + Math.floor(Math.random() * 11172));
+                    } else if (my.rule.lang == "ja") {
+                        gen += String.fromCharCode(0x3042 + Math.floor(Math.random() * 82)); // 히라가나 (あ~ん)
                     } else {
                         gen += String.fromCharCode(97 + Math.floor(Math.random() * 26));
                     }
@@ -810,7 +823,7 @@ function getMission(l, opts) {
     }
 
     // 기본 미션 로직
-    var arr = (l == "ko") ? Const.MISSION_ko : Const.MISSION_en;
+    var arr = (l == "ko") ? Const.MISSION_ko : (l == "ja") ? Const.MISSION_ja : Const.MISSION_en;
 
     if (!arr) return "-";
     return arr[Math.floor(Math.random() * arr.length)];
@@ -834,7 +847,7 @@ function getAuto(char, type) {
     if (my.rule.lang == "ko") {
         if (my.opts.loanword) aqs.push(['flag', { '$nand': Const.KOR_FLAG.LOANWORD }]);
         // free 모드: 품사 필터 없음 (모든 품사 허용)
-    } else {
+    } else if (my.rule.lang == "en") {
         aqs.push(['_id', Const.ENG_ID]);
     }
 
@@ -846,6 +859,9 @@ function getAuto(char, type) {
             var ja = 44032 + 588 * Math.floor(Math.random() * 19); // Random initial consonant group
             var range = `[\\u${ja.toString(16)}-\\u${(ja + 587).toString(16)}]`;
             aqs.push(['_id', new RegExp(`^${range}`)]);
+        } else if (my.rule.lang == "ja") {
+            var jc = JA_ROBOT_START_CHARS[Math.floor(Math.random() * JA_ROBOT_START_CHARS.length)];
+            aqs.push(['_id', new RegExp(`^${jc}`)]);
         } else {
             var char = String.fromCharCode(97 + Math.floor(Math.random() * 26));
             aqs.push(['_id', new RegExp(`^${char}`, 'i')]);

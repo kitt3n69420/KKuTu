@@ -1891,7 +1891,7 @@ function Room(room, channel) {
 			}
 			// 슉슉/양말대전: 보드가 고갈되지 않아 누적 점수가 무제한으로 커질 수 있어 라운드당 소프트 트랜지션을 둔다
 			// 참고: 클로드가 양말대전이라 한건 사실 솎솎(sock)이다
-			if (['KSK', 'ESK', 'KSS', 'ESS'].indexOf(Const.GAME_TYPE[my.mode]) !== -1) rw.score = softTransition(rw.score);
+			if (['KSK', 'ESK', 'KSS', 'ESS', 'JSS'].indexOf(Const.GAME_TYPE[my.mode]) !== -1) rw.score = softTransition(rw.score);
 			if (my.opts.stop) rw.score = Math.round(rw.score * 0.4);
 			if (my.opts.big) {
 				rw.score = Math.round(rw.score / 2);
@@ -2688,8 +2688,14 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 		case "KKT":
 			rw.score += score * 1.64;
 			break;
+		case "JKT":
+			rw.score += score * 1.7;
+			break;
 		case "KSH":
 			rw.score += score * 1.4;
+			break;
+		case "JSH":
+			rw.score += score * 1.2;
 			break;
 		case "CSQ":
 			rw.score += score * 1.2;
@@ -2712,8 +2718,14 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 		case 'ETY':
 			rw.score += score * 0.936;
 			break;
+		case 'JTY':
+			rw.score += score * 0.95;
+			break;
 		case 'KAP':
 			rw.score += score * 1.9;
+			break;
+		case 'JAP':
+			rw.score += score * 1.6;
 			break;
 		case 'HUN':
 			rw.score += score * 1.5;
@@ -2724,17 +2736,26 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 		case 'EDA':
 			rw.score += score * 1.25;
 			break;
+		case 'JDA':
+			rw.score += score * 1.3;
+			break;
 		case 'KSS':
 			rw.score += score * 1.1;
 			break;
 		case 'ESS':
 			rw.score += score * 0.5;
 			break;
+		case 'JSS':
+			rw.score += score * 0.9;
+			break;
 		case 'KFR':
 			rw.score += score * 0.9;
 			break;
 		case 'EFR':
 			rw.score += score * 0.75;
+			break;
+		case 'JFR':
+			rw.score += score * 0.83;
 			break;
 		case "KPQ":
 			rw.score += score * 2.72;

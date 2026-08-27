@@ -48,6 +48,7 @@ var RULE;
 var OPTIONS;
 var KO_INJEONG;
 var EN_INJEONG;
+var JA_INJEONG;
 var MAX_LEVEL = 360;
 var TICK = 30;
 var EXP = [];

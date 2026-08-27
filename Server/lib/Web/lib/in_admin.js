@@ -65,6 +65,18 @@
 		'e15': '지명', 'e18': '사람', 'e20': '식물', 'e43': '날씨'
 	};
 	var EN_INJEONG_MAP = { 'LOL': '리그 오브 레전드', 'MCJ': '마인크래프트' };
+	var JA_THEME_MAP = {
+		'j01': '경제', 'j02': '고적', 'j03': '공업', 'j04': '교통', 'j05': '농업',
+		'j06': '동물', 'j07': '물리', 'j08': '미술', 'j09': '불교', 'j10': '사회',
+		'j11': '생물', 'j12': '수학', 'j13': '식물', 'j14': '신체', 'j15': '언어',
+		'j16': '운동', 'j17': '음식', 'j18': '음악', 'j19': '의학', 'j20': '전통게임',
+		'j21': '지리', 'j22': '천문', 'j23': '컴퓨터', 'j24': '화학'
+	};
+	var JA_INJEONG_MAP = {
+		'PLC': '지명', 'PSN': '인명', 'EKI': '역명', 'ORG': '조직', 'CMP': '회사',
+		'WRK': '작품명', 'PRD': '제품명', 'SRV': '서비스명', 'CHR': '캐릭터', 'EVT': '사건/행사',
+		'FIC': '픽션', '0': '무주제'
+	};
 
 	// ===== 헬퍼: DOM =====
 	function getEl(id) { return document.getElementById(id); }
@@ -105,6 +117,9 @@
 		} else if (lang === 'en') {
 			for (k in EN_THEME_MAP) r[k] = EN_THEME_MAP[k];
 			for (k in EN_INJEONG_MAP) r[k] = EN_INJEONG_MAP[k];
+		} else if (lang === 'ja') {
+			for (k in JA_THEME_MAP) r[k] = JA_THEME_MAP[k];
+			for (k in JA_INJEONG_MAP) r[k] = JA_INJEONG_MAP[k];
 		}
 		return r;
 	}
@@ -241,7 +256,9 @@
 			.append($('<td>').append(putter(sid + '-name_ko_KR', 'l', '')))
 			.append($('<td>').append(putter(sid + '-desc_ko_KR', 'l', '')))
 			.append($('<td>').append(putter(sid + '-name_en_US', 'l', '')))
-			.append($('<td>').append(putter(sid + '-desc_en_US', 'l', '')));
+			.append($('<td>').append(putter(sid + '-desc_en_US', 'l', '')))
+			.append($('<td>').append(putter(sid + '-name_ja_JP', 'l', '')))
+			.append($('<td>').append(putter(sid + '-desc_ja_JP', 'l', '')));
 
 		return $row;
 	}
@@ -360,7 +377,7 @@
 				});
 				res.desc.forEach(function (item) {
 					var sid = 'si-' + item._id;
-					['name_ko_KR', 'desc_ko_KR', 'name_en_US', 'desc_en_US'].forEach(function (k) {
+					['name_ko_KR', 'desc_ko_KR', 'name_en_US', 'desc_en_US', 'name_ja_JP', 'desc_ja_JP'].forEach(function (k) {
 						var el = getEl(sid + '-' + k);
 						if (el) el.value = item[k] || '';
 					});
@@ -396,7 +413,9 @@
 						name_ko_KR: (getEl(sid + '-name_ko_KR') || {}).value || '',
 						desc_ko_KR:  (getEl(sid + '-desc_ko_KR')  || {}).value || '',
 						name_en_US: (getEl(sid + '-name_en_US') || {}).value || '',
-						desc_en_US:  (getEl(sid + '-desc_en_US')  || {}).value || ''
+						desc_en_US:  (getEl(sid + '-desc_en_US')  || {}).value || '',
+						name_ja_JP: (getEl(sid + '-name_ja_JP') || {}).value || '',
+						desc_ja_JP:  (getEl(sid + '-desc_ja_JP')  || {}).value || ''
 					}
 				});
 			});

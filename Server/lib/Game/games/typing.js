@@ -19,6 +19,7 @@
 var Const = require('../../const');
 var TYL = require('./typing_const');
 var Lizard = require('../../sub/lizard');
+var util = require('./classic-util');
 var DB;
 var DIC;
 
@@ -257,6 +258,8 @@ exports.submit = function (client, text) {
 	if (!my.game.clist) return;
 	if (my.game.late) return client.chat(text);
 
+	// 일본어 타자 대결(JTY): 클라이언트 한글→가나 변환 누락/타이밍 문제로 한글이 섞여 오면 서버에서 한 번 더 보정
+	if (my.rule.lang === 'ja') text = util.normalizeJaText(text);
 	if (my.opts.mirror) text = text.split("").reverse().join("");
 	if (my.game.clist[client.game.index] == text) {
 		score = my.getScore(text);
@@ -313,6 +316,7 @@ exports.getScore = function (text) {
 			}
 			return r;
 		case 'en': return text.replace(/\s/g, '').length;
+		case 'ja': return text.length;
 		default: return r;
 	}
 };

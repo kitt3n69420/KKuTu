@@ -69,6 +69,8 @@ exports.OPTIONS = {
 	'ret': { name: "Return" },        //리턴: 쓴 단어 재사용 가능
 	'mid': { name: "Middle" },        //미들잇기: 단어의 가운데 글자로 이음
 	'sch': { name: "Second" },
+	'jre': { name: "JaExpand" },  // 일본어 문자잇기: 작은 가나 처리를 제거(기본) 대신 확대로 전환
+	'jdk': { name: "JaDakuten" }, // 일본어 문자잇기: 청음/탁음/반탁음 상호 교체 허용
 	'vow': { name: "Vowel" },
 	'lng': { name: "Long" },
 	'ln2': { name: "Length2" }, // 한타대용
@@ -747,13 +749,90 @@ exports.RULE = {
 		big: true,
 		ewq: false,
 		survival: false
+	},
+	'JSH': {
+		lang: "ja",
+		rule: "Classic",
+		// mid/sch/fir(가운데말잇기/세컨드/첫말잇기 링크 지점 변경 옵션)는 v1 범위 밖이라 의도적으로 제외
+		opts: ["dod", "ext", "mis", "rdm", "unk", "one", "ret", "spd", "drg", "spt", "stt", "bbg", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "jre", "jdk"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: true,
+		survival: false
+	},
+	'JAP': {
+		lang: "ja",
+		rule: "Classic",
+		opts: ["dod", "ext", "mis", "rdm", "unk", "one", "ret", "spd", "drg", "spt", "stt", "bbg", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "jre", "jdk"],
+		time: 1,
+		ai: true,
+		big: false,
+		_back: true,
+		ewq: true,
+		survival: false
+	},
+	// 일본어 쿵쿵따: JSH(일본어 끝말잇기)와 동일한 앞으로 잇기 규칙에 길이만 3글자로 고정
+	'JKT': {
+		lang: "ja",
+		rule: "Classic",
+		opts: ["dod", "ext", "mis", "rdm", "unk", "one", "ret", "spd", "drg", "spt", "bbg", "rnt", "sur", "obo", "fho", "alp", "itm", "chs", "jre", "jdk", "k32", "k22", "k44", "k43", "kch"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: true,
+		survival: false
+	},
+	// 일본어 타자 대결: KTY(한국어)/ETY(영어)와 동일한 타자 규칙, 단어만 일본어
+	'JTY': {
+		lang: "ja",
+		rule: "Typing",
+		opts: ["mir", "one", "lng", "ln2", "ln5", "drg"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: false,
+		survival: false
+	},
+	// 일본어 단어 대결: KDA(한국어)/EDA(영어)와 동일한 단어 대결 규칙, 단어만 일본어
+	'JDA': {
+		lang: "ja",
+		rule: "Daneo",
+		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm", "chs"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: true,
+		survival: false
+	},
+	// 일본어 아무거나: KFR(한국어)/EFR(영어)와 동일한 자유 규칙, 단어만 일본어
+	'JFR': {
+		lang: "ja",
+		rule: "Free",
+		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm", "chs"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: true,
+		survival: false
+	},
+	// 일본어 솎솎: KSS(한국어)/ESS(영어)와 동일한 솎솎 규칙, 단어만 일본어
+	'JSS': {
+		lang: "ja",
+		rule: "Sock",
+		opts: ["no2", "big", "drg"],
+		time: 1,
+		ai: true,
+		big: true,
+		ewq: false,
+		survival: false
 	}
 
 };
 exports.GAME_CATEGORIES = {
 	'classic': {
 		name: 'GameCategoryClassic',
-		modes: ['KKT', 'KSH', 'KJM', 'KAP', 'KAK', 'KKU', 'EKT', 'ESH', 'EKK', 'EAP', 'EAK']
+		modes: ['KKT', 'KSH', 'KJM', 'KAP', 'KAK', 'KKU', 'EKT', 'ESH', 'EKK', 'EAP', 'EAK', 'JSH', 'JAP', 'JKT']
 	},
 	'quiz': {
 		name: 'GameCategoryQuiz',
@@ -761,21 +840,22 @@ exports.GAME_CATEGORIES = {
 	},
 	'board': {
 		name: 'GameCategoryBoard',
-		modes: ['KPF', 'EPF', 'KWR', 'EWR', 'KWS', 'EWS', 'KSS', 'ESS', 'KSK', 'ESK', 'KLG']
+		modes: ['KPF', 'EPF', 'KWR', 'EWR', 'KWS', 'EWS', 'KSS', 'ESS', 'JSS', 'KSK', 'ESK', 'KLG']
 	},
 	'speed': {
 		name: 'GameCategorySpeed',
-		modes: ['KTY', 'ETY', 'KTT', 'ETT', 'KCB', 'ECB', 'CAL']
+		modes: ['KTY', 'ETY', 'JTY', 'KTT', 'ETT', 'KCB', 'ECB', 'CAL']
 	},
 	'etc': {
 		name: 'GameCategoryEtc',
-		modes: ['KDA', 'EDA', 'HUN', 'KFR', 'EFR', 'KTF', 'ETF', 'CNC']
+		modes: ['KDA', 'EDA', 'JDA', 'HUN', 'KFR', 'EFR', 'JFR', 'KTF', 'ETF', 'CNC']
 	}
 };
 exports.GAME_TYPE = Object.keys(exports.RULE);
 exports.EXAMPLE_TITLE = {
 	'ko': "이기자도지사상가소법",
-	'en': "demography"
+	'en': "demography",
+	'ja': "いろはにほへとちりぬ"
 };
 exports.KKU_START_BIGRAMS = [
 	"아이", "국제", "자동", "전자", "자기", "전기", "사회", "사이",
@@ -790,7 +870,7 @@ exports.VOWEL_SOUNDS = ["ㅏ", "ㅐ", "ㅑ", "ㅒ", "ㅓ", "ㅔ", "ㅕ", "ㅖ", 
 exports.MISSION_ko = ["가", "나", "다", "라", "마", "바", "사", "아", "자", "차", "카", "타", "파", "하"];
 exports.MISSION_en = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 exports.MISSION_jamo = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅅ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ', 'ㅏ', 'ㅐ', 'ㅓ', 'ㅔ', 'ㅗ', 'ㅜ', 'ㅡ', 'ㅣ', 'ㅑ', 'ㅕ', 'ㅛ', 'ㅠ'];
-
+exports.MISSION_ja = ["あ","か","さ","た","な","は","ま","や","ら","わ"];
 exports.KO_INJEONG = [
 	"KRR", "KDI", "KTV", "KBS", 
 	"KPT", "KHJ", "KSC", "WCH",
@@ -821,6 +901,14 @@ exports.EN_THEME = [
 	"e05", "e08", "e12", "e13", "e15",
 	"e18", "e20", "e43"
 ];
+exports.JA_THEME = [
+	"j01", "j02", "j03", "j04", "j05", "j06", "j07", "j08", "j09", "j10",
+	"j11", "j12", "j13", "j14", "j15", "j16", "j17", "j18", "j19", "j20",
+	"j21", "j22", "j23", "j24"
+];
+exports.JA_INJEONG = [
+	"PLC", "EKI", "ORG", "CMP", "WRK", "PRD", "SRV", "CHR", "EVT", "FIC"
+];
 exports.IJP_EXCEPT = [
 	"OIJ", "TPW", "40", "MMM", "MKK", "1001", "HRH", "MNG", "LVL", "KGR", "KRR", "DOT"
 ];
@@ -832,9 +920,11 @@ exports.QUIZ_TOPIC_EN = [
 ];
 exports.KO_IJP = exports.KO_THEME.concat(exports.KO_INJEONG).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });
 exports.EN_IJP = exports.EN_INJEONG.concat(exports.EN_THEME).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });
+exports.JA_IJP = exports.JA_THEME.concat(exports.JA_INJEONG).filter(function (item) { return !exports.IJP_EXCEPT.includes(item); });
 exports.REGION = {
 	'en': "en",
-	'ko': "kr"
+	'ko': "kr",
+	'ja': "jp"
 };
 exports.KOR_STRICT = /(^|,)(1|INJEONG)($|,)/;
 exports.KOR_GROUP = new RegExp("(,|^)(" + [

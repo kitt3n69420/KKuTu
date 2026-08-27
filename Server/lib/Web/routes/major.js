@@ -463,28 +463,162 @@ exports.run = function (Server, page) {
           });
       });
   });
-  function blendWord(word) {
-    var lang = parseLanguage(word);
-    var i,
-      kl = [];
-    var kr = [];
-
-    if (lang == "en") return String.fromCharCode(97 + Math.floor(Math.random() * 26));
-    if (lang == "ko") {
-      for (i = word.length - 1; i >= 0; i--) {
-        var k = word.charCodeAt(i) - 0xac00;
-
-        kl.push([Math.floor(k / 28 / 21), Math.floor(k / 28) % 21, k % 28]);
+  // 오십음도: 행(자음 계열)과 단(모음)으로 글자 하나를 특정.
+  var JA_GYOU = {}; // 문자 -> 행 번호
+  var JA_DAN = {}; // 문자 -> 단(a/i/u/e/o)
+  var JA_TABLE = {}; // JA_TABLE[행][단] = 문자
+  (function () {
+    var GRID = [
+      ["あ", "い", "う", "え", "お"],
+      ["か", "き", "く", "け", "こ"],
+      ["が", "ぎ", "ぐ", "げ", "ご"],
+      ["さ", "し", "す", "せ", "そ"],
+      ["ざ", "じ", "ず", "ぜ", "ぞ"],
+      ["た", "ち", "つ", "て", "と"],
+      ["だ", "ぢ", "づ", "で", "ど"],
+      ["な", "に", "ぬ", "ね", "の"],
+      ["は", "ひ", "ふ", "へ", "ほ"],
+      ["ば", "び", "ぶ", "べ", "ぼ"],
+      ["ぱ", "ぴ", "ぷ", "ぺ", "ぽ"],
+      ["ま", "み", "む", "め", "も"],
+      ["や", "", "ゆ", "", "よ"],
+      ["ら", "り", "る", "れ", "ろ"],
+      ["わ", "", "", "", "を"],
+    ];
+    var DAN = ["a", "i", "u", "e", "o"];
+    GRID.forEach(function (row, gi) {
+      JA_TABLE[gi] = {};
+      row.forEach(function (ch, di) {
+        if (!ch) return;
+        JA_GYOU[ch] = gi;
+        JA_DAN[ch] = DAN[di];
+        JA_TABLE[gi][DAN[di]] = ch;
+      });
+    });
+  })();
+  // 가나(한 글자)를 한국어 표기법에 가까운 한글 음절 하나로 변환 (한국어 조각과 융합할 때 사용)
+  var JA_TO_KO = {
+    あ: "아", い: "이", う: "우", え: "에", お: "오",
+    か: "카", き: "키", く: "쿠", け: "케", こ: "코",
+    が: "가", ぎ: "기", ぐ: "구", げ: "게", ご: "고",
+    さ: "사", し: "시", す: "스", せ: "세", そ: "소",
+    ざ: "자", じ: "지", ず: "즈", ぜ: "제", ぞ: "조",
+    た: "타", ち: "치", つ: "츠", て: "테", と: "토",
+    だ: "다", ぢ: "지", づ: "즈", で: "데", ど: "도",
+    な: "나", に: "니", ぬ: "누", ね: "네", の: "노",
+    は: "하", ひ: "히", ふ: "후", へ: "헤", ほ: "호",
+    ば: "바", び: "비", ぶ: "부", べ: "베", ぼ: "보",
+    ぱ: "파", ぴ: "피", ぷ: "푸", ぺ: "페", ぽ: "포",
+    ま: "마", み: "미", む: "무", め: "메", も: "모",
+    や: "야", ゆ: "유", よ: "요",
+    ら: "라", り: "리", る: "루", れ: "레", ろ: "로",
+    わ: "와", を: "오", ん: "은",
+    ゃ: "야", ゅ: "유", ょ: "요", ぁ: "아", ぃ: "이", ぅ: "우", ぇ: "에", ぉ: "오", っ: "츠",
+  };
+  function toHiragana(ch) {
+    var c = ch.charCodeAt(0);
+    return c >= 0x30a1 && c <= 0x30f6 ? String.fromCharCode(c - 0x60) : ch;
+  }
+  function charLang(ch) {
+    if (/[a-zA-Z]/.test(ch)) return "en";
+    if (/[가-힣]/.test(ch)) return "ko";
+    if (/[ぁ-んァ-ヶ]/.test(ch)) return "ja";
+    return null;
+  }
+  // 한글 음절 3개의 초성/중성/종성을 뒤섞어 새 음절 하나를 만듦
+  function koFuse3(chars) {
+    var kl = chars.map(function (ch) {
+      var k = ch.charCodeAt(0) - 0xac00;
+      return [Math.floor(k / 28 / 21), Math.floor(k / 28) % 21, k % 28];
+    });
+    var order = [0, 1, 2].sort(function () {
+      return Math.random() < 0.5 ? -1 : 1;
+    });
+    var kr = order.map(function (v, i) {
+      return kl[v][i];
+    });
+    return String.fromCharCode((kr[0] * 21 + kr[1]) * 28 + kr[2] + 0xac00);
+  }
+  // 한글 음절 2개 중 하나에서 초성+종성, 나머지 하나에서 중성을 뽑아 새 음절을 만듦
+  function koFuse2(a, b) {
+    var pair = Math.random() < 0.5 ? [a, b] : [b, a];
+    var kc = pair[0].charCodeAt(0) - 0xac00;
+    var kv = pair[1].charCodeAt(0) - 0xac00;
+    var cho = Math.floor(kc / 28 / 21);
+    var jong = kc % 28;
+    var jung = Math.floor(kv / 28) % 21;
+    return String.fromCharCode((cho * 21 + jung) * 28 + jong + 0xac00);
+  }
+  // 주어진 가나들 중 두 글자의 행+단 조합으로 만들 수 있는 글자를 찾아 그 중 무작위로 반환.
+  // 후보가 없으면 주어진 글자 중 하나를 무작위로 반환.
+  function jaFuse(chars) {
+    var candidates = [];
+    for (var i = 0; i < chars.length; i++) {
+      for (var j = 0; j < chars.length; j++) {
+        if (i === j) continue;
+        var gi = JA_GYOU[toHiragana(chars[i])];
+        var dn = JA_DAN[toHiragana(chars[j])];
+        if (gi === undefined || dn === undefined) continue;
+        var cand = JA_TABLE[gi][dn];
+        if (cand) candidates.push(cand);
       }
-      [0, 1, 2]
-        .sort((a, b) => Math.random() < 0.5)
-        .forEach((v, i) => {
-          kr.push(kl[v][i]);
-        });
-      return String.fromCharCode((kr[0] * 21 + kr[1]) * 28 + kr[2] + 0xac00);
     }
+    if (candidates.length) return candidates[Math.floor(Math.random() * candidates.length)];
+    return chars[Math.floor(Math.random() * chars.length)];
+  }
+  function jaToKoSyllable(ch) {
+    return JA_TO_KO[toHiragana(ch)] || "가";
+  }
+  function randomAlpha() {
+    return String.fromCharCode(97 + Math.floor(Math.random() * 26));
+  }
+  // a-z 중 주어진 글자들을 제외한 무작위 알파벳 하나를 반환
+  function randomAlphaExcluding(excludeChars) {
+    var excluded = excludeChars.map(function (ch) {
+      return ch.toLowerCase();
+    });
+    var pool = [];
+    for (var i = 0; i < 26; i++) {
+      var c = String.fromCharCode(97 + i);
+      if (excluded.indexOf(c) === -1) pool.push(c);
+    }
+    if (!pool.length) return randomAlpha();
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  var JA_ALL_CHARS = Object.keys(JA_GYOU);
+  function randomKana() {
+    return JA_ALL_CHARS[Math.floor(Math.random() * JA_ALL_CHARS.length)];
+  }
+  // 뜻이 없는 글자 조각 3개를 융합해 새 글자 하나를 만듦. 언어가 섞인 경우의 규칙은 아래 분기 참고.
+  function blendWord(word) {
+    var chars = word.split("");
+    var byLang = { ko: [], en: [], ja: [] };
+
+    chars.forEach(function (ch) {
+      var lang = charLang(ch);
+      if (byLang[lang]) byLang[lang].push(ch);
+    });
+    var ko = byLang.ko, en = byLang.en, ja = byLang.ja;
+
+    if (ko.length === 3) return koFuse3(ko);
+    if (en.length === 3) return randomAlphaExcluding(en);
+    if (ja.length === 3) return jaFuse(ja);
+
+    if (ko.length === 2 && en.length === 1) return koFuse2(ko[0], ko[1]);
+    if (ko.length === 2 && ja.length === 1) return koFuse3([ko[0], ko[1], jaToKoSyllable(ja[0])]);
+    if (ja.length === 2) return jaFuse(ja); // 일본어 2 + 나머지 1: 나머지는 무시하고 둘만 행/단 조합
+    if (en.length === 2) return randomAlphaExcluding(en); // 영어 2 + 나머지 1: 나머지는 무시
+
+    if (ko.length === 1 && en.length === 1 && ja.length === 1) {
+      var r = Math.random();
+      if (r < 1 / 3) return randomKana();
+      if (r < 2 / 3) return randomAlpha();
+      return ko[0];
+    }
+    return chars[Math.floor(Math.random() * chars.length)];
   }
   function parseLanguage(word) {
+    if (word.match(/[ぁ-んァ-ヶ]/)) return "ja";
     return word.match(/[a-zA-Z]/) ? "en" : "ko";
   }
   Server.post("/cf", function (req, res) {
@@ -513,9 +647,13 @@ exports.run = function (Server, page) {
           req[tray[i]] = (req[tray[i]] || 0) + 1;
           if (($user.box[tray[i]] || 0) < req[tray[i]]) return res.json({ error: 434 });
         }
-        MainDB.kkutu[parseLanguage(word)].findOne(["_id", word]).on(function ($dic) {
+        // 공백 글자 조각('★', 구버전 '　' 포함)은 매칭에서 항상 제외됨(어디에 넣어도 무시되고 나머지 글자만으로 단어를 맞춤).
+        // 단, 보상 계산(getCFRewards)의 word.length/level은 공백을 포함한 전체 조각 수를 그대로 쓰므로,
+        // 공백을 채워 넣으면 실제 단어는 그대로 유지한 채 보상만 부스트할 수 있음(의도된 동작).
+        var matchWord = word.replace(/[　★]/g, "");
+        MainDB.kkutu[parseLanguage(matchWord)].findOne(["_id", matchWord]).on(function ($dic) {
           if (!$dic) {
-            if (word.length == 3) {
+            if (matchWord.length == 3) {
               blend = true;
             } else return res.json({ error: 404 });
           }
@@ -527,10 +665,17 @@ exports.run = function (Server, page) {
 
             if (Math.random() >= o.rate) continue;
             if (o.key.charAt(4) == "?") {
-              o.key = o.key.slice(0, 4) + (blend ? blendWord(word) : word.charAt(Math.floor(Math.random() * word.length)));
+              o.key = o.key.slice(0, 4) + (blend ? blendWord(matchWord) : word.charAt(Math.floor(Math.random() * word.length)));
             }
             obtain($user, o.key, o.value, o.term);
             gain.push(o);
+            // 의도된 보너스: 조합 보상으로 일반 글자 조각을 얻을 때 20% 확률로 공백 글자 조각('★')도 함께 얻음.
+            var tier = o.key.slice(0, 4);
+            if ((tier === "$WPA" || tier === "$WPB" || tier === "$WPC") && Math.random() < 0.2) {
+              var blankItem = { key: tier + "★", value: 1, rate: 1 };
+              obtain($user, blankItem.key, blankItem.value);
+              gain.push(blankItem);
+            }
           }
           $user.money -= cfr.cost;
           MainDB.users
@@ -777,13 +922,17 @@ exports.run = function (Server, page) {
   });
 };
 function getCFRewards(word, level, blend) {
+  // 상한 없음: f.len/f.lev는 실제 값(조각 최대 10개, 레벨 최대 30) 그대로 사용.
+  // boxB4/B3/B2도 WPC/WPB/WPA와 동일하게 "몫만큼 확정 지급 + 나머지는 확률로 1개 더"(floor+나머지) 방식이라
+  // 확률이 100%를 넘는 만큼 버려지지 않고 상자를 한 번에 여러 개 받을 수 있음.
+  // boxB3/boxB2 게이트는 기존 5/10에서 3/6으로 낮춤.
   var R = [];
   var f = {
-    len: word.length, // 최대 10
-    lev: level, // 최대 18
+    len: word.length, // 실제 조각 수, 최대 10
+    lev: level, // 실제 레벨 합, 최대 30
   };
   var cost = 20 * f.lev;
-  var wur = f.len / 36; // 최대 2.867
+  var wur = f.len / 36;
 
   if (blend) {
     if (wur >= 0.5) {
@@ -796,14 +945,22 @@ function getCFRewards(word, level, blend) {
     cost = Math.round(cost * 0.2);
   } else {
     R.push({ key: "dictPage", value: Math.round(f.len * 0.6), rate: 1 });
-    R.push({ key: "boxB4", value: 1, rate: Math.min(1, f.lev / 7) });
-    if (f.lev >= 5) {
-      R.push({ key: "boxB3", value: 1, rate: Math.min(1, f.lev / 15) });
+
+    var b4 = f.lev / 7;
+    if (b4 > 1) R.push({ key: "boxB4", value: Math.floor(b4), rate: 1 });
+    R.push({ key: "boxB4", value: 1, rate: Math.min(1, b4 % 1) });
+
+    if (f.lev >= 3) {
+      var b3 = f.lev / 15;
+      if (b3 > 1) R.push({ key: "boxB3", value: Math.floor(b3), rate: 1 });
+      R.push({ key: "boxB3", value: 1, rate: Math.min(1, b3 % 1) });
       cost += 10 * f.lev;
       wur += f.lev / 20;
     }
-    if (f.lev >= 10) {
-      R.push({ key: "boxB2", value: 1, rate: Math.min(1, f.lev / 30) });
+    if (f.lev >= 6) {
+      var b2 = f.lev / 30;
+      if (b2 > 1) R.push({ key: "boxB2", value: Math.floor(b2), rate: 1 });
+      R.push({ key: "boxB2", value: 1, rate: Math.min(1, b2 % 1) });
       cost += 20 * f.lev;
       wur += f.lev / 10;
     }
@@ -816,7 +973,9 @@ function getCFRewards(word, level, blend) {
       R.push({ key: "$WPB?", value: 1, rate: (wur / 2) % 1 });
     }
     if (wur >= 0.5) {
-      R.push({ key: "$WPA?", value: 1, rate: wur / 3 });
+      var wa = wur / 3;
+      if (wa > 1) R.push({ key: "$WPA?", value: Math.floor(wa), rate: 1 });
+      R.push({ key: "$WPA?", value: 1, rate: Math.min(1, wa % 1) });
     }
   }
   return { data: R, cost: cost };

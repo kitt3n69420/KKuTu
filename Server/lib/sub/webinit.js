@@ -23,6 +23,7 @@ var PKG_VERSION = PKG.version || Date.now().toString();
 var Language = {
 	'ko_KR': require("../Web/lang/ko_KR.json"),
 	'en_US': require("../Web/lang/en_US.json"),
+	'ja_JP': require("../Web/lang/ja_JP.json"),
 	'nya': require("../Web/lang/nya.json")
 };
 

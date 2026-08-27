@@ -144,7 +144,7 @@ $lib.Classic.turnEnd = function (id, data) {
 		// 연결 글자 길이 (EKT/KKU는 2-3글자, 기본은 1글자)
 		var charLen = matchedChar ? matchedChar.length : 1;
 
-		if (MODE[$data.room.mode] == "KAP" || MODE[$data.room.mode] == "KAK" || MODE[$data.room.mode] == "EAP" || MODE[$data.room.mode] == "EAK") $stage.game.display.empty()
+		if (MODE[$data.room.mode] == "KAP" || MODE[$data.room.mode] == "KAK" || MODE[$data.room.mode] == "EAP" || MODE[$data.room.mode] == "EAK" || MODE[$data.room.mode] == "JAP") $stage.game.display.empty()
 			.append($("<label>").css('color', "#AAAAAA").html(data.hint.slice(0, hi)))
 			.append($("<label>").html(data.hint.slice(hi)));
 		else {
