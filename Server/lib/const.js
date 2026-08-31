@@ -131,7 +131,7 @@ exports.CHAOS_LINK_CHANCE    = 0.05; // 매 턴 linkChange 아이템 강제 발�
 exports.ITEM_MAX_COUNT = 10;       // 종류별 최대 보유 개수
 exports.ITEM_GRANT_INTERVAL = 6;  // 글로벌 N턴마다 전체 자동 지급
 exports.ITEM_BONUS_THRESHOLD = 2; // 보너스 수치 N 이상이면 지급
-exports.WORD_PIECE_CHANCE = 0.06; // 글자 조각 획득 기본 확률 (게임별 coef가 곱해짐)
+exports.WORD_PIECE_CHANCE = 0.04; // 글자 조각 획득 기본 확률 (게임별 coef가 곱해짐)
 
 exports.ROBOT_TIMEOUT_MESSAGES = [ // 다른 플레이어가 게임오버되면 봇이 보내는 메시지
 	"저런", "ㅋㅋㅋㅋ", "안타깝네요", "아이고...", "바부", "컷~",
@@ -826,6 +826,19 @@ exports.RULE = {
 		big: true,
 		ewq: false,
 		survival: false
+	},
+
+	// 중심찾기: 16x16 보드에 상위 256글자를 배치하고, 매 라운드 홀수 변 직사각형 하나의
+	// 중심 글자로 시작하는 단어를 빨리·길게 낼수록 높은 점수를 얻는 한국어 전용 모드
+	'KCF': {
+		lang: "ko",
+		rule: "Center",
+		opts: ["drg"],
+		time: 0.5,
+		ai: true,
+		big: true,
+		ewq: false,
+		survival: false
 	}
 
 };
@@ -840,7 +853,7 @@ exports.GAME_CATEGORIES = {
 	},
 	'board': {
 		name: 'GameCategoryBoard',
-		modes: ['KPF', 'EPF', 'KWR', 'EWR', 'KWS', 'EWS', 'KSS', 'ESS', 'JSS', 'KSK', 'ESK', 'KLG']
+		modes: ['KPF', 'EPF', 'KWR', 'EWR', 'KWS', 'EWS', 'KSS', 'ESS', 'JSS', 'KSK', 'ESK', 'KLG', 'KCF']
 	},
 	'speed': {
 		name: 'GameCategorySpeed',

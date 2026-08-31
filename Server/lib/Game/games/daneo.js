@@ -268,8 +268,8 @@ exports.turnEnd = function () {
 			score = 0;
 		} else {
 			score = Const.getPenalty(my.game.chain, target.game.score);
-			// 나락(nar): 최소 패널티 >= 점수일 때 적용 (점수가 0 이하가 됨)
-			if (my.opts.narak && Math.abs(score) >= target.game.score) {
+			// 나락(nar): 패널티 적용 후에도 점수가 양수면 0으로 만듦
+			if (my.opts.narak && (target.game.score + score) > 0) {
 				score = -target.game.score;
 			}
 		}

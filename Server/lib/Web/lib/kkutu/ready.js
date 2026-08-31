@@ -730,7 +730,17 @@ $(document).ready(function () {
 		if (!isJaRoom()) return;
 		var v = $input.val();
 		var converted = convertHangulToKana(v);
-		if (converted !== v) $input.val(converted);
+		if (converted !== v) {
+			$input.val(converted);
+			// 크롬은 .val() 세팅 시 커서가 끝으로 이동하지만, 파이어폭스 모바일은 compositionend 처리 후
+			// 비동기로 캐럿을 조합 전 오프셋으로 되돌려버려 커서가 중간에 남는 경우가 있음.
+			// 다음 tick에 한 번 더 끝으로 보정해서 이를 이긴다.
+			var el = $input[0];
+			var end = converted.length;
+			setTimeout(function () {
+				if (el === document.activeElement) el.setSelectionRange(end, end);
+			}, 0);
+		}
 		// 변환으로 늘어난 글자수를 checkInput의 붙여넣기 감지 기준선에도 반영 (그래야 다음 입력에서 오탐 안 함)
 		$data._kd = $input.val();
 	}

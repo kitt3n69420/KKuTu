@@ -1497,6 +1497,11 @@ function processRoom(data) {
 						if (typeof data.roundTime === 'number') {
 							$lib.Flip.turnStart({ roundTime: data.roundTime });
 						}
+					} else if (specRule && specRule.rule === 'Center') {
+						$lib.Center.roundReady(data, true);
+						if (typeof data.roundTime === 'number') {
+							$lib.Center.turnStart({ roundTime: data.roundTime });
+						}
 					}
 				}
 			}
@@ -2602,6 +2607,7 @@ function clearBoard() {
 	$(".jjoriping,.rounds,.game-body").removeClass("cw");
 	$(".jjoriping,.game-body").removeClass("flip");
 	$(".jjoriping,.rounds,.game-body").removeClass("landgrab");
+	$(".jjoriping,.game-body").removeClass("center-board");
 	$(".jjoriping").css({ "float": "", "margin": "" });
 	// Small-mode class is managed by updateRoom() based on player count, don't remove it here
 	$stage.game.display.removeClass("raingame-board").empty();

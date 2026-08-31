@@ -513,14 +513,12 @@ exports.readyRobot = function (robot) {
 			];
 			var flagMask = 0;
 
+			// Injeong/Loanword: flag 필드는 언어 공통이므로 ko/en/ja 모두 적용
+			if (!my.opts.injeong) flagMask |= Const.KOR_FLAG.INJEONG;
+			if (my.opts.loanword) flagMask |= Const.KOR_FLAG.LOANWORD;
+
 			// Apply Rule Filters
 			if (my.rule.lang == "ko") {
-				// Injeong: If OFF, exclude INJEONG words
-				if (!my.opts.injeong) flagMask |= Const.KOR_FLAG.INJEONG;
-
-				// Loanword: If ON (Forbid), exclude LOANWORD words
-				if (my.opts.loanword) flagMask |= Const.KOR_FLAG.LOANWORD;
-
 				// Strict: If ON, exclude SPACED, SATURI, OLD, MUNHWA
 				if (my.opts.allpos) {
 					// allpos: 품사 필터 없음
@@ -530,15 +528,15 @@ exports.readyRobot = function (robot) {
 				} else {
 					query.push(['type', Const.KOR_GROUP]);
 				}
-
-				if (flagMask > 0) {
-					query.push(['flag', {
-						'$nand': flagMask
-					}]);
-				}
 			} else if (my.rule.lang == "en") {
 				// English rules
 				query.push(['_id', Const.ENG_ID]);
+			}
+
+			if (flagMask > 0) {
+				query.push(['flag', {
+					'$nand': flagMask
+				}]);
 			}
 
 			// needJSCheck: DB에서 넉넉히 가져온 뒤 JS에서 getChar() 위치 필터링

@@ -1260,6 +1260,11 @@ body {
 	margin: -10px auto 0;
 }
 
+.center-board.cw.jjoriping {
+	float: none;
+	margin: -10px auto 0;
+}
+
 .flip-cell {
 	position: absolute;
 	border-radius: 8px;

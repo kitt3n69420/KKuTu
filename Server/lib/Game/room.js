@@ -1613,7 +1613,7 @@ function Room(room, channel) {
 			process.send({ type: "round-end", room: my.id, chainLog: logCopy, round: r, totalRounds: totalRounds });
 		}
 	};
-	my.sendQuizRoundEnd = function (answer, winnerIds, missedIds, giveupIds, round) {
+	my.sendQuizRoundEnd = function (answer, winnerIds, missedIds, giveupIds, round, winnerWords) {
 		var r = round || my.game.round || 0;
 		var totalRounds = my.round || 0;
 		function resolveId(id) {
@@ -1625,9 +1625,15 @@ function Room(room, channel) {
 			}
 			return String(id);
 		}
+		// winnerWords가 주어지면(정답자마다 답이 다를 수 있는 모드), 이름 옆에 각자 입력한 단어를 붙인다.
+		function resolveWinner(id) {
+			var name = resolveId(id);
+			if (winnerWords && winnerWords[id]) return name + ': ' + winnerWords[id];
+			return name;
+		}
 		var data = {
 			answer: answer,
-			winners: (winnerIds || []).map(resolveId),
+			winners: (winnerIds || []).map(resolveWinner),
 			missed: (missedIds || []).map(resolveId),
 			giveup: (giveupIds || []).map(resolveId),
 			round: r,
@@ -2131,6 +2137,15 @@ function Room(room, channel) {
 				if (my.game.board) {
 					obj.board = my.game.board.map(function (c) { return c.word; });
 					obj.owners = my.game.board.map(function (c) { return c.owner; });
+					obj.round = my.game.round;
+					if (!my.game.late && my.game.roundAt) {
+						obj.roundTime = Math.max(0, my.game.roundTime - ((new Date()).getTime() - my.game.roundAt));
+					}
+				}
+			} else if (my.rule.rule == "Center") {
+				if (my.game.board) {
+					obj.board = my.game.board;
+					obj.rect = my.game.rect;
 					obj.round = my.game.round;
 					if (!my.game.late && my.game.roundAt) {
 						obj.roundTime = Math.max(0, my.game.roundTime - ((new Date()).getTime() - my.game.roundAt));
@@ -2779,6 +2794,9 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 			break;
 		case 'KLG':
 			rw.score += score * 0.8;
+			break;
+		case 'KCF':
+			rw.score += score * 0.75;
 			break;
 		case 'KQZ':
 			rw.score += score * 1.0;
