@@ -108,6 +108,9 @@
 					.append($("<div>").addClass("server-enter").html(L['serverEnter']))
 				);
 				if (status != "x") $e.on('click', function (e) {
+					if($stage.start.attr('data-guest-blocked') === 'true'){
+						return location.href = "/login?desc=login_kkutu";
+					}
 					location.href = "/?server=" + i;
 				}); else $e.children(".server-enter").html("-");
 			});

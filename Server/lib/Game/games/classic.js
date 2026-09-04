@@ -1829,6 +1829,7 @@ exports.submit = function (client, text) {
 			if ($doc) denied(410);
 			else {
 				var valid = true;
+				if (text.endsWith('/')) valid = false; // '/'로 끝나는 단어 차단
 				var isRandomMode = my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second;
 				if (isMannerLike(my.opts) && !isRandomMode) {
 					if (my.rule.lang == "ko") {

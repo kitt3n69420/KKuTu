@@ -1824,7 +1824,7 @@ function Room(room, channel) {
 				if (res[i].robot) continue;
 				var co = DIC[res[i].id];
 				if (!co || !co.game) continue;
-				var crw = getRewards(my.mode, res[i].score / res[i].dim, co.game.bonus, 1, coopFormulaAll, coopHumanSumScore);
+				var crw = getRewards(my.mode, res[i].score / res[i].dim, co.game.bonus, 1, coopFormulaAll, coopHumanSumScore, my.opts);
 				var centry = { rw: crw, turns: co.game.coopTurns || 0 };
 				coopRewardMap[co.id] = centry;
 				coopActive.push(centry);
@@ -1886,7 +1886,7 @@ function Room(room, channel) {
 			} else if (coopRewardMap) {
 				rw = coopRewardMap[o.id] ? coopRewardMap[o.id].rw : { score: 0, money: 0, _score: 0, _money: 0, _blog: [] };
 			} else {
-				rw = getRewards(my.mode, res[i].score / res[i].dim, o.game.bonus, myHumanRank, humanCount, sumScore);
+				rw = getRewards(my.mode, res[i].score / res[i].dim, o.game.bonus, myHumanRank, humanCount, sumScore, my.opts);
 			}
 
 			rw.playTime = now - o.playAt;
@@ -2684,7 +2684,7 @@ function shuffle(arr) {
 	}
 	return r;
 }
-function getRewards(mode, score, bonus, rank, all, ss) {
+function getRewards(mode, score, bonus, rank, all, ss, opts) {
 	var rw = { score: 0, money: 0 };
 	var sr = score / ss;
 
@@ -2826,6 +2826,7 @@ function getRewards(mode, score, bonus, rank, all, ss) {
 			rw.score += score * 1.25;
 			break;
 	}
+	if (opts && opts.bbungtwigi) rw.score *= 0.8; // 뻥튀기: 보너스는 이미 2배이므로 기본 경험치를 0.8배로 낮춰 균형 조정
 	rw.score = rw.score
 		* (0.77 + 0.05 * (all - rank) * (all - rank)) // 순위
 		* 1.5 / (1 + 1.25 * sr * sr) // 점차비(양학했을 수록 ↓)

@@ -728,18 +728,34 @@ $(document).ready(function () {
 	}
 	function applyHangulToKana($input) {
 		if (!isJaRoom()) return;
+		var el = $input[0];
 		var v = $input.val();
 		var converted = convertHangulToKana(v);
 		if (converted !== v) {
+			// 조합이 끝난 시점의 커서 위치(변환 전 좌표)를 변환 후 좌표로 재계산.
+			// 문장 끝이든 중간이든 방금 변환된 글자 바로 뒤로 커서가 오도록 한다(끝으로 강제 이동 아님).
+			var caret = (typeof el.selectionStart === 'number') ? el.selectionStart : v.length;
+			var newPos = convertHangulToKana(v.slice(0, caret)).length;
 			$input.val(converted);
-			// 크롬은 .val() 세팅 시 커서가 끝으로 이동하지만, 파이어폭스 모바일은 compositionend 처리 후
-			// 비동기로 캐럿을 조합 전 오프셋으로 되돌려버려 커서가 중간에 남는 경우가 있음.
-			// 다음 tick에 한 번 더 끝으로 보정해서 이를 이긴다.
-			var el = $input[0];
-			var end = converted.length;
-			setTimeout(function () {
-				if (el === document.activeElement) el.setSelectionRange(end, end);
-			}, 0);
+			el.setSelectionRange(newPos, newPos);
+			// 크롬은 위 setSelectionRange가 그대로 유지되지만, 파이어폭스 모바일은 IME 합성 종료 후
+			// 자체적으로(정확한 타이밍을 예측할 수 없게) 캐럿을 변환 전 글자수 기준(+1칸)으로 되돌려버림.
+			// setTimeout/rAF 한두 번으로는 그 시점을 못 이기므로, selectionchange를 짧게 감시하며
+			// 파이어폭스가 커서를 되돌릴 때마다 즉시 다시 바로잡는다.
+			(function () {
+				var tries = 0;
+				function onSelChange() {
+					if (el !== document.activeElement || ++tries > 20) { cleanup(); return; }
+					if (el.selectionStart !== newPos || el.selectionEnd !== newPos) {
+						el.setSelectionRange(newPos, newPos);
+					}
+				}
+				function cleanup() {
+					document.removeEventListener('selectionchange', onSelChange);
+				}
+				document.addEventListener('selectionchange', onSelChange);
+				setTimeout(cleanup, 500);
+			})();
 		}
 		// 변환으로 늘어난 글자수를 checkInput의 붙여넣기 감지 기준선에도 반영 (그래야 다음 입력에서 오탐 안 함)
 		$data._kd = $input.val();

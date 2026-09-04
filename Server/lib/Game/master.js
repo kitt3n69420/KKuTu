@@ -301,6 +301,42 @@ function handleDiscordProcessMessage(msg) {
       } catch (e) {}
       break;
     }
+    case "yell": {
+      KKuTu.publish("yell", { value: msg.message });
+      JLog.info("[Discord] yell: " + msg.message);
+      try {
+        discordProcess.send({ type: "yell-result", _reqId: msg._reqId, ok: true });
+      } catch (e) {}
+      break;
+    }
+    case "guest-connect": {
+      RUNTIME_GUEST.connect = !!msg.enable;
+      GuestState.write(RUNTIME_GUEST);
+      if (!RUNTIME_GUEST.connect) {
+        for (var _gid in DIC) {
+          if (DIC[_gid].guest) {
+            DIC[_gid].sendError(420);
+            DIC[_gid].socket.close();
+          }
+        }
+      }
+      JLog.info("[Discord] guestconnect: " + (RUNTIME_GUEST.connect ? "on" : "off"));
+      try {
+        discordProcess.send({ type: "guest-connect-result", _reqId: msg._reqId, connect: RUNTIME_GUEST.connect });
+      } catch (e) {}
+      break;
+    }
+    case "guest-chat": {
+      RUNTIME_GUEST.chat = !!msg.enable;
+      GUEST_PERMISSION.talk = RUNTIME_GUEST.chat;
+      GuestState.write(RUNTIME_GUEST);
+      for (var _gch in CHAN_DIC) CHAN_DIC[_gch].send({ type: "guest-permission", key: "talk", value: GUEST_PERMISSION.talk });
+      JLog.info("[Discord] guestchat: " + (GUEST_PERMISSION.talk ? "on" : "off"));
+      try {
+        discordProcess.send({ type: "guest-chat-result", _reqId: msg._reqId, talk: GUEST_PERMISSION.talk });
+      } catch (e) {}
+      break;
+    }
   }
 }
 
@@ -545,6 +581,14 @@ function processAdmin(id, value) {
       }
       RUNTIME_GUEST.connect = temp === "on";
       GuestState.write(RUNTIME_GUEST);
+      if (!RUNTIME_GUEST.connect) {
+        for (var _gid in DIC) {
+          if (DIC[_gid].guest) {
+            DIC[_gid].sendError(420);
+            DIC[_gid].socket.close();
+          }
+        }
+      }
       JLog.info(`[Admin] 게스트 접속이 ${RUNTIME_GUEST.connect ? "허용" : "차단"}으로 변경되었습니다.`);
       if (DIC[id]) DIC[id].send("notice", { value: `게스트 접속이 ${RUNTIME_GUEST.connect ? "허용" : "차단"}되었습니다.` });
       return null;

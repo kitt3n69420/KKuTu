@@ -47,6 +47,9 @@ let _queryOnlineUser = null; // (query) => Promise<{profile, data}|null>
 let _sendRoomMsg = null;     // (roomId, message) => Promise<{exists, sent}>
 let _kickUser = null;        // (userId) => Promise<{found}|null>
 let _listOnlineUsers = null; // () => Promise<{total, lobby, rooms}|null>
+let _sendYell = null;        // (message) => Promise<{ok}|null>
+let _setGuestConnect = null; // (enable) => Promise<{connect}|null>
+let _setGuestChat = null;    // (enable) => Promise<{talk}|null>
 
 /**
  * Safe wrapper for async operations
@@ -74,7 +77,7 @@ function scheduleReconnect() {
             client = null;
             channel = null;
             await Promise.race([
-                exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN, queryOnlineUser: _queryOnlineUser, sendRoomMsg: _sendRoomMsg, kickUser: _kickUser, listOnlineUsers: _listOnlineUsers }),
+                exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN, queryOnlineUser: _queryOnlineUser, sendRoomMsg: _sendRoomMsg, kickUser: _kickUser, listOnlineUsers: _listOnlineUsers, sendYell: _sendYell, setGuestConnect: _setGuestConnect, setGuestChat: _setGuestChat }),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Reconnect timeout (35s)')), 35000))
             ]);
         } catch (err) {
@@ -232,6 +235,9 @@ exports.init = async function (token, db, dic, options = {}) {
     _sendRoomMsg = options.sendRoomMsg || null;
     _kickUser = options.kickUser || null;
     _listOnlineUsers = options.listOnlineUsers || null;
+    _sendYell = options.sendYell || null;
+    _setGuestConnect = options.setGuestConnect || null;
+    _setGuestChat = options.setGuestChat || null;
 
     try {
         client = new Client({
@@ -642,6 +648,122 @@ async function registerCommands(token) {
                         })
                         .setRequired(true)
                         .setMaxLength(64)
+                ),
+
+            new SlashCommandBuilder()
+                .setName('yell')
+                .setNameLocalizations({ ko: '전체공지' })
+                .setDescription('Broadcast a server-wide announcement (admin only)')
+                .setDescriptionLocalizations({
+                    ko: '서버 전체에 공지를 방송해요. (관리자 전용)'
+                })
+                .addStringOption(opt =>
+                    opt.setName('message')
+                        .setNameLocalizations({ ko: '메시지' })
+                        .setDescription('Message to broadcast')
+                        .setDescriptionLocalizations({
+                            ko: '방송할 메시지'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(500)
+                ),
+
+            new SlashCommandBuilder()
+                .setName('ipban')
+                .setNameLocalizations({ ko: 'ip밴' })
+                .setDescription('Ban an IP address until a given date (admin only)')
+                .setDescriptionLocalizations({
+                    ko: 'IP 주소를 지정한 날짜까지 제재해요. (관리자 전용)'
+                })
+                .addStringOption(opt =>
+                    opt.setName('ip')
+                        .setNameLocalizations({ ko: 'ip' })
+                        .setDescription('IP address to ban')
+                        .setDescriptionLocalizations({
+                            ko: '제재할 IP 주소'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(45)
+                )
+                .addStringOption(opt =>
+                    opt.setName('until')
+                        .setNameLocalizations({ ko: '기한' })
+                        .setDescription('Ban expiration date (YYYY-MM-DD)')
+                        .setDescriptionLocalizations({
+                            ko: '제재 만료일 (YYYY-MM-DD)'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(10)
+                )
+                .addStringOption(opt =>
+                    opt.setName('reason')
+                        .setNameLocalizations({ ko: '사유' })
+                        .setDescription('Ban reason')
+                        .setDescriptionLocalizations({
+                            ko: '제재 사유'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(200)
+                ),
+
+            new SlashCommandBuilder()
+                .setName('ipunban')
+                .setNameLocalizations({ ko: 'ip밴해제' })
+                .setDescription("Lift an IP address's ban (admin only)")
+                .setDescriptionLocalizations({
+                    ko: 'IP 주소의 제재를 해제해요. (관리자 전용)'
+                })
+                .addStringOption(opt =>
+                    opt.setName('ip')
+                        .setNameLocalizations({ ko: 'ip' })
+                        .setDescription('IP address to unban')
+                        .setDescriptionLocalizations({
+                            ko: '제재를 해제할 IP 주소'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(45)
+                ),
+
+            new SlashCommandBuilder()
+                .setName('guestconnect')
+                .setNameLocalizations({ ko: '손님접속' })
+                .setDescription('Allow or block guest connections (admin only)')
+                .setDescriptionLocalizations({
+                    ko: '손님 접속을 허용/차단해요. (관리자 전용)'
+                })
+                .addStringOption(opt =>
+                    opt.setName('state')
+                        .setNameLocalizations({ ko: '상태' })
+                        .setDescription('on to allow, off to block')
+                        .setDescriptionLocalizations({
+                            ko: 'on: 허용, off: 차단'
+                        })
+                        .setRequired(true)
+                        .addChoices(
+                            { name: 'On', name_localizations: { ko: '허용' }, value: 'on' },
+                            { name: 'Off', name_localizations: { ko: '차단' }, value: 'off' }
+                        )
+                ),
+
+            new SlashCommandBuilder()
+                .setName('guestchat')
+                .setNameLocalizations({ ko: '손님채팅' })
+                .setDescription('Allow or block guest chat (admin only)')
+                .setDescriptionLocalizations({
+                    ko: '손님 채팅을 허용/차단해요. (관리자 전용)'
+                })
+                .addStringOption(opt =>
+                    opt.setName('state')
+                        .setNameLocalizations({ ko: '상태' })
+                        .setDescription('on to allow, off to block')
+                        .setDescriptionLocalizations({
+                            ko: 'on: 허용, off: 차단'
+                        })
+                        .setRequired(true)
+                        .addChoices(
+                            { name: 'On', name_localizations: { ko: '허용' }, value: 'on' },
+                            { name: 'Off', name_localizations: { ko: '차단' }, value: 'off' }
+                        )
                 )
         ];
 
@@ -729,6 +851,21 @@ async function handleCommand(interaction) {
                 break;
             case 'kick':
                 await handleKick(interaction);
+                break;
+            case 'yell':
+                await handleYell(interaction);
+                break;
+            case 'ipban':
+                await handleIpBan(interaction);
+                break;
+            case 'ipunban':
+                await handleIpUnban(interaction);
+                break;
+            case 'guestconnect':
+                await handleGuestConnect(interaction);
+                break;
+            case 'guestchat':
+                await handleGuestChat(interaction);
                 break;
             default:
                 await interaction.reply({ content: '알 수 없는 명령어입니다. 어떻게 하신 거죠?', ephemeral: true });
@@ -852,6 +989,31 @@ async function handleHelp(interaction) {
             {
                 name: '🥾 /kick (킥) `<아이디>`',
                 value: '접속 중인 유저의 연결을 강제로 종료 (관리자 전용, 온라인 유저만 가능)\n예: `/kick abc123`',
+                inline: false
+            },
+            {
+                name: '📣 /yell (전체공지) `<메시지>`',
+                value: '서버 전체에 공지 방송 (관리자 전용)\n예: `/yell 잠시 후 서버 점검이 있습니다`',
+                inline: false
+            },
+            {
+                name: '🚫 /ipban (ip밴) `<ip>` `<기한>` `<사유>`',
+                value: 'IP 주소를 지정한 날짜까지 제재 (관리자 전용)\n예: `/ipban 1.2.3.4 2026-08-15 어뷰징`',
+                inline: false
+            },
+            {
+                name: '✅ /ipunban (ip밴해제) `<ip>`',
+                value: 'IP 주소 제재 해제 (관리자 전용)\n예: `/ipunban 1.2.3.4`',
+                inline: false
+            },
+            {
+                name: '🚪 /guestconnect (손님접속) `<상태>`',
+                value: '손님 접속 허용/차단 전환 (관리자 전용)\n예: `/guestconnect off`',
+                inline: false
+            },
+            {
+                name: '💬 /guestchat (손님채팅) `<상태>`',
+                value: '손님 채팅 허용/차단 전환 (관리자 전용)\n예: `/guestchat off`',
                 inline: false
             }
         )
@@ -1770,6 +1932,165 @@ async function handleKick(interaction) {
     } catch (err) {
         JLog.error(`[Discord Bot] Kick error: ${err.message}`);
         await interaction.editReply({ content: `❌ 킥 처리 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
+/**
+ * /yell command - Broadcast a server-wide announcement (admin only)
+ */
+async function handleYell(interaction) {
+    if (!isAdmin(interaction)) {
+        await interaction.reply({ content: '❌ 관리자만 사용할 수 있는 명령어입니다.', ephemeral: true });
+        return;
+    }
+
+    const message = interaction.options.getString('message');
+    const discordId = 'discord-' + interaction.user.id;
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+        if (!_sendYell) throw new Error('현재 실행 모드에서는 지원되지 않는 명령어입니다.');
+
+        const result = await _sendYell(message);
+        if (!result || !result.ok) throw new Error('메인 서버 응답이 없습니다.');
+
+        JLog.info(`[Discord Bot] yell by ${discordId}: ${message}`);
+        await interaction.editReply({ content: `✅ 서버 전체에 공지를 방송했습니다: ${message}` });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Yell error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 방송 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
+/**
+ * /ipban command - Ban an IP address until a given date (admin only)
+ */
+async function handleIpBan(interaction) {
+    if (!isAdmin(interaction)) {
+        await interaction.reply({ content: '❌ 관리자만 사용할 수 있는 명령어입니다.', ephemeral: true });
+        return;
+    }
+
+    const ip = interaction.options.getString('ip');
+    const until = interaction.options.getString('until');
+    const reason = interaction.options.getString('reason');
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(until)) {
+        await interaction.reply({ content: '❌ 기한은 YYYY-MM-DD 형식으로 입력해주세요. (예: 2026-08-15)', ephemeral: true });
+        return;
+    }
+
+    const untilDate = new Date(`${until}T23:59:59+09:00`);
+    if (isNaN(untilDate.getTime())) {
+        await interaction.reply({ content: '❌ 유효하지 않은 날짜입니다.', ephemeral: true });
+        return;
+    }
+    if (untilDate.getTime() <= Date.now()) {
+        await interaction.reply({ content: '❌ 기한은 오늘 이후 날짜여야 합니다.', ephemeral: true });
+        return;
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+        if (!DB || !DB.ip_block) throw new Error('데이터베이스가 준비되지 않았습니다.');
+
+        DB.ip_block.upsert(['_id', ip]).set(['reasonBlocked', reason], ['ipBlockedUntil', untilDate.getTime()]).on();
+
+        JLog.info(`[Discord Bot] ipban ${ip} by discord-${interaction.user.id}: ${reason} (until ${until})`);
+        await interaction.editReply({ content: `✅ IP "${ip}"를 ${until}까지 제재했습니다. (사유: ${reason})` });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Ipban error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 제재 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
+/**
+ * /ipunban command - Lift an IP address's ban (admin only)
+ */
+async function handleIpUnban(interaction) {
+    if (!isAdmin(interaction)) {
+        await interaction.reply({ content: '❌ 관리자만 사용할 수 있는 명령어입니다.', ephemeral: true });
+        return;
+    }
+
+    const ip = interaction.options.getString('ip');
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+        if (!DB || !DB.ip_block) throw new Error('데이터베이스가 준비되지 않았습니다.');
+
+        const blocked = await dbFindOne(DB.ip_block, ['_id', ip]);
+        if (!blocked || !blocked.reasonBlocked) {
+            await interaction.editReply({ content: `❌ IP "${ip}"에는 제재 기록이 없습니다.` });
+            return;
+        }
+
+        DB.ip_block.update(['_id', ip]).set(['reasonBlocked', null], ['ipBlockedUntil', 0]).on();
+
+        JLog.info(`[Discord Bot] ipunban ${ip} by discord-${interaction.user.id}`);
+        await interaction.editReply({ content: `✅ IP "${ip}"의 제재를 해제했습니다.` });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Ipunban error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 제재 해제 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
+/**
+ * /guestconnect command - Allow or block guest connections (admin only)
+ */
+async function handleGuestConnect(interaction) {
+    if (!isAdmin(interaction)) {
+        await interaction.reply({ content: '❌ 관리자만 사용할 수 있는 명령어입니다.', ephemeral: true });
+        return;
+    }
+
+    const state = interaction.options.getString('state');
+    const discordId = 'discord-' + interaction.user.id;
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+        if (!_setGuestConnect) throw new Error('현재 실행 모드에서는 지원되지 않는 명령어입니다.');
+
+        const result = await _setGuestConnect(state === 'on');
+        if (!result) throw new Error('메인 서버 응답이 없습니다.');
+
+        JLog.info(`[Discord Bot] guestconnect ${state} by ${discordId}`);
+        await interaction.editReply({ content: `✅ 손님 접속이 ${result.connect ? '허용' : '차단'}되었습니다.` });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Guestconnect error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 처리 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
+/**
+ * /guestchat command - Allow or block guest chat (admin only)
+ */
+async function handleGuestChat(interaction) {
+    if (!isAdmin(interaction)) {
+        await interaction.reply({ content: '❌ 관리자만 사용할 수 있는 명령어입니다.', ephemeral: true });
+        return;
+    }
+
+    const state = interaction.options.getString('state');
+    const discordId = 'discord-' + interaction.user.id;
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+        if (!_setGuestChat) throw new Error('현재 실행 모드에서는 지원되지 않는 명령어입니다.');
+
+        const result = await _setGuestChat(state === 'on');
+        if (!result) throw new Error('메인 서버 응답이 없습니다.');
+
+        JLog.info(`[Discord Bot] guestchat ${state} by ${discordId}`);
+        await interaction.editReply({ content: `✅ 손님 채팅이 ${result.talk ? '허용' : '차단'}되었습니다.` });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Guestchat error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 처리 중 오류가 발생했습니다: ${err.message}` });
     }
 }
 

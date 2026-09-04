@@ -547,7 +547,7 @@ exports.submit = function (client, text) {
         if (my.opts.unknown) {
             if ($doc) denied(410);
             else {
-                var valid = true; //아무거나 쳐도 되므로 체크를 할 필요가 없다
+                var valid = true; //아무거나 쳐도 되므로 체크를 할 필요가 없다. 매너도 필요없다
 
                 if (!valid) denied();
                 else {

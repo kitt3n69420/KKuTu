@@ -45,6 +45,15 @@ const proxyCallbacks = {
     },
     listOnlineUsers: function () {
         return ipcRequest('list-online-users', {});
+    },
+    sendYell: function (message) {
+        return ipcRequest('yell', { message: message });
+    },
+    setGuestConnect: function (enable) {
+        return ipcRequest('guest-connect', { enable: enable });
+    },
+    setGuestChat: function (enable) {
+        return ipcRequest('guest-chat', { enable: enable });
     }
 };
 
@@ -134,6 +143,9 @@ MainDB.ready = function () {
         queryOnlineUser: proxyCallbacks.queryOnlineUser,
         sendRoomMsg: proxyCallbacks.sendRoomMsg,
         kickUser: proxyCallbacks.kickUser,
-        listOnlineUsers: proxyCallbacks.listOnlineUsers
+        listOnlineUsers: proxyCallbacks.listOnlineUsers,
+        sendYell: proxyCallbacks.sendYell,
+        setGuestConnect: proxyCallbacks.setGuestConnect,
+        setGuestChat: proxyCallbacks.setGuestChat
     });
 };
