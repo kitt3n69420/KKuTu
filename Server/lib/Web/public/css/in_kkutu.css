@@ -3075,6 +3075,210 @@ body.dark-mode .game-body.flip .GameBox::before {
 	background-color: #000 !important;
 }
 
+/* 달가루 모으기: 밤하늘 + 달 오버레이 (사진 배경 위, 다른 UI 요소 아래) */
+.wc-night-overlay {
+	position: absolute;
+	top: 0; right: 0; bottom: 0; left: 0;
+	z-index: -1;
+	pointer-events: none;
+	background: linear-gradient(180deg, #0a0e2a 0%, #131a3d 55%, #1c2550 100%);
+	opacity: 0;
+	transition: opacity 0.8s ease;
+}
+.wc-night-overlay.wc-active {
+	opacity: 1;
+}
+.wc-stars {
+	position: absolute;
+	top: 0; right: 0; bottom: 0; left: 0;
+	background-image:
+		radial-gradient(1px 1px at 10% 20%, #FFFFFF 100%, transparent 100%),
+		radial-gradient(1px 1px at 25% 60%, #FFFFFF 100%, transparent 100%),
+		radial-gradient(1px 1px at 40% 15%, #FFFFFF 100%, transparent 100%),
+		radial-gradient(1px 1px at 55% 75%, #FFFFFF 100%, transparent 100%),
+		radial-gradient(1px 1px at 70% 30%, #FFFFFF 100%, transparent 100%),
+		radial-gradient(1px 1px at 85% 55%, #FFFFFF 100%, transparent 100%),
+		radial-gradient(1px 1px at 15% 85%, #FFFFFF 100%, transparent 100%),
+		radial-gradient(1px 1px at 90% 80%, #FFFFFF 100%, transparent 100%);
+	opacity: 0.7;
+}
+.wc-moon {
+	position: absolute;
+	top: 40%;
+	left: 50%;
+	width: 200px;
+	height: 200px;
+	margin: -100px 0 0 -100px;
+	border-radius: 50%;
+	--moon-color: rgba(57, 42, 24, 1.00);
+	--moon-highlight: rgba(77, 63, 47, 1.00);
+	--moon-glow: rgba(57, 42, 24, 0.6);
+	background: radial-gradient(circle at 50% 50%, var(--moon-highlight), var(--moon-color) 60%);
+	box-shadow: 0 0 90px 15px var(--moon-glow);
+	transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+.wc-condition {
+	position: absolute;
+	top: calc(40% - 130px);
+	left: 50%;
+	transform: translateX(-50%);
+	width: max-content;
+	max-width: 260px;
+	text-align: center;
+	color: #FFFDF2;
+	font-size: 15px;
+	font-weight: bold;
+	text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+}
+.wc-timer {
+	position: absolute;
+	top: calc(40% + 115px);
+	left: 50%;
+	transform: translateX(-50%);
+	color: #FFE9A8;
+	font-size: 22px;
+	font-weight: bold;
+	text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+}
+.wc-dust-count {
+	position: absolute;
+	top: 40%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	color: #FFFFFF;
+	font-size: 42px;
+	font-weight: bold;
+	text-shadow: 0 0 4px #000000, 0 0 8px #000000, 0 1px 2px #000000;
+	pointer-events: none;
+}
+.wc-fly-word {
+	position: fixed;
+	z-index: 999;
+	color: #FFFDF2;
+	font-weight: bold;
+	font-size: 14px;
+	text-shadow: 0 0 6px rgba(255, 250, 220, 0.9);
+	pointer-events: none;
+	transform: translate(-50%, -50%);
+}
+.jjoriping.wc-round-active,
+.rounds.wc-round-active {
+	transform: translateY(-120px);
+	opacity: 0;
+	pointer-events: none;
+	transition: transform 0.6s ease, opacity 0.6s ease;
+}
+
+/* 추석 이벤트: 달가루 위상 + 마일스톤 (이벤트 기간 중 아이템 교환소 자리를 대신함) */
+.event-moon-wrap {
+	position: relative;
+	width: 120px;
+	height: 120px;
+	margin: 10px auto;
+	border-radius: 14px;
+	overflow: hidden;
+	background: linear-gradient(180deg, #0a0e2a 0%, #131a3d 55%, #1c2550 100%);
+	background-image:
+		radial-gradient(1px 1px at 12% 18%, #FFFFFF 100%, transparent 100%),
+		radial-gradient(1px 1px at 28% 62%, #FFFFFF 100%, transparent 100%),
+		radial-gradient(1px 1px at 82% 22%, #FFFFFF 100%, transparent 100%),
+		radial-gradient(1px 1px at 88% 70%, #FFFFFF 100%, transparent 100%),
+		radial-gradient(1px 1px at 8% 85%, #FFFFFF 100%, transparent 100%),
+		radial-gradient(1px 1px at 92% 45%, #FFFFFF 100%, transparent 100%),
+		linear-gradient(180deg, #0a0e2a 0%, #131a3d 55%, #1c2550 100%);
+	box-shadow: 0 0 20px 4px rgba(28, 37, 80, 0.5);
+}
+.event-moon-circle {
+	position: absolute;
+	top: 10px; right: 10px; bottom: 10px; left: 10px;
+	border-radius: 50%;
+	background: radial-gradient(circle at 35% 35%, #FFFDF2, #D8D3B0 60%, #9A9578 100%);
+}
+.event-moon-mask {
+	position: absolute;
+	top: 10px; right: 10px; bottom: 10px; left: 10px;
+	width: calc(100% - 20px);
+	height: calc(100% - 20px);
+	pointer-events: none;
+}
+.event-moon-mask path {
+	fill: #333333;
+}
+.event-moon-amount {
+	text-align: center;
+	font-size: 13px;
+	font-weight: bold;
+	margin-bottom: 6px;
+}
+.event-moon-notice {
+	text-align: center;
+	font-size: 11px;
+	color: #B36B00;
+	background: #FFF3CC;
+	border-radius: 4px;
+	padding: 4px 6px;
+	margin: 0 6px 8px;
+}
+.event-moon-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 6px;
+	padding: 0 6px 6px;
+}
+.event-moon-cell {
+	position: relative;
+	border: 1px solid #DDDDDD;
+	border-radius: 6px;
+	padding: 6px 4px;
+	text-align: center;
+	background: #FAFAFA;
+}
+.event-moon-cell-locked {
+	background: #EEEEEE;
+}
+.event-moon-cell-image {
+	width: 40px;
+	height: 40px;
+	margin: 0 auto 4px;
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+.event-moon-cell-question {
+	font-size: 22px;
+	font-weight: bold;
+	color: #AAAAAA;
+	line-height: 40px;
+}
+.event-moon-cell-name {
+	font-size: 10px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.event-moon-cell-status {
+	font-size: 9px;
+	color: #888888;
+	margin-top: 2px;
+}
+.event-moon-cell-owned {
+	background: #E9F7EF;
+	border-color: #7BC996;
+}
+.event-moon-cell-check {
+	position: absolute;
+	top: 2px;
+	right: 4px;
+	color: #2E9E4F;
+	font-weight: bold;
+}
+.event-moon-claim-btn {
+	margin-top: 3px;
+	font-size: 10px;
+	padding: 2px 8px;
+	cursor: pointer;
+}
+
 /* 입력창, 드롭박스: 라이트/다크 모두 kkutu-menu 버튼과 같은 색 공식(--theme-menu-btn)을 따라간다 */
 input:not([type='checkbox']):not([type='radio']):not([type='range']),
 select {

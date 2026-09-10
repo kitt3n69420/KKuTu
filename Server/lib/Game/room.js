@@ -1127,6 +1127,11 @@ function Room(room, channel) {
 			my.time = 220;
 			my.opts.big = true;
 		}
+		// 달가루 모으기: 라운드 1, 제한시간 60초로 고정 (클라이언트 입력값 무시)
+		if (my.rule && my.rule.rule === 'Wordcollect') {
+			my.round = 1;
+			my.time = 60;
+		}
 		if (!my.rule.ai) {
 			while (my.removeAI(false, true));
 		}
@@ -1848,6 +1853,26 @@ function Room(room, channel) {
 			}
 		}
 
+		// 달가루 모으기: 봇을 뺀 사람(손님 포함) 플레이어가 2명 이상 참여 시, 손님을 제외한 점수 합을 서버 전역 달가루 카운터에 누적
+		if (my.rule.rule === 'Wordcollect') {
+			var moonHumanCount = 0, moonSumScore = 0;
+			for (i in res) {
+				if (res[i].robot) continue;
+				moonHumanCount++;
+				var moPlayer = DIC[res[i].id];
+				if (moPlayer && moPlayer.guest) continue;
+				moonSumScore += res[i].score;
+			}
+			if (moonHumanCount >= 2) {
+				var moonDelta = Math.floor(moonSumScore);
+				if (moonDelta > 0 && DB.shared_collecting) {
+					DB.shared_collecting.direct("UPDATE shared_collecting SET amount = amount + $1 WHERE id='moondust'", [moonDelta], function () {});
+				}
+			}
+			// 이번 판에서 모은 달가루 수를 공지
+			narrate(my.players, 'chat', { code: 'wcRoundDust', v1: my.game.totalScore || 0, notice: true });
+		}
+
 		var humanRes = res.filter(function (r) { return !r.robot; });
 		var h_pv = -1;
 		for (i in humanRes) {
@@ -2147,6 +2172,16 @@ function Room(room, channel) {
 					obj.board = my.game.board;
 					obj.rect = my.game.rect;
 					obj.round = my.game.round;
+					if (!my.game.late && my.game.roundAt) {
+						obj.roundTime = Math.max(0, my.game.roundTime - ((new Date()).getTime() - my.game.roundAt));
+					}
+				}
+			} else if (my.rule.rule == "Wordcollect") {
+				if (my.game.condition) {
+					obj.round = my.game.round;
+					obj.condition = my.game.condition.code;
+					obj.words = my.game.words;
+					obj.totalScore = my.game.totalScore;
 					if (!my.game.late && my.game.roundAt) {
 						obj.roundTime = Math.max(0, my.game.roundTime - ((new Date()).getTime() - my.game.roundAt));
 					}

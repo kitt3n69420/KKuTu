@@ -63,6 +63,7 @@ block Jungle
 	span#RULE= JSON.stringify(locals.RULE)
 	span#OPTIONS= JSON.stringify(locals.OPTIONS)
 	span#GAME_CATEGORIES= JSON.stringify(locals.GAME_CATEGORIES)
+	span#EVENT_ACTIVE_KWC= (locals.activeEventIds && locals.activeEventIds.indexOf('kkn_chuseok') !== -1) ? "true" : "false"
 	span#KO_INJEONG= JSON.stringify(locals.KO_INJEONG)
 	span#EN_INJEONG= JSON.stringify(locals.EN_INJEONG)
 	span#JA_INJEONG= JSON.stringify(locals.JA_INJEONG)
@@ -382,6 +383,8 @@ block Middle
 		div.dialog-bar
 			h4(data-lang-key='gameCategory')= L('gameCategory')
 			select#room-category(style="width: 283px;")
+				if locals.activeEventIds && locals.activeEventIds.indexOf('kkn_chuseok') !== -1
+					option(value='event', data-lang-key='categoryEvent')= L('categoryEvent')
 				option(value='all', data-lang-key='categoryAll')= L('categoryAll')
 				option(value='classic', data-lang-key='categoryClassic')= L('categoryClassic')
 				option(value='quiz', data-lang-key='categoryQuiz')= L('categoryQuiz')
@@ -391,8 +394,11 @@ block Middle
 		div.dialog-bar
 			h4(data-lang-key='gameMode')= L('gameMode')
 			select#room-mode(style="width: 283px;")
+				if locals.activeEventIds && locals.activeEventIds.indexOf('kkn_chuseok') !== -1
+					optgroup(label=L('mcEvent'), data-lang-attr-label='mcEvent')
+						option(value=57, data-lang-key='modeKWC')= L('modeKWC')
 				optgroup(label=L('mcKorean'), data-lang-attr-label='mcKorean')
-					option(value=3, data-lang-key='modeKSH')= L('modeKSH')
+					option(value=3, selected, data-lang-key='modeKSH')= L('modeKSH')
 					option(value=33, data-lang-key='modeKJM')= L('modeKJM')
 					option(value=2, data-lang-key='modeKKT')= L('modeKKT')
 					option(value=23, data-lang-key='modeKKU')= L('modeKKU')
@@ -867,9 +873,11 @@ block Middle
 						- var v = locals.GROUPS[locals.CATEGORIES[i]] || [];
 						div.category-filter.craft-type(id="craft-type-" + locals.CATEGORIES[i], value=v.join(','), data-lang-key=('category_' + locals.CATEGORIES[i]))= L('category_' + locals.CATEGORIES[i])
 			div#craft-goods.goods-box(style='height: 180px; overflow-y: auto;')
-	+Dialog('ExchangeDiag', 330, 420, 'excWorkshop')
+	- var chuseokLive = locals.activeEventIds && locals.activeEventIds.indexOf('kkn_chuseok') !== -1;
+	+Dialog('ExchangeDiag', 330, 420, chuseokLive ? 'eventMoonTab' : 'excWorkshop')
 		div.dialog-bar(style='padding: 5px;')
-			div#exc-list(style='height: 380px; overflow-y: auto;')
+			div#exc-list(style=`height: 380px; overflow-y: auto; ${chuseokLive ? 'display: none;' : ''}`)
+			div#event-moon-panel(style=`height: 380px; overflow-y: auto; ${chuseokLive ? '' : 'display: none;'}`)
 	+Dialog('ChatLogDiag', 350, 500, 'chatLog')
 		div#chat-log-board(style='height: 475px; font-size: 11px; overflow-y: scroll;')
 	+Dialog('ObtainDiag', 300, 200, 'notice', true)

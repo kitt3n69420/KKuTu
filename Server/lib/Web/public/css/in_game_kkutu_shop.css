@@ -161,6 +161,8 @@
 .x-gradientname_pinkred{ background-image: linear-gradient(90deg, #F15F9A, #FF3333, #F15F9A); }
 .x-gradientname_purplered{ background-image: linear-gradient(90deg, #A939CC, #FF3333, #A939CC); }
 .x-kkn_triname{ background-image: linear-gradient(90deg, #1976D2, #C62828, #e67300, #1976D2 ); }
+/* 추석 이벤트: 달빛 이름 (마일스톤 5단계) */
+.x-gradientname_moonlight{ background-image: linear-gradient(30deg, #fed039, #755600,#fed039, #755600, #fed039); }
 
 /* Crafting Workshop UI */
 .craft-composable{ background-color: #B3E7B7 !important; cursor: pointer; }

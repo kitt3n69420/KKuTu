@@ -543,10 +543,10 @@ function processAdmin(id, value) {
       try {
         var args = value.split(",");
         if (args.length == 2) {
-          MainDB.ip_block.update(["_id", args[0].trim()]).set(["reasonBlocked", args[1].trim()]).on();
+          MainDB.ip_block.upsert(["_id", args[0].trim()]).set(["reasonBlocked", args[1].trim()]).on();
         } else if (args.length == 3) {
           MainDB.ip_block
-            .update(["_id", args[0].trim()])
+            .upsert(["_id", args[0].trim()])
             .set(["reasonBlocked", args[1].trim()], ["ipBlockedUntil", addDate(parseInt(args[2].trim()))])
             .on();
         } else return null;
@@ -566,7 +566,7 @@ function processAdmin(id, value) {
       return null;
     case "ipunban":
       try {
-        MainDB.ip_block.update(["_id", value]).set(["reasonBlocked", null], ["ipBlockedUntil", 0]).on();
+        MainDB.ip_block.remove(["_id", value]).on();
         JLog.info(`[Block] IP 주소 ${value}(이)가 이용제한 해제 처리되었습니다.`);
       } catch (e) {
         processAdminErrorCallback(e, id);
@@ -1114,7 +1114,7 @@ exports.init = function (_SID, CHAN) {
             MainDB.ip_block.findOne(["_id", $c.remoteAddress]).on(function ($body) {
               if ($body && $body.reasonBlocked) {
                 if ($body.ipBlockedUntil < Date.now()) {
-                  MainDB.ip_block.update(["_id", $c.remoteAddress]).set(["ipBlockedUntil", 0], ["reasonBlocked", null]).on();
+                  MainDB.ip_block.remove(["_id", $c.remoteAddress]).on();
                   JLog.info(`IP 주소 ${$c.remoteAddress}의 이용제한이 해제되었습니다.`);
                   proceedAfterIpCheck();
                 } else {

@@ -97,6 +97,7 @@ Pub.ready = function (isPub) {
 			DB.crafting = new mainAgent.Table("crafting");
 			DB.event = new mainAgent.Table("event");
 			DB.itemexc = new mainAgent.Table("itemexc");
+			DB.shared_collecting = new mainAgent.Table("shared_collecting");
 			DB.kkutu.quiz = new mainAgent.Table("quiz");
 
 			DB.session = new mainAgent.Table("session");

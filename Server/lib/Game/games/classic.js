@@ -1656,8 +1656,12 @@ exports.submit = function (client, text) {
 										if (linksToSelf) {
 											// 자기 자신으로 돌아오면 비매너
 											checkPending--;
-											if (checkPending === 0 && !hasValidWord) {
-												denied(403);
+											if (checkPending === 0) {
+												if (hasValidWord) {
+													approved();
+												} else {
+													denied(403);
+												}
 											}
 											return;
 										}

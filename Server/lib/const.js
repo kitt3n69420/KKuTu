@@ -839,10 +839,27 @@ exports.RULE = {
 		big: true,
 		ewq: false,
 		survival: false
+	},
+
+	// 달가루 모으기: 한국어 전용, 봇 없음, 라운드마다 무작위 조건(글자수/초성/받침/주제)에
+	// 맞는 새 단어를 자유롭게 제출해 점수를 모으는 비턴제 공용 워드풀 모드
+	'KWC': {
+		lang: "ko",
+		rule: "Wordcollect",
+		opts: [],
+		time: 1,
+		ai: false,
+		big: true,
+		ewq: false,
+		survival: false
 	}
 
 };
 exports.GAME_CATEGORIES = {
+	'event': {
+		name: 'GameCategoryEvent',
+		modes: ['KWC']
+	},
 	'classic': {
 		name: 'GameCategoryClassic',
 		modes: ['KKT', 'KSH', 'KJM', 'KAP', 'KAK', 'KKU', 'EKT', 'ESH', 'EKK', 'EAP', 'EAK', 'JSH', 'JAP', 'JKT']

@@ -450,6 +450,7 @@ $(document).ready(function () {
 				{ key: "KO", value: "/media/common/ko.mp3" },
 				{ key: "attack", value: "/media/common/attack.mp3" },
 				{ key: "defence", value: "/media/common/defence.mp3" },
+				{ key: "moondust", value: "/media/common/moondust.opus" },
 			];
 			for (i = 0; i <= 10; i++) $data._soundList.push(
 				{ key: "T" + i, value: "/media/kkutu/T" + i + ".mp3" },
@@ -486,6 +487,7 @@ $(document).ready(function () {
 	RULE = JSON.parse($("#RULE").html());
 	OPTIONS = JSON.parse($("#OPTIONS").html());
 	GAME_CATEGORIES = JSON.parse($("#GAME_CATEGORIES").html());
+	EVENT_ACTIVE_KWC = $("#EVENT_ACTIVE_KWC").html() == "true";
 	KO_INJEONG = JSON.parse($("#KO_INJEONG").html() || "[]");
 	EN_INJEONG = JSON.parse($("#EN_INJEONG").html() || "[]");
 	JA_INJEONG = JSON.parse($("#JA_INJEONG").html() || "[]");
@@ -1508,6 +1510,14 @@ $(document).ready(function () {
 			$("#room-round").attr({ min: 1, max: 10 });
 			$("#room-round-label").text(mobile ? L['numRound'] : L['roundSetting']);
 		}
+		// 달가루 모으기: 라운드 1 / 60초 고정, 사용자가 바꿀 수 없게 잠금
+		if (rule.rule === "Wordcollect") {
+			$("#room-round").val(1).prop('disabled', true);
+			$("#room-time").val(60).prop('disabled', true);
+		} else {
+			$("#room-round").prop('disabled', false);
+			$("#room-time").prop('disabled', false);
+		}
 		if (window.updateRoundColor) window.updateRoundColor();
 		if (window.updateViewAllRulesBtn) setTimeout(window.updateViewAllRulesBtn, 10);
 	});
@@ -1726,19 +1736,22 @@ $(document).ready(function () {
 		}
 
 		// 4. 라운드/서바이벌 설정을 규칙이 허용하는 범위 내에서 랜덤화
-		var survivalOn = !!rule.survival || !!target['survival'];
-		if (survivalOn) {
-			var hpOptions = [200, 500, 1000, 2000];
-			$("#room-sur-hp").val(hpOptions[Math.floor(Math.random() * hpOptions.length)]);
-		} else {
-			var min = Number($("#room-round").attr('min')) || 1;
-			var max = Number($("#room-round").attr('max')) || 10;
-			$("#room-round").val(min + Math.floor(Math.random() * (max - min + 1)));
+		// 달가루 모으기는 라운드 1 / 60초로 고정이므로 랜덤화 대상에서 제외
+		if (rule.rule !== "Wordcollect") {
+			var survivalOn = !!rule.survival || !!target['survival'];
+			if (survivalOn) {
+				var hpOptions = [200, 500, 1000, 2000];
+				$("#room-sur-hp").val(hpOptions[Math.floor(Math.random() * hpOptions.length)]);
+			} else {
+				var min = Number($("#room-round").attr('min')) || 1;
+				var max = Number($("#room-round").attr('max')) || 10;
+				$("#room-round").val(min + Math.floor(Math.random() * (max - min + 1)));
+			}
+			// 라운드 시간도 랜덤으로 선택
+			var $timeOptions = $("#room-time option");
+			var timeVal = $timeOptions.eq(Math.floor(Math.random() * $timeOptions.length)).val();
+			$("#room-time").val(timeVal);
 		}
-		// 라운드 시간도 랜덤으로 선택
-		var $timeOptions = $("#room-time option");
-		var timeVal = $timeOptions.eq(Math.floor(Math.random() * $timeOptions.length)).val();
-		$("#room-time").val(timeVal);
 		if (window.updateRoundColor) window.updateRoundColor();
 	}
 	$("#view-all-rules-btn").on('click', function () {
@@ -2782,7 +2795,11 @@ $(document).ready(function () {
 	$stage.menu.exchange.on('click', function (e) {
 		if ($data._gaming) return fail(438);
 		if ($data.guest) return fail(459);
-		if (showDialog($stage.dialog.exchangeWorkshop)) drawExchangeWorkshop();
+		if (showDialog($stage.dialog.exchangeWorkshop)) {
+			// 추석 이벤트 기간에는 이 다이얼로그가 교환소 대신 달가루 패널을 보여준다 (아이템 교환소가 없는 이벤트라서)
+			if (EVENT_ACTIVE_KWC) drawMoonPanel();
+			else drawExchangeWorkshop();
+		}
 	});
 	$(".craft-type").on('click', function (e) {
 		var $target = $(e.currentTarget);
@@ -5226,6 +5243,239 @@ $lib.Shuk.turnStart = function (data, spec) {
 	playBGM('jaqwi');
 };
 $lib.Shuk.turnGoing = $lib.Jaqwi.turnGoing;
+
+/**
+ * Rule the words! KKuTu Online
+ * Copyright (C) 2017 JJoriping(op@jjo.kr)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+$lib.Wordcollect = {};
+
+// 방 전체 점수 합(S)을 0~100 밝기로 변환: 0~20은 선형(20당 10), 20 이상은 배로 늘 때마다 +10 (320→50, 10240→100), 100 이상은 고정
+function wcMoonBrightness(roomScore) {
+	var s = roomScore || 0;
+	if (s <= 0) return 0;
+	if (s <= 20) return s / 2;
+	return Math.min(100, 10 + 10 * Math.log2(s / 20));
+}
+// 밝기(0~100)를 달 색으로 보간: 0=어두운 갈색, 50=금색, 100=크림색
+var WC_MOON_STOPS = [
+	{ p: 0, c: [57, 42, 24] },
+	{ p: 50, c: [255, 200, 0] },
+	{ p: 100, c: [253, 254, 241] }
+];
+function wcMoonColor(pct) {
+	var i, a, b, t;
+	pct = Math.max(0, Math.min(100, pct));
+	for (i = 0; i < WC_MOON_STOPS.length - 1; i++) {
+		a = WC_MOON_STOPS[i];
+		b = WC_MOON_STOPS[i + 1];
+		if (pct <= b.p) {
+			t = (pct - a.p) / (b.p - a.p);
+			return [
+				Math.round(a.c[0] + (b.c[0] - a.c[0]) * t),
+				Math.round(a.c[1] + (b.c[1] - a.c[1]) * t),
+				Math.round(a.c[2] + (b.c[2] - a.c[2]) * t)
+			];
+		}
+	}
+	return WC_MOON_STOPS[WC_MOON_STOPS.length - 1].c;
+}
+function wcRgb(rgb) {
+	return "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
+}
+function wcBlendWhite(rgb, p) {
+	return [
+		Math.round(rgb[0] + (255 - rgb[0]) * p),
+		Math.round(rgb[1] + (255 - rgb[1]) * p),
+		Math.round(rgb[2] + (255 - rgb[2]) * p)
+	];
+}
+function wcApplyMoonColor(pct) {
+	var $moon = $data._wcNight ? $data._wcNight.find(".wc-moon") : null;
+	var rgb;
+
+	if (!$moon || !$moon.length) return;
+	rgb = wcMoonColor(pct);
+	// jQuery 1.9의 .css()는 CSS 커스텀 프로퍼티(--*)를 camelCase로 잘못 변환해 무시하므로 setProperty를 직접 사용
+	$moon[0].style.setProperty('--moon-color', wcRgb(rgb));
+	$moon[0].style.setProperty('--moon-highlight', wcRgb(wcBlendWhite(rgb, 0.1)));
+	$moon[0].style.setProperty('--moon-glow', 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',0.6)');
+}
+function wcFlyWordToMoon($uc, text) {
+	var $moon = $data._wcNight ? $data._wcNight.find(".wc-moon") : null;
+	if (!$moon || !$moon.length || !$uc || !$uc.length) return;
+
+	var start = $uc.offset();
+	var end = $moon.offset();
+	var $fly = $("<div>").addClass("wc-fly-word").text(text).css({
+		left: start.left + $uc.outerWidth() / 2,
+		top: start.top + $uc.outerHeight() / 2
+	});
+	$("body").append($fly);
+	$fly.animate({
+		left: end.left + $moon.outerWidth() / 2,
+		top: end.top + $moon.outerHeight() / 2,
+		opacity: 0
+	}, 700, function () { $fly.remove(); });
+}
+
+$lib.Wordcollect.roundReady = function (data, spec) {
+	clearBoard();
+	$data._relay = true;
+	$data.room.round = 1;
+	$data._maps = [];
+	$(".jjoriping,.rounds,.game-body").addClass("cw wordcollect");
+
+	if (!$data._wcNight) {
+		$data._wcNight = $("<div>").addClass("wc-night-overlay").append(
+			$("<div>").addClass("wc-stars"),
+			$("<div>").addClass("wc-moon"),
+			$("<div>").addClass("wc-condition"),
+			$("<div>").addClass("wc-timer"),
+			$("<div>").addClass("wc-dust-count")
+		);
+		$(".GameBox").prepend($data._wcNight);
+	}
+	wcApplyMoonColor(wcMoonBrightness(data.totalScore || 0));
+
+	if (data.time) $data.room.time = data.time;
+	$data._roundTime = $data.room.time * 1000;
+	$data._wcNight.find(".wc-condition").html(L['wcCondition_' + data.condition] || '');
+	$data._wcNight.find(".wc-timer").text((Math.max(0, $data._roundTime) / 1000).toFixed(1));
+	$data._wcNight.find(".wc-dust-count").text(data.totalScore || 0);
+	$stage.game.items.hide();
+	$stage.game.bb.show();
+	$lib.Wordcollect.drawMaps();
+	$stage.game.display.html(L['wcCondition_' + data.condition] || '');
+	drawRound(data.round || 1);
+	if (!spec) playSound('round_start');
+	clearInterval($data._tTime);
+};
+$lib.Wordcollect.turnStart = function (data) {
+	$(".jjoriping,.rounds").addClass("wc-round-active");
+	if ($data._wcNight) $data._wcNight.addClass("wc-active");
+	if (typeof data.roundTime === 'number') $data._roundTime = data.roundTime;
+	// 서버가 보낸 남은 시간을 벽시계 기준 종료 시각으로 고정해두고, 매 tick마다 setInterval 누적 오차 대신
+	// Date.now()와의 차이로 다시 계산 (백그라운드 탭 등에서 setInterval이 밀려도 표시가 실제 서버 시간과 어긋나지 않음)
+	$data._wcEndAt = Date.now() + $data._roundTime;
+	clearInterval($data._tTime);
+	$data._tTime = addInterval($lib.Wordcollect.turnGoing, TICK);
+	playBGM('moondust');
+};
+$lib.Wordcollect.turnGoing = function () {
+	if (!$data.room || !$data.room.gaming) return clearInterval($data._tTime);
+	$data._roundTime = $data._wcEndAt - Date.now();
+
+	if ($data._wcNight) {
+		if ($data._roundTime <= 0) {
+			$data._wcNight.find(".wc-timer").text(L['wcTimeUp'] || '');
+			clearInterval($data._tTime);
+			stopBGM();
+		} else {
+			$data._wcNight.find(".wc-timer").text(($data._roundTime / 1000).toFixed(1));
+		}
+	}
+};
+$lib.Wordcollect.turnEnd = function (id, data) {
+	if (!data || !data.target) {
+		stopBGM();
+		playSound('horr');
+		return;
+	}
+
+	var $sc = $("<div>").addClass("deltaScore").html("+" + data.score);
+	var $uc = $("#game-user-" + id);
+
+	$data._maps.push(data.value);
+	$lib.Wordcollect.drawMaps();
+
+	wcApplyMoonColor(wcMoonBrightness(data.roomScore));
+	if ($data._wcNight) $data._wcNight.find(".wc-dust-count").text(data.roomScore);
+	wcFlyWordToMoon($uc, data.value);
+
+	if (id == $data.id) playSound('success');
+	else playSound('mission');
+
+	addScore(id, data.score, data.totalScore);
+	updateScore(id, getScore(id));
+	drawObtainedScore($uc, $sc);
+};
+// sock/shuk 모드의 공용 단어 목록 렌더링과 동일한 패턴 (칸 수에 따라 폰트/여백을 축소)
+$lib.Wordcollect.drawMaps = function () {
+	if ($data._maps.length > 100) {
+		if ($data._bbThrottleTimer) return;
+		var wait = Math.max(0, 200 - (Date.now() - ($data._bbLastDraw || 0)));
+		$data._bbThrottleTimer = setTimeout(function () {
+			$data._bbThrottleTimer = null;
+			$data._bbLastDraw = Date.now();
+			$lib.Wordcollect._renderMaps();
+		}, wait);
+		return;
+	}
+	$lib.Wordcollect._renderMaps();
+};
+$lib.Wordcollect._renderMaps = function () {
+	var len = $data._maps.length;
+	var STEP = mobile ? 12 : 18;
+	var MAX_COLS = mobile ? 2 : 6;
+	var SWITCH = STEP * MAX_COLS;
+	var DIVISOR = STEP / MAX_COLS;
+	var cols = (len <= SWITCH) ? Math.max(2, Math.ceil(len / STEP)) : Math.ceil(Math.sqrt(len / DIVISOR));
+	var widthPct = (100 / cols) + "%";
+
+	$stage.game.bb.empty();
+	if (cols > 2) $stage.game.bb.addClass("many-cols");
+	else $stage.game.bb.removeClass("many-cols");
+
+	$data._maps.slice().sort(function (a, b) { return b.length - a.length; }).forEach(function (item) {
+		$stage.game.bb.append($word(item));
+	});
+
+	if (cols > MAX_COLS) {
+		var $chars = $stage.game.bb.find(".bb-char");
+		var $sample = $chars.first();
+		if ($sample.length) {
+			var MIN_FONT = 3;
+			var baseWidth = parseFloat($sample.css('width'));
+			var baseFont = parseFloat($sample.css('font-size'));
+			var basePadding = parseFloat($sample.css('padding-left'));
+			var baseMargin = parseFloat($sample.css('margin-left'));
+			var floor = MIN_FONT / baseFont;
+			if (mobile) floor = Math.max(floor, 0.5);
+			var scale = Math.max(MAX_COLS / cols, floor);
+			$chars.css({
+				'width': (baseWidth * scale) + 'px',
+				'font-size': (baseFont * scale) + 'px',
+				'padding': (basePadding * scale) + 'px',
+				'margin': (baseMargin * scale) + 'px'
+			});
+		}
+	}
+	function $word(text) {
+		var $R = $("<div>").addClass("bb-word");
+		if (!mobile) $R.css('width', widthPct);
+		var i, len = text.length;
+
+		for (i = 0; i < len; i++) {
+			$R.append($("<div>").addClass("bb-char").html(text.charAt(i)));
+		}
+		return $R;
+	}
+};
 
 /**
 * Rule the words! KKuTu Online
@@ -8801,6 +9051,133 @@ function requestExchange(offer) {
 		});
 	});
 }
+// 추석 이벤트: 마일스톤 사이 구간을 선형 보간해 달의 위상(0=그믐~1=보름달)을 계산
+// (마일스톤 임계값 간격이 서로 달라도, 마일스톤 하나를 넘길 때마다 동일한 폭만큼 위상이 진행됨)
+function computeMoonPhase(amount, milestones) {
+	var anchors = [{ threshold: 0, phase: 0 }];
+	var n = milestones.length;
+
+	milestones.forEach(function (m, i) {
+		anchors.push({ threshold: m.threshold, phase: (i + 1) / n });
+	});
+	if (amount <= 0) return 0;
+	for (var i = 1; i < anchors.length; i++) {
+		if (amount <= anchors[i].threshold) {
+			var prev = anchors[i - 1], cur = anchors[i];
+			var t = (cur.threshold === prev.threshold) ? 1 : (amount - prev.threshold) / (cur.threshold - prev.threshold);
+			return prev.phase + t * (cur.phase - prev.phase);
+		}
+	}
+	return 1;
+}
+// 추석 이벤트: 달의 위상 경계(터미네이터)는 항상 원의 맨 위/맨 아래 점을 지나야 하고,
+// 세 번째로 지나는 점(적도 위 한 점)만 진행률에 따라 좌우로 움직인다.
+// 이 세 점을 지나는 원의 중심·반지름을 원의 방정식으로 구해 SVG 호로 그리되,
+// 반달 부근(중심이 발산하는 구간)에서는 3차 베지어 곡선으로 대체한다.
+// (viewBox 0 0 100 100, 중심 (50,50), 반지름 50 기준의 정규화 좌표)
+function buildMoonMaskPath(progress) {
+	var r = 50, cx = 50, cy = 50;
+	var dx = -r * Math.cos(progress * Math.PI);
+	var mx = cx + dx, my = cy;
+	var topX = cx, topY = cy - r;
+	var bottomX = cx, bottomY = cy + r;
+	// 세 점(top, mid, bottom)을 지나는 원의 중심은 대칭성에 의해 항상 y=cy 위에 있다.
+	var k = (dx * dx - r * r) / (2 * dx); // 중심 = (cx + k, cy); dx→0일수록 발산
+	var terminator;
+
+	if (Math.abs(k) > 1000) {
+		// 원의 중심이 지나치게 멀어지는(거의 직선인) 구간은 3차 베지어로 대체
+		// (2차 베지어가 mid를 정확히 지나도록 만든 뒤 표준 공식으로 3차 승격; dx=0이면 완전한 직선으로 수렴)
+		var cpNearTopX = cx + 4 * dx / 3, cpNearTopY = cy - r / 3;
+		var cpNearBottomX = cx + 4 * dx / 3, cpNearBottomY = cy + r / 3;
+		terminator = "C " + cpNearBottomX + "," + cpNearBottomY + " " + cpNearTopX + "," + cpNearTopY + " " + topX + "," + topY;
+	} else {
+		var ox = cx + k, oy = cy;
+		var R = Math.sqrt(k * k + r * r);
+		var norm = function (a) { var t = a % (2 * Math.PI); return t < 0 ? t + 2 * Math.PI : t; };
+		var angleTop = norm(Math.atan2(topY - oy, topX - ox));
+		var angleBottom = norm(Math.atan2(bottomY - oy, bottomX - ox));
+		var angleMid = norm(Math.atan2(my - oy, mx - ox));
+		var sweepSpan = norm(angleTop - angleBottom); // sweep=1(양의 각) 방향으로 bottom->top까지의 각도
+		var midSpan = norm(angleMid - angleBottom);
+		var sweepFlag = (midSpan > 0 && midSpan < sweepSpan) ? 1 : 0;
+		terminator = "A " + R + "," + R + " 0 0," + sweepFlag + " " + topX + "," + topY;
+	}
+	// 달 자신의 오른쪽 반원(고정) + 터미네이터(반보다 덜/더 참에 따라 저절로 안쪽/바깥쪽을 감싸게 됨)
+	return "M " + topX + "," + topY +
+		" A " + r + "," + r + " 0 0,1 " + bottomX + "," + bottomY +
+		" " + terminator + " Z";
+}
+// 추석 이벤트: 달가루 위상 + 마일스톤 그리드
+function drawMoonPanel() {
+	var $panel = $("#event-moon-panel");
+
+	$panel.empty();
+	$.get("/event/moon-status", {}, function (res) {
+		$panel.empty();
+		if (!res || !res.active) {
+			$panel.append($("<div>").addClass("exc-list-empty").html(L['excNoOffers']));
+			return;
+		}
+
+		var progress = computeMoonPhase(res.amount, res.milestones);
+		var $moonWrap = $("<div>").addClass("event-moon-wrap");
+		var $moonCircle = $("<div>").addClass("event-moon-circle");
+		// 0(그믐, 전부 어둡게 마스킹) ~ 1(보름, 마스킹 없음)
+		var maskPath = buildMoonMaskPath(progress);
+		// SVGElement.className은 이 jQuery 버전의 addClass()가 못 다루는 SVGAnimatedString(getter만 있음)이므로 attr("class", ...)로 설정
+		var $moonMask = $(document.createElementNS("http://www.w3.org/2000/svg", "svg")).attr("class", "event-moon-mask").attr("viewBox", "0 0 100 100");
+		var $moonMaskPath = $(document.createElementNS("http://www.w3.org/2000/svg", "path")).attr("d", maskPath);
+		$moonMask.append($moonMaskPath);
+		$moonWrap.append($moonCircle, $moonMask);
+
+		var $amount = $("<div>").addClass("event-moon-amount").html(L['eventMoonAmount'] + ": " + commify(res.amount));
+		$panel.append($moonWrap, $amount);
+
+		if (!res.participated) {
+			$panel.append($("<div>").addClass("event-moon-notice").html(L['eventMoonParticipateNotice']));
+		}
+
+		var $grid = $("<div>").addClass("event-moon-grid");
+		res.milestones.forEach(function (m) {
+			var $cell = $("<div>").addClass("event-moon-cell");
+			if (m.unlocked && $data.shop[m.itemId]) {
+				var gd = iGoods(m.itemId);
+				$cell.append($("<div>").addClass("jt-image event-moon-cell-image").css('background-image', "url(" + gd.image + ")"));
+				$cell.append($("<div>").addClass("event-moon-cell-name").html(gd.name));
+				if (m.owned) {
+					$cell.addClass("event-moon-cell-owned");
+					$cell.append($("<div>").addClass("event-moon-cell-check").html("&#10003;"));
+					$cell.append($("<div>").addClass("event-moon-cell-status").html(L['eventMoonClaimed']));
+				} else if (res.participated) {
+					var $btn = $("<button>").addClass("event-moon-claim-btn").html(L['eventMoonClaim']);
+					$btn.on('click', function () { claimMilestone(m.tier); });
+					$cell.append($btn);
+				}
+			} else {
+				$cell.addClass("event-moon-cell-locked");
+				$cell.append($("<div>").addClass("event-moon-cell-image event-moon-cell-question").html("?"));
+				$cell.append($("<div>").addClass("event-moon-cell-name").html(L['eventMoonLocked']));
+				$cell.append($("<div>").addClass("event-moon-cell-status").html(L['eventMoonLockedDescPrefix'] + commify(m.threshold) + L['eventMoonLockedDescSuffix']));
+			}
+			$grid.append($cell);
+		});
+		$panel.append($grid);
+	});
+}
+function claimMilestone(tier) {
+	$.post("/event/claim-milestone", { tier: tier }, function (res) {
+		if (res.error) return fail(res.error);
+		send('refresh');
+		showAlert(L['obtained'] + '!');
+		$data.box = res.box;
+		queueObtain({ key: res.obtained, value: 1 });
+
+		drawMyDress($data._avGroup);
+		updateMe();
+		drawMoonPanel();
+	});
+}
 
 function drawLeaderboard(data) {
 	var $board = $stage.dialog.lbTable.empty();
@@ -9754,7 +10131,8 @@ function changeSoundPack(newPackName, callback) {
 			{ key: "kung", value: "/media/kkutu/kung.mp3" },
 			{ key: "horr", value: "/media/kkutu/horr.mp3" },
 			{ key: "attack", value: "/media/common/attack.mp3" },
-			{ key: "defence", value: "/media/common/defence.mp3" }
+			{ key: "defence", value: "/media/common/defence.mp3" },
+			{ key: "moondust", value: "/media/common/moondust.opus" }
 		];
 		for (i = 0; i <= 10; i++) {
 			soundList.push(
@@ -10401,7 +10779,9 @@ function onMessage(data) {
 			break;
 		case 'chat':
 			if (data.notice) {
-				notice(data.value || L[data.code] || L['error_' + data.code], data.head);
+				var noticeMsg = data.value || L[data.code] || L['error_' + data.code];
+				if (data.v1 !== undefined) noticeMsg = noticeMsg.replace('{V1}', data.v1);
+				notice(noticeMsg, data.head);
 			} else {
 				chat(data.profile || { title: L['robot'] }, data.value, data.from, data.timestamp);
 			}
@@ -11290,6 +11670,14 @@ function processRoom(data) {
 						}
 					}
 				}
+				if (data.condition) {
+					$lib.Wordcollect.roundReady(data, true);
+					$data._maps = data.words || [];
+					$lib.Wordcollect.drawMaps();
+					if (typeof data.roundTime === 'number') {
+						$lib.Wordcollect.turnStart({ roundTime: data.roundTime });
+					}
+				}
 			}
 		}
 		if (!data.modify && data.target == $data.id) forkChat();
@@ -12076,6 +12464,17 @@ function clearGame() {
 	delete $data._flipColorMap;
 	$(".game-user").css("background-color", "");
 
+	// 게임 중 나가기는 clearBoard()를 거치지 않으므로, 모드 전용 클래스가 다음 게임(다른 모드)까지
+	// 남아 화면이 깨지지 않도록 여기서도 방어적으로 정리 (clearBoard()의 해당 줄들과 동일)
+	$(".jjoriping,.game-body").removeClass("flip");
+	$(".jjoriping,.rounds,.game-body").removeClass("landgrab");
+	$(".jjoriping,.game-body").removeClass("center-board");
+	$(".jjoriping,.rounds,.game-body").removeClass("wordcollect wc-round-active");
+	if ($data._wcNight) {
+		$data._wcNight.remove();
+		$data._wcNight = null;
+	}
+
 	// apple 규칙으로 변경된 설정을 원래대로 복구
 	if ($data._originalSettings && $data.room) {
 		$data.room.round = $data._originalSettings.round;
@@ -12394,6 +12793,11 @@ function clearBoard() {
 	$(".jjoriping,.game-body").removeClass("flip");
 	$(".jjoriping,.rounds,.game-body").removeClass("landgrab");
 	$(".jjoriping,.game-body").removeClass("center-board");
+	$(".jjoriping,.rounds,.game-body").removeClass("wordcollect wc-round-active");
+	if ($data._wcNight) {
+		$data._wcNight.remove();
+		$data._wcNight = null;
+	}
 	$(".jjoriping").css({ "float": "", "margin": "" });
 	// Small-mode class is managed by updateRoom() based on player count, don't remove it here
 	$stage.game.display.removeClass("raingame-board").empty();

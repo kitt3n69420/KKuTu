@@ -341,6 +341,7 @@ $(document).ready(function () {
 				{ key: "KO", value: "/media/common/ko.mp3" },
 				{ key: "attack", value: "/media/common/attack.mp3" },
 				{ key: "defence", value: "/media/common/defence.mp3" },
+				{ key: "moondust", value: "/media/common/moondust.opus" },
 			];
 			for (i = 0; i <= 10; i++) $data._soundList.push(
 				{ key: "T" + i, value: "/media/kkutu/T" + i + ".mp3" },
@@ -377,6 +378,7 @@ $(document).ready(function () {
 	RULE = JSON.parse($("#RULE").html());
 	OPTIONS = JSON.parse($("#OPTIONS").html());
 	GAME_CATEGORIES = JSON.parse($("#GAME_CATEGORIES").html());
+	EVENT_ACTIVE_KWC = $("#EVENT_ACTIVE_KWC").html() == "true";
 	KO_INJEONG = JSON.parse($("#KO_INJEONG").html() || "[]");
 	EN_INJEONG = JSON.parse($("#EN_INJEONG").html() || "[]");
 	JA_INJEONG = JSON.parse($("#JA_INJEONG").html() || "[]");
@@ -1399,6 +1401,14 @@ $(document).ready(function () {
 			$("#room-round").attr({ min: 1, max: 10 });
 			$("#room-round-label").text(mobile ? L['numRound'] : L['roundSetting']);
 		}
+		// 달가루 모으기: 라운드 1 / 60초 고정, 사용자가 바꿀 수 없게 잠금
+		if (rule.rule === "Wordcollect") {
+			$("#room-round").val(1).prop('disabled', true);
+			$("#room-time").val(60).prop('disabled', true);
+		} else {
+			$("#room-round").prop('disabled', false);
+			$("#room-time").prop('disabled', false);
+		}
 		if (window.updateRoundColor) window.updateRoundColor();
 		if (window.updateViewAllRulesBtn) setTimeout(window.updateViewAllRulesBtn, 10);
 	});
@@ -1617,19 +1627,22 @@ $(document).ready(function () {
 		}
 
 		// 4. 라운드/서바이벌 설정을 규칙이 허용하는 범위 내에서 랜덤화
-		var survivalOn = !!rule.survival || !!target['survival'];
-		if (survivalOn) {
-			var hpOptions = [200, 500, 1000, 2000];
-			$("#room-sur-hp").val(hpOptions[Math.floor(Math.random() * hpOptions.length)]);
-		} else {
-			var min = Number($("#room-round").attr('min')) || 1;
-			var max = Number($("#room-round").attr('max')) || 10;
-			$("#room-round").val(min + Math.floor(Math.random() * (max - min + 1)));
+		// 달가루 모으기는 라운드 1 / 60초로 고정이므로 랜덤화 대상에서 제외
+		if (rule.rule !== "Wordcollect") {
+			var survivalOn = !!rule.survival || !!target['survival'];
+			if (survivalOn) {
+				var hpOptions = [200, 500, 1000, 2000];
+				$("#room-sur-hp").val(hpOptions[Math.floor(Math.random() * hpOptions.length)]);
+			} else {
+				var min = Number($("#room-round").attr('min')) || 1;
+				var max = Number($("#room-round").attr('max')) || 10;
+				$("#room-round").val(min + Math.floor(Math.random() * (max - min + 1)));
+			}
+			// 라운드 시간도 랜덤으로 선택
+			var $timeOptions = $("#room-time option");
+			var timeVal = $timeOptions.eq(Math.floor(Math.random() * $timeOptions.length)).val();
+			$("#room-time").val(timeVal);
 		}
-		// 라운드 시간도 랜덤으로 선택
-		var $timeOptions = $("#room-time option");
-		var timeVal = $timeOptions.eq(Math.floor(Math.random() * $timeOptions.length)).val();
-		$("#room-time").val(timeVal);
 		if (window.updateRoundColor) window.updateRoundColor();
 	}
 	$("#view-all-rules-btn").on('click', function () {
@@ -2673,7 +2686,11 @@ $(document).ready(function () {
 	$stage.menu.exchange.on('click', function (e) {
 		if ($data._gaming) return fail(438);
 		if ($data.guest) return fail(459);
-		if (showDialog($stage.dialog.exchangeWorkshop)) drawExchangeWorkshop();
+		if (showDialog($stage.dialog.exchangeWorkshop)) {
+			// 추석 이벤트 기간에는 이 다이얼로그가 교환소 대신 달가루 패널을 보여준다 (아이템 교환소가 없는 이벤트라서)
+			if (EVENT_ACTIVE_KWC) drawMoonPanel();
+			else drawExchangeWorkshop();
+		}
 	});
 	$(".craft-type").on('click', function (e) {
 		var $target = $(e.currentTarget);

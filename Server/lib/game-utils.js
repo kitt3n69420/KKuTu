@@ -185,6 +185,12 @@ exports.getJamoRegex = function (jamo) {
 	return new RegExp('^[' + range + ']');
 };
 
+exports.hasBatchim = function (ch) {
+	var code = (ch || '').charCodeAt(0) - 0xAC00;
+	if (code < 0 || code > 11171) return false;
+	return (code % 28) !== 0;
+};
+
 exports.kjmStartsWith = function (decomposed, jamo) {
 	if (!decomposed || !jamo) return false;
 	var isVowel = jamo.charCodeAt(0) >= 0x314F;

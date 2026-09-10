@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>끄투엔 추석이벤트 - 끄투엔</title>
+	<style>
+		@font-face {
+			font-family: 'NBGothic';
+			src: url('../media/NanumBarunGothicLight.woff') format('woff');
+		}
+
+		:root {
+			--night-a: #0a0e2a;
+			--night-b: #131a3d;
+			--night-c: #1c2550;
+			--moon-gold: #fed039;
+			--moon-gold-dark: #755600;
+			--gold-soft: #FFE9A8;
+			--paper: #FFF8E1;
+			--ink: #2b2210;
+			--ink-soft: #6d5b4c;
+		}
+
+		* { box-sizing: border-box; }
+
+		body {
+			margin: 0;
+			padding: 0;
+			font-family: NBGothic, 돋움, sans-serif;
+			background: linear-gradient(180deg, var(--night-a) 0%, var(--night-b) 55%, var(--night-c) 100%) fixed;
+			color: #FFFFFF;
+			min-width: 320px;
+			overflow-x: hidden;
+		}
+
+		img { max-width: 100%; }
+
+		h1, h2, h3 { margin: 0; }
+
+		/* ===== 히어로 ===== */
+		.hero {
+			position: relative;
+			z-index: 0;
+			overflow: hidden;
+			padding: 0 20px 0;
+			text-align: center;
+			color: #FFFFFF;
+		}
+		.stars {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			z-index: 0;
+			pointer-events: none;
+			background-image:
+				radial-gradient(1.5px 1.5px at 8% 22%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 20% 55%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 33% 15%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 47% 68%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 60% 30%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 90% 20%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 96% 50%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 12% 80%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 75% 10%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 83% 65%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 5% 90%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 28% 92%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 45% 88%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 65% 95%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 80% 88%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 93% 93%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 40% 40%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 55% 12%, #FFFFFF 100%, transparent 100%);
+			opacity: 0.85;
+		}
+		.moon-hero {
+			position: absolute;
+			z-index: 1;
+			top: -150px;
+			left: 50%;
+			transform: translateX(-50%);
+			width: 300px;
+			height: 300px;
+			border-radius: 50%;
+			background: radial-gradient(circle at 35% 65%, #FFFDF2, var(--moon-gold) 70%);
+			box-shadow: 0 0 100px 30px rgba(254, 208, 57, 0.45);
+		}
+		.hero-content { position: relative; z-index: 1; padding: 18px 0 0; }
+		.hero h1 {
+			font-size: 2.1em;
+			color: var(--moon-gold-dark);
+			text-shadow: 0 1px 3px rgba(255, 255, 255, 0.4);
+			letter-spacing: 1px;
+		}
+		.hero h3 {
+			margin-top: 6px;
+			font-size: 1.15em;
+			font-weight: normal;
+			color: var(--moon-gold-dark);
+			text-shadow: 0 1px 3px rgba(255, 255, 255, 0.4);
+		}
+		.event-sub {
+			position: relative;
+			z-index: 1;
+			margin: 74px 0 0;
+			font-size: 1.05em;
+			color: #D9E0FF;
+		}
+		.exp-badge {
+			position: relative;
+			z-index: 1;
+			display: inline-block;
+			margin: 16px 0 20px;
+			padding: 8px 22px;
+			border-radius: 999px;
+			background: var(--moon-gold);
+			color: var(--moon-gold-dark);
+			font-weight: bold;
+			font-size: 1.1em;
+			box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+		}
+		.hero-summary {
+			position: relative;
+			z-index: 1;
+			max-width: 640px;
+			margin: 0 auto;
+			padding-bottom: 10px;
+			line-height: 1.7;
+			color: #E7EAFB;
+		}
+
+		/* ===== 공통 섹션 ===== */
+		.section {
+			position: relative;
+			z-index: 1;
+			padding: 24px 20px 0;
+			border-top: 1px dashed rgba(255, 233, 168, 0.35);
+		}
+		.section-inner { max-width: 920px; margin: 0 auto; padding-bottom: 60px; }
+		.section h2 {
+			text-align: center;
+			font-size: 1.6em;
+			margin-bottom: 8px;
+			color: #FFFFFF;
+		}
+		.section-note {
+			text-align: center;
+			margin-bottom: 30px;
+			color: var(--gold-soft);
+			font-size: 0.95em;
+		}
+		/* ===== 섹션: 신상 아이템 ===== */
+		.menu-board {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 22px;
+		}
+		.menu-card {
+			position: relative;
+			display: flex;
+			align-items: flex-start;
+			gap: 12px;
+			min-width: 0;
+			background: var(--paper);
+			color: var(--ink);
+			border-radius: 10px;
+			padding: 12px 12px 34px;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+		}
+		.menu-card .card-icon {
+			position: relative;
+			flex: 0 0 64px;
+			width: 64px; height: 64px;
+			background: #FFFFFF;
+			border-radius: 10px;
+			overflow: hidden;
+		}
+		.menu-card .card-icon img {
+			position: absolute;
+			top: 0; left: 0;
+			width: 100%; height: 100%;
+			image-rendering: pixelated;
+		}
+		.menu-card .card-info { flex: 1; min-width: 0; padding-top: 2px; }
+		.menu-card .card-name { font-weight: bold; font-size: 1em; }
+		.menu-card .card-desc {
+			font-size: 0.8em;
+			color: var(--ink-soft);
+			line-height: 1.4;
+			margin-top: 4px;
+		}
+		.menu-card .card-price {
+			position: absolute;
+			right: 12px;
+			bottom: 10px;
+			font-weight: bold;
+			font-size: 0.85em;
+			padding: 3px 10px;
+			border-radius: 999px;
+			background: #FBEFC7;
+			color: var(--moon-gold-dark);
+		}
+
+		/* ===== 섹션: 매커니즘 ===== */
+		.mech-block {
+			display: flex;
+			gap: 28px;
+			align-items: center;
+			margin-bottom: 46px;
+		}
+		.mech-block:last-child { margin-bottom: 0; }
+		.mech-block.reverse { flex-direction: row-reverse; }
+		.mech-image { flex: 0 0 44%; min-width: 0; }
+		.mech-image img {
+			display: block;
+			width: 100%;
+			border-radius: 14px;
+			box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+			border: 2px solid rgba(255, 255, 255, 0.12);
+		}
+		.mech-text { flex: 1; min-width: 0; }
+		.mech-text h3 {
+			font-size: 1.2em;
+			margin-bottom: 10px;
+			color: var(--gold-soft);
+		}
+		.mech-text p { margin: 0 0 10px; line-height: 1.7; color: #E7EAFB; }
+		.mech-text p:last-child { margin-bottom: 0; }
+
+		.milestone-pair {
+			display: flex;
+			gap: 20px;
+			justify-content: center;
+			flex-wrap: wrap;
+			margin: 20px 0 22px;
+		}
+		.milestone-shot { flex: 1 1 200px; max-width: 240px; text-align: center; }
+		.milestone-shot img {
+			width: 100%;
+			border-radius: 12px;
+			box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+			border: 2px solid rgba(255, 255, 255, 0.12);
+		}
+		.milestone-shot .caption {
+			margin-top: 8px;
+			font-size: 0.85em;
+			font-weight: bold;
+			color: var(--gold-soft);
+		}
+		.milestone-steps {
+			text-align: center;
+			margin: 4px 0 20px;
+			color: #C9D0F0;
+			font-size: 0.95em;
+			letter-spacing: 0.5px;
+		}
+		.milestone-steps strong { color: var(--gold-soft); }
+
+		/* ===== 섹션: 유의사항 ===== */
+		.detail-list { list-style: none; margin: 0; padding: 0; }
+		.detail-list li {
+			position: relative;
+			padding: 10px 0 10px 26px;
+			line-height: 1.7;
+			color: #C9D0F0;
+			border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
+		}
+		.detail-list li:last-child { border-bottom: none; }
+		.detail-list li::before {
+			content: "🌙";
+			position: absolute;
+			left: 0;
+			top: 9px;
+			font-size: 14px;
+		}
+		.detail-list strong { color: var(--gold-soft); }
+
+		.closing {
+			position: relative;
+			z-index: 1;
+			text-align: center;
+			padding: 40px 20px 60px;
+			font-size: 1.15em;
+			font-weight: bold;
+			color: var(--gold-soft);
+			border-top: 1px dashed rgba(255, 233, 168, 0.35);
+		}
+
+		/* ===== 모바일 ===== */
+		@media (max-width: 700px) {
+			.hero h1 { font-size: 1.5em; }
+			.moon-hero { width: 200px; height: 200px; top: -100px; }
+			.hero-content { padding: 6px 0 0; }
+			.event-sub { margin-top: 48px; }
+			.exp-badge { margin-top: 14px; }
+			.menu-board { grid-template-columns: 1fr; }
+			.mech-block, .mech-block.reverse { flex-direction: column; }
+			.mech-image { flex-basis: auto; width: 100%; }
+		}
+		@media (max-width: 400px) {
+			.menu-card .card-icon { flex-basis: 52px; width: 52px; height: 52px; }
+			.menu-card .card-name { font-size: 0.92em; }
+			.menu-card .card-desc { font-size: 0.74em; }
+			.menu-card .card-price { font-size: 0.8em; padding: 3px 8px; }
+			.section h2 { font-size: 1.35em; }
+			.milestone-shot { flex-basis: 42%; }
+		}
+	</style>
+</head>
+
+<body>
+
+	<div class="hero">
+		<div class="stars"></div>
+		<div class="moon-hero"></div>
+		<div class="hero-content">
+			<h1>달, 달, 둥근 달</h1>
+			<h3>끄투엔 추석 이벤트</h3>
+		</div>
+		<p class="event-sub">이벤트 기간: 2026.09.15 ~ 2026.10.15</p>
+		<div class="exp-badge">이벤트 기간 중 경험치·핑 1.5배!</div>
+		<div class="hero-summary">
+			한가위가 찾아왔어요! 이벤트 전용 게임모드인 &lsquo;달가루 모으기&rsquo; 게임모드를 플레이해서 다 함께 달가루를 모아보세요.
+			달가루가 쌓일수록 달이 차오르고, 마일스톤을 달성할 때마다 모두에게 한정 아이템이 열려요.
+		</div>
+	</div>
+
+	<section class="section">
+		<div class="section-inner">
+			<h2>신상 아이템</h2>
+			<div class="section-note">상점에서 상시 구매할 수 있어요!</div>
+			<div class="menu-board">
+
+				<div class="menu-card">
+					<div class="card-icon">
+						<img src="/img/kkutu/moremi/body.png" alt="">
+						<img src="/img/kkutu/moremi/eye/def.png" alt="">
+						<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+						<img src="/img/kkutu/moremi/clothes/hanbok_blue.png" alt="한복">
+					</div>
+					<div class="card-info">
+						<div class="card-name">한복</div>
+						<div class="card-desc">한국의 멋을 살린 한복 의상입니다. 하늘색·분홍·회색, 3가지 색상으로 준비했어요!<br><sub>색놀이냐고요? 맞아요.</sub></div>
+					</div>
+					<div class="card-price">500핑</div>
+				</div>
+
+				<div class="menu-card">
+					<div class="card-icon">
+						<img src="/img/kkutu/moremi/body.png" alt="">
+						<img src="/img/kkutu/moremi/eye/def.png" alt="">
+						<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+						<img src="/img/kkutu/moremi/back/dancheong_bg.png" alt="단청 배경">
+					</div>
+					<div class="card-info">
+						<div class="card-name">단청 배경</div>
+						<div class="card-desc">한국의 멋스러운 문양을 담은 배경입니다.</div>
+					</div>
+					<div class="card-price">1000핑</div>
+				</div>
+
+				<div class="menu-card">
+					<div class="card-icon">
+						<img src="/img/kkutu/moremi/body.png" alt="">
+						<img src="/img/kkutu/moremi/eye/def.png" alt="">
+						<img src="/img/kkutu/moremi/mouth/def.png" alt="">
+						<img src="/img/kkutu/moremi/hand/moon_cookie.png" alt="달 쿠키">
+					</div>
+					<div class="card-info">
+						<div class="card-name">달 쿠키</div>
+						<div class="card-desc">뭔가 바나나 맛이 날 것 같아...<br><sub>바나나 아니고 초승달이라고!</sub></div>
+					</div>
+					<div class="card-price">300핑</div>
+				</div>
+
+			</div>
+		</div>
+	</section>
+
+	<section class="section">
+		<div class="section-inner">
+			<h2>달가루 모으기 &amp; 마일스톤</h2>
+			<div class="section-note">서버의 모든 플레이어가 함께 만들어가는 이벤트 게임모드예요</div>
+
+			<div class="mech-block">
+				<div class="mech-image">
+					<img src="moondustgame.png" alt="달가루 모으기 플레이 화면">
+				</div>
+				<div class="mech-text">
+					<h3>달가루를 모아보세요</h3>
+					<p>달가루 모으기는 라운드마다 무작위로 주어지는 조건(글자 수·초성·주제 등)에 맞는 단어를 자유롭게 제출해 점수를 쌓는 협동 게임이에요.</p>
+					<p>제한시간은 60초! 이 시간 안에 함께 낸 점수가 모두 &lsquo;달가루&rsquo;가 되어 서버 전체에 쌓입니다.</p>
+				</div>
+			</div>
+
+			<div class="mech-block reverse">
+				<div class="mech-image">
+					<div class="milestone-pair">
+						<div class="milestone-shot">
+							<img src="moonmilestone.png" alt="달가루가 쌓이기 전">
+							<div class="caption">달가루가 쌓이기 전</div>
+						</div>
+						<div class="milestone-shot">
+							<img src="moonmilestone2.png" alt="1단계 달성 후">
+							<div class="caption">1단계(2,000개) 달성 후</div>
+						</div>
+					</div>
+				</div>
+				<div class="mech-text">
+					<h3>다 함께 채우는 마일스톤</h3>
+					<p>서버의 모든 플레이어가 함께 모은 달가루가 일정 개수를 넘을 때마다 달이 조금씩 차오르면서, 모두에게 새로운 한정 아이템이 열려요.</p>
+					<p class="milestone-steps">마일스톤 목표: <strong>2,000 / 5,000 / 10,000 / 20,000 / 30,000 / 50,000</strong></p>
+					<p>1단계를 달성하면 &lsquo;손에 든 송편&rsquo;이 열리는 걸 확인할 수 있어요. 그 다음 단계들에는 어떤 아이템이 기다리고 있을지는... 비밀이에요! 달을 채워가며 하나씩 확인해보세요.</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="section">
+		<div class="section-inner">
+			<h2>유의사항</h2>
+			<ul class="detail-list">
+				<li>손님(게스트) 계정은 함께 플레이할 수 있지만, 손님이 낸 점수는 서버 전체 달가루 집계에는 포함되지 않습니다.</li>
+				<li>달가루는 봇을 제외하고 <strong>2명 이상</strong> 함께 플레이했을 때만 쌓입니다.</li>
+				<li>마일스톤 보상 중 <strong>&lsquo;손에 든 송편&rsquo;은 최대 2개</strong>, 나머지 아이템은 <strong>최대 1개</strong>까지만 받을 수 있습니다.</li>
+				<li>부당하게 아이템을 획득한 경우, 아이템이 회수되고 제재를 받을 수 있습니다.</li>
+			</ul>
+		</div>
+	</section>
+
+	<div class="closing">풍성한 한가위에도 끄투엔과 함께해요!</div>
+
+</body>
+
+</html>

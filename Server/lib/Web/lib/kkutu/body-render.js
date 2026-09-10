@@ -448,6 +448,133 @@ function requestExchange(offer) {
 		});
 	});
 }
+// 추석 이벤트: 마일스톤 사이 구간을 선형 보간해 달의 위상(0=그믐~1=보름달)을 계산
+// (마일스톤 임계값 간격이 서로 달라도, 마일스톤 하나를 넘길 때마다 동일한 폭만큼 위상이 진행됨)
+function computeMoonPhase(amount, milestones) {
+	var anchors = [{ threshold: 0, phase: 0 }];
+	var n = milestones.length;
+
+	milestones.forEach(function (m, i) {
+		anchors.push({ threshold: m.threshold, phase: (i + 1) / n });
+	});
+	if (amount <= 0) return 0;
+	for (var i = 1; i < anchors.length; i++) {
+		if (amount <= anchors[i].threshold) {
+			var prev = anchors[i - 1], cur = anchors[i];
+			var t = (cur.threshold === prev.threshold) ? 1 : (amount - prev.threshold) / (cur.threshold - prev.threshold);
+			return prev.phase + t * (cur.phase - prev.phase);
+		}
+	}
+	return 1;
+}
+// 추석 이벤트: 달의 위상 경계(터미네이터)는 항상 원의 맨 위/맨 아래 점을 지나야 하고,
+// 세 번째로 지나는 점(적도 위 한 점)만 진행률에 따라 좌우로 움직인다.
+// 이 세 점을 지나는 원의 중심·반지름을 원의 방정식으로 구해 SVG 호로 그리되,
+// 반달 부근(중심이 발산하는 구간)에서는 3차 베지어 곡선으로 대체한다.
+// (viewBox 0 0 100 100, 중심 (50,50), 반지름 50 기준의 정규화 좌표)
+function buildMoonMaskPath(progress) {
+	var r = 50, cx = 50, cy = 50;
+	var dx = -r * Math.cos(progress * Math.PI);
+	var mx = cx + dx, my = cy;
+	var topX = cx, topY = cy - r;
+	var bottomX = cx, bottomY = cy + r;
+	// 세 점(top, mid, bottom)을 지나는 원의 중심은 대칭성에 의해 항상 y=cy 위에 있다.
+	var k = (dx * dx - r * r) / (2 * dx); // 중심 = (cx + k, cy); dx→0일수록 발산
+	var terminator;
+
+	if (Math.abs(k) > 1000) {
+		// 원의 중심이 지나치게 멀어지는(거의 직선인) 구간은 3차 베지어로 대체
+		// (2차 베지어가 mid를 정확히 지나도록 만든 뒤 표준 공식으로 3차 승격; dx=0이면 완전한 직선으로 수렴)
+		var cpNearTopX = cx + 4 * dx / 3, cpNearTopY = cy - r / 3;
+		var cpNearBottomX = cx + 4 * dx / 3, cpNearBottomY = cy + r / 3;
+		terminator = "C " + cpNearBottomX + "," + cpNearBottomY + " " + cpNearTopX + "," + cpNearTopY + " " + topX + "," + topY;
+	} else {
+		var ox = cx + k, oy = cy;
+		var R = Math.sqrt(k * k + r * r);
+		var norm = function (a) { var t = a % (2 * Math.PI); return t < 0 ? t + 2 * Math.PI : t; };
+		var angleTop = norm(Math.atan2(topY - oy, topX - ox));
+		var angleBottom = norm(Math.atan2(bottomY - oy, bottomX - ox));
+		var angleMid = norm(Math.atan2(my - oy, mx - ox));
+		var sweepSpan = norm(angleTop - angleBottom); // sweep=1(양의 각) 방향으로 bottom->top까지의 각도
+		var midSpan = norm(angleMid - angleBottom);
+		var sweepFlag = (midSpan > 0 && midSpan < sweepSpan) ? 1 : 0;
+		terminator = "A " + R + "," + R + " 0 0," + sweepFlag + " " + topX + "," + topY;
+	}
+	// 달 자신의 오른쪽 반원(고정) + 터미네이터(반보다 덜/더 참에 따라 저절로 안쪽/바깥쪽을 감싸게 됨)
+	return "M " + topX + "," + topY +
+		" A " + r + "," + r + " 0 0,1 " + bottomX + "," + bottomY +
+		" " + terminator + " Z";
+}
+// 추석 이벤트: 달가루 위상 + 마일스톤 그리드
+function drawMoonPanel() {
+	var $panel = $("#event-moon-panel");
+
+	$panel.empty();
+	$.get("/event/moon-status", {}, function (res) {
+		$panel.empty();
+		if (!res || !res.active) {
+			$panel.append($("<div>").addClass("exc-list-empty").html(L['excNoOffers']));
+			return;
+		}
+
+		var progress = computeMoonPhase(res.amount, res.milestones);
+		var $moonWrap = $("<div>").addClass("event-moon-wrap");
+		var $moonCircle = $("<div>").addClass("event-moon-circle");
+		// 0(그믐, 전부 어둡게 마스킹) ~ 1(보름, 마스킹 없음)
+		var maskPath = buildMoonMaskPath(progress);
+		// SVGElement.className은 이 jQuery 버전의 addClass()가 못 다루는 SVGAnimatedString(getter만 있음)이므로 attr("class", ...)로 설정
+		var $moonMask = $(document.createElementNS("http://www.w3.org/2000/svg", "svg")).attr("class", "event-moon-mask").attr("viewBox", "0 0 100 100");
+		var $moonMaskPath = $(document.createElementNS("http://www.w3.org/2000/svg", "path")).attr("d", maskPath);
+		$moonMask.append($moonMaskPath);
+		$moonWrap.append($moonCircle, $moonMask);
+
+		var $amount = $("<div>").addClass("event-moon-amount").html(L['eventMoonAmount'] + ": " + commify(res.amount));
+		$panel.append($moonWrap, $amount);
+
+		if (!res.participated) {
+			$panel.append($("<div>").addClass("event-moon-notice").html(L['eventMoonParticipateNotice']));
+		}
+
+		var $grid = $("<div>").addClass("event-moon-grid");
+		res.milestones.forEach(function (m) {
+			var $cell = $("<div>").addClass("event-moon-cell");
+			if (m.unlocked && $data.shop[m.itemId]) {
+				var gd = iGoods(m.itemId);
+				$cell.append($("<div>").addClass("jt-image event-moon-cell-image").css('background-image', "url(" + gd.image + ")"));
+				$cell.append($("<div>").addClass("event-moon-cell-name").html(gd.name));
+				if (m.owned) {
+					$cell.addClass("event-moon-cell-owned");
+					$cell.append($("<div>").addClass("event-moon-cell-check").html("&#10003;"));
+					$cell.append($("<div>").addClass("event-moon-cell-status").html(L['eventMoonClaimed']));
+				} else if (res.participated) {
+					var $btn = $("<button>").addClass("event-moon-claim-btn").html(L['eventMoonClaim']);
+					$btn.on('click', function () { claimMilestone(m.tier); });
+					$cell.append($btn);
+				}
+			} else {
+				$cell.addClass("event-moon-cell-locked");
+				$cell.append($("<div>").addClass("event-moon-cell-image event-moon-cell-question").html("?"));
+				$cell.append($("<div>").addClass("event-moon-cell-name").html(L['eventMoonLocked']));
+				$cell.append($("<div>").addClass("event-moon-cell-status").html(L['eventMoonLockedDescPrefix'] + commify(m.threshold) + L['eventMoonLockedDescSuffix']));
+			}
+			$grid.append($cell);
+		});
+		$panel.append($grid);
+	});
+}
+function claimMilestone(tier) {
+	$.post("/event/claim-milestone", { tier: tier }, function (res) {
+		if (res.error) return fail(res.error);
+		send('refresh');
+		showAlert(L['obtained'] + '!');
+		$data.box = res.box;
+		queueObtain({ key: res.obtained, value: 1 });
+
+		drawMyDress($data._avGroup);
+		updateMe();
+		drawMoonPanel();
+	});
+}
 
 function drawLeaderboard(data) {
 	var $board = $stage.dialog.lbTable.empty();
@@ -1401,7 +1528,8 @@ function changeSoundPack(newPackName, callback) {
 			{ key: "kung", value: "/media/kkutu/kung.mp3" },
 			{ key: "horr", value: "/media/kkutu/horr.mp3" },
 			{ key: "attack", value: "/media/common/attack.mp3" },
-			{ key: "defence", value: "/media/common/defence.mp3" }
+			{ key: "defence", value: "/media/common/defence.mp3" },
+			{ key: "moondust", value: "/media/common/moondust.opus" }
 		];
 		for (i = 0; i <= 10; i++) {
 			soundList.push(

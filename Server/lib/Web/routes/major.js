@@ -27,6 +27,32 @@ var NicknameGuard = require("../../sub/nickname-guard");
 var { validateInput } = require("../validators");
 var KO_KR_LANG = require("../lang/ko_KR.json");
 
+var CHUSEOK_EVENT_ID = "kkn_chuseok";
+var CHUSEOK_MILESTONES = [
+  { tier: 1, threshold: 2000, itemId: "songpyeon" },
+  { tier: 2, threshold: 5000, itemId: "gat" },
+  { tier: 3, threshold: 10000, itemId: "b3_moon" },
+  { tier: 4, threshold: 20000, itemId: "songpyeon_costume" },
+  { tier: 5, threshold: 30000, itemId: "gradientname_moonlight" },
+  { tier: 6, threshold: 50000, itemId: "fullmoon_bg" }
+];
+var CHUSEOK_MAX_DUST = 50000;
+// 마일스톤 아이템별 최대 획득 개수 (손에 든 송편은 양손에 하나씩 낄 수 있어 2개, 나머지는 1개)
+var CHUSEOK_ITEM_MAX = { songpyeon: 2 };
+// 착용 중인 아이템은 box에서 소모(0/삭제)되어 사라지므로, box 개수만으로는 실제 보유 수를 알 수 없다.
+// box에 남아있는 개수 + 현재 장착 슬롯에 걸려있는 개수를 더해야 실제로 갖고 있는 개수가 나온다.
+function getMoonOwnedCount(user, itemId) {
+  var boxCount = Number((user.box && user.box[itemId]) || 0);
+  var equipCount = 0;
+
+  if (user.equip) {
+    for (var part in user.equip) {
+      if (user.equip[part] === itemId) equipCount++;
+    }
+  }
+  return boxCount + equipCount;
+}
+
 function obtain($user, key, value, term, addValue) {
   var now = new Date().getTime();
 
@@ -902,6 +928,85 @@ exports.run = function (Server, page) {
     MainDB.event.find().on(function ($r) { _events = $r || []; excPhase1(); });
     MainDB.itemexc.find().on(function ($r) { _recipes = $r || []; excPhase1(); });
     MainDB.users.findOne(["_id", uid]).limit(["box", true]).on(function ($r) { _user = $r; excPhase1(); });
+  });
+  Server.get("/event/moon-status", function (req, res) {
+    if (!req.session.profile) return res.json({ error: 400 });
+    var uid = req.session.profile.id;
+    var _events = null, _dust = null, _user = null, _done = 0;
+
+    function done() {
+      if (++_done < 3) return;
+      var active = (_events || []).some(function (e) { return e._id === CHUSEOK_EVENT_ID && Const.isEventActive(e); });
+      if (!active) return res.json({ active: false });
+
+      var amount = (_dust && _dust.amount) ? Number(_dust.amount) : 0;
+      var user = _user || {};
+      var moonClaims = (user.kkutu && user.kkutu.moonClaims) || {};
+      var record = user.kkutu && user.kkutu.record && user.kkutu.record.KWC;
+      var participated = !!(record && record[2] >= 1);
+
+      // moonClaims는 이 기능을 넣기 전에 이미 받은 아이템은 모른다. 착용 중이라 box에서 사라졌더라도
+      // 실제 보유 수(box 잔여 + 장착 중인 개수)가 있으면 그만큼은 받은 것으로 쳐서 "집계 안 됨"을 방지한다.
+      var milestones = CHUSEOK_MILESTONES.map(function (m) {
+        var claimed = Math.max(moonClaims[m.itemId] || 0, getMoonOwnedCount(user, m.itemId));
+        var max = CHUSEOK_ITEM_MAX[m.itemId] || 1;
+        return {
+          tier: m.tier,
+          threshold: m.threshold,
+          itemId: m.itemId,
+          unlocked: amount >= m.threshold,
+          owned: claimed >= max
+        };
+      });
+
+      res.json({ active: true, amount: amount, maxDust: CHUSEOK_MAX_DUST, participated: participated, milestones: milestones });
+    }
+    MainDB.event.find().on(function ($r) { _events = $r || []; done(); });
+    MainDB.shared_collecting.findOne(["id", "moondust"]).on(function ($r) { _dust = $r; done(); });
+    MainDB.users.findOne(["_id", uid]).limit(["box", true], ["kkutu", true], ["equip", true]).on(function ($r) { _user = $r; done(); });
+  });
+  Server.post("/event/claim-milestone", function (req, res) {
+    if (!req.session.profile) return res.json({ error: 400 });
+    var uid = req.session.profile.id;
+
+    var tier = parseInt(req.body.tier, 10);
+    var milestone = CHUSEOK_MILESTONES.filter(function (m) { return m.tier === tier; })[0];
+    if (!milestone) return res.json({ error: 400 });
+
+    var _events = null, _dust = null, _user = null, _phase1 = 0, _failed = false;
+    function claimPhase1() {
+      if (_failed) return;
+      if (++_phase1 < 3) return;
+      if (!_user) { _failed = true; return res.json({ error: 400 }); }
+      if (!_user.box) _user.box = {};
+      if (!_user.kkutu) _user.kkutu = {};
+      if (!_user.kkutu.moonClaims) _user.kkutu.moonClaims = {};
+
+      var active = (_events || []).some(function (e) { return e._id === CHUSEOK_EVENT_ID && Const.isEventActive(e); });
+      if (!active) { _failed = true; return res.json({ error: 463 }); }
+
+      var amount = (_dust && _dust.amount) ? Number(_dust.amount) : 0;
+      if (amount < milestone.threshold) { _failed = true; return res.json({ error: 464 }); }
+
+      var record = _user.kkutu.record && _user.kkutu.record.KWC;
+      if (!record || record[2] < 1) { _failed = true; return res.json({ error: 465 }); }
+
+      // moonClaims 도입 전에 이미 받아 착용 중인 경우 box 집계에서 사라지므로, 실제 보유 수도 함께 확인한다.
+      var claimed = Math.max(_user.kkutu.moonClaims[milestone.itemId] || 0, getMoonOwnedCount(_user, milestone.itemId));
+      var max = CHUSEOK_ITEM_MAX[milestone.itemId] || 1;
+      if (claimed >= max) { _failed = true; return res.json({ error: 466 }); }
+
+      obtain(_user, milestone.itemId, 1);
+      _user.kkutu.moonClaims[milestone.itemId] = claimed + 1;
+
+      MainDB.users.update(["_id", uid]).set(["box", _user.box], ["kkutu", _user.kkutu]).on(function () {
+        res.json({ result: 200, box: _user.box, obtained: milestone.itemId });
+        JLog.log("[MOON_CLAIM] tier " + tier + " (" + milestone.itemId + ") by " + uid);
+      });
+    }
+    MainDB.event.find().on(function ($r) { _events = $r || []; claimPhase1(); });
+    MainDB.shared_collecting.findOne(["id", "moondust"]).on(function ($r) { _dust = $r; claimPhase1(); });
+    MainDB.users.findOne(["_id", uid]).limit(["box", true], ["kkutu", true], ["equip", true]).on(function ($r) { _user = $r; claimPhase1(); });
   });
   Server.get("/dict/:word", function (req, res) {
     var word = req.params.word;

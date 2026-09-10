@@ -194,6 +194,9 @@ function refreshEventMults() {
 		_eventMults = { expmul: expmul, mnymul: mnymul, eventItems: eventItems, itemmul: itemmul };
 	});
 }
+function isEventLive(id) {
+	return _cachedEventList.some(function (ev) { return ev._id === id && Const.isEventActive(ev); });
+}
 
 exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN, _DiscordRelay) {
 	var i, k;
@@ -1155,6 +1158,10 @@ exports.Client = function (socket, profile, sid) {
 				4. 일꾼이 만들었다고 마스터에게 알린다.
 				5. 마스터가 방 정보를 반영한다.
 			*/
+			var _newRule = Const.getRule(room.mode);
+			if (_newRule && _newRule.rule === 'Wordcollect' && !isEventLive('kkn_chuseok')) {
+				return my.sendError(463);
+			}
 			if (Cluster.isMaster) {
 				var av = getFreeChannel();
 
@@ -1354,6 +1361,10 @@ exports.Client = function (socket, profile, sid) {
 		if ($room) {
 			if (!$room.gaming) {
 				if ($room.master == my.id) {
+					var _setRule = Const.getRule(room.mode);
+					if (_setRule && _setRule.rule === 'Wordcollect' && !isEventLive('kkn_chuseok')) {
+						return my.sendError(463);
+					}
 					$room.set(room);
 					exports.publish('room', { target: my.id, room: $room.getData(), modify: true }, room.password);
 					// Discord: 방 설정 변경 로그

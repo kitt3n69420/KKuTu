@@ -414,7 +414,7 @@ async function registerCommands(token) {
                             ko: '검색할 단어'
                         })
                         .setRequired(true)
-                        .setMaxLength(50)
+                        .setMaxLength(120)
                 ),
 
             new SlashCommandBuilder()
@@ -2028,7 +2028,7 @@ async function handleIpUnban(interaction) {
             return;
         }
 
-        DB.ip_block.update(['_id', ip]).set(['reasonBlocked', null], ['ipBlockedUntil', 0]).on();
+        DB.ip_block.remove(['_id', ip]).on();
 
         JLog.info(`[Discord Bot] ipunban ${ip} by discord-${interaction.user.id}`);
         await interaction.editReply({ content: `✅ IP "${ip}"의 제재를 해제했습니다.` });

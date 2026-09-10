@@ -54,7 +54,7 @@ var ROUTES = ["major", "consume", "admin", "login"];
 //볕뉘 수정 끝
 var page = WebInit.page;
 var gameServers = [];
-var _noticeCache = { text: null, banner: null, at: 0 };
+var _noticeCache = { text: null, banner: null, activeIds: [], at: 0 };
 var NOTICE_CACHE_TTL = 300000; // 5분 (이벤트는 자주 바뀌지 않음)
 
 WebInit.MOBILE_AVAILABLE = ["portal", "main", "kkutu"];
@@ -86,11 +86,13 @@ Server.use(Parser.urlencoded({ extended: true }));
 Server.use(function (req, res, next) {
   res.locals.activeEventNotice = _noticeCache.text;
   res.locals.activeEventBanner = _noticeCache.banner;
+  res.locals.activeEventIds = _noticeCache.activeIds || [];
   var now = Date.now();
   if (now - _noticeCache.at >= NOTICE_CACHE_TTL) {
     _noticeCache.at = now;
     DB.event.find().on(function ($events) {
       var active = ($events || []).filter(function (ev) { return Const.isEventActive(ev); });
+      _noticeCache.activeIds = active.map(function (ev) { return ev._id; });
       if (!active.length) {
         _noticeCache.text = null;
         _noticeCache.banner = null;

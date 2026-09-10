@@ -615,7 +615,9 @@ function onMessage(data) {
 			break;
 		case 'chat':
 			if (data.notice) {
-				notice(data.value || L[data.code] || L['error_' + data.code], data.head);
+				var noticeMsg = data.value || L[data.code] || L['error_' + data.code];
+				if (data.v1 !== undefined) noticeMsg = noticeMsg.replace('{V1}', data.v1);
+				notice(noticeMsg, data.head);
 			} else {
 				chat(data.profile || { title: L['robot'] }, data.value, data.from, data.timestamp);
 			}
@@ -1504,6 +1506,14 @@ function processRoom(data) {
 						}
 					}
 				}
+				if (data.condition) {
+					$lib.Wordcollect.roundReady(data, true);
+					$data._maps = data.words || [];
+					$lib.Wordcollect.drawMaps();
+					if (typeof data.roundTime === 'number') {
+						$lib.Wordcollect.turnStart({ roundTime: data.roundTime });
+					}
+				}
 			}
 		}
 		if (!data.modify && data.target == $data.id) forkChat();
@@ -2290,6 +2300,17 @@ function clearGame() {
 	delete $data._flipColorMap;
 	$(".game-user").css("background-color", "");
 
+	// 게임 중 나가기는 clearBoard()를 거치지 않으므로, 모드 전용 클래스가 다음 게임(다른 모드)까지
+	// 남아 화면이 깨지지 않도록 여기서도 방어적으로 정리 (clearBoard()의 해당 줄들과 동일)
+	$(".jjoriping,.game-body").removeClass("flip");
+	$(".jjoriping,.rounds,.game-body").removeClass("landgrab");
+	$(".jjoriping,.game-body").removeClass("center-board");
+	$(".jjoriping,.rounds,.game-body").removeClass("wordcollect wc-round-active");
+	if ($data._wcNight) {
+		$data._wcNight.remove();
+		$data._wcNight = null;
+	}
+
 	// apple 규칙으로 변경된 설정을 원래대로 복구
 	if ($data._originalSettings && $data.room) {
 		$data.room.round = $data._originalSettings.round;
@@ -2608,6 +2629,11 @@ function clearBoard() {
 	$(".jjoriping,.game-body").removeClass("flip");
 	$(".jjoriping,.rounds,.game-body").removeClass("landgrab");
 	$(".jjoriping,.game-body").removeClass("center-board");
+	$(".jjoriping,.rounds,.game-body").removeClass("wordcollect wc-round-active");
+	if ($data._wcNight) {
+		$data._wcNight.remove();
+		$data._wcNight = null;
+	}
 	$(".jjoriping").css({ "float": "", "margin": "" });
 	// Small-mode class is managed by updateRoom() based on player count, don't remove it here
 	$stage.game.display.removeClass("raingame-board").empty();
