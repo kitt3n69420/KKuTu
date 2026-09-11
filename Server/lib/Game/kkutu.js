@@ -458,6 +458,8 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 		for (g = 0; g < EQUIP_GROUPS.length; g++) {
 			if (groups[EQUIP_GROUPS[g]]) pool = pool.concat(groups[EQUIP_GROUPS[g]]);
 		}
+		// cost가 -1인 아이템(비매품)은 봇 착용 후보에서 제외한다.
+		pool = pool.filter(function (id) { return SHOP[id] && SHOP[id].cost >= 0; });
 
 		var count = Math.floor(Math.random() * 5) + 2; // 2 ~ 6
 		var shuffled = pool.sort(function (a, b) {
