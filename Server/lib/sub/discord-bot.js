@@ -45,6 +45,7 @@ const RECONNECT_DELAY = 30000; // 30s before manual reconnect attempt
 // Proxy callbacks set when running as a separate process
 let _queryOnlineUser = null; // (query) => Promise<{profile, data}|null>
 let _sendRoomMsg = null;     // (roomId, message) => Promise<{exists, sent}>
+let _resetTitle = null;      // (roomId) => Promise<{exists, newTitle}>
 let _kickUser = null;        // (userId) => Promise<{found}|null>
 let _listOnlineUsers = null; // () => Promise<{total, lobby, rooms}|null>
 let _sendYell = null;        // (message) => Promise<{ok}|null>
@@ -77,7 +78,7 @@ function scheduleReconnect() {
             client = null;
             channel = null;
             await Promise.race([
-                exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN, queryOnlineUser: _queryOnlineUser, sendRoomMsg: _sendRoomMsg, kickUser: _kickUser, listOnlineUsers: _listOnlineUsers, sendYell: _sendYell, setGuestConnect: _setGuestConnect, setGuestChat: _setGuestChat }),
+                exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN, queryOnlineUser: _queryOnlineUser, sendRoomMsg: _sendRoomMsg, resetTitle: _resetTitle, kickUser: _kickUser, listOnlineUsers: _listOnlineUsers, sendYell: _sendYell, setGuestConnect: _setGuestConnect, setGuestChat: _setGuestChat }),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Reconnect timeout (35s)')), 35000))
             ]);
         } catch (err) {
@@ -233,6 +234,7 @@ exports.init = async function (token, db, dic, options = {}) {
     ADMIN = options.ADMIN || [];
     _queryOnlineUser = options.queryOnlineUser || null;
     _sendRoomMsg = options.sendRoomMsg || null;
+    _resetTitle = options.resetTitle || null;
     _kickUser = options.kickUser || null;
     _listOnlineUsers = options.listOnlineUsers || null;
     _sendYell = options.sendYell || null;
@@ -551,6 +553,23 @@ async function registerCommands(token) {
                 ),
 
             new SlashCommandBuilder()
+                .setName('resettitle')
+                .setNameLocalizations({ ko: '방제목초기화' })
+                .setDescription('Reset a room\'s title to its default (admin only)')
+                .setDescriptionLocalizations({
+                    ko: '방 제목을 기본값으로 초기화해요. (관리자 전용)'
+                })
+                .addIntegerOption(opt =>
+                    opt.setName('room')
+                        .setNameLocalizations({ ko: '방번호' })
+                        .setDescription('Room number')
+                        .setDescriptionLocalizations({
+                            ko: '방 번호'
+                        })
+                        .setRequired(true)
+                ),
+
+            new SlashCommandBuilder()
                 .setName('users')
                 .setNameLocalizations({ ko: '접속자' })
                 .setDescription('Show total online user count grouped by room')
@@ -837,6 +856,9 @@ async function handleCommand(interaction) {
             case 'roommsg':
                 await handleRoomMsg(interaction);
                 break;
+            case 'resettitle':
+                await handleResetTitle(interaction);
+                break;
             case 'users':
                 await handleUsers(interaction);
                 break;
@@ -964,6 +986,11 @@ async function handleHelp(interaction) {
             {
                 name: '📢 /roommsg (방메시지) `<방번호>` `<메시지>`',
                 value: '방에 관리자 공지 메시지 전송 (관리자 전용)\n예: `/roommsg 102 안녕하세요`',
+                inline: false
+            },
+            {
+                name: '🏷️ /resettitle (방제목초기화) `<방번호>`',
+                value: '방 제목을 기본값으로 초기화 (관리자 전용)\n예: `/resettitle 102`',
                 inline: false
             },
             {
@@ -1638,6 +1665,49 @@ async function handleRoomMsg(interaction) {
 
     JLog.info(`[Discord Bot] roommsg to room ${rid} by ${discordId}: ${message}`);
     await interaction.reply({ content: `✅ ${rid}번 방에 메시지를 보냈습니다. (${sent}명에게 전달)`, ephemeral: true });
+}
+
+/**
+ * /resettitle command - Reset a room's title to its default (admin only)
+ */
+async function handleResetTitle(interaction) {
+    if (!isAdmin(interaction)) {
+        await interaction.reply({ content: '❌ 관리자만 사용할 수 있는 명령어입니다.', ephemeral: true });
+        return;
+    }
+
+    var rid = interaction.options.getInteger('room');
+    var discordId = 'discord-' + interaction.user.id;
+
+    if (_resetTitle) {
+        // Separate process mode: proxy to master
+        const result = await _resetTitle(rid);
+        if (!result || !result.exists) {
+            await interaction.reply({ content: `❌ ${rid}번 방을 찾을 수 없습니다.`, ephemeral: true });
+            return;
+        }
+        JLog.info(`[Discord Bot] resettitle room ${rid} by ${discordId}: ${result.newTitle}`);
+        await interaction.reply({ content: `✅ ${rid}번 방의 제목을 "${result.newTitle}"(으)로 초기화했습니다.`, ephemeral: true });
+        return;
+    }
+
+    // Same process mode: direct DIC/ROOM access
+    if (!ROOM || !ROOM[rid]) {
+        await interaction.reply({ content: `❌ ${rid}번 방을 찾을 수 없습니다.`, ephemeral: true });
+        return;
+    }
+
+    var newTitle = rid + '번 방';
+    ROOM[rid].title = newTitle;
+    var r = JSON.stringify({ type: 'room', room: ROOM[rid].getData(), modify: true });
+    for (var k in DIC) {
+        if ((DIC[k].place == rid || DIC[k].place == 0) && DIC[k].socket && DIC[k].socket.readyState == 1) {
+            DIC[k].socket.send(r);
+        }
+    }
+
+    JLog.info(`[Discord Bot] resettitle room ${rid} by ${discordId}: ${newTitle}`);
+    await interaction.reply({ content: `✅ ${rid}번 방의 제목을 "${newTitle}"(으)로 초기화했습니다.`, ephemeral: true });
 }
 
 /**

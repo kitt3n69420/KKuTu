@@ -254,6 +254,27 @@ function handleDiscordProcessMessage(msg) {
       } catch (e) {}
       break;
     }
+    case "reset-title": {
+      var rtRid = msg.roomId;
+      var rtRoom = ROOM && ROOM[rtRid];
+      var rtExists = !!rtRoom;
+      var rtNewTitle = null;
+      if (rtExists) {
+        rtNewTitle = rtRid + "번 방";
+        rtRoom.title = rtNewTitle;
+        var rtMsg = JSON.stringify({ type: "room", room: rtRoom.getData(), modify: true });
+        for (var rtK in DIC) {
+          if ((DIC[rtK].place == rtRid || DIC[rtK].place == 0) && DIC[rtK].socket && DIC[rtK].socket.readyState == 1) {
+            DIC[rtK].socket.send(rtMsg);
+          }
+        }
+        JLog.info("[Discord] resettitle room " + rtRid + " -> " + rtNewTitle);
+      }
+      try {
+        discordProcess.send({ type: "reset-title-result", _reqId: msg._reqId, exists: rtExists, newTitle: rtNewTitle });
+      } catch (e) {}
+      break;
+    }
     case "kick-user": {
       var kTarget = DIC[msg.userId];
       var kFound = !!(kTarget && kTarget.socket && kTarget.socket.readyState == 1);
@@ -508,6 +529,22 @@ function processAdmin(id, value) {
           }
         }
         JLog.info(`[Admin] roommsg to room ${rid}: ${message}`);
+      } else {
+        if (DIC[id]) DIC[id].send("notice", { value: "방을 찾을 수 없습니다." });
+      }
+      return null;
+    case "resettitle":
+      temp = value.match(/^(\d+)$/);
+      if (temp && ROOM[Number(temp[1])]) {
+        var rtRid = Number(temp[1]);
+        ROOM[rtRid].title = rtRid + "번 방";
+        var rtMsg = JSON.stringify({ type: "room", room: ROOM[rtRid].getData(), modify: true });
+        for (var rtK in DIC) {
+          if ((DIC[rtK].place == rtRid || DIC[rtK].place == 0) && DIC[rtK].socket && DIC[rtK].socket.readyState == 1) {
+            DIC[rtK].socket.send(rtMsg);
+          }
+        }
+        JLog.info(`[Admin] resettitle room ${rtRid} -> ${ROOM[rtRid].title}`);
       } else {
         if (DIC[id]) DIC[id].send("notice", { value: "방을 찾을 수 없습니다." });
       }

@@ -40,6 +40,9 @@ const proxyCallbacks = {
     sendRoomMsg: function (roomId, message) {
         return ipcRequest('send-roommsg', { roomId: roomId, message: message });
     },
+    resetTitle: function (roomId) {
+        return ipcRequest('reset-title', { roomId: roomId });
+    },
     kickUser: function (userId) {
         return ipcRequest('kick-user', { userId: userId });
     },
@@ -142,6 +145,7 @@ MainDB.ready = function () {
         ADMIN: GLOBAL.ADMIN,
         queryOnlineUser: proxyCallbacks.queryOnlineUser,
         sendRoomMsg: proxyCallbacks.sendRoomMsg,
+        resetTitle: proxyCallbacks.resetTitle,
         kickUser: proxyCallbacks.kickUser,
         listOnlineUsers: proxyCallbacks.listOnlineUsers,
         sendYell: proxyCallbacks.sendYell,
