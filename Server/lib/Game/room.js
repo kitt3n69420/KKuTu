@@ -1865,12 +1865,14 @@ function Room(room, channel) {
 			}
 			if (moonHumanCount >= 2) {
 				var moonDelta = Math.floor(moonSumScore);
-				if (moonDelta > 0 && DB.shared_collecting) {
-					DB.shared_collecting.direct("UPDATE shared_collecting SET amount = amount + $1 WHERE id='moondust'", [moonDelta], function () {});
+				if (moonDelta > 0) {
+					if (DB.shared_collecting) {
+						DB.shared_collecting.direct("UPDATE shared_collecting SET amount = amount + $1 WHERE id='moondust'", [moonDelta], function () {});
+					}
+					// 이번 판에서 모은 달가루 수를 공지 (조건 미충족/기여분 0이면 표출 안 함)
+					narrate(my.players, 'chat', { code: 'wcRoundDust', v1: moonDelta, notice: true });
 				}
 			}
-			// 이번 판에서 모은 달가루 수를 공지
-			narrate(my.players, 'chat', { code: 'wcRoundDust', v1: my.game.totalScore || 0, notice: true });
 		}
 
 		var humanRes = res.filter(function (r) { return !r.robot; });

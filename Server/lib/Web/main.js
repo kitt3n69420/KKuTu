@@ -123,6 +123,10 @@ Server.use(
     secret: GLOBAL.SESSION_SECRET || "kkutu",
     resave: false,
     saveUninitialized: false,
+    // maxAge 미지정 시 브라우저 세션 쿠키(브라우저/탭 종료 시 소멸)가 되어,
+    // 모바일 브라우저가 백그라운드에서 종료되는 경우 등에 로그인이 조기에 풀림.
+    // Redis 세션 store의 ttl(12시간)과 맞춘다.
+    cookie: { maxAge: 3600 * 12 * 1000 },
   }),
 );
 //볕뉘 수정
