@@ -383,8 +383,6 @@ block Middle
 		div.dialog-bar
 			h4(data-lang-key='gameCategory')= L('gameCategory')
 			select#room-category(style="width: 283px;")
-				if locals.activeEventIds && locals.activeEventIds.indexOf('kkn_chuseok') !== -1
-					option(value='event', data-lang-key='categoryEvent')= L('categoryEvent')
 				option(value='all', data-lang-key='categoryAll')= L('categoryAll')
 				option(value='classic', data-lang-key='categoryClassic')= L('categoryClassic')
 				option(value='quiz', data-lang-key='categoryQuiz')= L('categoryQuiz')
