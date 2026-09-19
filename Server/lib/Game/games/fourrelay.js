@@ -22,9 +22,9 @@ var File = require('fs');
 var DB;
 var DIC;
 
-var ROBOT_START_DELAY = [1200, 800, 400, 200, 0];
-var ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0];
-var ROBOT_ACCURACY = [0.9, 0.95, 0.99, 1, 1]; // 레벨(0~4)별 정답 제출 확률
+var ROBOT_START_DELAY = [1200, 800, 400, 200, 0, 0];
+var ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0, 0];
+var ROBOT_ACCURACY = [0.9, 0.95, 0.99, 1, 1, 1]; // 레벨(0~4)별 정답 제출 확률
 
 var PROBLEMS4 = []; // [{ clue: "마을", candidates: ["버스", "회관"] }, ...] (4글자 문제)
 var PROBLEMS6 = []; // 6글자 문제 (clue 3글자 + candidate 3글자)

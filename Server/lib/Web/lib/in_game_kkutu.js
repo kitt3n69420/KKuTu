@@ -682,7 +682,7 @@ $(document).ready(function () {
 		var $target = $(e.currentTarget);
 		var value = $target.val();
 
-		if (value < 2 || value > 12) {
+		if (value < 2 || value > 24) {
 			$target.css('color', "#FF4444");
 		} else {
 			$target.css('color', "");
@@ -3041,7 +3041,7 @@ $(document).ready(function () {
 		if (obj) drawObtain(obj);
 		else $stage.dialog.obtain.hide();
 	});
-	for (i = 0; i < 5; i++) $("#team-" + i).on('click', onTeam);
+	for (i = 0; i < 7; i++) $("#team-" + i).on('click', onTeam);
 	function onTeam(e) {
 		if ($(".team-selector").hasClass("team-unable")) return;
 
@@ -7387,7 +7387,7 @@ $lib.Quiz.turnEnd = function (id, data) {
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// 플레이어 배경색 (인덱스 0 = 미소유) — 라이트 모드
+// 플레이어 배경색 (인덱스 0 = 미소유) — 라이트 모드, Tier 1 (1~10P)
 $lib.Flip._PLAYER_COLORS = [
 	'#42341a',  // 0: 미소유
 	'#fffea4',  // 1P
@@ -7399,12 +7399,10 @@ $lib.Flip._PLAYER_COLORS = [
 	'#8ce7a1',  // 4P
 	'#F7b1e6',  // 8P
 	'#feb482',  // 3P
-	'#a1cafe',  // 9P
-	'#e178c2',  // 11P
-	'#11bdce'   // 12P
+	'#a1cafe'   // 9P
 ];
 
-// 플레이어 배경색 — 다크 모드 (HSL L-inversion 후 S×0.8, L×1.5)
+// 플레이어 배경색 — 다크 모드 (HSL L-inversion 후 S×0.8, L×1.5), Tier 1 (1~10P)
 $lib.Flip._PLAYER_COLORS_DARK = [
 	'#000000',  // 0: 미소유  H39  S34  L100(cap)
 	'#979516',  // 1P        H59  S80  L27
@@ -7416,27 +7414,58 @@ $lib.Flip._PLAYER_COLORS_DARK = [
 	'#2fa54b',  // 4P        H134 S53  L41
 	'#a131a3',  // 8P        H315 S66  L26
 	'#d1741d',  // 3P        H24  S78  L38
-	'#2265be',  // 9P        H214 S78  L29
-	'#cd678c',  // 11P       H318 S51  L48
-	'#93c757'   // 12P       H185 S68  L84
+	'#2265be'   // 9P        H214 S78  L29
 ];
+
+// 채널별 formula 적용 후 0~255로 clamp해 새 팔레트를 파생 (11~20P/21~30P 티어용)
+$lib.Flip._deriveTier = function (baseColors, formula) {
+	var clamp = function (x) { return Math.max(0, Math.min(255, Math.round(x))); };
+	var out = [];
+	for (var i = 0; i < baseColors.length; i++) {
+		var hex = baseColors[i];
+		var r = parseInt(hex.slice(1, 3), 16);
+		var g = parseInt(hex.slice(3, 5), 16);
+		var b = parseInt(hex.slice(5, 7), 16);
+		out.push('#' + ((1 << 24) + (clamp(formula(r)) << 16) + (clamp(formula(g)) << 8) + clamp(formula(b))).toString(16).slice(1));
+	}
+	return out;
+};
+
+// Tier 1(1~10P)에서 Tier 2(11~20P)를 파생하고, Tier 3(21~30P)는 Tier 2에서 이어서 파생 (라이트/다크 각자 독립적)
+// 라이트: Tier2 = 5/3배 진하게, Tier3 = Tier2 색에 검정 30% 혼합
+// 다크: Tier2 = 4/3배 밝게, Tier3 = Tier2 색에 흰색 40% 혼합
+$lib.Flip._PLAYER_COLORS_TIER1 = $lib.Flip._PLAYER_COLORS.slice(1);
+$lib.Flip._PLAYER_COLORS_TIER2 = $lib.Flip._deriveTier($lib.Flip._PLAYER_COLORS_TIER1, function (x) { return 255 - (5 / 3) * (255 - x); });
+$lib.Flip._PLAYER_COLORS_TIER3 = $lib.Flip._deriveTier($lib.Flip._PLAYER_COLORS_TIER2, function (x) { return x * 0.7; });
+
+$lib.Flip._PLAYER_COLORS_DARK_TIER1 = $lib.Flip._PLAYER_COLORS_DARK.slice(1);
+$lib.Flip._PLAYER_COLORS_DARK_TIER2 = $lib.Flip._deriveTier($lib.Flip._PLAYER_COLORS_DARK_TIER1, function (x) { return x * (4 / 3); });
+$lib.Flip._PLAYER_COLORS_DARK_TIER3 = $lib.Flip._deriveTier($lib.Flip._PLAYER_COLORS_DARK_TIER2, function (x) { return x * 0.6 + 255 * 0.4; });
+
+// 조회용 통합 팔레트: 인덱스 0=미소유, 1~10=Tier1, 11~20=Tier2, 21~30=Tier3
+$lib.Flip._PLAYER_COLORS_FULL = [$lib.Flip._PLAYER_COLORS[0]].concat($lib.Flip._PLAYER_COLORS_TIER1, $lib.Flip._PLAYER_COLORS_TIER2, $lib.Flip._PLAYER_COLORS_TIER3);
+$lib.Flip._PLAYER_COLORS_DARK_FULL = [$lib.Flip._PLAYER_COLORS_DARK[0]].concat($lib.Flip._PLAYER_COLORS_DARK_TIER1, $lib.Flip._PLAYER_COLORS_DARK_TIER2, $lib.Flip._PLAYER_COLORS_DARK_TIER3);
 
 // 팀 배경색 — 라이트 모드
 $lib.Flip._TEAM_COLORS = [
 	'',         // 0: 팀 없음
-	'#8CA6FF',  // 팀 1
-	'#9575CD',  // 팀 2
-	'#F06292',  // 팀 3
-	'#FFCA28'   // 팀 4
+	'#92B2FF',  // 팀 1 (A)
+	'#9B92F8',  // 팀 2 (B)
+	'#EE76A4',  // 팀 3 (C)
+	'#FF9A72',  // 팀 4 (D)
+	'#FFCA7A',  // 팀 5 (E)
+	'#81EB78'   // 팀 6 (F)
 ];
 
-// 팀 배경색 — 다크 모드 (HSL L-inversion 후 S×0.8, L×1.5)
+// 팀 배경색 — 다크 모드 (기본색에 검은색 30% oklch 혼합)
 $lib.Flip._TEAM_COLORS_DARK = [
 	'',         // 0: 팀 없음
-	'#11319b',  // 팀 1  H226 S80  L34
-	'#8263b8',  // 팀 2  H262 S37  L55
-	'#d42e66',  // 팀 3  H340 S66  L51
-	'#ecc756'   // 팀 4  H45  S80  L63
+	'#3B579E',  // 팀 1 (A)
+	'#483795',  // 팀 2 (B)
+	'#88134C',  // 팀 3 (C)
+	'#9E3900',  // 팀 4 (D)
+	'#9E6C00',  // 팀 5 (E)
+	'#108A0A'   // 팀 6 (F)
 ];
 
 $lib.Flip._getPlayerIndex = function (ownerId) {
@@ -7451,33 +7480,41 @@ $lib.Flip._getPlayerIndex = function (ownerId) {
 };
 
 // 게임 시작 시 컬러맵 생성 (게임마다 1회, 라운드마다 아님)
+// N명분 색상 풀을 티어(1~10/11~20/21~30) 순서로 구성: 10명 단위는 전부, 나머지는 해당 티어에서 무작위 샘플
 $lib.Flip._buildColorMap = function () {
 	var seq = $data.room.game.seq;
 	var n = seq.length;
 	var map = {};
-	var i, id, colors, offset;
+	var i, id;
+	var tiers = [1, 2, 3]; // tier index offset은 (tier-1)*10 + 1
+	var pool = [];
+	var remaining = n;
 
-	if (n >= 11) {
-		// 11~12명: 1~12번 색상 전체를 셔플
-		colors = [];
-		for (i = 1; i <= 12; i++) colors.push(i);
-		for (i = colors.length - 1; i > 0; i--) {
-			var j = Math.floor(Math.random() * (i + 1));
-			var t = colors[i]; colors[i] = colors[j]; colors[j] = t;
+	for (var t = 0; t < tiers.length && remaining > 0; t++) {
+		var offset = (tiers[t] - 1) * 10 + 1;
+		if (remaining >= 10) {
+			for (i = 0; i < 10; i++) pool.push(offset + i);
+			remaining -= 10;
+		} else {
+			var picks = [];
+			for (i = 0; i < 10; i++) picks.push(offset + i);
+			for (i = picks.length - 1; i > 0; i--) {
+				var j = Math.floor(Math.random() * (i + 1));
+				var pt = picks[i]; picks[i] = picks[j]; picks[j] = pt;
+			}
+			pool = pool.concat(picks.slice(0, remaining));
+			remaining = 0;
 		}
-		for (i = 0; i < n; i++) {
-			if (!seq[i]) continue;
-			id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
-			map[id] = colors[i];
-		}
-	} else {
-		// 1~10명: 1~10번 색상에서 랜덤 오프셋으로 순환
-		offset = Math.floor(Math.random() * 10);
-		for (i = 0; i < n; i++) {
-			if (!seq[i]) continue;
-			id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
-			map[id] = ((i + offset) % 10) + 1;
-		}
+	}
+
+	for (i = pool.length - 1; i > 0; i--) {
+		var j2 = Math.floor(Math.random() * (i + 1));
+		var t2 = pool[i]; pool[i] = pool[j2]; pool[j2] = t2;
+	}
+	for (i = 0; i < n; i++) {
+		if (!seq[i]) continue;
+		id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
+		map[id] = pool[i];
 	}
 	$data._flipColorMap = map;
 };
@@ -7486,14 +7523,14 @@ $lib.Flip._buildColorMap = function () {
 $lib.Flip._assignFallbackColor = function (ownerId) {
 	var used = {};
 	for (var id in $data._flipColorMap) used[$data._flipColorMap[id]] = true;
-	for (var c = 1; c <= 12; c++) {
+	for (var c = 1; c <= 30; c++) {
 		if (!used[c]) { $data._flipColorMap[ownerId] = c; return; }
 	}
-	$data._flipColorMap[ownerId] = (Object.keys($data._flipColorMap).length % 12) + 1;
+	$data._flipColorMap[ownerId] = (Object.keys($data._flipColorMap).length % 30) + 1;
 };
 
 $lib.Flip._getPlayerColor = function (ownerId) {
-	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK : $lib.Flip._PLAYER_COLORS;
+	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK_FULL : $lib.Flip._PLAYER_COLORS_FULL;
 	if (!ownerId) return colors[0];
 	if (!$data._flipColorMap) $data._flipColorMap = {};
 	if (!$data._flipColorMap[ownerId]) $lib.Flip._assignFallbackColor(ownerId);
@@ -7502,7 +7539,7 @@ $lib.Flip._getPlayerColor = function (ownerId) {
 
 $lib.Flip._applyUserCardColors = function () {
 	if (!$data._flipColorMap) return;
-	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK : $lib.Flip._PLAYER_COLORS;
+	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK_FULL : $lib.Flip._PLAYER_COLORS_FULL;
 	var seq = $data.room && $data.room.game && $data.room.game.seq;
 	if (seq) {
 		for (var i = 0; i < seq.length; i++) {
@@ -7511,9 +7548,15 @@ $lib.Flip._applyUserCardColors = function () {
 			if (!$data._flipColorMap[seqId]) $lib.Flip._assignFallbackColor(seqId);
 		}
 	}
+	var isDarkMode = document.body.classList.contains('dark-mode');
 	for (var id in $data._flipColorMap) {
-		var color = colors[$data._flipColorMap[id]];
-		$("#game-user-" + id).css('background-color', color);
+		var idx = $data._flipColorMap[id];
+		var color = colors[idx];
+		// 다크 모드에서 11p 이상(Tier2/3)은 원래 색보다 밝아서 흰 글씨로는 안 보이므로 검은 글씨로
+		$("#game-user-" + id).css({
+			'background-color': color,
+			'color': (isDarkMode && idx > 10) ? '#000000' : ''
+		});
 	}
 };
 
@@ -7648,7 +7691,8 @@ $lib.Flip.drawDisplay = function () {
 				height: CELL_H + "%",
 				'background-color': bgColor,
 				'border': borderColor ? ('3px solid ' + borderColor) : '1px solid #999',
-				'color': isDark ? ('#FFF') : (owner ? '#000' : '#FFF'),
+				// 다크 모드에서 11p 이상(Tier2/3) 소유 칸은 배경이 밝아서 흰 글씨 대신 검은 글씨 사용
+				'color': isDark ? ((owner && $data._flipColorMap[owner] > 10) ? '#000' : '#FFF') : (owner ? '#000' : '#FFF'),
 				'font-weight': (isNyh || isEnFlip) ? 'normal' : 'bold',
 				'font-size': isEnFlip ? '80%' : ''
 			})
@@ -7681,44 +7725,83 @@ $lib.Flip.turnHint = function (data) {
 
 $lib.Landgrab = {};
 
-// 플레이어 배경색 (인덱스 0 = 미소유) — rule_flip.js와 동일한 팔레트
+// 플레이어 배경색 (인덱스 0 = 미소유) — rule_flip.js와 동일한 팔레트, Tier 1 (1~10P)
 $lib.Landgrab._PLAYER_COLORS = [
 	'#42341a', '#fffea4', '#b7f3f1', '#fda09b', '#d0bcfe', '#cfcfcf',
-	'#dfbb9c', '#8ce7a1', '#F7b1e6', '#feb482', '#a1cafe', '#e178c2', '#11bdce'
+	'#dfbb9c', '#8ce7a1', '#F7b1e6', '#feb482', '#a1cafe'
 ];
 $lib.Landgrab._PLAYER_COLORS_DARK = [
 	'#000000', '#979516', '#2ca09a', '#b72018', '#592ac6', '#808080',
-	'#957a4d', '#2fa54b', '#a131a3', '#d1741d', '#2265be', '#cd678c', '#93c757'
+	'#957a4d', '#2fa54b', '#a131a3', '#d1741d', '#2265be'
 ];
-$lib.Landgrab._TEAM_COLORS = ['', '#8CA6FF', '#9575CD', '#F06292', '#FFCA28'];
-$lib.Landgrab._TEAM_COLORS_DARK = ['', '#11319b', '#8263b8', '#d42e66', '#ecc756'];
+$lib.Landgrab._TEAM_COLORS = ['', '#92B2FF', '#9B92F8', '#EE76A4', '#FF9A72', '#FFCA7A', '#81EB78'];
+$lib.Landgrab._TEAM_COLORS_DARK = ['', '#3B579E', '#483795', '#88134C', '#9E3900', '#9E6C00', '#108A0A'];
+
+// 채널별 formula 적용 후 0~255로 clamp해 새 팔레트를 파생 (11~20P/21~30P 티어용)
+$lib.Landgrab._deriveTier = function (baseColors, formula) {
+	var clamp = function (x) { return Math.max(0, Math.min(255, Math.round(x))); };
+	var out = [];
+	for (var i = 0; i < baseColors.length; i++) {
+		var hex = baseColors[i];
+		var r = parseInt(hex.slice(1, 3), 16);
+		var g = parseInt(hex.slice(3, 5), 16);
+		var b = parseInt(hex.slice(5, 7), 16);
+		out.push('#' + ((1 << 24) + (clamp(formula(r)) << 16) + (clamp(formula(g)) << 8) + clamp(formula(b))).toString(16).slice(1));
+	}
+	return out;
+};
+
+// Tier 1(1~10P)에서 Tier 2(11~20P)를 파생하고, Tier 3(21~30P)는 Tier 2에서 이어서 파생 (라이트/다크 각자 독립적)
+// 라이트: Tier2 = 5/3배 진하게, Tier3 = Tier2 색에 검정 30% 혼합
+// 다크: Tier2 = 4/3배 밝게, Tier3 = Tier2 색에 흰색 40% 혼합
+$lib.Landgrab._PLAYER_COLORS_TIER1 = $lib.Landgrab._PLAYER_COLORS.slice(1);
+$lib.Landgrab._PLAYER_COLORS_TIER2 = $lib.Landgrab._deriveTier($lib.Landgrab._PLAYER_COLORS_TIER1, function (x) { return 255 - (5 / 3) * (255 - x); });
+$lib.Landgrab._PLAYER_COLORS_TIER3 = $lib.Landgrab._deriveTier($lib.Landgrab._PLAYER_COLORS_TIER2, function (x) { return x * 0.7; });
+
+$lib.Landgrab._PLAYER_COLORS_DARK_TIER1 = $lib.Landgrab._PLAYER_COLORS_DARK.slice(1);
+$lib.Landgrab._PLAYER_COLORS_DARK_TIER2 = $lib.Landgrab._deriveTier($lib.Landgrab._PLAYER_COLORS_DARK_TIER1, function (x) { return x * (4 / 3); });
+$lib.Landgrab._PLAYER_COLORS_DARK_TIER3 = $lib.Landgrab._deriveTier($lib.Landgrab._PLAYER_COLORS_DARK_TIER2, function (x) { return x * 0.6 + 255 * 0.4; });
+
+// 조회용 통합 팔레트: 인덱스 0=미소유, 1~10=Tier1, 11~20=Tier2, 21~30=Tier3
+$lib.Landgrab._PLAYER_COLORS_FULL = [$lib.Landgrab._PLAYER_COLORS[0]].concat($lib.Landgrab._PLAYER_COLORS_TIER1, $lib.Landgrab._PLAYER_COLORS_TIER2, $lib.Landgrab._PLAYER_COLORS_TIER3);
+$lib.Landgrab._PLAYER_COLORS_DARK_FULL = [$lib.Landgrab._PLAYER_COLORS_DARK[0]].concat($lib.Landgrab._PLAYER_COLORS_DARK_TIER1, $lib.Landgrab._PLAYER_COLORS_DARK_TIER2, $lib.Landgrab._PLAYER_COLORS_DARK_TIER3);
 
 // 게임 시작 시 컬러맵 생성 (게임마다 1회, 라운드마다 아님)
+// N명분 색상 풀을 티어(1~10/11~20/21~30) 순서로 구성: 10명 단위는 전부, 나머지는 해당 티어에서 무작위 샘플
 $lib.Landgrab._buildColorMap = function () {
 	var seq = $data.room.game.seq;
 	var n = seq.length;
 	var map = {};
-	var i, id, colors, offset;
+	var i, id;
+	var tiers = [1, 2, 3]; // tier index offset은 (tier-1)*10 + 1
+	var pool = [];
+	var remaining = n;
 
-	if (n >= 11) {
-		colors = [];
-		for (i = 1; i <= 12; i++) colors.push(i);
-		for (i = colors.length - 1; i > 0; i--) {
-			var j = Math.floor(Math.random() * (i + 1));
-			var t = colors[i]; colors[i] = colors[j]; colors[j] = t;
+	for (var t = 0; t < tiers.length && remaining > 0; t++) {
+		var offset = (tiers[t] - 1) * 10 + 1;
+		if (remaining >= 10) {
+			for (i = 0; i < 10; i++) pool.push(offset + i);
+			remaining -= 10;
+		} else {
+			var picks = [];
+			for (i = 0; i < 10; i++) picks.push(offset + i);
+			for (i = picks.length - 1; i > 0; i--) {
+				var j = Math.floor(Math.random() * (i + 1));
+				var pt = picks[i]; picks[i] = picks[j]; picks[j] = pt;
+			}
+			pool = pool.concat(picks.slice(0, remaining));
+			remaining = 0;
 		}
-		for (i = 0; i < n; i++) {
-			if (!seq[i]) continue;
-			id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
-			map[id] = colors[i];
-		}
-	} else {
-		offset = Math.floor(Math.random() * 10);
-		for (i = 0; i < n; i++) {
-			if (!seq[i]) continue;
-			id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
-			map[id] = ((i + offset) % 10) + 1;
-		}
+	}
+
+	for (i = pool.length - 1; i > 0; i--) {
+		var j2 = Math.floor(Math.random() * (i + 1));
+		var t2 = pool[i]; pool[i] = pool[j2]; pool[j2] = t2;
+	}
+	for (i = 0; i < n; i++) {
+		if (!seq[i]) continue;
+		id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
+		map[id] = pool[i];
 	}
 	$data._landgrabColorMap = map;
 };
@@ -7743,14 +7826,14 @@ $lib.Landgrab._assignFallbackColor = function (ownerId) {
 	$lib.Landgrab._pruneColorMap();
 	var used = {};
 	for (var id in $data._landgrabColorMap) used[$data._landgrabColorMap[id]] = true;
-	for (var c = 1; c <= 12; c++) {
+	for (var c = 1; c <= 30; c++) {
 		if (!used[c]) { $data._landgrabColorMap[ownerId] = c; return; }
 	}
-	// 활성 인원이 실제로 12명을 넘는 예외적인 경우에만 여기 도달한다 — 색 12개로는 원래 불가능한 상황.
-	$data._landgrabColorMap[ownerId] = (Object.keys($data._landgrabColorMap).length % 12) + 1;
+	// 활성 인원이 실제로 30명을 넘는 예외적인 경우에만 여기 도달한다 — 색 30개로는 원래 불가능한 상황.
+	$data._landgrabColorMap[ownerId] = (Object.keys($data._landgrabColorMap).length % 30) + 1;
 };
 $lib.Landgrab._getPlayerColor = function (ownerId) {
-	var colors = document.body.classList.contains('dark-mode') ? $lib.Landgrab._PLAYER_COLORS_DARK : $lib.Landgrab._PLAYER_COLORS;
+	var colors = document.body.classList.contains('dark-mode') ? $lib.Landgrab._PLAYER_COLORS_DARK_FULL : $lib.Landgrab._PLAYER_COLORS_FULL;
 	if (!ownerId) return colors[0];
 	if (!$data._landgrabColorMap) $data._landgrabColorMap = {};
 	if (!$data._landgrabColorMap[ownerId]) $lib.Landgrab._assignFallbackColor(ownerId);
@@ -7758,7 +7841,7 @@ $lib.Landgrab._getPlayerColor = function (ownerId) {
 };
 $lib.Landgrab._applyUserCardColors = function () {
 	if (!$data._landgrabColorMap) return;
-	var colors = document.body.classList.contains('dark-mode') ? $lib.Landgrab._PLAYER_COLORS_DARK : $lib.Landgrab._PLAYER_COLORS;
+	var colors = document.body.classList.contains('dark-mode') ? $lib.Landgrab._PLAYER_COLORS_DARK_FULL : $lib.Landgrab._PLAYER_COLORS_FULL;
 	var seq = $data.room && $data.room.game && $data.room.game.seq;
 	if (seq) {
 		for (var i = 0; i < seq.length; i++) {
@@ -7767,9 +7850,15 @@ $lib.Landgrab._applyUserCardColors = function () {
 			if (!$data._landgrabColorMap[seqId]) $lib.Landgrab._assignFallbackColor(seqId);
 		}
 	}
+	var isDarkMode = document.body.classList.contains('dark-mode');
 	for (var id in $data._landgrabColorMap) {
-		var color = colors[$data._landgrabColorMap[id]];
-		$("#game-user-" + id).css('background-color', color);
+		var idx = $data._landgrabColorMap[id];
+		var color = colors[idx];
+		// 다크 모드에서 11p 이상(Tier2/3)은 원래 색보다 밝아서 흰 글씨로는 안 보이므로 검은 글씨로
+		$("#game-user-" + id).css({
+			'background-color': color,
+			'color': (isDarkMode && idx > 10) ? '#000000' : ''
+		});
 	}
 };
 // hex 색상을 밝게(+)/어둡게(-) 보정. percent: -1 ~ 1
@@ -7951,7 +8040,8 @@ $lib.Landgrab.drawDisplay = function () {
 				height: CELL + "%",
 				'background-color': bgColor,
 				'border': border,
-				'color': ($data.room.opts.drg ? getRandomColor() : (isDark ? '#FFF' : (owner ? '#000' : '#FFF')))
+				// 다크 모드에서 11p 이상(Tier2/3) 소유 칸은 배경이 밝아서 흰 글씨 대신 검은 글씨 사용
+				'color': ($data.room.opts.drg ? getRandomColor() : (isDark ? ((owner && $data._landgrabColorMap[owner] > 10) ? '#000' : '#FFF') : (owner ? '#000' : '#FFF')))
 			})
 			.html(chosung)
 		);
@@ -11165,7 +11255,7 @@ function onMessage(data) {
 					for (var _tid in data.teams) {
 						var _nt = data.teams[_tid];
 						$("#game-user-" + _tid + " .game-user-score")
-							.removeClass("team-1 team-2 team-3 team-4")
+							.removeClass("team-1 team-2 team-3 team-4 team-5 team-6")
 							.toggleClass("team-" + _nt, _nt > 0);
 					}
 				}
@@ -12131,15 +12221,49 @@ function updateRoom(gaming) {
 		$r = $(".GameBox .game-body").empty();
 		// Apply appropriate CSS class based on mode and player count
 		if (rule.big) {
-			$r.removeClass("small-mode");
 			$(".jjoriping,.rounds,.game-body").addClass("cw");
+			$r.removeClass("small-mode"); // small-mode는 모레미 카드 전용 클래스라 큰 보드 모드에서는 절대 쓰지 않음(이름만 목록과 이름 충돌 방지)
+			// 큰 보드 모드(이름만 목록)도 13명부터 2열이 되어 실제 줄 수가 늘어나므로,
+			// 그 줄 수(인원수/2 올림)가 9줄 이상(=17명↑)이면 더 촘촘한 행 스타일(cw-dense)을 쓴다
+			var _seqLenCw = $data.room.game.seq.length;
+			var _effectiveRowsCw = (_seqLenCw >= 13) ? Math.ceil(_seqLenCw / 2) : _seqLenCw;
+			if (_effectiveRowsCw >= 9) {
+				$r.addClass("cw-dense");
+			} else {
+				$r.removeClass("cw-dense");
+			}
 		} else {
 			$(".jjoriping,.rounds,.game-body").removeClass("cw");
-			if ($data.room.game.seq.length >= 9) {
+			$r.removeClass("cw-dense");
+			var _seqLen = $data.room.game.seq.length;
+			// 모바일: 13명부터 2열이 되며, 13~20명은 지금 16명 이하가 쓰는(일반) 패널 크기를 그대로 쓰고
+			// 21명부터만 축소된 small-mode 패널을 쓴다. 13명 미만은 기존과 동일하게 9명부터 small-mode.
+			// 데스크톱(모레미 카드): 기존과 동일하게 9명부터 small-mode.
+			var _useSmall = (mobile && _seqLen >= 13) ? (_seqLen >= 21) : (_seqLen >= 9);
+			if (_useSmall) {
 				$r.addClass("small-mode");
 			} else {
 				$r.removeClass("small-mode");
 			}
+			// 데스크톱 모레미 카드(일반 게임모드, 모바일 제외): 14명까지는 1줄로 들어가는 현재
+			// small-mode 카드를 쓰고, 15명부터는 2줄 전용으로 촘촘하게 재배치한 카드를 씀.
+			// 카드 폭은 항상 24명(12+12) 기준으로 고정(CSS). 위/아래 줄 인원이 균등하도록(홀수면 위쪽에
+			// 1명 더) 위쪽 줄 인원수만 --moremi-top으로 넘기면 CSS가 컨테이너 좌우 여백으로 줄바꿈 지점을 맞춘다.
+			if (!mobile && _seqLen >= 15) {
+				$r.addClass("moremi-dense");
+				var _topCount = Math.ceil(_seqLen / 2);
+				// jQuery .css()는 버전에 따라 커스텀 프로퍼티(--변수)를 제대로 못 다룰 수 있어 DOM API로 직접 설정
+				if ($r[0]) $r[0].style.setProperty('--moremi-top', _topCount);
+			} else {
+				$r.removeClass("moremi-dense");
+				if ($r[0]) $r[0].style.removeProperty('--moremi-top');
+			}
+		}
+		// 이름만 나오는 목록(모바일 및 큰 보드 모드) 13명부터 2열 표시 — cw/small-mode와 무관하게 인원수만으로 토글
+		if ($data.room.game.seq.length >= 13) {
+			$(".game-body").addClass("name-2col");
+		} else {
+			$(".game-body").removeClass("name-2col");
 		}
 		// updateScore(true);
 		// 서바이벌 모드: 초기 HP 결정
@@ -12194,8 +12318,11 @@ function updateRoom(gaming) {
 		delete $data._jamsu;
 	} else {
 		$r = $(".room-users").empty();
-		if ($data.room.players.length >= 9) $r.addClass("small-mode");
-		else $r.removeClass("small-mode");
+		$r.removeClass("small-mode size-5col size-6col size-6col-4row");
+		if ($data.room.players.length >= 19) $r.addClass("size-6col-4row");
+		else if ($data.room.players.length >= 16) $r.addClass("size-6col");
+		else if ($data.room.players.length >= 13) $r.addClass("size-5col");
+		else if ($data.room.players.length >= 9) $r.addClass("small-mode");
 		spec = $data.users[$data.id].game.form == "S";
 		// 참가자
 		for (i in $data.room.players) {

@@ -1,5 +1,6 @@
 ﻿var Const = require('../../const');
 var util = require('./classic-util');
+var ClassicTable = require('./classic-table');
 
 var ctx = util.ctx;
 var getAuto = util.getAuto;
@@ -322,6 +323,7 @@ exports.readyRobot = function (robot) {
 			text = w._id;
 			delay += 500 * ROBOT_THINK_COEF[level] * Math.random() / Math.log(1.1 + w.hit);
 			robot._done.add(text);
+			if (level >= 5) delay = Math.max(delay, 100); // 레벨 5: 최소 0.1초 텀
 			my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
 		}
 
@@ -422,6 +424,21 @@ exports.readyRobot = function (robot) {
 		return;
 	}
 
+	// 레벨 5: 미리 계산한 후보 테이블(classic-table.js)에서 한방/공격/고득점 단어를 고른다.
+	// 지원하지 않는 모드/옵션이거나 후보가 없으면 아래 기존 흐름(startLegacy)으로 폴백한다.
+	if (level >= 5) {
+		level5Candidates().catch(function (err) {
+			console.error("[BOT] level 5 candidate selection failed, falling back:", err);
+			return null;
+		}).then(function (list) {
+			if (list && list.length) pickList(list);
+			else startLegacy();
+		});
+	} else {
+		startLegacy();
+	}
+
+	function startLegacy() {
 	// Priority 1: Preferred Character Logic (Direct Query)
 	// 매너 계열 규칙에서 선호 글자가 한번 거부당하면 다시 시도하지 않음
 	if (preferredChar && robot.data._preferredCharRejected) {
@@ -601,6 +618,121 @@ exports.readyRobot = function (robot) {
 		});
 	} else {
 		decideStrategy();
+	}
+	}
+
+	// 다음 차례가 같은 팀이면 공격하지 않는다 (decideStrategy의 팀 검사와 같은 규칙)
+	function nextIsTeammate() {
+		var currentTeam = robot.game.team || 0;
+		if (currentTeam === 0 && !my.opts.randomturn) return false;
+		var nextPlayer = my.game.seq[(my.game.turn + 1) % my.game.seq.length];
+		if (typeof nextPlayer === 'string') nextPlayer = util.ctx.DIC[nextPlayer];
+		if (!nextPlayer) return false;
+		var nextTeam = nextPlayer.robot ? (nextPlayer.game.team || 0) : (nextPlayer.team || 0);
+		return nextTeam !== 0 && nextTeam === currentTeam;
+	}
+
+	// 레벨 5 후보 선택. 낼 만한 단어는 classic-table.js에서 가져오고, 상대가 이을 수 있는 단어 수(한방/공격)는
+	// 방 옵션에 맞춰 stats 테이블(countNextWords)로 여기서 계산한다. 폴백해야 하면 null.
+	function level5Candidates() {
+		var none = Promise.resolve(null);
+		var mode = ClassicTable.MODES[Const.GAME_TYPE[my.mode]];
+		var o = my.opts;
+		if (!mode || mode.lang !== my.rule.lang || !ClassicTable.isReady(mode.lang)) return none;
+		// 연결 글자가 바뀌거나 두음 규칙이 달라지는 옵션은 테이블이 다루지 않는다
+		if (o.unknown || o.middle || o.first || o.second || o.random || o.nodueum || o.freedueum || o.robloxduum || o.vowelinv || o.nododoli) return none;
+		if (my.game.linkOverride || !my.game.chain || !my.game.seq) return none;
+		var link = my.game.char;
+		if (!link || link.length !== 1) return none;
+
+		var lang = mode.lang;
+		var dir = mode.dir;
+		var chain = my.game.chain;
+		var chainSet = new Set(chain);
+		var state = getMannerState(o);
+		var wl = my.game.wordLength || 0;
+		var mission = null;
+		if (typeof my.game.mission === "string" && ClassicTable.MISSION_CHARS[lang].indexOf(my.game.mission) >= 0 && !(lang === "ko" && o.easymission)) {
+			mission = my.game.mission;
+		}
+
+		var entries = [link];
+		var sub = getSubChar.call(my, link);
+		if (sub) sub.split("|").forEach(function (c) { if (c && entries.indexOf(c) < 0) entries.push(c); });
+
+		function lenOK(len) {
+			if (wl) return len === wl;
+			if (o.nolong && len > 8) return false;
+			if (o.noshort && len < 9) return false;
+			if (o.no2 && len < 3) return false;
+			return true;
+		}
+
+		var seen = new Set();
+		var cands = [];
+		function add(list) {
+			list.forEach(function (it) {
+				if (seen.has(it._id)) return;
+				seen.add(it._id);
+				if (!ClassicTable.isValid(state, it.wflag) || !lenOK(it.len)) return;
+				if (chainSet.has(it._id) || robot._done.has(it._id)) return;
+				cands.push(it);
+			});
+		}
+		entries.forEach(function (c) {
+			ClassicTable.CLASSES.forEach(function (cl) {
+				add(ClassicTable.get(lang, dir, c, "V", cl));
+				add(ClassicTable.get(lang, dir, c, wl ? "B" : "A", cl));
+			});
+			if (mission) add(ClassicTable.get(lang, dir, c, "M", mission));
+		});
+		if (!cands.length) return none;
+
+		var exitChars = [];
+		cands.forEach(function (it) { if (exitChars.indexOf(it.exitc) < 0) exitChars.push(it.exitc); });
+		return Promise.all(exitChars.map(countNextWords)).then(function (counts) {
+			var countOf = {};
+			exitChars.forEach(function (e, idx) { countOf[e] = counts[idx]; });
+
+			var minRem = isMannerLike(o) ? getMannerMinRemaining(o) : (my.game.roundChainCount < 1 ? 1 : 0); // 첫 턴은 항상 매너 검사
+			var chainLen = chain.length;
+			var list = [];
+			cands.forEach(function (it) {
+				var word = it._id;
+				// 상대가 이을 글자(exit 글자와 두음 대체 글자)로 시작/끝나는, 이미 나온 단어와 이 단어 자신을 뺀 남은 수
+				var eset = [it.exitc];
+				var esc = getSubChar.call(my, it.exitc);
+				if (esc) esc.split("|").forEach(function (c) { if (c && eset.indexOf(c) < 0) eset.push(c); });
+				var used = 0;
+				chain.forEach(function (cw) {
+					if (eset.indexOf(dir === "E" ? cw.charAt(0) : cw.charAt(cw.length - 1)) >= 0) used++;
+				});
+				var self = dir === "E" ? word.charAt(0) : word.charAt(word.length - 1);
+				var remaining = countOf[it.exitc] - used - (eset.indexOf(self) >= 0 ? 1 : 0);
+				if (remaining < minRem) return;
+
+				var mc = 0;
+				if (mission) for (var k = 0; k < word.length; k++) if (word.charAt(k) === mission) mc++;
+				// getPreScore + 미션 보너스(글자당 30%)와 같은 가치
+				var value = (Math.pow(5 + 7 * it.len, 0.74) + 1.18 * chainLen) * (1 + 0.3 * mc);
+				list.push({ _id: word, hit: it.hit, value: value, remaining: remaining, len: it.len });
+			});
+
+			// 공격적인 성격이면 한방(가장 긴 것) > 공격(남은 단어가 적은 순) > 점수, 아니면 점수만
+			// (첫 턴에도 공격은 허용하지만 한방은 위의 minRem으로 이미 걸러진다)
+			var aggressive = personality > 0 && !robot.fastMode && !nextIsTeammate();
+			list.sort(function (a, b) {
+				if (aggressive) {
+					var ta = a.remaining <= 0 ? 0 : (a.remaining <= 5 ? 1 : 2);
+					var tb = b.remaining <= 0 ? 0 : (b.remaining <= 5 ? 1 : 2);
+					if (ta !== tb) return ta - tb;
+					if (ta === 0 && a.len !== b.len) return b.len - a.len; // 한방: 가장 긴 단어
+					if (ta === 1 && a.remaining !== b.remaining) return a.remaining - b.remaining; // 공격: 끝 글자 뒤로 이을 단어가 가장 적은 것
+				}
+				return b.value - a.value || b.hit - a.hit;
+			});
+			return list;
+		});
 	}
 
 	function decideStrategy() {
@@ -1468,6 +1600,7 @@ exports.readyRobot = function (robot) {
 		if (my.game.late) return; // Prevent scheduling after round end
 		delay += text.length * ROBOT_TYPE_COEF[level];
 		robot._done.add(text);
+		if (level >= 5) delay = Math.max(delay, 100); // 레벨 5: 최소 0.1초 텀
 		my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
 	}
 

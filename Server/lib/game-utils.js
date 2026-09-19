@@ -279,7 +279,7 @@ exports.checkSurvivalStatus = function (my, DIC) {
 		if (p && p.game && p.game.alive) {
 			aliveCount++;
 			var team = p.robot ? p.game.team : p.team;
-			if (team && team >= 1 && team <= 4) {
+			if (team && team >= 1 && team <= 6) { // 6 = Const.TEAM_MAX (const 비의존 유지)
 				aliveTeams.add(team);
 				hasTeams = true;
 			} else {

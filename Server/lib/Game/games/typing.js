@@ -26,8 +26,8 @@ var DIC;
 var LIST_LENGTH = 200;
 var DOUBLE_VOWELS = [9, 10, 11, 14, 15, 16, 19];
 var DOUBLE_TAILS = [3, 5, 6, 9, 10, 11, 12, 13, 14, 15, 18];
-const BOT_CPM = [30, 70, 150, 250, 500];
-const BOT_ACCURACY = [0.9, 0.95, 0.98, 0.99, 1.0];
+const BOT_CPM = [30, 70, 150, 250, 500, 3500];
+const BOT_ACCURACY = [0.9, 0.95, 0.98, 0.99, 1.0, 1.0];
 
 function traverse(func) {
 	var my = this;

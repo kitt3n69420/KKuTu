@@ -27,11 +27,11 @@ var DB;
 var DIC;
 
 // 봇 상수
-const ROBOT_START_DELAY = [1200, 800, 400, 200, 0];
-const ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0];
-const ROBOT_THINK_COEF = [10, 5, 2, 1, 0];
-const ROBOT_ACCURACY_COEF = [0.8, 1, 1.5, 2, 1];
-const BOT_CPM = [30, 70, 150, 250, 500];
+const ROBOT_START_DELAY = [1200, 800, 400, 200, 0, 0];
+const ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0, 0];
+const ROBOT_THINK_COEF = [10, 5, 2, 1, 0, 0];
+const ROBOT_ACCURACY_COEF = [0.8, 1, 1.5, 2, 1, 1];
+const BOT_CPM = [30, 70, 150, 250, 500, 5000];
 const BOT_ACCURACY = [0.9, 0.95, 0.98, 0.99, 1.0];
 
 // 순회 헬퍼

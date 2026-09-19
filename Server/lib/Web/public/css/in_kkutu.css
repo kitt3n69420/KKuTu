@@ -995,11 +995,11 @@ body {
 
 .team-button {
 	float: left;
-	padding-top: 20px;
+	padding-top: 12px;
 	border-radius: 10px;
 	margin: 2px 0px;
 	width: 100%;
-	height: 40px;
+	height: 29px;
 	text-align: center;
 	font-size: 13px;
 	cursor: pointer;
@@ -1024,19 +1024,27 @@ body {
 }
 
 .team-1 {
-	background-color: #8CA6FF;
+	background-color: #92B2FF;
 }
 
 .team-2 {
-	background-color: #9575CD;
+	background-color: #9B92F8;
 }
 
 .team-3 {
-	background-color: #F06292;
+	background-color: #EE76A4;
 }
 
 .team-4 {
-	background-color: #FFCA28;
+	background-color: #FF9A72;
+}
+
+.team-5 {
+	background-color: #FFCA7A;
+}
+
+.team-6 {
+	background-color: #81EB78;
 }
 
 .room-user {
@@ -1670,6 +1678,13 @@ body {
 	width: 334px;
 }
 
+/* 13명 이상 2열: 실제 필요한 줄 수(인원수/2 올림)에 맞춰 늘어나되,
+   기존 1열일 때(일반 모드)와 같은 180px을 최소 높이로 유지 */
+.cw.game-body.name-2col {
+	height: auto;
+	min-height: 180px;
+}
+
 .game-user {
 	padding: 1px;
 	border: 3px solid var(--color-border);
@@ -1748,6 +1763,80 @@ body {
 	font-size: 15px;
 }
 
+/* 13명 이상: 이름만 목록 2열 표시 (큰 보드 모드).
+   컨테이너(.cw.game-body) 폭이 334px로 고정. box-sizing은 건드리지 않고(기본 content-box 유지 —
+   border-box로 바꾸면 height:22px도 border-box로 해석되어 콘텐츠 높이가 줄어들며 점수가 삐져나옴)
+   content-box 기준 여백(padding 1px*2 + border 2px*2 + margin 1px*2 = 8px)을 직접 빼서 폭 계산.
+   점수 폰트 크기는 그대로 두고(12명 때와 동일, .cw .game-user-score의 15px 상속) 폭/간격만 좁힘.
+   game-user-score-char는 개별 float div라 letter-spacing이 적용되지 않으므로 width로만 간격 조절. */
+.cw.game-body.name-2col .game-user {
+	width: calc(50% - 10px);
+	height: 22px;
+	overflow: hidden;
+}
+
+.cw.game-body.name-2col .game-user-title {
+	width: calc(100% - 60px);
+}
+
+.cw.game-body.name-2col .game-user-name {
+	width: 70px;
+	font-size: 11px;
+}
+
+.cw.game-body.name-2col .game-user-score {
+	position: absolute;
+	right: -15px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 58px;
+	height: 18px;
+	line-height: 18px;
+	padding: 0px 1px;
+	overflow: hidden;
+}
+
+/* 실제 보이는 숫자는 개별 game-user-score-char(자리수별 float div)라서,
+   부모의 height만으로는 삐져나오는 걸 막을 수 없어 여기에도 height/line-height를 지정.
+   폭도 44px(4자리 한계)에서 58px(7자리)로 넓혀 점수가 줄바꿈되며 위로 잘리던 문제를 방지. */
+.cw.game-body.name-2col .game-user-score-char {
+	width: 8px;
+	height: 18px;
+	line-height: 18px;
+}
+
+/* 17명 이상(2열 실제 줄 수 9줄↑): 큰 보드 모드도 더 촘촘한 행 스타일 사용.
+   주의: 클래스명을 "small-mode"가 아니라 "cw-dense"로 분리했다 — small-mode는 모레미 카드 전용
+   선택자(.game-body.small-mode .game-user 등, .cw 조건 없음)에서도 매칭되어 버려서, 이름만 목록에
+   모레미 카드 스타일(height:160px 등)이 섞여 들어가는 충돌이 있었다. */
+.cw.game-body.cw-dense .game-user {
+	height: 17px;
+	overflow: hidden;
+}
+
+.cw.game-body.cw-dense .game-user-level {
+	width: 13px;
+	height: 13px;
+}
+
+.cw.game-body.cw-dense .game-user-name {
+	font-size: 10px;
+}
+
+.cw.game-body.cw-dense .game-user-score {
+	font-size: 12px;
+}
+
+.cw.game-body.cw-dense.name-2col .game-user-score {
+	height: 15px;
+	line-height: 15px;
+}
+
+.cw.game-body.cw-dense.name-2col .game-user-score-char {
+	height: 15px;
+	line-height: 15px;
+}
+
 #ResultDiag .dialog-body div {
 	float: left;
 }
@@ -1755,6 +1844,8 @@ body {
 .result-board {
 	width: 400px;
 	height: 385px;
+	overflow-y: auto;
+	overflow-x: hidden;
 }
 
 .result-board-item {
@@ -2499,6 +2590,122 @@ body {
 	font-size: 12px;
 }
 
+/* 13~24명: 준비상태/팀 표시(.room-user-stat)를 아바타 옆에 나란히 띄우는 float 배치는
+   실제 카드 폭이 아바타+stat 합보다 좁아지면 줄바꿈되어 카드 전체(title/name까지)가
+   무너지는 문제가 있었음. 카드 폭 계산에 기대지 않도록 stat을 absolute로 카드
+   우상단에 고정(아바타와 겹쳐도 무방) — 12명 이하 UI의 "오른쪽 위 정렬"이라는
+   결과만 재현하고, float 줄바꿈 리스크는 원천 차단한다. */
+.room-users.size-5col .room-user,
+.room-users.size-6col .room-user {
+	position: relative;
+	height: 95px;
+}
+
+.room-users.size-5col .room-user-image,
+.room-users.size-6col .room-user-image {
+	width: 60px;
+	height: 60px;
+}
+
+.room-users.size-5col .room-user-stat {
+	position: absolute;
+	top: 3px;
+	right: 3px;
+	width: 108px;
+	height: 40px;
+	font-size: 11px;
+}
+
+.room-users.size-6col .room-user-stat {
+	position: absolute;
+	top: 3px;
+	right: 3px;
+	width: 78px;
+	height: 34px;
+	font-size: 10px;
+}
+
+.room-users.size-5col .room-user-title,
+.room-users.size-6col .room-user-title {
+	clear: both;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 2px 4px;
+	font-size: 12px;
+}
+
+.room-users.size-5col .room-user-level,
+.room-users.size-6col .room-user-level {
+	width: 18px;
+	height: 18px;
+}
+
+.room-users.size-5col .room-user-name,
+.room-users.size-6col .room-user-name {
+	padding: 2px 0px 0px 4px;
+	font-size: 12px;
+	display: block;
+	max-width: calc(100% - 26px);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* 13~15명: 5열 */
+.room-users.size-5col .room-user {
+	width: calc(100% / 5 - 12px);
+}
+
+/* 16~18명: 6열 */
+.room-users.size-6col .room-user {
+	width: calc(100% / 6 - 12px);
+}
+
+/* 19~24명: 6열 x 4행 (6col과 열폭 동일, 아바타/폰트도 축소).
+   준비상태/팀 표시도 위와 동일하게 absolute로 우상단 고정(줄바꿈 리스크 차단). */
+.room-users.size-6col-4row .room-user {
+	position: relative;
+	width: calc(100% / 6 - 12px);
+	height: 64px;
+}
+
+.room-users.size-6col-4row .room-user-image {
+	width: 40px;
+	height: 40px;
+}
+
+.room-users.size-6col-4row .room-user-stat {
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	width: 95px;
+	height: 30px;
+	font-size: 8px;
+}
+
+.room-users.size-6col-4row .room-user-title {
+	clear: both;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 1px 2px;
+	font-size: 9px;
+}
+
+.room-users.size-6col-4row .room-user-level {
+	width: 12px;
+	height: 12px;
+}
+
+.room-users.size-6col-4row .room-user-name {
+	padding: 1px 0px 0px 2px;
+	font-size: 9px;
+	display: block;
+	max-width: calc(100% - 18px);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
 /* Game Screen */
 .game-body {
 	display: flex;
@@ -2680,6 +2887,67 @@ body {
 	width: auto;
 	display: inline-block;
 	text-align: center;
+}
+
+/* 15명 이상: 모레미 카드 2줄 전용 배치.
+   폭은 14명 때 최소 폭(60px)에 고정, 높이는 기존 모레미 카드(160px)의 절반이 조금 안 되게,
+   위쪽 여백 없이 아바타부터 시작, 아바타-닉네임 간격은 1px로 최소화.
+   레벨은 카드 좌하단, 점수는 align-self:flex-end로 우측에 붙임(레벨/점수가 닉네임과 겹칠 수 있음). */
+/* 카드 폭은 인원수와 무관하게 항상 24명(12+12) 기준으로 고정.
+   카드 실제 점유 폭 = width 74 + padding 2 + border 4 + margin 2 = 82px → 992px에 정확히 12개.
+   위/아래 줄 균등 분배(홀수면 위가 1명 더)는 JS(body.js updateRoom)가 위쪽 줄 인원수를
+   --moremi-top으로 넘기면, 컨테이너 좌우 여백으로 내용 폭을 (위쪽 인원 x 82px)로 줄여 줄바꿈 지점을 맞춘다.
+   .game-body는 width:992px 고정이라 border-box로 바꿔도 전체 폭은 그대로. */
+.game-body.small-mode.moremi-dense {
+	box-sizing: border-box;
+	padding: 0px calc((992px - var(--moremi-top, 12) * 82px) / 2);
+}
+
+.game-body.small-mode.moremi-dense .game-user {
+	width: 74px;
+	max-width: 74px;
+	min-width: 74px;
+	flex: 0 0 74px;
+	height: 94px;
+	margin: 1px 1px;
+	justify-content: flex-start;
+}
+
+.game-body.small-mode.moremi-dense .game-user-image {
+	width: 90%;
+	height: auto;
+	aspect-ratio: 1 / 1;
+	margin: 0 auto;
+	flex-grow: 0;
+	flex-shrink: 0;
+}
+
+.game-body.small-mode.moremi-dense .game-user-title {
+	width: 100%;
+	margin-top: 1px;
+}
+
+.game-body.small-mode.moremi-dense .game-user-name {
+	font-size: 9px;
+	padding-left: 0;
+	margin-top: 0;
+}
+
+.game-body.small-mode.moremi-dense .game-user-level {
+	top: auto;
+	bottom: 1px;
+	left: 1px;
+	width: 12px;
+	height: 12px;
+}
+
+.game-body.small-mode.moremi-dense .game-user-score {
+	width: auto;
+	max-width: 48%;
+	align-self: flex-end;
+	margin: 0 1px 1px 0;
+	font-size: 11px;
+	padding: 0px;
 }
 
 /* QuickDiag - Special Rules Grid Layout (4 columns like room settings) */
@@ -3492,18 +3760,24 @@ body.dark-mode .cw-bar.cw-my-open {
 	background-color: #00A55A !important;
 }
 
-/* 팀 색 (A,B,C,D): HSL L-inversion 후 S×0.8, L×1.5 */
+/* 팀 색 (A~F): 기본색에 검은색 30% oklch 혼합 */
 body.dark-mode .team-1 {
-	background-color: #11319b !important;
+	background-color: #3B579E !important;
 }
 body.dark-mode .team-2 {
-	background-color: #8263b8 !important;
+	background-color: #483795 !important;
 }
 body.dark-mode .team-3 {
-	background-color: #d42e66 !important;
+	background-color: #88134C !important;
 }
 body.dark-mode .team-4 {
-	background-color: #ecc756 !important;
+	background-color: #9E3900 !important;
+}
+body.dark-mode .team-5 {
+	background-color: #9E6C00 !important;
+}
+body.dark-mode .team-6 {
+	background-color: #108A0A !important;
 }
 
 #global-notice {

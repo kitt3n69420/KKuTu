@@ -34,9 +34,11 @@ var CHUSEOK_MILESTONES = [
   { tier: 3, threshold: 10000, itemId: "b3_moon" },
   { tier: 4, threshold: 20000, itemId: "songpyeon_costume" },
   { tier: 5, threshold: 30000, itemId: "gradientname_moonlight" },
-  { tier: 6, threshold: 50000, itemId: "fullmoon_bg" }
+  { tier: 6, threshold: 50000, itemId: "fullmoon_bg" },
+  { tier: 7, threshold: 75000, itemId: "kkotsin" },
+  { tier: 8, threshold: 100000, itemId: "rabbit_jeolgu" }
 ];
-var CHUSEOK_MAX_DUST = 50000;
+var CHUSEOK_MAX_DUST = 100000;
 // 마일스톤 아이템별 최대 획득 개수 (손에 든 송편은 양손에 하나씩 낄 수 있어 2개, 나머지는 1개)
 var CHUSEOK_ITEM_MAX = { songpyeon: 2 };
 // 착용 중인 아이템은 box에서 소모(0/삭제)되어 사라지므로, box 개수만으로는 실제 보유 수를 알 수 없다.

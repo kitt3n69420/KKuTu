@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// 플레이어 배경색 (인덱스 0 = 미소유) — 라이트 모드
+// 플레이어 배경색 (인덱스 0 = 미소유) — 라이트 모드, Tier 1 (1~10P)
 $lib.Flip._PLAYER_COLORS = [
 	'#42341a',  // 0: 미소유
 	'#fffea4',  // 1P
@@ -28,12 +28,10 @@ $lib.Flip._PLAYER_COLORS = [
 	'#8ce7a1',  // 4P
 	'#F7b1e6',  // 8P
 	'#feb482',  // 3P
-	'#a1cafe',  // 9P
-	'#e178c2',  // 11P
-	'#11bdce'   // 12P
+	'#a1cafe'   // 9P
 ];
 
-// 플레이어 배경색 — 다크 모드 (HSL L-inversion 후 S×0.8, L×1.5)
+// 플레이어 배경색 — 다크 모드 (HSL L-inversion 후 S×0.8, L×1.5), Tier 1 (1~10P)
 $lib.Flip._PLAYER_COLORS_DARK = [
 	'#000000',  // 0: 미소유  H39  S34  L100(cap)
 	'#979516',  // 1P        H59  S80  L27
@@ -45,27 +43,58 @@ $lib.Flip._PLAYER_COLORS_DARK = [
 	'#2fa54b',  // 4P        H134 S53  L41
 	'#a131a3',  // 8P        H315 S66  L26
 	'#d1741d',  // 3P        H24  S78  L38
-	'#2265be',  // 9P        H214 S78  L29
-	'#cd678c',  // 11P       H318 S51  L48
-	'#93c757'   // 12P       H185 S68  L84
+	'#2265be'   // 9P        H214 S78  L29
 ];
+
+// 채널별 formula 적용 후 0~255로 clamp해 새 팔레트를 파생 (11~20P/21~30P 티어용)
+$lib.Flip._deriveTier = function (baseColors, formula) {
+	var clamp = function (x) { return Math.max(0, Math.min(255, Math.round(x))); };
+	var out = [];
+	for (var i = 0; i < baseColors.length; i++) {
+		var hex = baseColors[i];
+		var r = parseInt(hex.slice(1, 3), 16);
+		var g = parseInt(hex.slice(3, 5), 16);
+		var b = parseInt(hex.slice(5, 7), 16);
+		out.push('#' + ((1 << 24) + (clamp(formula(r)) << 16) + (clamp(formula(g)) << 8) + clamp(formula(b))).toString(16).slice(1));
+	}
+	return out;
+};
+
+// Tier 1(1~10P)에서 Tier 2(11~20P)를 파생하고, Tier 3(21~30P)는 Tier 2에서 이어서 파생 (라이트/다크 각자 독립적)
+// 라이트: Tier2 = 5/3배 진하게, Tier3 = Tier2 색에 검정 30% 혼합
+// 다크: Tier2 = 4/3배 밝게, Tier3 = Tier2 색에 흰색 40% 혼합
+$lib.Flip._PLAYER_COLORS_TIER1 = $lib.Flip._PLAYER_COLORS.slice(1);
+$lib.Flip._PLAYER_COLORS_TIER2 = $lib.Flip._deriveTier($lib.Flip._PLAYER_COLORS_TIER1, function (x) { return 255 - (5 / 3) * (255 - x); });
+$lib.Flip._PLAYER_COLORS_TIER3 = $lib.Flip._deriveTier($lib.Flip._PLAYER_COLORS_TIER2, function (x) { return x * 0.7; });
+
+$lib.Flip._PLAYER_COLORS_DARK_TIER1 = $lib.Flip._PLAYER_COLORS_DARK.slice(1);
+$lib.Flip._PLAYER_COLORS_DARK_TIER2 = $lib.Flip._deriveTier($lib.Flip._PLAYER_COLORS_DARK_TIER1, function (x) { return x * (4 / 3); });
+$lib.Flip._PLAYER_COLORS_DARK_TIER3 = $lib.Flip._deriveTier($lib.Flip._PLAYER_COLORS_DARK_TIER2, function (x) { return x * 0.6 + 255 * 0.4; });
+
+// 조회용 통합 팔레트: 인덱스 0=미소유, 1~10=Tier1, 11~20=Tier2, 21~30=Tier3
+$lib.Flip._PLAYER_COLORS_FULL = [$lib.Flip._PLAYER_COLORS[0]].concat($lib.Flip._PLAYER_COLORS_TIER1, $lib.Flip._PLAYER_COLORS_TIER2, $lib.Flip._PLAYER_COLORS_TIER3);
+$lib.Flip._PLAYER_COLORS_DARK_FULL = [$lib.Flip._PLAYER_COLORS_DARK[0]].concat($lib.Flip._PLAYER_COLORS_DARK_TIER1, $lib.Flip._PLAYER_COLORS_DARK_TIER2, $lib.Flip._PLAYER_COLORS_DARK_TIER3);
 
 // 팀 배경색 — 라이트 모드
 $lib.Flip._TEAM_COLORS = [
 	'',         // 0: 팀 없음
-	'#8CA6FF',  // 팀 1
-	'#9575CD',  // 팀 2
-	'#F06292',  // 팀 3
-	'#FFCA28'   // 팀 4
+	'#92B2FF',  // 팀 1 (A)
+	'#9B92F8',  // 팀 2 (B)
+	'#EE76A4',  // 팀 3 (C)
+	'#FF9A72',  // 팀 4 (D)
+	'#FFCA7A',  // 팀 5 (E)
+	'#81EB78'   // 팀 6 (F)
 ];
 
-// 팀 배경색 — 다크 모드 (HSL L-inversion 후 S×0.8, L×1.5)
+// 팀 배경색 — 다크 모드 (기본색에 검은색 30% oklch 혼합)
 $lib.Flip._TEAM_COLORS_DARK = [
 	'',         // 0: 팀 없음
-	'#11319b',  // 팀 1  H226 S80  L34
-	'#8263b8',  // 팀 2  H262 S37  L55
-	'#d42e66',  // 팀 3  H340 S66  L51
-	'#ecc756'   // 팀 4  H45  S80  L63
+	'#3B579E',  // 팀 1 (A)
+	'#483795',  // 팀 2 (B)
+	'#88134C',  // 팀 3 (C)
+	'#9E3900',  // 팀 4 (D)
+	'#9E6C00',  // 팀 5 (E)
+	'#108A0A'   // 팀 6 (F)
 ];
 
 $lib.Flip._getPlayerIndex = function (ownerId) {
@@ -80,33 +109,41 @@ $lib.Flip._getPlayerIndex = function (ownerId) {
 };
 
 // 게임 시작 시 컬러맵 생성 (게임마다 1회, 라운드마다 아님)
+// N명분 색상 풀을 티어(1~10/11~20/21~30) 순서로 구성: 10명 단위는 전부, 나머지는 해당 티어에서 무작위 샘플
 $lib.Flip._buildColorMap = function () {
 	var seq = $data.room.game.seq;
 	var n = seq.length;
 	var map = {};
-	var i, id, colors, offset;
+	var i, id;
+	var tiers = [1, 2, 3]; // tier index offset은 (tier-1)*10 + 1
+	var pool = [];
+	var remaining = n;
 
-	if (n >= 11) {
-		// 11~12명: 1~12번 색상 전체를 셔플
-		colors = [];
-		for (i = 1; i <= 12; i++) colors.push(i);
-		for (i = colors.length - 1; i > 0; i--) {
-			var j = Math.floor(Math.random() * (i + 1));
-			var t = colors[i]; colors[i] = colors[j]; colors[j] = t;
+	for (var t = 0; t < tiers.length && remaining > 0; t++) {
+		var offset = (tiers[t] - 1) * 10 + 1;
+		if (remaining >= 10) {
+			for (i = 0; i < 10; i++) pool.push(offset + i);
+			remaining -= 10;
+		} else {
+			var picks = [];
+			for (i = 0; i < 10; i++) picks.push(offset + i);
+			for (i = picks.length - 1; i > 0; i--) {
+				var j = Math.floor(Math.random() * (i + 1));
+				var pt = picks[i]; picks[i] = picks[j]; picks[j] = pt;
+			}
+			pool = pool.concat(picks.slice(0, remaining));
+			remaining = 0;
 		}
-		for (i = 0; i < n; i++) {
-			if (!seq[i]) continue;
-			id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
-			map[id] = colors[i];
-		}
-	} else {
-		// 1~10명: 1~10번 색상에서 랜덤 오프셋으로 순환
-		offset = Math.floor(Math.random() * 10);
-		for (i = 0; i < n; i++) {
-			if (!seq[i]) continue;
-			id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
-			map[id] = ((i + offset) % 10) + 1;
-		}
+	}
+
+	for (i = pool.length - 1; i > 0; i--) {
+		var j2 = Math.floor(Math.random() * (i + 1));
+		var t2 = pool[i]; pool[i] = pool[j2]; pool[j2] = t2;
+	}
+	for (i = 0; i < n; i++) {
+		if (!seq[i]) continue;
+		id = (typeof seq[i] === 'string') ? seq[i] : seq[i].id;
+		map[id] = pool[i];
 	}
 	$data._flipColorMap = map;
 };
@@ -115,14 +152,14 @@ $lib.Flip._buildColorMap = function () {
 $lib.Flip._assignFallbackColor = function (ownerId) {
 	var used = {};
 	for (var id in $data._flipColorMap) used[$data._flipColorMap[id]] = true;
-	for (var c = 1; c <= 12; c++) {
+	for (var c = 1; c <= 30; c++) {
 		if (!used[c]) { $data._flipColorMap[ownerId] = c; return; }
 	}
-	$data._flipColorMap[ownerId] = (Object.keys($data._flipColorMap).length % 12) + 1;
+	$data._flipColorMap[ownerId] = (Object.keys($data._flipColorMap).length % 30) + 1;
 };
 
 $lib.Flip._getPlayerColor = function (ownerId) {
-	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK : $lib.Flip._PLAYER_COLORS;
+	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK_FULL : $lib.Flip._PLAYER_COLORS_FULL;
 	if (!ownerId) return colors[0];
 	if (!$data._flipColorMap) $data._flipColorMap = {};
 	if (!$data._flipColorMap[ownerId]) $lib.Flip._assignFallbackColor(ownerId);
@@ -131,7 +168,7 @@ $lib.Flip._getPlayerColor = function (ownerId) {
 
 $lib.Flip._applyUserCardColors = function () {
 	if (!$data._flipColorMap) return;
-	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK : $lib.Flip._PLAYER_COLORS;
+	var colors = document.body.classList.contains('dark-mode') ? $lib.Flip._PLAYER_COLORS_DARK_FULL : $lib.Flip._PLAYER_COLORS_FULL;
 	var seq = $data.room && $data.room.game && $data.room.game.seq;
 	if (seq) {
 		for (var i = 0; i < seq.length; i++) {
@@ -140,9 +177,15 @@ $lib.Flip._applyUserCardColors = function () {
 			if (!$data._flipColorMap[seqId]) $lib.Flip._assignFallbackColor(seqId);
 		}
 	}
+	var isDarkMode = document.body.classList.contains('dark-mode');
 	for (var id in $data._flipColorMap) {
-		var color = colors[$data._flipColorMap[id]];
-		$("#game-user-" + id).css('background-color', color);
+		var idx = $data._flipColorMap[id];
+		var color = colors[idx];
+		// 다크 모드에서 11p 이상(Tier2/3)은 원래 색보다 밝아서 흰 글씨로는 안 보이므로 검은 글씨로
+		$("#game-user-" + id).css({
+			'background-color': color,
+			'color': (isDarkMode && idx > 10) ? '#000000' : ''
+		});
 	}
 };
 
@@ -277,7 +320,8 @@ $lib.Flip.drawDisplay = function () {
 				height: CELL_H + "%",
 				'background-color': bgColor,
 				'border': borderColor ? ('3px solid ' + borderColor) : '1px solid #999',
-				'color': isDark ? ('#FFF') : (owner ? '#000' : '#FFF'),
+				// 다크 모드에서 11p 이상(Tier2/3) 소유 칸은 배경이 밝아서 흰 글씨 대신 검은 글씨 사용
+				'color': isDark ? ((owner && $data._flipColorMap[owner] > 10) ? '#000' : '#FFF') : (owner ? '#000' : '#FFF'),
 				'font-weight': (isNyh || isEnFlip) ? 'normal' : 'bold',
 				'font-size': isEnFlip ? '80%' : ''
 			})

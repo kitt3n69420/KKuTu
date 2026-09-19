@@ -573,7 +573,7 @@ $(document).ready(function () {
 		var $target = $(e.currentTarget);
 		var value = $target.val();
 
-		if (value < 2 || value > 12) {
+		if (value < 2 || value > 24) {
 			$target.css('color', "#FF4444");
 		} else {
 			$target.css('color', "");
@@ -2932,7 +2932,7 @@ $(document).ready(function () {
 		if (obj) drawObtain(obj);
 		else $stage.dialog.obtain.hide();
 	});
-	for (i = 0; i < 5; i++) $("#team-" + i).on('click', onTeam);
+	for (i = 0; i < 7; i++) $("#team-" + i).on('click', onTeam);
 	function onTeam(e) {
 		if ($(".team-selector").hasClass("team-unable")) return;
 

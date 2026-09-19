@@ -25,8 +25,8 @@ var DIC;
 var BOARD_W = 16;
 var BOARD_H = 16;
 var ODD_SIZES = [7, 9, 11, 13, 15];
-var ROBOT_CATCH_RATE = [0.3, 0.6, 0.8, 0.9, 0.99];
-var ROBOT_TYPE_COEF = [2000, 1200, 800, 300, 100];
+var ROBOT_CATCH_RATE = [0.3, 0.6, 0.8, 0.9, 0.99, 1];
+var ROBOT_TYPE_COEF = [2000, 1200, 800, 300, 100, 0];
 
 // 서버 기동 시 딱 한 번만 계산되어 프로세스 수명 내내 고정되는 상위 256글자 풀.
 // 단어 DB는 서버 실행 중 바뀌지 않으므로 이후 재계산은 절대 하지 않는다 — 매 라운드는

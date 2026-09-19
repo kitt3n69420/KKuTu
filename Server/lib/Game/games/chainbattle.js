@@ -27,9 +27,9 @@ var DB;
 var DIC;
 
 // 봇 상수
-const ROBOT_LENGTH_LIMIT = [2, 3, 4, 5, 6];
-const BOT_CPM = [70, 150, 250, 500, 1000];
-const BOT_ACCURACY = [0.9, 0.95, 0.98, 0.99, 1.0];
+const ROBOT_LENGTH_LIMIT = [2, 3, 4, 5, 6, 80];
+const BOT_CPM = [70, 150, 250, 500, 1000, 10000];
+const BOT_ACCURACY = [0.9, 0.95, 0.98, 0.99, 1.0, 1.0];
 
 // 영어 단어 캐시 (글자별) - 2번, 3번 문제 해결
 var EnglishWordCache = {};

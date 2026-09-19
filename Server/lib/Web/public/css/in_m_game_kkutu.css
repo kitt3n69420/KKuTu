@@ -638,7 +638,7 @@ body.dark-mode .rooms-gaming {
 	padding: 2px 0px;
 	border-radius: 10px;
 	margin: 0px 2px;
-	width: calc(20% - 4px);
+	width: calc(14.28% - 4px);
 	height: 20px;
 	text-align: center;
 	font-size: 13px;
@@ -664,19 +664,27 @@ body.dark-mode .rooms-gaming {
 }
 
 .team-1 {
-	background-color: #8CA6FF;
+	background-color: #92B2FF;
 }
 
 .team-2 {
-	background-color: #9575CD;
+	background-color: #9B92F8;
 }
 
 .team-3 {
-	background-color: #F06292;
+	background-color: #EE76A4;
 }
 
 .team-4 {
-	background-color: #FFCA28;
+	background-color: #FF9A72;
+}
+
+.team-5 {
+	background-color: #FFCA7A;
+}
+
+.team-6 {
+	background-color: #81EB78;
 }
 
 .room-user {

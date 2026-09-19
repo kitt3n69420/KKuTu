@@ -22,7 +22,7 @@ var Shapes = require('./cw_shapes').MAPS;
 var DB;
 var DIC;
 
-const ROBOT_CW_INTERVAL = [48000, 24000, 12000, 6000, 3000];
+const ROBOT_CW_INTERVAL = [48000, 24000, 12000, 6000, 3000, 100];
 
 function getBoardQuestions(my, boardIdx) {
 	var board = my.game.boards[boardIdx];

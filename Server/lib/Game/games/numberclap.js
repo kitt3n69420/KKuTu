@@ -21,10 +21,10 @@ var Lizard = require('../../sub/lizard');
 var DB;
 var DIC;
 
-const ROBOT_START_DELAY = [1200, 800, 400, 200, 0];
-const ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0];
-const ROBOT_THINK_COEF = [5, 3, 1, 0.5, 0];
-const ROBOT_ACCURACY_COEF = [0.8, 1, 1.5, 2, 1];
+const ROBOT_START_DELAY = [1200, 800, 400, 200, 0, 0];
+const ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0, 0];
+const ROBOT_THINK_COEF = [5, 3, 1, 0.5, 0, 0];
+const ROBOT_ACCURACY_COEF = [0.8, 1, 1.5, 2, 1, 1];
 
 var CLAP = '👏'; // 👏
 var CLAP_TOKENS = [CLAP, '짝', 'ㅉ', 'clap', 'c', 'w'];

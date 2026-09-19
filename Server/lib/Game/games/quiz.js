@@ -21,8 +21,8 @@ var Lizard = require('../../sub/lizard');
 var DB;
 var DIC;
 
-var ROBOT_CATCH_RATE = [0.1, 0.3, 0.5, 0.7, 0.99];
-var ROBOT_TYPE_COEF = [2000, 1200, 800, 300, 0];
+var ROBOT_CATCH_RATE = [0.1, 0.3, 0.5, 0.7, 0.99, 1];
+var ROBOT_TYPE_COEF = [2000, 1200, 800, 300, 0, 0];
 
 var DIFFICULTY_CATCH_MOD = { 'qz1': 1.2, 'qz2': 0.8, 'qz3': 0.4 };
 var DIFFICULTY_TYPE_MOD  = { 'qz1': 0.5, 'qz2': 1.0, 'qz3': 2.0 };

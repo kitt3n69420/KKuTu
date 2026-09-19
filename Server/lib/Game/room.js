@@ -535,6 +535,13 @@ function Room(room, channel) {
 		if (!my.rule.ai) {
 			return caller.sendError(415);
 		}
+		var botCount = 0;
+		for (var _bci = 0; _bci < my.players.length; _bci++) {
+			if (my.players[_bci] && my.players[_bci].robot) botCount++;
+		}
+		if (botCount >= 11) {
+			return caller.sendError(472);
+		}
 
 		function pushRobot(robot) {
 			// 기존 봇들이 새 봇에게 인사 (30% 확률, push 전에 순회)
@@ -916,7 +923,7 @@ function Room(room, channel) {
 									aliveCount++;
 									var team = sp.robot ? sp.game.team : sp.team;
 									// team이 1~4이면 팀전, 0이거나 undefined/null이면 개인전
-									if (team && team >= 1 && team <= 4) {
+									if (team && team >= 1 && team <= Const.TEAM_MAX) {
 										aliveTeams.add(team);
 									} else {
 										individualCount++;
@@ -1091,7 +1098,7 @@ function Room(room, channel) {
 
 		my.title = room.title;
 		my.password = room.password;
-		my.limit = Math.max(Math.min(12, my.players.length), Math.round(room.limit));
+		my.limit = Math.max(Math.min(24, my.players.length), Math.round(room.limit));
 		my.mode = room.mode;
 		my.rule = Const.getRule(room.mode);
 		my.round = Math.round(room.round);
@@ -1148,7 +1155,7 @@ function Room(room, channel) {
 			if (teams[0].length) {
 				// if (teams[1].length > 1 || teams[2].length > 1 || teams[3].length > 1 || teams[4].length > 1) return 418;
 			} else {
-				for (i = 1; i < 5; i++) {
+				for (i = 1; i <= Const.TEAM_MAX; i++) {
 					if (j = teams[i].length) {
 						if (t) {
 							// if (t != j) return 418;
@@ -1177,7 +1184,7 @@ function Room(room, channel) {
 		}
 		// 코옵 턴 수 검사: 목표 턴 수가 참여 인원(봇 포함)보다 적으면 시작 불가
 		if (my.rule.coop && teams) {
-			var coopHeadcount = teams[0].length + teams[1].length + teams[2].length + teams[3].length + teams[4].length;
+			var coopHeadcount = teams.reduce(function (p, t) { return p + t.length; }, 0);
 			if (my.round < coopHeadcount) return 448;
 		}
 		return false;
@@ -1185,7 +1192,7 @@ function Room(room, channel) {
 	my.ready = function () {
 		var i, all = true;
 		var len = 0;
-		var teams = [[], [], [], [], []];
+		var teams = []; for (i = 0; i <= Const.TEAM_MAX; i++) teams.push([]);
 
 		for (i in my.players) {
 			if (my.players[i].robot) {
@@ -1270,7 +1277,7 @@ function Room(room, channel) {
 			// Check if we have any teams (1~4)
 			var hasTeams = false;
 			if (my._teams) {
-				for (var k = 1; k <= 4; k++) {
+				for (var k = 1; k <= Const.TEAM_MAX; k++) {
 					if (my._teams[k] && my._teams[k].length > 0) {
 						hasTeams = true;
 						break;
@@ -1282,7 +1289,7 @@ function Room(room, channel) {
 				// Stride Scheduling for Team Placement
 				var allGroups = [];
 				var totalPlayers = 0;
-				for (var k = 0; k < 5; k++) {
+				for (var k = 0; k <= Const.TEAM_MAX; k++) {
 					if (my._teams[k] && my._teams[k].length > 0) {
 						allGroups.push({ id: k, count: my._teams[k].length });
 						// Shuffle players within the team/pool for random order
@@ -1331,7 +1338,7 @@ function Room(room, channel) {
 					// Fallback if null (shouldn't happen)
 					if (tid === undefined || tid === null) {
 						// Find any remaining
-						for (var k = 0; k < 5; k++) {
+						for (var k = 0; k <= Const.TEAM_MAX; k++) {
 							if (my._teams[k] && my._teams[k].length > 0) {
 								tid = k;
 								break;
@@ -1706,7 +1713,7 @@ function Room(room, channel) {
 		var rl;
 		var pv = -1;
 		var suv = [];
-		var teams = [null, [], [], [], []];
+		var teams = [null]; for (i = 1; i <= Const.TEAM_MAX; i++) teams.push([]);
 		var sumScore = 0;
 		var now = (new Date()).getTime();
 
@@ -1732,7 +1739,7 @@ function Room(room, channel) {
 				if (o.game.team) teams[o.game.team].push(o.game.score);
 			} else if (o.team) teams[o.team].push(o.game.score);
 		}
-		for (i = 1; i < 5; i++) if (o = teams[i].length) teams[i] = [o, teams[i].reduce(function (p, item) { return p + item; }, 0)];
+		for (i = 1; i <= Const.TEAM_MAX; i++) if (o = teams[i].length) teams[i] = [o, teams[i].reduce(function (p, item) { return p + item; }, 0)];
 
 		// 1. Calculate Human Count first (for XP calculation)
 		var humanCount = 0;
@@ -2518,7 +2525,7 @@ function Room(room, channel) {
 					aliveCount++;
 					var team = p.robot ? p.game.team : p.team;
 					// team이 1~4이면 팀전, 0이거나 undefined/null이면 개인전
-					if (team && team >= 1 && team <= 4) {
+					if (team && team >= 1 && team <= Const.TEAM_MAX) {
 						aliveTeams.add(team);
 					} else {
 						individualCount++;

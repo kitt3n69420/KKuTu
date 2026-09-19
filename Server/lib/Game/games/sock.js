@@ -25,12 +25,12 @@ var DIC;
 var _sockWordCache = {};
 var SOCK_CACHE_TTL = 3 * 60 * 1000;
 
-const ROBOT_SOCK_START_DELAY = [5000, 3000, 1800, 900, 300];
-const ROBOT_SOCK_MAX_WORDS = [10, 20, 30, 50, 999];
-const BOT_SOCK_CPM = [30, 60, 120, 300, 800];
-const ROBOT_SOCK_MAX_LEN_KO = [3, 2, 3, 4, 8];
-const ROBOT_SOCK_MAX_LEN_EN = [4, 5, 7, 10, 20];
-const ROBOT_SOCK_MAX_LEN_JA = [3, 2, 3, 4, 8];
+const ROBOT_SOCK_START_DELAY = [5000, 3000, 1800, 900, 300, 30];
+const ROBOT_SOCK_MAX_WORDS = [10, 20, 30, 50, 9999, 9999];
+const BOT_SOCK_CPM = [30, 60, 120, 300, 800, 5000];
+const ROBOT_SOCK_MAX_LEN_KO = [3, 2, 3, 4, 8, 10];
+const ROBOT_SOCK_MAX_LEN_EN = [4, 5, 7, 10, 20, 30];
+const ROBOT_SOCK_MAX_LEN_JA = [3, 2, 3, 4, 8, 10];
 
 function buildFreqMap(str) {
 	var map = {};
@@ -213,7 +213,7 @@ function robotSubmitOne(my, robot) {
 	}
 
 	var cpm = BOT_SOCK_CPM[level] * (my.opts.no2 ? 0.5 : 1);
-	var typingTime = Math.max(200, (picked.length * 60000) / cpm + (Math.random() * 300 - 150));
+	var typingTime = Math.max(20, (picked.length * 60000) / cpm + (Math.random() * 300 - 150));
 
 	robot._sockTimer = setTimeout(function () {
 		if (my.game.late || !my.gaming) return;

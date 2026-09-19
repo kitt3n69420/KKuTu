@@ -27,7 +27,7 @@ var SCAN_INTERVAL      = 1000;
 var ROBOT_MIN_DELAY    = 500;
 var OVERFLOW_X_START   = 3;
 var OVERFLOW_X_END     = 12;
-var ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0];
+var ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0, 0];
 
 // 두음법칙 상수 (chainbattle.js 동일)
 var RIEUL_TO_NIEUN = [4449, 4450, 4457, 4460, 4462, 4467];

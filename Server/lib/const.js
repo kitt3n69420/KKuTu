@@ -234,6 +234,7 @@ exports.GROUPS = {
 	'hs': ["bluecandy", "bokjori", "choco_ice", "lemoncandy", "melon_ice", "pinkcandy", "purple_ice", "black_oxford", "black_shoes", "brown_oxford", "loosesocks", "Mshoes", "Mhand"],
 	'back': ["Mback", "Mfront"]
 };
+exports.TEAM_MAX = 6; // 팀 개수 (1~TEAM_MAX = A~F, 0 = 개인)
 exports.RULE = {
 	/*
 		유형: { lang: 언어,
@@ -1022,7 +1023,8 @@ exports.BOT_LEVEL_NAMES = {
 	"1": "초보",
 	"2": "중수",
 	"3": "고수",
-	"4": "초고수"
+	"4": "초고수",
+	"5": "최강"
 };
 
 exports.REPORT_REASON_LABELS = {

@@ -443,7 +443,7 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (stable) {
         if (msg.title.length > 20) stable = false;
         if (msg.password.length > 20) stable = false;
-        if (msg.limit < 2 || msg.limit > 12) {
+        if (msg.limit < 2 || msg.limit > 24) {
           msg.code = 432;
           stable = false;
         }
@@ -521,7 +521,7 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (msg.level === -1) {
         if (ROOM[$c.place].rule.ewq) return;
       } else if (ROOM[$c.place].rule.ai) {
-        if (msg.level < 0 || msg.level >= 5) return;
+        if (msg.level < 0 || msg.level > 5) return;
       } else return;
 
       if (msg.personality !== undefined) msg.personality = Number(msg.personality);
@@ -573,7 +573,7 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (ROOM[$c.place].gaming) return;
       if ($c.ready) return;
       if (isNaN((temp = Number(msg.value)))) return;
-      if (temp < 0 || temp > 4) return;
+      if (temp < 0 || temp > Const.TEAM_MAX) return;
 
       $c.setTeam(Math.round(temp));
       break;
@@ -663,11 +663,11 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (ROOM[$c.place].gaming) return;
       if (ROOM[$c.place].master != $c.id) return;
       if (isNaN((msg.level = Number(msg.level)))) return;
-      if (msg.level < 0 || msg.level >= 5) return;
+      if (msg.level < 0 || msg.level > 5) return;
       if (isNaN((msg.team = Number(msg.team)))) return;
-      if (msg.team < 0 || msg.team > 4) return;
+      if (msg.team < 0 || msg.team > Const.TEAM_MAX) return;
 
-      if (msg.team < 0 || msg.team > 4) return;
+      if (msg.team < 0 || msg.team > Const.TEAM_MAX) return;
       if (msg.personality !== undefined) {
         msg.personality = Number(msg.personality);
         if (isNaN(msg.personality) || msg.personality < -1 || msg.personality > 1) return;

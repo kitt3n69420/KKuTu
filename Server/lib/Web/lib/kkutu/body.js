@@ -1001,7 +1001,7 @@ function onMessage(data) {
 					for (var _tid in data.teams) {
 						var _nt = data.teams[_tid];
 						$("#game-user-" + _tid + " .game-user-score")
-							.removeClass("team-1 team-2 team-3 team-4")
+							.removeClass("team-1 team-2 team-3 team-4 team-5 team-6")
 							.toggleClass("team-" + _nt, _nt > 0);
 					}
 				}
@@ -1967,15 +1967,49 @@ function updateRoom(gaming) {
 		$r = $(".GameBox .game-body").empty();
 		// Apply appropriate CSS class based on mode and player count
 		if (rule.big) {
-			$r.removeClass("small-mode");
 			$(".jjoriping,.rounds,.game-body").addClass("cw");
+			$r.removeClass("small-mode"); // small-mode는 모레미 카드 전용 클래스라 큰 보드 모드에서는 절대 쓰지 않음(이름만 목록과 이름 충돌 방지)
+			// 큰 보드 모드(이름만 목록)도 13명부터 2열이 되어 실제 줄 수가 늘어나므로,
+			// 그 줄 수(인원수/2 올림)가 9줄 이상(=17명↑)이면 더 촘촘한 행 스타일(cw-dense)을 쓴다
+			var _seqLenCw = $data.room.game.seq.length;
+			var _effectiveRowsCw = (_seqLenCw >= 13) ? Math.ceil(_seqLenCw / 2) : _seqLenCw;
+			if (_effectiveRowsCw >= 9) {
+				$r.addClass("cw-dense");
+			} else {
+				$r.removeClass("cw-dense");
+			}
 		} else {
 			$(".jjoriping,.rounds,.game-body").removeClass("cw");
-			if ($data.room.game.seq.length >= 9) {
+			$r.removeClass("cw-dense");
+			var _seqLen = $data.room.game.seq.length;
+			// 모바일: 13명부터 2열이 되며, 13~20명은 지금 16명 이하가 쓰는(일반) 패널 크기를 그대로 쓰고
+			// 21명부터만 축소된 small-mode 패널을 쓴다. 13명 미만은 기존과 동일하게 9명부터 small-mode.
+			// 데스크톱(모레미 카드): 기존과 동일하게 9명부터 small-mode.
+			var _useSmall = (mobile && _seqLen >= 13) ? (_seqLen >= 21) : (_seqLen >= 9);
+			if (_useSmall) {
 				$r.addClass("small-mode");
 			} else {
 				$r.removeClass("small-mode");
 			}
+			// 데스크톱 모레미 카드(일반 게임모드, 모바일 제외): 14명까지는 1줄로 들어가는 현재
+			// small-mode 카드를 쓰고, 15명부터는 2줄 전용으로 촘촘하게 재배치한 카드를 씀.
+			// 카드 폭은 항상 24명(12+12) 기준으로 고정(CSS). 위/아래 줄 인원이 균등하도록(홀수면 위쪽에
+			// 1명 더) 위쪽 줄 인원수만 --moremi-top으로 넘기면 CSS가 컨테이너 좌우 여백으로 줄바꿈 지점을 맞춘다.
+			if (!mobile && _seqLen >= 15) {
+				$r.addClass("moremi-dense");
+				var _topCount = Math.ceil(_seqLen / 2);
+				// jQuery .css()는 버전에 따라 커스텀 프로퍼티(--변수)를 제대로 못 다룰 수 있어 DOM API로 직접 설정
+				if ($r[0]) $r[0].style.setProperty('--moremi-top', _topCount);
+			} else {
+				$r.removeClass("moremi-dense");
+				if ($r[0]) $r[0].style.removeProperty('--moremi-top');
+			}
+		}
+		// 이름만 나오는 목록(모바일 및 큰 보드 모드) 13명부터 2열 표시 — cw/small-mode와 무관하게 인원수만으로 토글
+		if ($data.room.game.seq.length >= 13) {
+			$(".game-body").addClass("name-2col");
+		} else {
+			$(".game-body").removeClass("name-2col");
 		}
 		// updateScore(true);
 		// 서바이벌 모드: 초기 HP 결정
@@ -2030,8 +2064,11 @@ function updateRoom(gaming) {
 		delete $data._jamsu;
 	} else {
 		$r = $(".room-users").empty();
-		if ($data.room.players.length >= 9) $r.addClass("small-mode");
-		else $r.removeClass("small-mode");
+		$r.removeClass("small-mode size-5col size-6col size-6col-4row");
+		if ($data.room.players.length >= 19) $r.addClass("size-6col-4row");
+		else if ($data.room.players.length >= 16) $r.addClass("size-6col");
+		else if ($data.room.players.length >= 13) $r.addClass("size-5col");
+		else if ($data.room.players.length >= 9) $r.addClass("small-mode");
 		spec = $data.users[$data.id].game.form == "S";
 		// 참가자
 		for (i in $data.room.players) {

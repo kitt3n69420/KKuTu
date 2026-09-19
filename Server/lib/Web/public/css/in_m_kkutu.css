@@ -799,7 +799,7 @@ body {
 	padding: 2px 0px;
 	border-radius: 10px;
 	margin: 0px 2px;
-	width: calc(20% - 4px);
+	width: calc(14.28% - 4px);
 	height: 20px;
 	text-align: center;
 	font-size: 13px;
@@ -825,19 +825,27 @@ body {
 }
 
 .team-1 {
-	background-color: #8CA6FF;
+	background-color: #92B2FF;
 }
 
 .team-2 {
-	background-color: #9575CD;
+	background-color: #9B92F8;
 }
 
 .team-3 {
-	background-color: #F06292;
+	background-color: #EE76A4;
 }
 
 .team-4 {
-	background-color: #FFCA28;
+	background-color: #FF9A72;
+}
+
+.team-5 {
+	background-color: #FFCA7A;
+}
+
+.team-6 {
+	background-color: #81EB78;
 }
 
 .room-user {
@@ -1719,6 +1727,19 @@ body {
 	width: 334px;
 }
 
+/* 9명 이상(small-mode 9~12 / name-2col 13~16 / 둘 다 17~24): 180px면 채팅창 사이에 빈 공간이
+   남아서 240px로 늘림(넘치는 줄은 스크롤). 1~8명(기본)과 cw(큰 보드)는 그대로.
+   overflow-y:auto만 쓰면 overflow-x도 auto가 되어 가로 스크롤이 생길 수 있어 x는 숨김. */
+.game-body.small-mode:not(.cw),
+.game-body.name-2col:not(.cw) {
+	/* 박스는 240px로 그리되 아래 마진 -60px로 flow상 높이는 180px만 차지하게 해서
+	   늘어난 만큼 채팅창이 밀려 내려가지 않고 빈 공간 위에 겹쳐 그려지게 함 */
+	margin-bottom: -60px;
+	height: 240px;
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
 .game-user {
 	border: 2px solid var(--color-border);
 	border-radius: 10px;
@@ -1732,11 +1753,7 @@ body {
 
 /* Mobile Small Mode (9+ Players) Scaling */
 /* Mobile Small Mode (9+ Players) Scaling */
-.game-body.small-mode {
-	height: auto !important;
-	/* Allow expansion */
-	min-height: 250px;
-}
+/* 높이/위치는 이제 base .game-body(position:absolute)가 모든 모드에 공통으로 고정 처리함 */
 
 .GameBox {
 	height: auto !important;
@@ -1746,6 +1763,8 @@ body {
 }
 
 .game-body.small-mode .game-user {
+	/* content-box라 width 100% + 테두리 2px + 좌우 마진 2px = 컨테이너보다 4px 넓어져 가로 스크롤 발생 */
+	width: calc(100% - 4px);
 	height: 17px;
 	margin: 1px 1px 4px 1px;
 	/* Added 4px bottom margin for spacing */
@@ -1775,6 +1794,169 @@ body {
 	width: 14px;
 	/* Smaller icon */
 	height: 14px;
+}
+
+/* 13명 이상: 이름만 목록 2열 표시 (큰 보드 모드). 컨테이너(.cw.game-body) 폭 334px 고정.
+   box-sizing은 건드리지 않고(기본 content-box 유지 — border-box면 height:22px도 border-box로
+   해석되어 콘텐츠 높이가 줄어들며 점수가 삐져나옴) content-box 여백(border 2px*2+margin 1px*2=6px,
+   모바일 game-user는 padding 없음)을 직접 빼서 폭 계산.
+   점수 폰트는 그대로(.cw .game-user-score 없으면 기본 15px 상속), 폭/간격만 좁힘.
+   game-user-score-char는 개별 float div라 letter-spacing 무효 — width로만 간격 조절. */
+.cw.game-body.name-2col .game-user {
+	width: calc(50% - 8px);
+	height: 22px;
+	overflow: hidden;
+}
+
+.cw.game-body.name-2col .game-user-title {
+	width: calc(100% - 60px);
+}
+
+/* 13명 이상 2열: 1열일 때(일반 모드)와 같은 180px로 고정하고 넘치는 줄은 스크롤로 처리
+   (늘어나게 두면 game-input이 그만큼 밀려 내려감) */
+.cw.game-body.name-2col {
+	height: 180px;
+	overflow-y: auto;
+}
+
+.cw.game-body.name-2col .game-user-name {
+	width: 62px;
+	font-size: 11px;
+}
+
+.cw.game-body.name-2col .game-user-score {
+	position: absolute;
+	right: 2px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 58px;
+	height: 18px;
+	line-height: 18px;
+	padding: 0px 1px;
+	overflow: hidden;
+}
+
+/* 실제 보이는 숫자는 개별 game-user-score-char(자리수별 float div)라서,
+   부모의 height만으로는 삐져나오는 걸 막을 수 없어 여기에도 height/line-height를 지정.
+   폭도 44px(4자리 한계)에서 58px(7자리)로 넓혀 점수가 줄바꿈되며 잘리던 문제를 방지. */
+.cw.game-body.name-2col .game-user-score-char {
+	width: 8px;
+	height: 18px;
+	line-height: 18px;
+}
+
+/* 17명 이상(2열 실제 줄 수 9줄↑): 큰 보드 모드도 더 촘촘한 행 스타일 사용.
+   주의: 클래스명을 "small-mode"가 아니라 "cw-dense"로 분리했다 — small-mode는 모레미 카드 전용
+   선택자와 이름이 겹치면 안 되기 때문 (데스크톱과 동일한 이유, 모바일은 모레미 카드가 없지만
+   클래스명 통일을 위해 동일하게 적용). */
+.cw.game-body.cw-dense .game-user {
+	height: 17px;
+	overflow: hidden;
+}
+
+.cw.game-body.cw-dense .game-user-level {
+	width: 13px;
+	height: 13px;
+}
+
+.cw.game-body.cw-dense .game-user-name {
+	font-size: 10px;
+}
+
+.cw.game-body.cw-dense .game-user-score {
+	font-size: 12px;
+}
+
+.cw.game-body.cw-dense.name-2col .game-user-score {
+	height: 15px;
+	line-height: 15px;
+}
+
+.cw.game-body.cw-dense.name-2col .game-user-score-char {
+	height: 15px;
+	line-height: 15px;
+}
+
+/* 13명 이상: 이름만 목록 2열 표시 (일반 모드, 모바일).
+   폭이 뷰포트 기준(가변)이라 %+border-box로 계산.
+   13~20명은 지금 16명 이하가 쓰는(일반) 패널 크기를 그대로 쓰고,
+   21명부터 아래 .small-mode.name-2col 쪽(축소된 패널)이 적용된다. */
+.game-body.name-2col .game-user {
+	width: calc(50% - 8px);
+	height: 22px;
+	overflow: hidden;
+}
+
+.game-body.name-2col .game-user-title {
+	width: calc(100% - 42px);
+}
+
+.game-body.name-2col .game-user-name {
+	width: 75px;
+}
+
+.game-body.name-2col .game-user-score {
+	position: absolute;
+	right: 2px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 40px;
+	height: 20px;
+	line-height: 20px;
+	padding: 0px 2px;
+	overflow: hidden;
+}
+
+.game-body.name-2col .game-user-score-char {
+	width: 8px;
+	height: 20px;
+	line-height: 20px;
+}
+
+.game-body.small-mode.name-2col .game-user {
+	width: calc(50% - 6px);
+	height: 17px;
+	overflow: hidden;
+}
+
+.game-body.small-mode.name-2col .game-user-title {
+	width: calc(100% - 42px);
+}
+
+.game-body.small-mode.name-2col .game-user-name {
+	width: 95px;
+}
+
+/* 점수 폰트 크기는 small-mode 기본값(12px)을 그대로 유지 — 폭/높이만 좁혀서 행(17px) 아래로 삐져나오지 않게 함.
+   폭도 42px(5자리 한계)에서 46px(6자리)로 넓혀 줄바꿈으로 잘리던 문제를 방지. */
+.game-body.small-mode.name-2col .game-user-score {
+	position: absolute;
+	right: 2px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 40px;
+	height: 15px;
+	line-height: 15px;
+	padding: 0px 1px;
+	overflow: hidden;
+}
+
+.game-body.small-mode.name-2col .game-user-score-char {
+	width: 7px;
+	height: 15px;
+	line-height: 15px;
+}
+
+/* 2열 모드: 점수(.game-user-score)가 행 오른쪽 끝에 absolute로 붙어 있어서, 점수 스플래시
+   (+N / -N)는 flow에 두면 점수와 겹치므로 점수 폭(40px)+여백만큼 띄워 그 왼쪽에 절대 위치시킴 */
+.game-body.name-2col .deltaScore {
+	position: absolute;
+	right: 44px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: auto;
+	white-space: nowrap;
+	pointer-events: none;
 }
 
 .game-user-current {
@@ -1833,7 +2015,9 @@ body {
 .result-board {
 	width: 100%;
 	height: 390px;
-	/* Increased to fit ~12 players */
+	/* 최대 12명 분량 높이로 고정, 그 이상은 스크롤 */
+	overflow-y: auto;
+	overflow-x: hidden;
 }
 
 .result-board-item {
@@ -3108,16 +3292,22 @@ body.dark-mode .team-unable div {
 	background-color: #444 !important;
 }
 body.dark-mode .team-1 {
-	background-color: #11319b !important;
+	background-color: #3B579E !important;
 }
 body.dark-mode .team-2 {
-	background-color: #8263b8 !important;
+	background-color: #483795 !important;
 }
 body.dark-mode .team-3 {
-	background-color: #d42e66 !important;
+	background-color: #88134C !important;
 }
 body.dark-mode .team-4 {
-	background-color: #ecc756 !important;
+	background-color: #9E3900 !important;
+}
+body.dark-mode .team-5 {
+	background-color: #9E6C00 !important;
+}
+body.dark-mode .team-6 {
+	background-color: #108A0A !important;
 }
 
 body.dark-mode .pq-canvas {

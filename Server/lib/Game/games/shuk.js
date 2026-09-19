@@ -27,11 +27,11 @@ var MOVE_INTERVAL = 500;
 var _shukWordCache = {};
 var SHUK_CACHE_TTL = 3 * 60 * 1000;
 
-const ROBOT_SHUK_START_DELAY = [8000, 5500, 3000, 1200, 500];
-const ROBOT_SHUK_MAX_WORDS = [20, 50, 80, 150, 9999];
-const BOT_SHUK_CPM = [25, 50, 100, 200, 500];
-const ROBOT_SHUK_MAX_LEN_KO = [2, 3, 4, 6, 10];
-const ROBOT_SHUK_MAX_LEN_EN = [3, 4, 6, 10, 20];
+const ROBOT_SHUK_START_DELAY = [8000, 5500, 3000, 1200, 500, 50];
+const ROBOT_SHUK_MAX_WORDS = [20, 50, 80, 150, 9999, 9999];
+const BOT_SHUK_CPM = [25, 50, 100, 200, 500, 5000];
+const ROBOT_SHUK_MAX_LEN_KO = [2, 3, 4, 6, 10, 10];
+const ROBOT_SHUK_MAX_LEN_EN = [3, 4, 6, 10, 20, 20];
 // 통계 테이블 state 비트마스크: bit0=noInjeong, bit1=strict, bit2=noLoan, bit3=allpos
 // state=8 → 어인정 포함 + 외래어 포함 + 품사 제한 없음(특수단어 포함) = 가장 관대한 조합
 const STATS_STATE = 8;
@@ -189,7 +189,7 @@ function robotSubmitOne(my, robot) {
 	}
 
 	var cpm = BOT_SHUK_CPM[level];
-	var typingTime = Math.max(200, (picked.length * 60000) / cpm + (Math.random() * 300 - 150));
+	var typingTime = Math.max(20, (picked.length * 60000) / cpm + (Math.random() * 300 - 150));
 
 	robot._shukTimer = setTimeout(function () {
 		if (my.game.late || !my.gaming) return;

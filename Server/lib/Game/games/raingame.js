@@ -22,8 +22,8 @@ function getInitialAttacks(playerCount) {
 	return INITIAL_ATTACKS_BY_COUNT[playerCount];
 }
 
-var BOT_CPM      = [30, 70, 150, 250, 500];
-var BOT_ACCURACY = [0.9, 0.95, 0.98, 0.99, 1.0];
+var BOT_CPM      = [30, 70, 150, 250, 500, 5000];
+var BOT_ACCURACY = [0.9, 0.95, 0.98, 0.99, 1.0, 1.0];
 
 // nyh 한국어
 var NYH_INITIALS = [1, 4, 8, 10, 13];

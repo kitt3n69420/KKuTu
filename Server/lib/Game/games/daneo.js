@@ -18,18 +18,19 @@
 
 var Const = require('../../const');
 var Lizard = require('../../sub/lizard');
+var MissionTable = require('./mission-table');
 var DB;
 var DIC;
 
-const ROBOT_START_DELAY = [1200, 800, 400, 200, 0];
-const ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0];
-const ROBOT_THINK_COEF = [4, 2, 1, 0, 0];
-const ROBOT_HIT_LIMIT = [4, 2, 1, 0, 0];
-const ROBOT_LENGTH_LIMIT = [3, 6, 12, 24, 80];
-const ROBOT_CANDIDATE_LIMIT = [10, 20, 40, 80, 40];
-const SPECIAL_MOVE_PROB = [0, 0, 0.1, 0.25, 0.4];
-const PERSONALITY_CONST = [0, 0, 0.5, 0.8, 0.99];
-const PREFERRED_CHAR_PROB = [0.6, 0.7, 0.8, 0.9, 1.0];
+const ROBOT_START_DELAY = [1200, 800, 400, 200, 0, 0];
+const ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0, 0];
+const ROBOT_THINK_COEF = [4, 2, 1, 0, 0, 0];
+const ROBOT_HIT_LIMIT = [4, 2, 1, 0, 0, 0];
+const ROBOT_LENGTH_LIMIT = [3, 6, 12, 24, 80, 80];
+const ROBOT_CANDIDATE_LIMIT = [10, 20, 40, 80, 40, 40];
+const SPECIAL_MOVE_PROB = [0, 0, 0.1, 0.25, 0.4, 0.4];
+const PERSONALITY_CONST = [0, 0, 0.5, 0.8, 0.99, 0.99];
+const PREFERRED_CHAR_PROB = [0.6, 0.7, 0.8, 0.9, 1.0, 1.0];
 
 // Helper function to get player ID (supports both robot objects and player ID strings)
 function getPlayerId(player) {
@@ -687,6 +688,14 @@ exports.readyRobot = function (robot) {
 	}
 
 	function executeStrategy(strategy) {
+		// 레벨 5: 미리 계산한 주제x미션 테이블에서 점수가 가장 높은 단어를 고른다. 조건이 안 맞으면 아래 기존 로직으로 폴백
+		if (level >= 5) {
+			var tableList = MissionTable.getCandidates(my.rule.lang, my.game.theme, my.game.mission, my.opts, my.game.chain, robot._done);
+			if (tableList) {
+				pickList(tableList);
+				return;
+			}
+		}
 		var limit = 0;
 		if (strategy === "LONG") limit = 3;
 
@@ -770,6 +779,7 @@ exports.readyRobot = function (robot) {
 	}
 	function after() {
 		delay += text.length * ROBOT_TYPE_COEF[level];
+		if (level >= 5) delay = Math.max(delay, 100); // 레벨 5: 최소 0.1초 텀
 		my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
 	}
 };

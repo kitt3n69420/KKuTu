@@ -379,7 +379,7 @@ block Middle
 			input#room-pw(type='password', placeholder=L('password'), data-lang-attr-placeholder='password', maxlength=20, style="width: 283px;")
 		div.dialog-bar
 			h4(data-lang-key='userLimit')= L('userLimit')
-			input#room-limit(type='number', min=2, max=12, step=1, value=12, style="width: 283px;")
+			input#room-limit(type='number', min=2, max=24, step=1, value=12, style="width: 283px;")
 		div.dialog-bar
 			h4(data-lang-key='gameCategory')= L('gameCategory')
 			select#room-category(style="width: 283px;")
@@ -663,6 +663,7 @@ block Middle
 				option(value=2, selected, data-lang-key='aiLevel2')= L('aiLevel2')
 				option(value=3, data-lang-key='aiLevel3')= L('aiLevel3')
 				option(value=4, data-lang-key='aiLevel4')= L('aiLevel4')
+				option(value=5, data-lang-key='aiLevel5')= L('aiLevel5')
 		div.dialog-bar
 			h4(data-lang-key='team')= L('team')
 			select#ai-team
@@ -671,6 +672,8 @@ block Middle
 				option(value=2) B
 				option(value=3) C
 				option(value=4) D
+				option(value=5) E
+				option(value=6) F
 		div.dialog-bar.ai-setting-only(style='margin-bottom: 10px;')
 			h4(data-lang-key='aiPersonality')= L('aiPersonality')
 			div(style='float: left; width: 187px;')
@@ -927,6 +930,8 @@ block Middle
 			div.team-button#team-2.team-2 B
 			div.team-button#team-3.team-3 C
 			div.team-button#team-4.team-4 D
+			div.team-button#team-5.team-5 E
+			div.team-button#team-6.team-6 F
 		div.room-users
 	+Product('Game')
 		div.game-head

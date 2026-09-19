@@ -209,6 +209,12 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN, _DiscordRel
 	DiscordRelay = _DiscordRelay;
 	_rid = 100;
 	refreshEventMults();
+	// 부팅 직후 첫 조회가 지연/실패하면 최대 5분간 이벤트가 안 걸린 것처럼 보이므로, 초반엔 짧은 주기로 재조회해 빠르게 따라잡는다
+	var _eventWarmupLeft = 15;
+	var _eventWarmupTimer = setInterval(function () {
+		refreshEventMults();
+		if (--_eventWarmupLeft <= 0) clearInterval(_eventWarmupTimer);
+	}, 20000);
 	setInterval(refreshEventMults, 300000); // 5분마다 갱신 (이벤트는 자주 바뀌지 않음)
 	// 망할 셧다운제 if(Cluster.isMaster) setInterval(exports.processAjae, 60000);
 	DB.kkutu_shop.find().on(function ($shop) {
@@ -241,6 +247,10 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN, _DiscordRel
 		DB.statsReady.en = true;
 		JLog.info("[STATS] kkutu_stats_en loaded: " + Object.keys(DB.statsData.en).length + " rows");
 	});
+	// 레벨 5 봇용 주제x미션 상위 단어 테이블(tools/build_mission_table.js). 테이블이 없으면 봇이 기존 경로로 폴백한다.
+	require("./games/mission-table").load(DB, JLog);
+	// 레벨 5 봇용 끝말잇기 후보 테이블(tools/build_classic_table.js). 테이블이 없으면 봇이 기존 경로로 폴백한다.
+	require("./games/classic-table").load(DB, JLog);
 	// roundReady에서 매번 COUNT 쿼리를 날리지 않도록 서버 시작 시 단어 수 캐시
 	DB._cachedWordCount = { ko: { normal: 0, allpos: 0 }, en: { normal: 0, allpos: 0 } };
 	DB.kkutu['ko'].count(['type', Const.KOR_GROUP]).on(function (n) { if (typeof n === 'number' && n > 0) DB._cachedWordCount.ko.normal = n; });

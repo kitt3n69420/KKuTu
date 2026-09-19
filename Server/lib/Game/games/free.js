@@ -5,15 +5,16 @@
 
 var Const = require('../../const');
 var Lizard = require('../../sub/lizard');
+var MissionTable = require('./mission-table');
 var DB;
 var DIC;
 
-const ROBOT_START_DELAY = [1200, 800, 400, 200, 0];
-const ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0];
-const ROBOT_THINK_COEF = [4, 2, 1, 0, 0];
-const ROBOT_HIT_LIMIT = [4, 3, 2, 1, 0];
-const ROBOT_LENGTH_LIMIT = [3, 7, 15, 31, 80];
-const ROBOT_CANDIDATE_LIMIT = [10, 20, 40, 80, 40];
+const ROBOT_START_DELAY = [1200, 800, 400, 200, 0, 0];
+const ROBOT_TYPE_COEF = [1250, 750, 500, 250, 0, 0];
+const ROBOT_THINK_COEF = [4, 2, 1, 0, 0, 0];
+const ROBOT_HIT_LIMIT = [4, 3, 2, 1, 0, 0];
+const ROBOT_LENGTH_LIMIT = [3, 7, 15, 31, 80, 80];
+const ROBOT_CANDIDATE_LIMIT = [10, 20, 40, 80, 40, 40];
 // ん(어떤 단어도 이 글자로 시작하지 않음)/작은 가나/고어(ゐゑ)는 봇의 무작위 시작 글자로 뽑히면
 // 사전 조회 결과가 거의 항상 0건이 되어 봇이 부당하게 ROBOT_DEFEAT_MESSAGES_2를 보내게 됨 — 제외.
 const JA_ROBOT_START_CHARS = (function () {
@@ -721,6 +722,20 @@ exports.readyRobot = function (robot) {
     }
 
     var autoArg = (isTopicFree(my) && my.opts.injpick && my.opts.injpick.length) ? my.opts.injpick : null;
+
+    // 레벨 5: 미리 계산한 주제x미션 테이블에서 점수가 가장 높은 단어를 고른다. 조건이 안 맞으면 아래 기존 로직으로 폴백
+    if (level >= 5) {
+        var tableList = MissionTable.getCandidates(my.rule.lang, autoArg, my.game.mission, my.opts, my.game.chain, robot._done, {
+            injeong: isTopicFree(my) || !!my.opts.injeong, // getAuto/입력 검사와 같은 규칙: 주제 자유는 어인정 항상 허용
+            noLoan: my.rule.lang == "ko" && !!my.opts.loanword, // 외래어 금지는 한국어만
+            idRegex: my.rule.lang == "en" ? Const.ENG_ID : null // 영어는 getAuto처럼 알파벳 단어만
+        });
+        if (tableList) {
+            pickList(tableList);
+            return;
+        }
+    }
+
     getAuto.call(my, autoArg, 2).then(function (list) {
         if (list.length) {
             // Filter by mission if active (Strategy 2)
@@ -799,6 +814,7 @@ exports.readyRobot = function (robot) {
     function after() {
         delay += text.length * ROBOT_TYPE_COEF[level];
         robot._done.add(text);
+        if (level >= 5) delay = Math.max(delay, 100); // 레벨 5: 최소 0.1초 텀
         my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
     }
 };

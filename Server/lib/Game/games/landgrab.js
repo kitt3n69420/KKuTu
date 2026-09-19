@@ -28,12 +28,12 @@ var TOTAL_CELLS = BOARD_W * BOARD_H;
 var POINTS_PER_CELL = 4;
 
 // 레벨별 분당 타수(레벨 0 = 40타, 레벨 1당 2배)와 단어 사이 대기시간(레벨 0 = 8초, 레벨 1당 절반)
-var ROBOT_TYPE_CPM = [40, 80, 160, 320, 640];
-var ROBOT_INTER_WORD_DELAY = [8000, 4000, 2000, 1000, 500];
+var ROBOT_TYPE_CPM = [40, 80, 160, 320, 640, 5000];
+var ROBOT_INTER_WORD_DELAY = [8000, 4000, 2000, 1000, 500, 50];
 // 레벨별 최대 글자수: 0~1레벨 2글자, 2~3레벨 3글자, 4레벨 4글자
-var ROBOT_MAX_LEN = [2, 2, 3, 3, 4];
+var ROBOT_MAX_LEN = [2, 2, 3, 3, 4, 20];
 // no2 옵션(2글자 이하 금지)에서는 0~1레벨도 3글자부터 시작
-var ROBOT_MAX_LEN_NO2 = [3, 3, 3, 3, 4];
+var ROBOT_MAX_LEN_NO2 = [3, 3, 3, 3, 4, 20];
 
 // 초성 그룹별 가중치 (그룹 점유율 ÷ 그룹 내 글자 수)
 var CHOSUNG_WEIGHTS = (function () {
