@@ -9,6 +9,7 @@
  * 정확히 같은 글자만 센다(영어는 소문자 a-z, 일본어는 히라가나).
  */
 var Const = require('../../const');
+var TableLoader = require('../../sub/table-loader');
 
 var MISSION_CHARS = {
 	ko: Const.MISSION_ko.join(""),
@@ -23,21 +24,26 @@ var store = {};
 exports.load = function (DB, JLog) {
 	Object.keys(MISSION_CHARS).forEach(function (lang) {
 		var table = DB["kkutu_mission_" + lang];
-		table.find().on(function ($rows) {
-			var next = new Map();
-			if ($rows) {
-				$rows.sort(function (a, b) { return a.rank - b.rank; });
-				$rows.forEach(function (r) {
-					var key = r.theme + "|" + r.mission + "|" + r.cap;
-					var arr = next.get(key);
-					if (!arr) next.set(key, arr = []);
-					arr.push({ _id: r.word, len: r.len, mcount: r.mcount, hit: r.hit, flag: r.flag });
-				});
-			}
-			if (next.size) store[lang] = next;
-			JLog.info("[MISSION-TABLE] kkutu_mission_" + lang + " loaded: " + next.size + " keys");
-		}, null, function (err) {
-			JLog.warn("[MISSION-TABLE] kkutu_mission_" + lang + " not available, level 5 bots will use the default logic: " + (err && err.message || err));
+		TableLoader.load("kkutu_mission_" + lang, function (timeout, done) {
+			var q = table.find();
+			if (timeout) q.timeout(timeout);
+			q.on(function ($rows) {
+				var next = new Map();
+				if ($rows) {
+					$rows.sort(function (a, b) { return a.rank - b.rank; });
+					$rows.forEach(function (r) {
+						var key = r.theme + "|" + r.mission + "|" + r.cap;
+						var arr = next.get(key);
+						if (!arr) next.set(key, arr = []);
+						arr.push({ _id: r.word, len: r.len, mcount: r.mcount, hit: r.hit, flag: r.flag });
+					});
+				}
+				if (next.size) store[lang] = next;
+				JLog.info("[MISSION-TABLE] kkutu_mission_" + lang + " loaded: " + next.size + " keys");
+				done();
+			}, null, done);
+		}, function () {
+			JLog.warn("[MISSION-TABLE] kkutu_mission_" + lang + " not available, level 5 bots will use the default logic");
 		});
 	});
 };

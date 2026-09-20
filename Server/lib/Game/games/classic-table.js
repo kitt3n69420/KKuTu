@@ -14,6 +14,7 @@
  * wflag 비트: 1 외래어, 2 어인정, 4 깐깐 통과, 8 품사 통과
  */
 var MissionTable = require('./mission-table');
+var TableLoader = require('../../sub/table-loader');
 
 // 게임 모드 -> 언어/방향. KKU, EKT, KJM, 일본어 모드와 영어 쿵쿵따 계열(EKK, EAK)은 지원하지 않는다.
 var MODES = {
@@ -55,21 +56,26 @@ var store = {}; // lang -> Map(key -> [{ _id, len, exitc, wflag, hit }] (rank �
 
 exports.load = function (DB, JLog) {
 	["ko", "en"].forEach(function (lang) {
-		DB["kkutu_classic_" + lang].find().on(function ($rows) {
-			var next = new Map();
-			if ($rows) {
-				$rows.sort(function (a, b) { return a.rank - b.rank; });
-				$rows.forEach(function (r) {
-					var key = r.dir + "|" + r.link + "|" + r.pool + "|" + r.sub;
-					var arr = next.get(key);
-					if (!arr) next.set(key, arr = []);
-					arr.push({ _id: r.word, len: r.len, exitc: r.exitc, wflag: r.wflag, hit: r.hit });
-				});
-			}
-			if (next.size) store[lang] = next;
-			JLog.info("[CLASSIC-TABLE] kkutu_classic_" + lang + " loaded: " + next.size + " keys");
-		}, null, function (err) {
-			JLog.warn("[CLASSIC-TABLE] kkutu_classic_" + lang + " not available, level 5 bots will use the default logic: " + (err && err.message || err));
+		TableLoader.load("kkutu_classic_" + lang, function (timeout, done) {
+			var q = DB["kkutu_classic_" + lang].find();
+			if (timeout) q.timeout(timeout);
+			q.on(function ($rows) {
+				var next = new Map();
+				if ($rows) {
+					$rows.sort(function (a, b) { return a.rank - b.rank; });
+					$rows.forEach(function (r) {
+						var key = r.dir + "|" + r.link + "|" + r.pool + "|" + r.sub;
+						var arr = next.get(key);
+						if (!arr) next.set(key, arr = []);
+						arr.push({ _id: r.word, len: r.len, exitc: r.exitc, wflag: r.wflag, hit: r.hit });
+					});
+				}
+				if (next.size) store[lang] = next;
+				JLog.info("[CLASSIC-TABLE] kkutu_classic_" + lang + " loaded: " + next.size + " keys");
+				done();
+			}, null, done);
+		}, function () {
+			JLog.warn("[CLASSIC-TABLE] kkutu_classic_" + lang + " not available, level 5 bots will use the default logic");
 		});
 	});
 };

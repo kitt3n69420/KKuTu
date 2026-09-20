@@ -7,19 +7,24 @@
  */
 
 var JLog = require('../../sub/jjlog');
+var TableLoader = require('../../sub/table-loader');
 
 var MAX_PER_CHAR = 50;
 
 var index = null; // Map<char, Array<{ _id, hit }>>
-var buildingPromise = null;
+var building = false;
 
+// 재시도까지 실패하면 인덱스는 null로 남고, pick()이 null을 돌려주므로 호출부의 기존 처리를 따른다.
 exports.build = function (DB, topChars) {
-	if (buildingPromise) return buildingPromise;
+	if (building) return;
+	building = true;
 
-	buildingPromise = new Promise(function (resolve) {
-		var wanted = new Set(topChars);
+	var wanted = new Set(topChars);
 
-		DB.kkutu.ko.find().limit(['_id', true], ['hit', true]).on(function (docs) {
+	TableLoader.load('kkutu_ko (center index)', function (timeout, done) {
+		var q = DB.kkutu.ko.find().limit(['_id', true], ['hit', true]);
+		if (timeout) q.timeout(timeout);
+		q.on(function (docs) {
 			var raw = new Map(); // char -> {_id, hit}[]
 
 			for (var i = 0; i < docs.length; i++) {
@@ -40,11 +45,11 @@ exports.build = function (DB, topChars) {
 
 			index = built;
 			JLog.log('[CENTER] Word index built: ' + index.size + ' character buckets');
-			resolve();
-		});
+			done();
+		}, null, done);
+	}, function () {
+		JLog.warn('[CENTER] Word index not available, bots will use the default logic');
 	});
-
-	return buildingPromise;
 };
 
 exports.isReady = function () {

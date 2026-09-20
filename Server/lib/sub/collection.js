@@ -283,6 +283,24 @@ exports.Agent = function(type, origin){
 			_my.second = {};
 			_my.sorts = null;
 			
+			function queryWithTimeout(sql, ms, cb){
+				origin.connect(function(err, client, release){
+					if(err) return cb(err);
+					client.query("SET statement_timeout = " + (ms | 0), function(err){
+						if(err){
+							release();
+							return cb(err);
+						}
+						client.query(sql, function(err, res){
+							// 커넥션은 풀로 돌아가므로 풀 기본값으로 되돌린 뒤 반환한다.
+							client.query("RESET statement_timeout", function(){
+								release();
+								cb(err, res);
+							});
+						});
+					});
+				});
+			}
 			this.on = function(f, chk, onFail){
 				var sql;
 				var sq = _my.second['$set'];
@@ -371,7 +389,8 @@ exports.Agent = function(type, origin){
 				}
 				if(!sql) return JLog.warn("SQL is undefined. This call will be ignored.");
 				// JLog.log("Query: " + sql.slice(0, 100));
-				origin.query(sql, preCB);
+				if(_my.statementTimeout) queryWithTimeout(sql, _my.statementTimeout, preCB);
+				else origin.query(sql, preCB);
 				/*if(_my.findLimit){
 					
 					c = my.source[mode](q, flag, { limit: _my.findLimit }, preCB);
@@ -379,6 +398,11 @@ exports.Agent = function(type, origin){
 					c = my.source[mode](q, _my.second, flag, preCB);
 				}*/
 				return sql;
+			};
+			// timeout: 이 쿼리에 한해 풀 기본 statement_timeout 대신 ms를 적용한다. (서버 시작 시 대용량 테이블 재시도용)
+			this.timeout = function(ms){
+				_my.statementTimeout = ms;
+				return this;
 			};
 			// limit: find 쿼리에 걸린 문서를 필터링하는 지침을 정의한다.
 			this.limit = function(_data){

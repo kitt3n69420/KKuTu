@@ -13,6 +13,7 @@
  */
 
 var JLog = require('../../sub/jjlog');
+var TableLoader = require('../../sub/table-loader');
 
 var INIT_SOUNDS = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
 var MIN_LEN = 2;
@@ -20,7 +21,7 @@ var MAX_LEN = 4;
 var K_BY_LEN = { 2: 10, 3: 10, 4: 2 };
 
 var index = null; // Map<chosungKey, Array<{ _id, hit }>>
-var buildingPromise = null;
+var building = false;
 
 function toChosung(text) {
 	var seq = '';
@@ -32,41 +33,53 @@ function toChosung(text) {
 	return seq;
 }
 
-// DB: 초기화 시 1회 전달받는 DB 핸들 (landgrab.js의 exports.init에서 호출)
-exports.build = function (DB) {
-	if (buildingPromise) return buildingPromise;
+function indexDocs(docs, label) {
+	var raw = new Map(); // chosungKey -> {_id, hit}[] (아직 K로 자르기 전)
 
-	buildingPromise = new Promise(function (resolve) {
-		DB.kkutu.ko.find().limit(['hit', true]).on(function (docs) {
-			var raw = new Map(); // chosungKey -> {_id, hit}[] (아직 K로 자르기 전)
+	for (var i = 0; i < docs.length; i++) {
+		var doc = docs[i];
+		var text = doc._id.replace(/\s/g, '');
+		if (text.length < MIN_LEN || text.length > MAX_LEN) continue;
 
-			for (var i = 0; i < docs.length; i++) {
-				var doc = docs[i];
-				var text = doc._id.replace(/\s/g, '');
-				if (text.length < MIN_LEN || text.length > MAX_LEN) continue;
+		var key = toChosung(text);
+		if (key === null) continue;
 
-				var key = toChosung(text);
-				if (key === null) continue;
+		var bucket = raw.get(key);
+		if (!bucket) raw.set(key, bucket = []);
+		bucket.push({ _id: doc._id, hit: doc.hit || 0 });
+	}
 
-				var bucket = raw.get(key);
-				if (!bucket) raw.set(key, bucket = []);
-				bucket.push({ _id: doc._id, hit: doc.hit || 0 });
-			}
-
-			var built = new Map();
-			raw.forEach(function (words, key) {
-				var K = K_BY_LEN[key.length] || 1;
-				words.sort(function (a, b) { return b.hit - a.hit; });
-				built.set(key, words.slice(0, K));
-			});
-
-			index = built;
-			JLog.log('[landgrab] Chosung index built: ' + index.size + ' keys');
-			resolve();
-		});
+	var built = new Map();
+	raw.forEach(function (words, key) {
+		var K = K_BY_LEN[key.length] || 1;
+		words.sort(function (a, b) { return b.hit - a.hit; });
+		built.set(key, words.slice(0, K));
 	});
 
-	return buildingPromise;
+	index = built;
+	JLog.log('[landgrab] Chosung index built' + label + ': ' + index.size + ' keys');
+}
+
+// DB: 초기화 시 1회 전달받는 DB 핸들 (landgrab.js의 exports.init에서 호출)
+// 전체 사전 로드가 (재시도까지) 실패하면, 2~3글자 단어만이라도 올리는 축소 인덱스로 폴백한다.
+exports.build = function (DB) {
+	if (building) return;
+	building = true;
+
+	TableLoader.load('kkutu_ko (landgrab index)', function (timeout, done) {
+		var q = DB.kkutu.ko.find().limit(['hit', true]);
+		if (timeout) q.timeout(timeout);
+		q.on(function (docs) {
+			indexDocs(docs || [], '');
+			done();
+		}, null, done);
+	}, function () {
+		DB.kkutu.ko.find(['_id', /^.{2,3}$/]).limit(['hit', true]).on(function (docs) {
+			indexDocs(docs || [], ' (fallback: 2~3 letters only)');
+		}, null, function (err) {
+			JLog.warn('[landgrab] Fallback index also failed, bots will stay idle: ' + (err && err.message || err));
+		});
+	});
 };
 
 exports.isReady = function () {
