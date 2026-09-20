@@ -88,6 +88,7 @@ Pub.ready = function (isPub) {
 				DB.kkutu_cw[LANG[i]] = new mainAgent.Table("kkutu_cw_" + LANG[i]);
 			}
 			DB.kkutu_cw_mean = new mainAgent.Table("kkutu_cw_mean_ko"); // 아케이드/기초사전 단어-뜻 조회 전용(한국어 전용)
+			DB.kkutu_sudoku = new mainAgent.Table("kkutu_sudoku");
 			DB.kkutu_injeong = new mainAgent.Table("kkutu_injeong");
 			DB.kkutu_stats = new mainAgent.Table("kkutu_stats");
 			DB.kkutu_stats_ko = new mainAgent.Table("kkutu_stats_ko");

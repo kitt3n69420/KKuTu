@@ -334,6 +334,7 @@ exports.readyRobot = function (robot) {
 		var gen = "";
 		var len;
 		var pool = [];
+		var repeatBlock = false;
 		var usePreferred = false;
 
 		// Check if preferredChar matches the game language
@@ -345,7 +346,7 @@ exports.readyRobot = function (robot) {
 		if (Const.GAME_TYPE[my.mode] == "KKT" || Const.GAME_TYPE[my.mode] == "EKK") {
 			len = my.game.wordLength - 1;
 		} else {
-			switch (level) {
+			switch (Math.min(level, 4)) {
 				case 0:
 					len = Math.floor(Math.random() * 2) + 1;
 					break; // 1~2
@@ -377,7 +378,12 @@ exports.readyRobot = function (robot) {
 				if (len > maxUnkLen) len = maxUnkLen;
 			}
 			// no2 모드: 최소 2글자 (char 포함 최소 3글자)
-			if (my.opts.no2 && len < 2) {
+			// 레벨 5: 미션이 있으면 미션 글자 400~490개, 없으면 랜덤 49글자를 10번 반복(490글자). nolong이면 레벨 4와 동일
+				if (level >= 5 && !my.opts.nolong) {
+					if (my.game.mission) len = 400 + Math.floor(Math.random() * 91);
+					else repeatBlock = true;
+				}
+				if (my.opts.no2 && len < 2) {
 				len = 2;
 			}
 		}
@@ -414,6 +420,17 @@ exports.readyRobot = function (robot) {
 					gen += String.fromCharCode(97 + Math.floor(Math.random() * 26));
 				}
 			}
+		}
+
+		if (repeatBlock) {
+			var block = "";
+			for (i = 0; i < 49; i++) {
+				block += (my.rule.lang == "ko")
+					? String.fromCharCode(0xAC00 + Math.floor(Math.random() * 11172))
+					: String.fromCharCode(97 + Math.floor(Math.random() * 26));
+			}
+			gen = "";
+			for (i = 0; i < 10; i++) gen += block;
 		}
 
 		if (isRev) text = gen + my.game.char;

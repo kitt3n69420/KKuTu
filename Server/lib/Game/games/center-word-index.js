@@ -19,7 +19,7 @@ exports.build = function (DB, topChars) {
 	buildingPromise = new Promise(function (resolve) {
 		var wanted = new Set(topChars);
 
-		DB.kkutu.ko.find().limit(['hit', true]).on(function (docs) {
+		DB.kkutu.ko.find().limit(['_id', true], ['hit', true]).on(function (docs) {
 			var raw = new Map(); // char -> {_id, hit}[]
 
 			for (var i = 0; i < docs.length; i++) {

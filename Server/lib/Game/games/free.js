@@ -40,6 +40,9 @@ function isTopicFree(my) {
     var mc = Const.GAME_TYPE[my.mode];
     return mc === 'KTF' || mc === 'ETF';
 }
+function isFool(my) {
+    return Const.GAME_TYPE[my.mode] === 'XBB';
+}
 function toRegex(theme) {
     if (Array.isArray(theme)) return new RegExp('(^|,)(' + theme.join('|') + ')($|,)');
     return new RegExp('(^|,)' + theme + '($|,)');
@@ -50,7 +53,7 @@ exports.getTitle = function () {
 
     setTimeout(function () {
         var mc = Const.GAME_TYPE[my.mode];
-        if (mc === 'KFR' || mc === 'EFR' || mc === 'JFR' || mc === 'KTF' || mc === 'ETF') {
+        if (mc === 'KFR' || mc === 'EFR' || mc === 'JFR' || mc === 'KTF' || mc === 'ETF' || mc === 'XBB') {
             R.go("①②③④⑤⑥⑦⑧⑨⑩");
         } else {
             R.go(Const.EXAMPLE_TITLE[my.rule.lang]);
@@ -211,7 +214,13 @@ exports.turnEnd = function () {
 
     // Hint logic: KTF/ETF uses topic-filtered hint
     var hintArg = (isTopicFree(my) && my.opts.injpick && my.opts.injpick.length) ? my.opts.injpick : null;
-    getAuto.call(my, hintArg, 0).then(function (w) {
+    var hintTail;
+    if (isFool(my)) {
+        // 바보 모드: 단어 DB가 없으므로 힌트 없음
+        hintTail = new Lizard.Tail();
+        setTimeout(function () { hintTail.go(null); }, 0);
+    } else hintTail = getAuto.call(my, hintArg, 0);
+    hintTail.then(function (w) {
         my.byMaster('turnEnd', {
             ok: false,
             target: target ? target.id : null,
@@ -315,7 +324,7 @@ exports.submit = function (client, text) {
 
     // No chaining check needed for Free mode
 
-    if (my.game.chain.indexOf(text) != -1) {
+    if (!isFool(my) && my.game.chain.indexOf(text) != -1) {
         var isRecentDuplicate = my.opts.return && my.game.chain.slice(-5).indexOf(text) != -1;
 
         if (my.opts.return && !isRecentDuplicate) {
@@ -493,7 +502,7 @@ exports.submit = function (client, text) {
                         }, my.game.turnTime / 6);
                     }
 
-                    if (!client.robot) {
+                    if (!client.robot && !isFool(my)) {
                         client.invokeWordPiece(text, 1);
                         DB.kkutu[l].update(['_id', text]).set(['hit', $doc.hit + 1]).on();
                     }
@@ -528,7 +537,7 @@ exports.submit = function (client, text) {
                     my.checkItemGrant(client.id, bp, true);
                 }
                 setTimeout(my.turnNext, my.game.turnTime / 6);
-                if (!client.robot) {
+                if (!client.robot && !isFool(my)) {
                     client.invokeWordPiece(text, 1);
                     DB.kkutu[l].update(['_id', text]).set(['hit', $doc.hit + 1]).on();
                 }
@@ -545,7 +554,11 @@ exports.submit = function (client, text) {
                 }, 1000);
             }
         }
-        if (my.opts.unknown) {
+        if (isFool(my)) {
+            // 바보 모드: DB 조회 없이 어떤 입력이든 통과
+            $doc = { mean: "", theme: "", type: "unknown", hit: 0, baby: 0, flag: 0 };
+            preApproved();
+        } else if (my.opts.unknown) {
             if ($doc) denied(410);
             else {
                 var valid = true; //아무거나 쳐도 되므로 체크를 할 필요가 없다. 매너도 필요없다
@@ -584,6 +597,7 @@ exports.submit = function (client, text) {
             denied();
         }
     }
+    if (isFool(my)) return onDB(null);
     var findArgs = [['_id', text]];
     if (l == "en") findArgs.push(['_id', Const.ENG_ID]);
     DB.kkutu[l].findOne.apply(DB.kkutu[l], findArgs
@@ -645,7 +659,7 @@ exports.readyRobot = function (robot) {
     var w, text, i;
 
     // Strategy 3: Unknown O
-    if (my.opts.unknown) {
+    if (my.opts.unknown || isFool(my)) {
         var gen = "";
         var len;
         var usePreferred = false;
@@ -658,7 +672,7 @@ exports.readyRobot = function (robot) {
         }
 
         // Random length based on level
-        switch (level) {
+        switch (Math.min(level, 4)) {
             case 0: len = Math.floor(Math.random() * 2) + 1; break; // 1~2
             case 1: len = Math.floor(Math.random() * 3) + 2; break; // 2~4
             case 2: len = Math.floor(Math.random() * 5) + 4; break; // 4~8
@@ -681,8 +695,24 @@ exports.readyRobot = function (robot) {
         if (my.opts.no2 && len < 3) {
             len = 3;
         }
+        // 레벨 5: 미션이 있으면 미션 글자 400~490개, 없으면 랜덤 49글자를 10번 반복(490글자). nolong이면 레벨 4와 동일
+        var repeatBlock = false;
+        if (level >= 5 && !my.opts.nolong) {
+            if (my.game.mission) len = 400 + Math.floor(Math.random() * 91);
+            else repeatBlock = true;
+        }
 
-        if (my.game.mission) {
+        if (repeatBlock) {
+            // Mission X (레벨 5): 랜덤 49글자 x 10회
+            var block = "";
+            for (i = 0; i < 49; i++) {
+                if (my.rule.lang == "ko") block += String.fromCharCode(0xAC00 + Math.floor(Math.random() * 11172));
+                else if (my.rule.lang == "ja") block += String.fromCharCode(0x3042 + Math.floor(Math.random() * 82));
+                else if (my.rule.lang == "etc") block += Const.MISSION_XBB[Math.floor(Math.random() * Const.MISSION_XBB.length)];
+                else block += String.fromCharCode(97 + Math.floor(Math.random() * 26));
+            }
+            for (i = 0; i < 10; i++) gen += block;
+        } else if (my.game.mission) {
             // Mission O: Repeat mission char
             for (i = 0; i < len; i++) {
                 gen += my.game.mission;
@@ -700,6 +730,8 @@ exports.readyRobot = function (robot) {
                         gen += String.fromCharCode(0xAC00 + Math.floor(Math.random() * 11172));
                     } else if (my.rule.lang == "ja") {
                         gen += String.fromCharCode(0x3042 + Math.floor(Math.random() * 82)); // 히라가나 (あ~ん)
+                    } else if (my.rule.lang == "etc") {
+                        gen += Const.MISSION_XBB[Math.floor(Math.random() * Const.MISSION_XBB.length)];
                     } else {
                         gen += String.fromCharCode(97 + Math.floor(Math.random() * 26));
                     }
@@ -814,7 +846,7 @@ exports.readyRobot = function (robot) {
     function after() {
         delay += text.length * ROBOT_TYPE_COEF[level];
         robot._done.add(text);
-        if (level >= 5) delay = Math.max(delay, 100); // 레벨 5: 최소 0.1초 텀
+        if (level >= 4) delay = Math.max(delay, 100); // 레벨 5: 최소 0.1초 텀
         my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
     }
 };
@@ -838,7 +870,8 @@ function getMission(l, opts) {
         return String.fromCharCode(0xAC00 + (initialIndex * 588) + (vowelIndex * 28));
     }
 
-    // 기본 미션 로직
+    // 기본 미션 로직 (lang "etc"는 바보 모드 전용)
+    if (l == "etc") return Const.MISSION_XBB[Math.floor(Math.random() * Const.MISSION_XBB.length)];
     var arr = (l == "ko") ? Const.MISSION_ko : (l == "ja") ? Const.MISSION_ja : Const.MISSION_en;
 
     if (!arr) return "-";

@@ -284,7 +284,7 @@ exports.readyRobot = function (robot) {
 
 	delay += 100 * Math.log10(n + 100) * ROBOT_THINK_COEF[level];
 
-	if (level === 4) {
+	if (level >= 4) {
 		accuracy = 1;
 	} else {
 		baseAccuracy = 10 / (Math.log10(n) + 10);

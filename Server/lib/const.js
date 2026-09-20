@@ -86,7 +86,7 @@ exports.OPTIONS = {
 	'rdu': { name: "RobloxDuum" },
 	'spd': { name: "Speed" },
 	'drg': { name: "Drg" },
-	'dic': { name: "Dic" },   // 기초사전: 크로스워드에 한국어기초사전 명사 출처 사용 (KCW 전용)
+	'dic': { name: "Dic" },   // 이지 모드: 크로스워드에 한국어기초사전 명사 출처 사용 (KCW) / 스도쿠를 6x6으로 출제 (CSD)
 	'arc': { name: "Arc" },   // 아케이드: 크로스워드에 아케이드 단어 목록 출처 사용 (KCW 전용)
 	'spt': { name: "SpeedToss" },
 	'stt': { name: "Straight" },
@@ -853,6 +853,31 @@ exports.RULE = {
 		big: true,
 		ewq: false,
 		survival: false
+	},
+
+	// 바보 모드: Free 규칙 기반, 언어/DB 조회 없음. 아무 문자열(BMP)이나 입력해도 턴이 넘어가고
+	// 중복 입력 허용, 보상은 항상 0. 미션 글자는 a-z/0-9/가~하 중 랜덤
+	'XBB': {
+		lang: "etc",
+		rule: "Free",
+		opts: ["mis", "rdm", "spd", "drg", "nar", "god", "rnt", "chs", "nsw"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: true,
+		survival: false
+	},
+
+	// 스도쿠: 여러 명이 한 판을 공유하며 빈 칸에 숫자를 먼저 맞히면 10점(오답 -5점). 이지 모드(dic)는 6x6, 기본은 9x9. 봇 없음
+	'CSD': {
+		lang: "etc",
+		rule: "Sudoku",
+		opts: ["dic", "drg"],
+		time: 3,
+		ai: true,
+		big: true,
+		ewq: false,
+		survival: false
 	}
 
 };
@@ -871,7 +896,7 @@ exports.GAME_CATEGORIES = {
 	},
 	'board': {
 		name: 'GameCategoryBoard',
-		modes: ['KPF', 'EPF', 'KWR', 'EWR', 'KWS', 'EWS', 'KSS', 'ESS', 'JSS', 'KSK', 'ESK', 'KLG', 'KCF']
+		modes: ['KPF', 'EPF', 'KWR', 'EWR', 'KWS', 'EWS', 'KSS', 'ESS', 'JSS', 'KSK', 'ESK', 'KLG', 'KCF', 'CSD']
 	},
 	'speed': {
 		name: 'GameCategorySpeed',
@@ -879,7 +904,7 @@ exports.GAME_CATEGORIES = {
 	},
 	'etc': {
 		name: 'GameCategoryEtc',
-		modes: ['KDA', 'EDA', 'JDA', 'HUN', 'KFR', 'EFR', 'JFR', 'KTF', 'ETF', 'CNC']
+		modes: ['KDA', 'EDA', 'JDA', 'HUN', 'KFR', 'EFR', 'JFR', 'KTF', 'ETF', 'CNC', 'XBB']
 	}
 };
 exports.GAME_TYPE = Object.keys(exports.RULE);
@@ -902,6 +927,8 @@ exports.MISSION_ko = ["가", "나", "다", "라", "마", "바", "사", "아", "�
 exports.MISSION_en = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 exports.MISSION_jamo = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅅ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ', 'ㅏ', 'ㅐ', 'ㅓ', 'ㅔ', 'ㅗ', 'ㅜ', 'ㅡ', 'ㅣ', 'ㅑ', 'ㅕ', 'ㅛ', 'ㅠ'];
 exports.MISSION_ja = ["あ","か","さ","た","な","は","ま","や","ら","わ"];
+// 바보 모드(XBB) 미션: a-z, 0-9, MISSION_ko(가나다라마바사아자차카타파하) 총 50글자를 균등하게 뽑는다
+exports.MISSION_XBB = exports.MISSION_en.concat(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], exports.MISSION_ko);
 exports.KO_INJEONG = [
 	"KRR", "KDI", "KTV", "KBS", 
 	"KPT", "KHJ", "KSC", "WCH",
@@ -1085,6 +1112,9 @@ exports.isEventActive = function (ev) {
 exports.BOT_ITEM_WEIGHTS = {
 	// "item_id": weight (default: 10)
 	"nekomimi": 30,
+	"rabbit_ear": 20,
+	"hamster_G": 15,
+	"hamster_O": 15,
 	"black_mask": 5,
 	"white_mask": 5,
 

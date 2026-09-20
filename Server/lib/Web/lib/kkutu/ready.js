@@ -562,7 +562,8 @@ $(document).ready(function () {
 			$data._sel = null;
 			$(".cw-q-body").empty();
 			$stage.game.cwcmd.css('opacity', 0);
-			if ($data._boards) $lib.Crossword.drawDisplay();
+			if ($data._sdk) $lib.Sudoku.drawDisplay();
+			else if ($data._boards) $lib.Crossword.drawDisplay();
 			else if ($data._board) $lib.Landgrab.drawDisplay();
 		});
 

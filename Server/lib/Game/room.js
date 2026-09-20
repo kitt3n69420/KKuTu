@@ -1929,6 +1929,11 @@ function Room(room, channel) {
 				if (rw.score > 100) rw.score = 100;
 				if (rw.money > 10) rw.money = 10;
 			}
+			// 바보 모드: 보상 항상 0 (착용 아이템 보너스 포함)
+			if (Const.GAME_TYPE[my.mode] === 'XBB') {
+				rw.score = 0;
+				rw.money = 0;
+			}
 			// 슉슉/양말대전: 보드가 고갈되지 않아 누적 점수가 무제한으로 커질 수 있어 라운드당 소프트 트랜지션을 둔다
 			// 참고: 클로드가 양말대전이라 한건 사실 솎솎(sock)이다
 			if (['KSK', 'ESK', 'KSS', 'ESS', 'JSS'].indexOf(Const.GAME_TYPE[my.mode]) !== -1) rw.score = softTransition(rw.score);
@@ -2185,6 +2190,9 @@ function Room(room, channel) {
 						obj.roundTime = Math.max(0, my.game.roundTime - ((new Date()).getTime() - my.game.roundAt));
 					}
 				}
+			} else if (my.rule.rule == "Sudoku") {
+				var sudokuState = Rule.Sudoku.getSpecState.call(my);
+				if (sudokuState) obj.sudoku = sudokuState;
 			} else if (my.rule.rule == "Wordcollect") {
 				if (my.game.condition) {
 					obj.round = my.game.round;
@@ -2815,6 +2823,11 @@ function getRewards(mode, score, bonus, rank, all, ss, opts) {
 			break;
 		case 'JFR':
 			rw.score += score * 0.83;
+			break;
+		case 'XBB':
+			break;
+		case 'CSD':
+			rw.score += score * 0.6;
 			break;
 		case "KPQ":
 			rw.score += score * 2.72;

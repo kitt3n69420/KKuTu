@@ -33,7 +33,7 @@ $lib.Free.roundReady = function (data) {
         var suffix = allPicks.length >= 4 ? ', ...' : '';
         tStr = "&lt;" + names.join(', ') + suffix + "&gt;";
     } else {
-        tStr = "&lt;" + (L && L['anything'] ? L['anything'] : "아무거나") + "&gt;";
+        tStr = "&lt;" + (modeCode === 'XBB' ? L['modeXBB'] : (L && L['anything'] ? L['anything'] : "아무거나")) + "&gt;";
     }
     if ($data.room.opts.drg) tStr = "<label style='color:" + getRandomColor() + "'>" + tStr + "</label>";
     $stage.game.display.html($data._char = tStr);

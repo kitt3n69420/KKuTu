@@ -486,9 +486,9 @@ exports.readyRobot = function (robot) {
 	delay += 500 * Math.log10(answer + 1) * ROBOT_THINK_COEF[level];
 
 	// 정답률 계산: 10 / (log10(정답) + 10) * ROBOT_ACCURACY_COEF, clamped to [0, 1]
-	// 레벨 4는 항상 정답률 1
+	// 레벨 4 이상은 항상 정답률 1
 	var accuracy;
-	if (level === 4) {
+	if (level >= 4) {
 		accuracy = 1;
 	} else {
 		var baseAccuracy = 10 / (Math.log10(answer) + 10);

@@ -22,8 +22,8 @@ var DIC;
 
 var BOARD_SIZE = 50;
 var POOL_SIZE = 200;
-var BOT_CPM = [20, 40, 80, 160, 320];
-var BOT_ACCURACY = [0.9, 0.95, 0.98, 0.99, 1.0];
+var BOT_CPM = [20, 40, 80, 160, 320, 3000];
+var BOT_ACCURACY = [0.9, 0.95, 0.98, 0.99, 1.0, 1.0];
 var BOT_REST_TIME = 3000;
 
 // 녜힁 모드용 한글 조합 테이블

@@ -1519,6 +1519,70 @@ body {
 	animation: landgrab-pulse 1s ease-in-out infinite;
 }
 
+/* 스도쿠: 서브그리드마다 십자말풀이의 .cw-bar 하나, 그 안에 .cw-cell 칸들. 밝은 블록(x+y 홀수)의 막대는 더 밝게(+10%), 어두운 블록은 더 어둡게(-10%) */
+.cw-bar.sd-light,
+.cw-bar.sd-light:hover {
+	background-color: #F3F3F3;
+	cursor: default;
+}
+
+.cw-bar.sd-dark,
+.cw-bar.sd-dark:hover {
+	background-color: #C7C7C7;
+	cursor: default;
+}
+
+.cw-cell.sd-open {
+	background-color: #888888;
+}
+
+.cw-cell.sd-my-open {
+	background-color: #00A55A;
+}
+
+.cw-cell.sd-empty {
+	cursor: pointer;
+}
+
+.cw-cell.sd-empty:hover {
+	background-color: rgba(255, 255, 255, 0.7);
+}
+
+.cw-cell.sd-sel {
+	outline: 2px solid #FF8800;
+	outline-offset: -2px;
+}
+
+.cw-cell.sd-wrong {
+	background-color: #F59E9E;
+}
+
+body.dark-mode .cw-bar.sd-light,
+body.dark-mode .cw-bar.sd-light:hover {
+	background-color: #5E5E5E !important;
+}
+
+body.dark-mode .cw-bar.sd-dark,
+body.dark-mode .cw-bar.sd-dark:hover {
+	background-color: #4D4D4D !important;
+}
+
+body.dark-mode .cw-cell.sd-open {
+	background-color: #AAAAAA;
+}
+
+body.dark-mode .cw-cell.sd-my-open {
+	background-color: #00A55A;
+}
+
+body.dark-mode .cw-cell.sd-empty:hover {
+	background-color: rgba(255, 255, 255, 0.25);
+}
+
+body.dark-mode .cw-cell.sd-wrong {
+	background-color: #8A2E2E;
+}
+
 .sock-char {
 	text-align: center;
 }

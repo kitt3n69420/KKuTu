@@ -1506,6 +1506,11 @@ function processRoom(data) {
 						}
 					}
 				}
+				if (data.sudoku) {
+					$data.selectedRound = 1;
+					$lib.Sudoku.roundReady({}, true);
+					$lib.Sudoku.turnStart(data.sudoku);
+				}
 				if (data.condition) {
 					$lib.Wordcollect.roundReady(data, true);
 					$data._maps = data.words || [];
@@ -2638,6 +2643,7 @@ function recordEvent(data) {
 function clearBoard() {
 	$data._relay = false;
 	$data._sel = null;
+	$data._sdk = null;
 	// APL (Bad Apple) 정리
 	if ($data._aplInterval) {
 		clearInterval($data._aplInterval);
