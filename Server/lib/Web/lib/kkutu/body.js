@@ -54,7 +54,7 @@ function send(type, data, toMaster) {
 	}
 
 	// Exempt 'draw' and 'test' from spam counter
-	if (type != "test" && type != "draw" && type != "fill" && type != "team") if (spamCount++ > 10) {
+	if (type != "test" && type != "draw" && type != "fill" && type != "team" && type != "xrgHit" && type != "xrgSync") if (spamCount++ > 10) {
 		if (++spamWarning >= 3) return subj.close();
 		spamCount = 5;
 	}
@@ -745,6 +745,9 @@ function onMessage(data) {
 			}
 			playSound('KO');
 			playSound('timeout');
+			break;
+		case 'xrgSync':
+			if ($lib.Rhythm && $lib.Rhythm.onSync) $lib.Rhythm.onSync(data);
 			break;
 		case 'raingameWord':
 			if ($lib.Raingame && $lib.Raingame.onWord) $lib.Raingame.onWord(data);
@@ -1510,6 +1513,10 @@ function processRoom(data) {
 					$data.selectedRound = 1;
 					$lib.Sudoku.roundReady({}, true);
 					$lib.Sudoku.turnStart(data.sudoku);
+				}
+				if (data.rhythm) {
+					$lib.Rhythm.roundReady(data.rhythm, true);
+					if (data.rhythm.startAt) $lib.Rhythm.turnStart({ startAt: data.rhythm.startAt, now: data.rhythm.now });
 				}
 				if (data.condition) {
 					$lib.Wordcollect.roundReady(data, true);
@@ -2348,6 +2355,7 @@ function clearGame() {
 	$(".jjoriping,.rounds,.game-body").removeClass("landgrab");
 	$(".jjoriping,.game-body").removeClass("center-board");
 	$(".jjoriping,.rounds,.game-body").removeClass("wordcollect wc-round-active");
+	if ($lib.Rhythm) $lib.Rhythm.cleanup();
 	if ($data._wcNight) {
 		$data._wcNight.remove();
 		$data._wcNight = null;
@@ -2673,6 +2681,7 @@ function clearBoard() {
 	$(".jjoriping,.rounds,.game-body").removeClass("landgrab");
 	$(".jjoriping,.game-body").removeClass("center-board");
 	$(".jjoriping,.rounds,.game-body").removeClass("wordcollect wc-round-active");
+	if ($lib.Rhythm) $lib.Rhythm.cleanup();
 	if ($data._wcNight) {
 		$data._wcNight.remove();
 		$data._wcNight = null;

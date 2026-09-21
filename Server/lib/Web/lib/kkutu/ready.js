@@ -1403,7 +1403,7 @@ $(document).ready(function () {
 			$("#room-round-label").text(mobile ? L['numRound'] : L['roundSetting']);
 		}
 		// 달가루 모으기: 라운드 1 / 60초 고정, 사용자가 바꿀 수 없게 잠금
-		if (rule.rule === "Wordcollect") {
+		if (rule.rule === "Wordcollect" || rule.rule === "Rhythm") {
 			$("#room-round").val(1).prop('disabled', true);
 			$("#room-time").val(60).prop('disabled', true);
 		} else {
@@ -1629,7 +1629,7 @@ $(document).ready(function () {
 
 		// 4. 라운드/서바이벌 설정을 규칙이 허용하는 범위 내에서 랜덤화
 		// 달가루 모으기는 라운드 1 / 60초로 고정이므로 랜덤화 대상에서 제외
-		if (rule.rule !== "Wordcollect") {
+		if (rule.rule !== "Wordcollect" && rule.rule !== "Rhythm") {
 			var survivalOn = !!rule.survival || !!target['survival'];
 			if (survivalOn) {
 				var hpOptions = [200, 500, 1000, 2000];

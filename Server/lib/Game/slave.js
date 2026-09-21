@@ -329,6 +329,17 @@ KKuTu.onClientMessage = function ($c, msg) {
         $c._lastVisibility = { state: msg.state, at: Date.now() };
       }
       break;
+    case "xrgSync":
+      // 리듬 게임 시계 동기화: 클라이언트가 보낸 시각을 그대로 돌려주며 서버 시각을 함께 회신
+      if (typeof msg.c !== "number") return;
+      $c.send("xrgSync", { c: msg.c, s: Date.now() });
+      break;
+    case "xrgHit":
+      if ($c.subPlace) temp = $c.pracRoom;
+      else if (!(temp = ROOM[$c.place])) return;
+      if (!temp.gaming || !temp.game || temp.game.late || !temp.rule || temp.rule.rule !== "Rhythm") return;
+      temp.route("hit", $c, msg);
+      break;
     case "yell":
       if (!msg.value) return;
       if (!validateInput(msg.value, "string", { maxLength: 200 })) return;

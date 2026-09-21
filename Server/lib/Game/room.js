@@ -1139,6 +1139,11 @@ function Room(room, channel) {
 			my.round = 1;
 			my.time = 60;
 		}
+		// 리듬 게임: 라운드 1, 제한시간 60초로 고정
+		if (my.rule && my.rule.rule === 'Rhythm') {
+			my.round = 1;
+			my.time = 60;
+		}
 		if (!my.rule.ai) {
 			while (my.removeAI(false, true));
 		}
@@ -2203,6 +2208,10 @@ function Room(room, channel) {
 						obj.roundTime = Math.max(0, my.game.roundTime - ((new Date()).getTime() - my.game.roundAt));
 					}
 				}
+			}
+			if (my.rule.rule == "Rhythm" && my.game.chart) {
+				obj.round = my.game.round;
+				obj.rhythm = { song: my.game.song, bpm: my.game.chart.bpm, res: my.game.chart.res, seq: my.game.chart.seq, startAt: my.game.startAt, now: (new Date()).getTime() };
 			}
 			obj.spec = {};
 			for (i in my.game.seq) {
