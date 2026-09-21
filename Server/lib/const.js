@@ -119,7 +119,8 @@ exports.OPTIONS = {
 	'ctc': { name: "Catch" },      // 캐치: 그림퀴즈 전용 특수 데이터베이스 사용
 	'ord': { name: "Order" },      // 순서대로: seq 순서로 술래
 	'shf': { name: "Shuffle" },    // 공정랜덤: 셔플 후 한 명씩 술래
-	'stp': { name: "Stop" }        // 멈춰!: 슉슉 글자 이동 정지, 경험치 40%로 감소
+	'stp': { name: "Stop" },       // 멈춰!: 슉슉 글자 이동 정지, 경험치 40%로 감소
+	'rnm': { name: "RandomNumber" } // 랜덤 숫자: 369 게임에서 라운드마다 박수 대상 숫자 3개를 무작위로 뽑음
 
 };
 
@@ -734,7 +735,7 @@ exports.RULE = {
 	'CNC': {
 		lang: "etc",
 		rule: "Numberclap",
-		opts: ["one", "rnt", "chs", "spd"],
+		opts: ["one", "rnt", "chs", "spd", "rnm"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -1126,7 +1127,7 @@ exports.BOT_ITEM_WEIGHTS = {
 	"gundaebere": 2,
 	"invaderm": 2,
 	"samsaekbere": 2,
-	"brokenled": 2,
+	"brokenled": 2,	
 	"seawave_cloth": 1,
 	"flamingo_tube": 1,
 	"beach": 1,

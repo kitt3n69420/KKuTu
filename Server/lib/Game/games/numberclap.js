@@ -33,11 +33,29 @@ function getPlayerId(player) {
 	return (typeof player === 'object' && player.id) ? player.id : player;
 }
 
-// 자릿수 내 3/6/9 등장 횟수 = 필요한 박수 수 (0이면 숫자 턴)
-function requiredClaps(n) {
+var DEFAULT_DIGITS = ['3', '6', '9'];
+
+// 랜덤 숫자 규칙: 1~9에서 겹치지 않게 3개를 뽑되, 모두 홀수/모두 짝수인 조합은 제외한다.
+function pickClapDigits() {
+	var pool, out, i, j, odd;
+
+	do {
+		pool = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+		out = [];
+		for (i = 0; i < 3; i++) {
+			j = Math.floor(Math.random() * pool.length);
+			out.push(pool.splice(j, 1)[0]);
+		}
+		odd = out.filter(function (d) { return d % 2 === 1; }).length;
+	} while (odd === 0 || odd === 3);
+	return out.sort(function (a, b) { return a - b; }).map(String);
+}
+
+// 자릿수 내 박수 대상 숫자(digits) 등장 횟수 = 필요한 박수 수 (0이면 숫자 턴)
+function requiredClaps(n, digits) {
 	var s = String(n), count = 0, i;
 	for (i = 0; i < s.length; i++) {
-		if (s[i] === '3' || s[i] === '6' || s[i] === '9') count++;
+		if (digits.indexOf(s[i]) !== -1) count++;
 	}
 	return count;
 }
@@ -95,9 +113,11 @@ exports.roundReady = function () {
 	my.game.roundTime = my.time * 1000; //설정된 초를 밀리초로 바꾼다.
 	my.resetChain(); //1부터 다시 숫자를 시작한다.
 	my.game.n = 1;
+	my.game.clapDigits = my.opts.randomnumber ? pickClapDigits() : DEFAULT_DIGITS;
 	if (my.game.round <= my.round) {
 		my.byMaster('roundReady', {
-			round: my.game.round
+			round: my.game.round,
+			digits: my.game.clapDigits
 		}, true);
 		my.game.turnTimer = setTimeout(my.turnStart, 2400); //라운드 준비 브금을 트는 것 같아.
 	} else {
@@ -124,7 +144,8 @@ exports.turnStart = function (force) {
 		speed: speed,
 		roundTime: my.game.roundTime,
 		turnTime: my.game.turnTime,
-		seq: force ? my.game.seq : undefined
+		seq: force ? my.game.seq : undefined,
+		digits: my.game.clapDigits
 	}, true);
 	var timeout = my.opts.survival
 		? my.game.turnTime + 100
@@ -162,7 +183,7 @@ exports.turnEnd = function () {
 		target.adjustAnger(1);
 	}
 
-	claps = requiredClaps(my.game.n);
+	claps = requiredClaps(my.game.n, my.game.clapDigits);
 	hint = claps > 0 ? clapString(claps) : String(my.game.n);
 
 	my.byMaster('turnEnd', {
@@ -212,7 +233,7 @@ exports.submit = function (client, text, data) {
 	if (my.game.late) return;
 
 	n = my.game.n;
-	expectedClaps = requiredClaps(n);
+	expectedClaps = requiredClaps(n, my.game.clapDigits);
 	input = classifyInput(text);
 
 	if (expectedClaps > 0) {
@@ -278,7 +299,7 @@ exports.readyRobot = function (robot) {
 	var level = robot.level;
 	var delay = ROBOT_START_DELAY[level];
 	var n = my.game.n;
-	var claps = requiredClaps(n);
+	var claps = requiredClaps(n, my.game.clapDigits);
 	var correctText = claps > 0 ? clapString(claps) : String(n);
 	var accuracy, baseAccuracy, response, wrongCount;
 
