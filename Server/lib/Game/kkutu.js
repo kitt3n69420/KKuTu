@@ -23,6 +23,7 @@ var path = require("path");
 var Const = require('../const');
 var Lizard = require('../sub/lizard');
 var JLog = require('../sub/jjlog');
+var TableLoader = require('../sub/table-loader');
 // 마스터 프로세스 안에서 처리되는 이벤트(로비 채팅 등)는 discord-bot.js를 직접 물고 있으면
 // 그 인스턴스가 한 번도 init()되지 않아 항상 오프라인 취급된다. 실제 로그인된 디스코드
 // 클라이언트는 별도의 discordProcess 자식 프로세스에만 있으므로, master.js가 주입하는
@@ -230,38 +231,53 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN, _DiscordRel
 			}
 		});
 	});
-	// stats 테이블 전체 메모리 로드 (서버 실행 중 변하지 않는 정적 데이터)
 	DB.statsData = { ko: {}, en: {} };
 	DB.statsReady = { ko: false, en: false };
-	DB.kkutu_stats_ko.find().on(function ($rows) {
-		if ($rows) {
-			$rows.forEach(function (row) { DB.statsData.ko[row._id] = row; });
-		}
-		DB.statsReady.ko = true;
-		JLog.info("[STATS] kkutu_stats_ko loaded: " + Object.keys(DB.statsData.ko).length + " rows");
-	});
-	DB.kkutu_stats_en.find().on(function ($rows) {
-		if ($rows) {
-			$rows.forEach(function (row) { DB.statsData.en[row._id] = row; });
-		}
-		DB.statsReady.en = true;
-		JLog.info("[STATS] kkutu_stats_en loaded: " + Object.keys(DB.statsData.en).length + " rows");
-	});
-	// 레벨 5 봇용 주제x미션 상위 단어 테이블(tools/build_mission_table.js). 테이블이 없으면 봇이 기존 경로로 폴백한다.
-	require("./games/mission-table").load(DB, JLog);
-	// 레벨 5 봇용 끝말잇기 후보 테이블(tools/build_classic_table.js). 테이블이 없으면 봇이 기존 경로로 폴백한다.
-	require("./games/classic-table").load(DB, JLog);
-	// roundReady에서 매번 COUNT 쿼리를 날리지 않도록 서버 시작 시 단어 수 캐시
 	DB._cachedWordCount = { ko: { normal: 0, allpos: 0 }, en: { normal: 0, allpos: 0 } };
-	DB.kkutu['ko'].count(['type', Const.KOR_GROUP]).on(function (n) { if (typeof n === 'number' && n > 0) DB._cachedWordCount.ko.normal = n; });
-	DB.kkutu['ko'].count().on(function (n) { if (typeof n === 'number' && n > 0) DB._cachedWordCount.ko.allpos = n; });
-	DB.kkutu['en'].count(['_id', Const.ENG_ID]).on(function (n) { if (typeof n === 'number' && n > 0) DB._cachedWordCount.en.normal = n; });
-	DB.kkutu['en'].count().on(function (n) { if (typeof n === 'number' && n > 0) DB._cachedWordCount.en.allpos = n; });
+	// 아래 대용량 로드는 게임을 실제로 돌리는 워커에서만 필요하다. 마스터는 방 상태 미러링과 로비만 맡는다.
+	// 모두 TableLoader 큐를 지나 한 번에 하나씩, 등록한 순서대로 실행된다.
+	if (Cluster.isWorker) {
+		// stats 테이블 전체 메모리 로드 (서버 실행 중 변하지 않는 정적 데이터)
+		["ko", "en"].forEach(function (lang) {
+			TableLoader.load("kkutu_stats_" + lang, function (timeout, done) {
+				var q = DB["kkutu_stats_" + lang].find();
+				if (timeout) q.timeout(timeout);
+				q.on(function ($rows) {
+					if ($rows) {
+						$rows.forEach(function (row) { DB.statsData[lang][row._id] = row; });
+					}
+					DB.statsReady[lang] = true;
+					JLog.info("[STATS] kkutu_stats_" + lang + " loaded: " + Object.keys(DB.statsData[lang]).length + " rows");
+					done();
+				}, null, done);
+			});
+		});
+		// 레벨 5 봇용 주제x미션 상위 단어 테이블(tools/build_mission_table.js). 테이블이 없으면 봇이 기존 경로로 폴백한다.
+		require("./games/mission-table").load(DB, JLog);
+		// 레벨 5 봇용 끝말잇기 후보 테이블(tools/build_classic_table.js). 테이블이 없으면 봇이 기존 경로로 폴백한다.
+		require("./games/classic-table").load(DB, JLog);
+		// roundReady에서 매번 COUNT 쿼리를 날리지 않도록 서버 시작 시 단어 수 캐시
+		var loadWordCount = function (lang, key, make) {
+			TableLoader.load("kkutu_" + lang + " count (" + key + ")", function (timeout, done) {
+				var q = make();
+				if (timeout) q.timeout(timeout);
+				q.on(function (n) {
+					if (typeof n === 'number' && n > 0) DB._cachedWordCount[lang][key] = n;
+					done();
+				}, null, done);
+			});
+		};
+		loadWordCount("ko", "normal", function () { return DB.kkutu['ko'].count(['type', Const.KOR_GROUP]); });
+		loadWordCount("ko", "allpos", function () { return DB.kkutu['ko'].count(); });
+		loadWordCount("en", "normal", function () { return DB.kkutu['en'].count(['_id', Const.ENG_ID]); });
+		loadWordCount("en", "allpos", function () { return DB.kkutu['en'].count(); });
+	}
 	Rule = {};
 	for (i in Const.RULE) {
 		k = Const.RULE[i].rule;
 		Rule[k] = require(`./games/${k.toLowerCase()}`);
-		Rule[k].init(DB, DIC, checkSwearWords);
+		// 마스터에서는 게임이 돌지 않으므로 init(중심찾기/땅따먹기의 사전 인덱스 빌드 등)을 건너뛴다
+		if (Cluster.isWorker) Rule[k].init(DB, DIC, checkSwearWords);
 	}
 	Room.setContext({ DB: DB, DIC: DIC, ROOM: ROOM, CHAN: CHAN, Rule: Rule, checkSwearWords: checkSwearWords, censorSwearWords: censorSwearWords, narrate: exports.narrate, publish: exports.publish, Robot: exports.Robot, getEventMults: function() { return _eventMults; }, DiscordRelay: DiscordRelay });
 

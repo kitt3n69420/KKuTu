@@ -20,9 +20,11 @@ exports.build = function (DB, topChars) {
 	building = true;
 
 	var wanted = new Set(topChars);
+	// 139만 행을 통째로 옮기지 않도록 상위 글자로 시작하는 단어만 DB에서 거른다
+	var startsWith = new RegExp('^[' + topChars.map(function (c) { return c.replace(/[\\\]\[^-]/g, '\\$&'); }).join('') + ']');
 
 	TableLoader.load('kkutu_ko (center index)', function (timeout, done) {
-		var q = DB.kkutu.ko.find().limit(['_id', true], ['hit', true]);
+		var q = DB.kkutu.ko.find(['_id', startsWith]).limit(['_id', true], ['hit', true]);
 		if (timeout) q.timeout(timeout);
 		q.on(function (docs) {
 			var raw = new Map(); // char -> {_id, hit}[]
