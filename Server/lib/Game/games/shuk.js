@@ -27,6 +27,15 @@ var MOVE_INTERVAL = 500;
 var _shukWordCache = {};
 var SHUK_CACHE_TTL = 3 * 60 * 1000;
 
+// 키(글자 조합)가 판마다 달라 만료돼도 다시 안 쓰이면 남으므로, 저장할 때 만료분을 함께 비운다
+function putShukWordCache(key, words) {
+	var now = Date.now();
+	for (var k in _shukWordCache) {
+		if (now - _shukWordCache[k].time >= SHUK_CACHE_TTL) delete _shukWordCache[k];
+	}
+	_shukWordCache[key] = { time: now, words: words };
+}
+
 const ROBOT_SHUK_START_DELAY = [8000, 5500, 3000, 1200, 500, 50];
 const ROBOT_SHUK_MAX_WORDS = [20, 50, 80, 150, 9999, 9999];
 const BOT_SHUK_CPM = [25, 50, 100, 200, 500, 5000];
@@ -145,7 +154,7 @@ function fetchRobotWords(my) {
 		my.game.robotWordsLoading = false;
 		if (err || !res || !my.game.botCharPool) return;
 		var rawList = res.rows.map(function (r) { return r._id; });
-		_shukWordCache[cacheKey] = { time: Date.now(), words: rawList };
+		putShukWordCache(cacheKey, rawList);
 		applyList(rawList);
 	});
 }

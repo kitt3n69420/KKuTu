@@ -25,6 +25,15 @@ var DIC;
 var _sockWordCache = {};
 var SOCK_CACHE_TTL = 3 * 60 * 1000;
 
+// 키(보드 글자 조합)가 판마다 달라 만료돼도 다시 안 쓰이면 남으므로, 저장할 때 만료분을 함께 비운다
+function putSockWordCache(key, words) {
+	var now = Date.now();
+	for (var k in _sockWordCache) {
+		if (now - _sockWordCache[k].time >= SOCK_CACHE_TTL) delete _sockWordCache[k];
+	}
+	_sockWordCache[key] = { time: now, words: words };
+}
+
 const ROBOT_SOCK_START_DELAY = [5000, 3000, 1800, 900, 300, 30];
 const ROBOT_SOCK_MAX_WORDS = [10, 20, 30, 50, 9999, 9999];
 const BOT_SOCK_CPM = [30, 60, 120, 300, 800, 5000];
@@ -96,7 +105,7 @@ function fetchRobotWords(my) {
 		if (err || !res || !my.game.robotBoardFreq) return;
 
 		var rawList = res.rows.map(function (r) { return r._id; });
-		_sockWordCache[cacheKey] = { time: Date.now(), words: rawList };
+		putSockWordCache(cacheKey, rawList);
 
 		var submitted = my.game.words || [];
 		var submittedSet = new Set(submitted);
@@ -156,7 +165,7 @@ function fetchRobotWordsFallback(my) {
 		my.game.robotWordsLoading = false;
 		if (err || !res || !my.game.robotBoardFreq) return;
 		var rawList = res.rows.map(function (r) { return r._id; });
-		_sockWordCache[cacheKey] = { time: Date.now(), words: rawList };
+		putSockWordCache(cacheKey, rawList);
 		var submitted = my.game.words || [];
 		var submittedSet = new Set(submitted);
 		var list = rawList.filter(function (w) { return !submittedSet.has(w) && canMakeWord(my.game.robotBoardFreq, w); });

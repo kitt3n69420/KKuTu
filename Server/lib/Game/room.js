@@ -1578,6 +1578,9 @@ function Room(room, channel) {
 		clearTimeout(my.game.qTimer);
 		clearTimeout(my.game.robotTimer);
 		clearInterval(my.game.moveTimer);
+		// 레인게임/워드스택: 방이 삭제되며 my.game이 교체되면 핸들을 잃어 영영 못 지우므로 여기서 정리한다
+		clearInterval(my.game.scanTimer);
+		clearTimeout(my.game.autoAtkTimer);
 		if (my._botIdleTimers) {
 			for (var _bti = 0; _bti < my._botIdleTimers.length; _bti++) clearTimeout(my._botIdleTimers[_bti]);
 			my._botIdleTimers = [];
