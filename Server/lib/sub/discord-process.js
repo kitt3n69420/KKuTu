@@ -57,6 +57,9 @@ const proxyCallbacks = {
     },
     setGuestChat: function (enable) {
         return ipcRequest('guest-chat', { enable: enable });
+    },
+    getSnapshot: function () {
+        return ipcRequest('get-snapshot', {});
     }
 };
 
@@ -150,6 +153,7 @@ MainDB.ready = function () {
         listOnlineUsers: proxyCallbacks.listOnlineUsers,
         sendYell: proxyCallbacks.sendYell,
         setGuestConnect: proxyCallbacks.setGuestConnect,
-        setGuestChat: proxyCallbacks.setGuestChat
+        setGuestChat: proxyCallbacks.setGuestChat,
+        getSnapshot: proxyCallbacks.getSnapshot
     });
 };

@@ -42,6 +42,7 @@ var Const = require("../const");
 var https = require("https");
 var fs = require("fs");
 var path = require("path");
+var DiagLog = require("../sub/diag-log");
 
 var Language = {
   ko_KR: require("./lang/ko_KR.json"),
@@ -70,6 +71,43 @@ Server.set("trust proxy", true);
 Server.use(function (req, res, next) {
   var cfIp = req.headers["cf-connecting-ip"];
   if (cfIp) Object.defineProperty(req, "ip", { value: cfIp, configurable: true });
+  next();
+});
+// 웹 서버 프로세스의 이벤트루프 지연(게임 마스터/워커와 별개 프로세스라 따로 잰다). 50ms 넘는 것만 기록.
+(function trackWebLag() {
+  var last = Date.now();
+  setInterval(function () {
+    var now = Date.now(), lag = Math.max(0, now - last - 1000);
+    last = now;
+    if (lag > 50) DiagLog.write("LAG", "event loop lag=" + lag + "ms proc=web pid=" + process.pid);
+  }, 1000);
+})();
+// 요청 단위 타이밍 로그: 500ms 넘는 요청만 KKUTU_DIAG.log에 남긴다.
+// DB/이벤트루프 쪽엔 아무 신호가 없는데 Cloudflare 오리진 응답시간만 튀는 경우를 잡기 위함
+// (예: 외부 API 대기, 커넥션 자체의 지연 등 SLOWQ/LAG로는 안 보이는 스톨).
+// head=응답 헤더를 보낸 시점(서버 처리 시간). 전체 시간과 차이가 크면 본문을 받아가는 쪽(클라이언트/크롤러)이 느린 것.
+// 응답을 다 보내기 전에 연결이 끊긴 요청은 finish가 안 불리므로 close에서 [ABORTREQ]로 따로 남긴다.
+function _reqWho(req) {
+  return "ip=" + req.ip + " ua=\"" + String(req.headers["user-agent"] || "-").slice(0, 120) + "\"";
+}
+Server.use(function (req, res, next) {
+  var _reqT0 = Date.now();
+  var _headAt = null;
+  var _writeHead = res.writeHead;
+  res.writeHead = function () {
+    if (_headAt === null) _headAt = Date.now() - _reqT0;
+    return _writeHead.apply(this, arguments);
+  };
+  res.on("finish", function () {
+    var _elapsed = Date.now() - _reqT0;
+    if (_elapsed > 500) {
+      DiagLog.write("SLOWREQ", _elapsed + "ms (head " + _headAt + "ms) " + req.method + " " + req.originalUrl + " -> " + res.statusCode + " " + _reqWho(req));
+    }
+  });
+  res.on("close", function () {
+    if (res.writableFinished) return;
+    DiagLog.write("ABORTREQ", (Date.now() - _reqT0) + "ms (head " + (_headAt === null ? "not sent" : _headAt + "ms") + ") " + req.method + " " + req.originalUrl + " " + _reqWho(req));
+  });
   next();
 });
 Server.use(Express.static(__dirname + "/public", { maxAge: "1d", etag: true }));

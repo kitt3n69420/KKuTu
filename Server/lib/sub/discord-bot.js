@@ -51,6 +51,7 @@ let _listOnlineUsers = null; // () => Promise<{total, lobby, rooms}|null>
 let _sendYell = null;        // (message) => Promise<{ok}|null>
 let _setGuestConnect = null; // (enable) => Promise<{connect}|null>
 let _setGuestChat = null;    // (enable) => Promise<{talk}|null>
+let _getSnapshot = null;     // () => Promise<{master, workers, expectedWorkers, dbPool}|null>
 
 /**
  * Safe wrapper for async operations
@@ -78,7 +79,7 @@ function scheduleReconnect() {
             client = null;
             channel = null;
             await Promise.race([
-                exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN, queryOnlineUser: _queryOnlineUser, sendRoomMsg: _sendRoomMsg, resetTitle: _resetTitle, kickUser: _kickUser, listOnlineUsers: _listOnlineUsers, sendYell: _sendYell, setGuestConnect: _setGuestConnect, setGuestChat: _setGuestChat }),
+                exports.init(_botToken, DB, DIC, { enabled: true, ROOM, ADMIN, queryOnlineUser: _queryOnlineUser, sendRoomMsg: _sendRoomMsg, resetTitle: _resetTitle, kickUser: _kickUser, listOnlineUsers: _listOnlineUsers, sendYell: _sendYell, setGuestConnect: _setGuestConnect, setGuestChat: _setGuestChat, getSnapshot: _getSnapshot }),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Reconnect timeout (35s)')), 35000))
             ]);
         } catch (err) {
@@ -240,6 +241,7 @@ exports.init = async function (token, db, dic, options = {}) {
     _sendYell = options.sendYell || null;
     _setGuestConnect = options.setGuestConnect || null;
     _setGuestChat = options.setGuestChat || null;
+    _getSnapshot = options.getSnapshot || null;
 
     try {
         client = new Client({
@@ -652,6 +654,14 @@ async function registerCommands(token) {
                 ),
 
             new SlashCommandBuilder()
+                .setName('status')
+                .setNameLocalizations({ ko: '상태' })
+                .setDescription('Server memory/lag/DB pool snapshot (admin only)')
+                .setDescriptionLocalizations({
+                    ko: '서버(마스터+워커)의 메모리/이벤트 루프 지연/DB 커넥션 풀 상태를 스냅샷으로 보여줘요. (관리자 전용)'
+                }),
+
+            new SlashCommandBuilder()
                 .setName('kick')
                 .setNameLocalizations({ ko: '킥' })
                 .setDescription('Disconnect an online user (admin only)')
@@ -874,6 +884,9 @@ async function handleCommand(interaction) {
             case 'kick':
                 await handleKick(interaction);
                 break;
+            case 'status':
+                await handleStatus(interaction);
+                break;
             case 'yell':
                 await handleYell(interaction);
                 break;
@@ -927,6 +940,85 @@ async function handlePing(interaction) {
         .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
+}
+
+/**
+ * /status command - Memory/event-loop-lag/DB-pool snapshot across master + all workers (admin only)
+ */
+function fmtMB(bytes) {
+    return Math.round(bytes / 1024 / 1024) + 'MB';
+}
+function fmtUptime(sec) {
+    sec = Math.floor(sec);
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    return (h ? h + '시간 ' : '') + (m ? m + '분 ' : '') + s + '초';
+}
+async function handleStatus(interaction) {
+    if (!isAdmin(interaction)) {
+        await interaction.reply({ content: '❌ 관리자만 사용할 수 있는 명령어입니다.', ephemeral: true });
+        return;
+    }
+
+    await interaction.deferReply();
+
+    if (!_getSnapshot) {
+        await interaction.editReply({ content: '❌ 이 실행 모드에서는 상태 스냅샷을 지원하지 않습니다.' });
+        return;
+    }
+
+    try {
+        const snap = await _getSnapshot();
+        if (!snap) {
+            await interaction.editReply({ content: '❌ 마스터 프로세스에서 응답이 없습니다 (타임아웃).' });
+            return;
+        }
+
+        const workers = snap.workers || [];
+        const missing = (snap.expectedWorkers || 0) - workers.length;
+        const maxLag = Math.max(snap.master ? snap.master.lagMs : 0, ...workers.map(w => w.lagMs || 0), 0);
+        const poolSaturated = snap.dbPool && snap.dbPool.waiting > 0;
+        const cpuHigh = snap.master && snap.master.sysCpuPct >= 85;
+        const isWarn = missing > 0 || maxLag > 300 || poolSaturated || cpuHigh;
+
+        const embed = new EmbedBuilder()
+            .setTitle(isWarn ? '⚠️ 서버 상태 스냅샷' : '🩺 서버 상태 스냅샷')
+            .setColor(isWarn ? 0xF39C12 : 0x2ECC71)
+            .setTimestamp();
+
+        if (snap.master) {
+            embed.addFields({
+                name: '🧠 마스터',
+                value: `PID ${snap.master.pid} · 가동 ${fmtUptime(snap.master.uptime)}\n`
+                    + `RSS ${fmtMB(snap.master.mem.rss)} (heap ${fmtMB(snap.master.mem.heapUsed)}/${fmtMB(snap.master.mem.heapTotal)}) · 지연 ${snap.master.lagMs}ms\n`
+                    + `로비/방 유저 ${snap.master.userCount}명 · 방 ${snap.master.roomCount}개`
+                    + (snap.master.sysCpuPct !== undefined ? `\n시스템 CPU ${snap.master.sysCpuPct}% · 여유 메모리 ${snap.master.freeMemMB}MB` : '')
+            });
+        }
+
+        embed.addFields({
+            name: '🔌 DB 커넥션 풀',
+            value: snap.dbPool
+                ? `사용중 ${snap.dbPool.total - snap.dbPool.idle}/${snap.dbPool.total} · 대기중인 요청 ${snap.dbPool.waiting}`
+                : '정보 없음'
+        });
+
+        if (workers.length) {
+            const workerLines = workers
+                .sort((a, b) => Number(a.channel) - Number(b.channel))
+                .map(w => `**#${w.channel}** PID ${w.pid} · 가동 ${fmtUptime(w.uptime)} · RSS ${fmtMB(w.mem.rss)} · 지연 ${w.lagMs}ms · 유저 ${w.userCount} · 방 ${w.roomCount}`)
+                .join('\n');
+            embed.addFields({ name: `🧩 워커 (${workers.length}/${snap.expectedWorkers})`, value: workerLines });
+        }
+
+        if (missing > 0) {
+            embed.addFields({ name: '❗ 응답 없는 워커', value: `${missing}개 워커가 3초 안에 응답하지 않았습니다 (멈췄거나 죽었을 수 있음)` });
+        }
+
+        await interaction.editReply({ embeds: [embed] });
+    } catch (err) {
+        JLog.error(`[Discord Bot] /status error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 오류가 발생했습니다: ${err.message}` });
+    }
 }
 
 /**
@@ -1016,6 +1108,11 @@ async function handleHelp(interaction) {
             {
                 name: '🥾 /kick (킥) `<아이디>`',
                 value: '접속 중인 유저의 연결을 강제로 종료 (관리자 전용, 온라인 유저만 가능)\n예: `/kick abc123`',
+                inline: false
+            },
+            {
+                name: '🩺 /status (상태)',
+                value: '마스터+모든 워커의 메모리/이벤트 루프 지연/DB 커넥션 풀 상태 스냅샷 (관리자 전용)\n렉 걸릴 때 원격으로 상태 확인용',
                 inline: false
             },
             {

@@ -23,6 +23,7 @@ var path = require("path");
 var Const = require('../const');
 var Lizard = require('../sub/lizard');
 var JLog = require('../sub/jjlog');
+var DiagLog = require('../sub/diag-log');
 var TableLoader = require('../sub/table-loader');
 // 마스터 프로세스 안에서 처리되는 이벤트(로비 채팅 등)는 discord-bot.js를 직접 물고 있으면
 // 그 인스턴스가 한 번도 init()되지 않아 항상 오프라인 취급된다. 실제 로그인된 디스코드
@@ -854,7 +855,15 @@ exports.Client = function (socket, profile, sid) {
 			process.send({ type: "tail-report", id: my.id, chan: channel, place: my.place, msg: data });
 		}
 
+		// 실시간 처리 경로 타이밍 계측: Date.now() 2회 + 비교뿐이라 게임 로직엔 부담 없음.
+		// (onClientMessage 내부에서 비동기로 넘어가는 부분은 못 잡고, 동기 처리 구간만 잰다 —
+		//  그래도 이벤트루프를 막는 무거운 동기 연산이 여기 있으면 이걸로 드러난다.)
+		var _msgT0 = Date.now();
 		exports.onClientMessage(my, data);
+		var _msgElapsed = Date.now() - _msgT0;
+		if (_msgElapsed > 50) {
+			DiagLog.write("SLOWMSG", _msgElapsed + "ms [" + (data.type || "?") + "] chan=" + channel + " place=" + my.place);
+		}
 	});
 	/* 망할 셧다운제
 	my.confirmAjae = function(input){

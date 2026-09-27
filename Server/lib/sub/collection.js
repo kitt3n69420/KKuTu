@@ -40,6 +40,7 @@ var Escape = function(str){
 };
 var Lizard = require('./lizard');
 var JLog = require('./jjlog');
+var DiagLog = require('./diag-log');
 
 // (JSON ENDPOINT) KEY
 _Escape.asSKey = function(val){
@@ -208,66 +209,76 @@ exports.Agent = function(type, origin){
 	
 	this.RedisTable = function(key){
 		var my = this;
-		
+		// Redis 호출 타이밍 계측. 콜백을 감싸기만 하고(Date.now() 2회 + 비교) I/O나 동기 연산을
+		// 추가하지 않으므로 실시간 처리 경로에 부담을 주지 않는다. 100ms 넘는 것만 기록.
+		function timed(label, cb){
+			var _t0 = Date.now();
+			return function(){
+				var _elapsed = Date.now() - _t0;
+				if(_elapsed > 100) DiagLog.write("SLOWREDIS", _elapsed + "ms [" + key + "/" + label + "]");
+				cb.apply(null, arguments);
+			};
+		}
+
 		my.putGlobal = function(id, score){
 			var R = new Lizard.Tail();
-			
-			origin.zadd([ key, score, id ], function(err, res){
+
+			origin.zadd([ key, score, id ], timed("putGlobal", function(err, res){
 				R.go(id);
-			});
+			}));
 			return R;
 		};
 		my.getGlobal = function(id){
 			var R = new Lizard.Tail();
 
-			origin.zrevrank([ key, id ], function(err, res){
+			origin.zrevrank([ key, id ], timed("getGlobal", function(err, res){
 				R.go(res);
-			});
+			}));
 			return R;
 		};
 		my.getScore = function(id){
 			var R = new Lizard.Tail();
 
-			origin.zscore([ key, id ], function(err, res){
+			origin.zscore([ key, id ], timed("getScore", function(err, res){
 				R.go(res);
-			});
+			}));
 			return R;
 		};
 		my.getPage = function(pg, lpp){
 			var R = new Lizard.Tail();
-			
-			origin.zrevrange([ key, pg * lpp, (pg + 1) * lpp - 1, "WITHSCORES" ], function(err, res){
+
+			origin.zrevrange([ key, pg * lpp, (pg + 1) * lpp - 1, "WITHSCORES" ], timed("getPage", function(err, res){
 				var A = [];
 				var rank = pg * lpp;
 				var i, len = res.length;
-				
+
 				for(i=0; i<len; i += 2){
 					A.push({ id: res[i], rank: rank++, score: res[i+1] });
 				}
 				R.go({ page: pg, data: A });
-			});
+			}));
 			return R;
 		};
 		my.getSurround = function(id, rv){
 			var R = new Lizard.Tail();
 			var i;
-			
+
 			rv = rv || 8;
-			origin.zrevrank([ key, id ], function(err, res){
+			origin.zrevrank([ key, id ], timed("getSurround.rank", function(err, res){
 				var range = [ Math.max(0, res - Math.round(rv / 2 + 1)), 0 ];
-				
+
 				range[1] = range[0] + rv - 1;
-				origin.zrevrange([ key, range[0], range[1], "WITHSCORES" ], function(err, res){
+				origin.zrevrange([ key, range[0], range[1], "WITHSCORES" ], timed("getSurround.range", function(err, res){
 					if(!res) return R.go({ target: id, data: [] });
-					
+
 					var A = [], len = res.length;
-					
+
 					for(i=0; i<len; i += 2){
 						A.push({ id: res[i], rank: range[0]++, score: res[i+1] });
 					}
 					R.go({ target: id, data: A });
-				});
-			});
+				}));
+			}));
 			return R;
 		};
 	};
@@ -305,8 +316,11 @@ exports.Agent = function(type, origin){
 				var sql;
 				var sq = _my.second['$set'];
 				var uq;
+				var _qStart;
 				
 				function preCB(err, res){
+					var _elapsed = Date.now() - _qStart;
+					if(_elapsed > 200) DiagLog.write("SLOWQ", _elapsed + "ms [" + col + "/" + mode + "] " + sql.slice(0, 300));
 					if(err){
 						JLog.error("Error when querying: "+sql);
 						JLog.error("Context: "+err.toString());
@@ -389,6 +403,7 @@ exports.Agent = function(type, origin){
 				}
 				if(!sql) return JLog.warn("SQL is undefined. This call will be ignored.");
 				// JLog.log("Query: " + sql.slice(0, 100));
+				_qStart = Date.now();
 				if(_my.statementTimeout) queryWithTimeout(sql, _my.statementTimeout, preCB);
 				else origin.query(sql, preCB);
 				/*if(_my.findLimit){

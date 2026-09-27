@@ -41,6 +41,7 @@ var KKuTu = require("./kkutu");
 var Lizard = require("../sub/lizard");
 var MainDB = require("../Web/db");
 var JLog = require("../sub/jjlog");
+var DiagLog = require("../sub/diag-log");
 var GLOBAL = require("../sub/global.json");
 var LANG_DATA = {
   'ko_KR': require("../Web/lang/ko_KR.json"),
@@ -67,6 +68,19 @@ var RESERVED = {};
 
 const CHAN = process.env["CHANNEL"];
 const DEVELOP = Master.DEVELOP;
+
+// 원격(디스코드) 상태 스냅샷용 이벤트 루프 지연 측정. 1초 타이머가 실제로 얼마나 늦게
+// 도는지로 계산하며, 별도 로그는 안 남기고 최신 값만 들고 있다가 /상태 명령에 응답할 때 씀.
+var _lastLagMs = 0;
+(function trackLag() {
+  var last = Date.now();
+  setInterval(function () {
+    var now = Date.now();
+    _lastLagMs = Math.max(0, now - last - 1000);
+    last = now;
+    if (_lastLagMs > 50) DiagLog.write("LAG", "event loop lag=" + _lastLagMs + "ms proc=chan" + CHAN);
+  }, 1000);
+})();
 const GUEST_PERMISSION = Master.GUEST_PERMISSION;
 const ENABLE_ROUND_TIME = Master.ENABLE_ROUND_TIME;
 const ENABLE_FORM = Master.ENABLE_FORM;
@@ -96,10 +110,16 @@ process.on("unhandledRejection", function (reason, promise) {
   JLog.error("UNHANDLED REJECTION: " + stack);
 });
 // 이슈 4 진단: 슬레이브가 어떤 신호로 죽는지 + WebSocket 서버 자체 에러도 추적
+// exit 시점엔 비동기 파일쓰기가 끝까지 안 돌 수 있어(프로세스가 바로 죽으므로) 동기 쓰기로 남긴다.
 process.on("exit", function (code) {
+  var text = `:${process.env["KKUTU_PORT"]} [${new Date().toLocaleString()}] WORKER_EXIT: code=${code} chan=${CHAN} pid=${process.pid} uptime=${process.uptime().toFixed(1)}s\n`;
+  try { File.appendFileSync("../KKUTU_ERROR.log", text); } catch (e) {}
   JLog.warn(`[diag#4] slave process exit: code=${code} chan=${process.env["KKUTU_PORT"]}`);
 });
-process.on("SIGTERM", function () { JLog.warn(`[diag#4] slave got SIGTERM`); });
+process.on("SIGTERM", function () {
+  try { File.appendFileSync("../KKUTU_ERROR.log", `:${process.env["KKUTU_PORT"]} [${new Date().toLocaleString()}] WORKER_SIGTERM: chan=${CHAN} pid=${process.pid}\n`); } catch (e) {}
+  JLog.warn(`[diag#4] slave got SIGTERM`);
+});
 process.on("SIGINT", function () { JLog.warn(`[diag#4] slave got SIGINT`); });
 Server.on("error", function (err) {
   var text = `:${process.env["KKUTU_PORT"]} [${new Date().toLocaleString()}] WS_SERVER_ERROR: ${err && err.stack || err}\n`;
@@ -170,6 +190,19 @@ process.on("message", function (msg) {
       if (msg.removed && ROOM[msg.id]) {
         delete ROOM[msg.id];
       }
+      break;
+    case "get-worker-snapshot":
+      process.send({
+        type: "get-worker-snapshot-result",
+        _reqId: msg._reqId,
+        channel: CHAN,
+        pid: process.pid,
+        uptime: process.uptime(),
+        mem: process.memoryUsage(),
+        lagMs: _lastLagMs,
+        roomCount: Object.keys(ROOM).length,
+        userCount: Object.keys(DIC).length,
+      });
       break;
     default:
       JLog.warn(`Unhandled IPC message type: ${msg.type}`);

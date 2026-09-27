@@ -29,6 +29,7 @@ var GLOBAL = require("../sub/global.json");
 var Const = require("../const");
 var JLog = require("../sub/jjlog");
 var FallbackLog = require("../sub/discord-fallback-log");
+var DiagLog = require('../sub/diag-log');
 var Secure = require("../sub/secure");
 var Recaptcha = require("../sub/recaptcha");
 var NicknameGuard = require("../sub/nickname-guard");
@@ -48,6 +49,43 @@ var T_USER = {};
 var SID;
 var CHAN_DIC = {};
 var WDIC = {};
+
+// 원격(디스코드) 상태 스냅샷용. DBPool은 MainDB.ready(Redis, Pg)에서 채워진다.
+var DBPool = null;
+var _lastLagMs = 0;
+var _sysCpuPct = 0;
+var SysOS = require("os");
+var _snapshotWaiters = new Map(); // reqId -> { chans, results, finish }
+// slave.js도 master.js를 require하므로, 마스터 프로세스에서만 돌리고 워커는 slave.js의 측정을 쓴다.
+(function trackLag() {
+  if (!Cluster.isMaster) return;
+  var last = Date.now();
+  setInterval(function () {
+    var now = Date.now();
+    _lastLagMs = Math.max(0, now - last - 1000);
+    last = now;
+    if (_lastLagMs > 50) DiagLog.write("LAG", "event loop lag=" + _lastLagMs + "ms proc=master");
+  }, 1000);
+})();
+// 시스템 전체 CPU 사용률(5초 평균). 이 PC는 2코어 저전력 CPU라, 사전 정규식 쿼리가 몰리면 Node까지
+// 같이 굶는지 확인하려는 것. 85% 이상일 때만 기록하고 /상태 스냅샷에도 최신값을 싣는다.
+(function trackSysCpu() {
+  if (!Cluster.isMaster) return;
+  function snap() {
+    var t = 0, idle = 0;
+    SysOS.cpus().forEach(function (c) { for (var k in c.times) t += c.times[k]; idle += c.times.idle; });
+    return { t: t, idle: idle };
+  }
+  var prev = snap();
+  setInterval(function () {
+    var cur = snap(), dt = cur.t - prev.t, di = cur.idle - prev.idle;
+    prev = cur;
+    _sysCpuPct = dt > 0 ? Math.round(100 * (1 - di / dt)) : 0;
+    if (_sysCpuPct >= 85) DiagLog.write("CPU", "system cpu=" + _sysCpuPct + "% freeMem=" + Math.round(SysOS.freemem() / 1048576) + "MB");
+  }, 5000);
+})();
+// 핑(공유기/외부)과 Wi-Fi 신호를 KKUTU_DIAG.log에 [PING]/[NET]으로 남긴다. 마스터에서만 한 번 띄운다.
+if (Cluster.isMaster) require("../sub/net-monitor").start();
 
 const DEVELOP = (exports.DEVELOP = global.test || false);
 // 실시간 토글 값은 global.json(DB 비번/토큰 등 비밀값 포함)이 아니라
@@ -286,6 +324,61 @@ function handleDiscordProcessMessage(msg) {
       try {
         discordProcess.send({ type: "kick-user-result", _reqId: msg._reqId, found: kFound });
       } catch (e) {}
+      break;
+    }
+    case "get-snapshot": {
+      var snapReqId = msg._reqId;
+      var snapChans = Object.keys(CHAN_DIC);
+      var snapResults = [];
+      var snapFinished = false;
+      var snapTimer;
+
+      function finishSnapshot() {
+        if (snapFinished) return;
+        snapFinished = true;
+        clearTimeout(snapTimer);
+        _snapshotWaiters.delete(snapReqId);
+        var poolInfo = DBPool ? { total: DBPool.totalCount, idle: DBPool.idleCount, waiting: DBPool.waitingCount } : null;
+        var snapshotPayload = {
+          type: "get-snapshot-result",
+          _reqId: snapReqId,
+          master: {
+            pid: process.pid,
+            uptime: process.uptime(),
+            mem: process.memoryUsage(),
+            lagMs: _lastLagMs,
+            sysCpuPct: _sysCpuPct,
+            freeMemMB: Math.round(SysOS.freemem() / 1048576),
+            userCount: Object.keys(DIC).length,
+            roomCount: Object.keys(ROOM).length,
+          },
+          workers: snapResults,
+          expectedWorkers: snapChans.length,
+          dbPool: poolInfo,
+        };
+        // 디스코드에는 요약 임베드만 나가지만, 상세 원본은 이 PC의 KKUTU_DIAG.log에 [SNAPSHOT] 태그로 남긴다.
+        DiagLog.write("SNAPSHOT", JSON.stringify({
+          master: snapshotPayload.master,
+          workers: snapResults.map(function (w) {
+            return { channel: w.channel, pid: w.pid, uptime: w.uptime, mem: w.mem, lagMs: w.lagMs, roomCount: w.roomCount, userCount: w.userCount };
+          }),
+          expectedWorkers: snapChans.length,
+          dbPool: poolInfo,
+        }));
+        try {
+          discordProcess.send(snapshotPayload);
+        } catch (e) {}
+      }
+
+      if (!snapChans.length) {
+        finishSnapshot();
+        break;
+      }
+      _snapshotWaiters.set(snapReqId, { chans: snapChans, results: snapResults, finish: finishSnapshot });
+      snapChans.forEach(function (ch) {
+        try { CHAN_DIC[ch].send({ type: "get-worker-snapshot", _reqId: snapReqId }); } catch (e) {}
+      });
+      snapTimer = setTimeout(finishSnapshot, 3000);
       break;
     }
     case "list-online-users": {
@@ -701,6 +794,14 @@ Cluster.on("message", function (worker, msg) {
   var temp;
 
   switch (msg.type) {
+    case "get-worker-snapshot-result": {
+      var snapWaiter = _snapshotWaiters.get(msg._reqId);
+      if (snapWaiter) {
+        snapWaiter.results.push(msg);
+        if (snapWaiter.results.length >= snapWaiter.chans.length) snapWaiter.finish();
+      }
+      break;
+    }
     case "admin":
       if (DIC[msg.id] && DIC[msg.id].admin) processAdmin(msg.id, msg.value);
       break;
@@ -993,7 +1094,8 @@ exports.init = function (_SID, CHAN) {
   SID = _SID;
   CHAN_DIC = CHAN;
   MainDB = require("../Web/db");
-  MainDB.ready = function () {
+  MainDB.ready = function (Redis, Pg) {
+    DBPool = Pg || null;
     JLog.success("Master DB is ready.");
 
     // Spawn Discord bot as a separate child process
