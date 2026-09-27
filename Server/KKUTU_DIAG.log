@@ -9483,3 +9483,261 @@
 [2026-09-27 17:41:33.270] [NET] gw avg=3ms max=8ms loss=0/12 | ext avg=7ms max=13ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=80% rx=104Mbps bssid=80:ca:4b:5a:9a:32
 [2026-09-27 17:41:37.224] [SLOWREQ] 523ms (head 521ms) GET /?server=0 -> 200 ip=211.203.226.11 ua="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
 [2026-09-27 17:41:37.224] [LAG] event loop lag=322ms proc=web pid=7556
+[2026-09-27 17:42:33.287] [NET] gw avg=3ms max=11ms loss=0/12 | ext avg=6ms max=13ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=72% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:43:06.466] [SLOWQ] 361ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ E'^[\\uc544-\\uc78f].{4}$' AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 20
+[2026-09-27 17:43:13.781] [LAG] event loop lag=78ms proc=master
+[2026-09-27 17:43:33.296] [NET] gw avg=3ms max=15ms loss=0/12 | ext avg=6ms max=20ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=69% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:43:43.312] [SLOWQ] 219ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ E'^[\\ud30c-\\ud557].{4}$' AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 20
+[2026-09-27 17:44:05.656] [LAG] event loop lag=255ms proc=web pid=7556
+[2026-09-27 17:44:09.997] [SLOWREQ] 720ms (head 720ms) GET /login/google/callback?iss=https%3A%2F%2Faccounts.google.com&code=4%2F0AXlqoi66Smk0M0SFgo00OYkhG2ZZqvE_1V3BfFqakAeGWC5LoSYy41JMHnHyriHNvvkIjA&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid&authuser=0&prompt=none -> 302 ip=1.252.202.217 ua="Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+[2026-09-27 17:44:33.301] [NET] gw avg=4ms max=12ms loss=0/12 | ext avg=8ms max=13ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=80% rx=115.6Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:45:33.302] [NET] gw avg=12ms max=97ms loss=0/12 | ext avg=10ms max=35ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=79% rx=115.6Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:46:33.312] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=7ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=84% rx=130Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:47:33.319] [NET] gw avg=10ms max=84ms loss=0/12 | ext avg=15ms max=85ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=69% rx=78Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:48:33.320] [NET] gw avg=18ms max=136ms loss=0/12 | ext avg=21ms max=138ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=71% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:49:13.434] [SLOWQ] 327ms [event/find] SELECT * FROM event WHERE TRUE
+[2026-09-27 17:49:15.002] [SLOWREQ] 695ms (head 693ms) GET /?server=0 -> 200 ip=211.203.226.11 ua="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+[2026-09-27 17:49:33.319] [NET] gw avg=14ms max=120ms loss=0/12 | ext avg=39ms max=227ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=79% rx=115.6Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:50:33.328] [NET] gw avg=29ms max=167ms loss=0/12 | ext avg=30ms max=168ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=72% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:51:33.339] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=6ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=80% rx=117Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:52:16.205] [PING] gw(192.168.219.1) 443ms
+[2026-09-27 17:52:16.208] [PING] ext(1.1.1.1) 441ms
+[2026-09-27 17:52:33.339] [NET] gw avg=40ms max=443ms loss=0/12 | ext avg=43ms max=441ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=71% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:53:33.354] [NET] gw avg=11ms max=81ms loss=0/12 | ext avg=15ms max=81ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=71% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:54:33.370] [NET] gw avg=7ms max=42ms loss=0/12 | ext avg=9ms max=40ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=80% rx=115.6Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:55:33.371] [NET] gw avg=4ms max=8ms loss=0/12 | ext avg=8ms max=20ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=79% rx=115.6Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:56:33.378] [NET] gw avg=9ms max=73ms loss=0/12 | ext avg=13ms max=71ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=72% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:57:33.407] [NET] gw avg=3ms max=4ms loss=0/12 | ext avg=6ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:57:58.847] [LAG] event loop lag=289ms proc=web pid=7556
+[2026-09-27 17:58:33.410] [NET] gw avg=4ms max=11ms loss=0/12 | ext avg=8ms max=15ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 17:59:33.420] [NET] gw avg=5ms max=21ms loss=0/12 | ext avg=11ms max=29ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=68% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:00:33.435] [NET] gw avg=13ms max=101ms loss=0/12 | ext avg=16ms max=102ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=57.8Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:01:33.437] [NET] gw avg=3ms max=8ms loss=0/12 | ext avg=8ms max=26ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=65Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:02:33.440] [NET] gw avg=3ms max=6ms loss=0/12 | ext avg=7ms max=12ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:03:33.454] [NET] gw avg=4ms max=14ms loss=0/12 | ext avg=7ms max=14ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=117Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:04:33.471] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=6ms max=8ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=65Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:05:33.472] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=8ms max=25ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=80% rx=65Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:06:33.477] [NET] gw avg=5ms max=19ms loss=0/12 | ext avg=9ms max=37ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:07:33.487] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=7ms max=13ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:08:33.492] [NET] gw avg=3ms max=8ms loss=0/12 | ext avg=6ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=78Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:09:23.912] [SLOWQ] 206ms [users/update] UPDATE users SET "server"='' WHERE "_id"='105520881609641903933'
+[2026-09-27 18:09:33.507] [NET] gw avg=3ms max=4ms loss=0/12 | ext avg=7ms max=17ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:09:38.400] [LAG] event loop lag=117ms proc=web pid=7556
+[2026-09-27 18:10:33.516] [NET] gw avg=3ms max=4ms loss=0/12 | ext avg=6ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=68% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:11:33.520] [NET] gw avg=4ms max=9ms loss=0/12 | ext avg=9ms max=18ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=80% rx=65Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:12:33.525] [NET] gw avg=5ms max=20ms loss=0/12 | ext avg=8ms max=21ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:13:33.525] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=7ms max=16ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=78Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:14:10.272] [SLOWREQ] 668ms (head 667ms) GET /login/google/callback?iss=https%3A%2F%2Faccounts.google.com&code=4%2F0AXlqoi658y6KGRmFw102CDpYalU4VJqMSclhzVCKbKuY94k_xrabrb0ouVmszs3HJlKQ6w&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile&authuser=0&prompt=none -> 302 ip=1.252.202.217 ua="Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+[2026-09-27 18:14:13.004] [LAG] event loop lag=149ms proc=web pid=7556
+[2026-09-27 18:14:33.531] [NET] gw avg=5ms max=23ms loss=0/12 | ext avg=8ms max=29ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:15:33.544] [NET] gw avg=4ms max=8ms loss=0/12 | ext avg=6ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=78Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:16:33.556] [NET] gw avg=4ms max=11ms loss=0/12 | ext avg=7ms max=12ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=58.5Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:17:33.566] [NET] gw avg=3ms max=8ms loss=0/12 | ext avg=6ms max=13ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=78Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:18:33.567] [NET] gw avg=3ms max=7ms loss=0/12 | ext avg=6ms max=7ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:19:33.568] [NET] gw avg=4ms max=10ms loss=0/12 | ext avg=7ms max=11ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:20:33.568] [NET] gw avg=5ms max=7ms loss=0/12 | ext avg=7ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:21:33.572] [NET] gw avg=3ms max=8ms loss=0/12 | ext avg=6ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=115.6Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:22:33.577] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=7ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:23:33.584] [NET] gw avg=3ms max=6ms loss=0/12 | ext avg=6ms max=7ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:24:33.588] [NET] gw avg=5ms max=15ms loss=0/12 | ext avg=7ms max=11ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:25:33.596] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=6ms max=8ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:26:33.607] [NET] gw avg=4ms max=8ms loss=0/12 | ext avg=7ms max=12ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:27:26.921] [LAG] event loop lag=216ms proc=master
+[2026-09-27 18:27:33.610] [NET] gw avg=5ms max=21ms loss=0/12 | ext avg=10ms max=41ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:28:33.593] [SLOWQ] 230ms [event/find] SELECT * FROM event WHERE TRUE
+[2026-09-27 18:28:33.627] [NET] gw avg=3ms max=6ms loss=0/12 | ext avg=6ms max=8ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=130Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:29:33.644] [NET] gw avg=4ms max=9ms loss=0/12 | ext avg=7ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=130Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:30:33.659] [NET] gw avg=4ms max=10ms loss=0/11 | ext avg=5ms max=12ms loss=0/11 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=144.4Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:31:33.667] [NET] gw avg=4ms max=11ms loss=0/12 | ext avg=6ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:32:33.672] [NET] gw avg=6ms max=21ms loss=0/12 | ext avg=10ms max=23ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:33:33.673] [NET] gw avg=3ms max=11ms loss=0/12 | ext avg=6ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:34:33.684] [NET] gw avg=5ms max=19ms loss=0/12 | ext avg=7ms max=17ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:35:33.685] [NET] gw avg=5ms max=12ms loss=0/12 | ext avg=9ms max=22ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=115.6Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:36:33.697] [NET] gw avg=3ms max=8ms loss=0/12 | ext avg=7ms max=12ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:37:33.710] [NET] gw avg=15ms max=143ms loss=0/12 | ext avg=18ms max=141ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:38:33.712] [NET] gw avg=4ms max=7ms loss=0/12 | ext avg=7ms max=11ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:39:33.713] [NET] gw avg=3ms max=6ms loss=0/12 | ext avg=6ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:40:33.728] [NET] gw avg=5ms max=17ms loss=0/12 | ext avg=8ms max=20ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=57.8Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:41:33.730] [NET] gw avg=4ms max=9ms loss=0/12 | ext avg=8ms max=16ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:42:33.734] [NET] gw avg=4ms max=9ms loss=0/12 | ext avg=8ms max=25ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:43:33.735] [NET] gw avg=4ms max=8ms loss=0/12 | ext avg=6ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:44:33.736] [NET] gw avg=4ms max=11ms loss=0/12 | ext avg=7ms max=13ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:44:57.780] [LAG] event loop lag=63ms proc=web pid=7556
+[2026-09-27 18:45:33.736] [NET] gw avg=3ms max=9ms loss=0/12 | ext avg=6ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:46:33.742] [NET] gw avg=7ms max=19ms loss=0/12 | ext avg=10ms max=21ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:47:33.755] [NET] gw avg=5ms max=11ms loss=0/12 | ext avg=8ms max=25ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:48:33.756] [NET] gw avg=6ms max=30ms loss=0/12 | ext avg=9ms max=28ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=117Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:49:33.765] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=6ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=117Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:50:33.775] [NET] gw avg=5ms max=14ms loss=0/12 | ext avg=9ms max=27ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=115.6Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:51:33.776] [NET] gw avg=13ms max=128ms loss=0/12 | ext avg=16ms max=126ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=115.6Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:52:33.777] [NET] gw avg=4ms max=10ms loss=0/12 | ext avg=7ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:53:33.780] [NET] gw avg=4ms max=8ms loss=0/12 | ext avg=8ms max=12ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:54:33.794] [NET] gw avg=4ms max=9ms loss=0/12 | ext avg=7ms max=11ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:55:33.805] [NET] gw avg=4ms max=5ms loss=0/12 | ext avg=7ms max=11ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:56:33.820] [NET] gw avg=4ms max=9ms loss=0/12 | ext avg=8ms max=20ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=115.6Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:57:33.837] [NET] gw avg=4ms max=7ms loss=0/12 | ext avg=9ms max=21ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:58:33.851] [NET] gw avg=3ms max=6ms loss=0/12 | ext avg=5ms max=7ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=65Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 18:59:33.852] [NET] gw avg=3ms max=9ms loss=0/12 | ext avg=6ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:00:33.869] [NET] gw avg=4ms max=8ms loss=0/12 | ext avg=6ms max=8ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=57.8Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:01:33.870] [NET] gw avg=9ms max=43ms loss=0/12 | ext avg=11ms max=47ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:02:33.870] [NET] gw avg=3ms max=9ms loss=0/12 | ext avg=6ms max=12ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:03:33.880] [NET] gw avg=3ms max=6ms loss=0/12 | ext avg=7ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:04:33.891] [NET] gw avg=3ms max=9ms loss=0/12 | ext avg=6ms max=12ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=115.6Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:05:33.892] [NET] gw avg=6ms max=14ms loss=0/12 | ext avg=8ms max=16ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:06:33.901] [NET] gw avg=5ms max=24ms loss=0/12 | ext avg=7ms max=23ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=52Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:07:33.904] [NET] gw avg=4ms max=10ms loss=0/12 | ext avg=7ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:08:33.907] [NET] gw avg=4ms max=7ms loss=0/12 | ext avg=7ms max=12ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:09:33.920] [NET] gw avg=3ms max=8ms loss=0/12 | ext avg=8ms max=24ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=78Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:10:33.920] [NET] gw avg=4ms max=10ms loss=0/12 | ext avg=7ms max=12ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:11:33.922] [NET] gw avg=4ms max=8ms loss=0/12 | ext avg=8ms max=15ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:12:33.923] [NET] gw avg=8ms max=23ms loss=0/12 | ext avg=14ms max=43ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:13:33.936] [NET] gw avg=4ms max=13ms loss=0/12 | ext avg=7ms max=16ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=78Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:14:33.937] [NET] gw avg=4ms max=11ms loss=0/12 | ext avg=8ms max=14ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:15:33.949] [NET] gw avg=4ms max=16ms loss=0/12 | ext avg=6ms max=13ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:16:33.950] [NET] gw avg=2ms max=5ms loss=0/12 | ext avg=8ms max=25ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:17:33.951] [NET] gw avg=3ms max=7ms loss=0/12 | ext avg=6ms max=13ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:18:33.962] [NET] gw avg=4ms max=9ms loss=0/12 | ext avg=6ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:19:33.972] [NET] gw avg=6ms max=22ms loss=0/12 | ext avg=8ms max=25ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:20:33.973] [NET] gw avg=2ms max=5ms loss=0/12 | ext avg=7ms max=16ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=58.5Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:21:22.781] [SLOWREQ] 756ms (head 756ms) GET /login/google/callback?iss=https%3A%2F%2Faccounts.google.com&code=4%2F0AXlqoi4QK_OSq3uNmfhuCFZa1NlnrDRF1l_Rn8D6TYDo9bVVvlFMeeaqDKlCQ9T0ratmHA&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid&authuser=0&prompt=none -> 302 ip=1.252.202.217 ua="Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+[2026-09-27 19:21:33.984] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=6ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:22:33.985] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=8ms max=22ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=70% rx=78Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:23:33.986] [NET] gw avg=5ms max=10ms loss=0/12 | ext avg=7ms max=21ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:24:33.994] [NET] gw avg=4ms max=10ms loss=0/12 | ext avg=6ms max=12ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:25:33.994] [NET] gw avg=4ms max=10ms loss=0/12 | ext avg=8ms max=27ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:26:33.995] [NET] gw avg=4ms max=6ms loss=0/12 | ext avg=7ms max=11ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:27:33.997] [NET] gw avg=4ms max=8ms loss=0/12 | ext avg=9ms max=23ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:28:34.013] [NET] gw avg=3ms max=7ms loss=0/12 | ext avg=5ms max=8ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=57.8Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:29:34.018] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=9ms max=20ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:29:44.666] [LAG] event loop lag=63ms proc=master
+[2026-09-27 19:30:34.018] [NET] gw avg=4ms max=10ms loss=0/12 | ext avg=9ms max=23ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:31:34.019] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=6ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:32:34.027] [NET] gw avg=4ms max=8ms loss=0/12 | ext avg=6ms max=8ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:33:34.035] [NET] gw avg=3ms max=10ms loss=0/12 | ext avg=6ms max=8ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:34:34.048] [NET] gw avg=4ms max=7ms loss=0/12 | ext avg=6ms max=11ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:35:34.049] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=9ms max=24ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:36:34.053] [NET] gw avg=3ms max=7ms loss=0/12 | ext avg=6ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=78Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:36:34.762] [SLOWQ] 213ms [session/upsert] INSERT INTO session ("profile", "createdAt", "_id") VALUES ('{"authType":"google","id":"105520881609641903933","name":"Glided글라이드","title":"Glided글라이드","image":"https://lh3.googleusercontent.com/a/ACg8ocKLxZQ6GE5xW3FKnyrMAhl6IYS8_VaTXEgY4r0Mdve28-3D_A=s96-c","token":"ya29.a0AX07CmvMFR0NTZl4XQUp5xyN-
+[2026-09-27 19:36:34.765] [SLOWREQ] 836ms (head 834ms) GET /login/google/callback?iss=https%3A%2F%2Faccounts.google.com&code=4%2F0AXlqoi42oXh1wcg9MeoAKOfCM8vcg0LfUXgH0VUfD9loBqUUAaDCphdYmb0w-kdGPe-6DA&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid&authuser=0&prompt=none -> 302 ip=175.204.86.177 ua="Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36"
+[2026-09-27 19:37:34.055] [NET] gw avg=4ms max=10ms loss=0/12 | ext avg=7ms max=11ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=78Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:38:34.068] [NET] gw avg=4ms max=16ms loss=0/12 | ext avg=7ms max=15ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:39:34.083] [NET] gw avg=4ms max=8ms loss=0/12 | ext avg=7ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:40:34.084] [NET] gw avg=4ms max=12ms loss=0/12 | ext avg=8ms max=17ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:40:35.810] [SLOWQ] 201ms [event/find] SELECT * FROM event WHERE TRUE
+[2026-09-27 19:41:34.093] [NET] gw avg=4ms max=20ms loss=0/12 | ext avg=8ms max=24ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:41:41.245] [LAG] event loop lag=233ms proc=web pid=7556
+[2026-09-27 19:42:34.095] [NET] gw avg=3ms max=6ms loss=0/12 | ext avg=6ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:43:34.101] [NET] gw avg=3ms max=4ms loss=0/12 | ext avg=8ms max=24ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:44:34.104] [NET] gw avg=3ms max=9ms loss=0/12 | ext avg=9ms max=32ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:45:34.104] [NET] gw avg=5ms max=12ms loss=0/12 | ext avg=8ms max=12ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:46:34.105] [NET] gw avg=2ms max=3ms loss=0/12 | ext avg=7ms max=23ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:47:34.121] [NET] gw avg=3ms max=4ms loss=0/12 | ext avg=6ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:47:58.634] [SLOWQ] 203ms [kkutu_ko/findOne] SELECT "theme", "_id" FROM kkutu_ko WHERE "_id"='이상한나라의앨리스' LIMIT 1
+[2026-09-27 19:48:34.129] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=6ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=104Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:49:34.137] [NET] gw avg=4ms max=7ms loss=0/12 | ext avg=6ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=115.6Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:50:34.146] [NET] gw avg=3ms max=7ms loss=0/12 | ext avg=6ms max=10ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:51:00.236] [SLOWQ] 210ms [users/update] UPDATE users SET "server"='' WHERE "_id"='105520881609641903933'
+[2026-09-27 19:51:26.013] [LAG] event loop lag=338ms proc=web pid=7556
+[2026-09-27 19:51:28.907] [SLOWREQ] 559ms (head 3ms) GET /media/kkutu/%ED%94%BC%EC%95%84%EB%85%B8/T5.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:51:28.939] [SLOWREQ] 665ms (head 3ms) GET /media/kkutu/%ED%94%BC%EC%95%84%EB%85%B8/T4.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:51:28.976] [SLOWREQ] 682ms (head 6ms) GET /media/kkutu/%ED%94%BC%EC%95%84%EB%85%B8/T1.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:51:29.009] [SLOWREQ] 712ms (head 7ms) GET /media/kkutu/%ED%94%BC%EC%95%84%EB%85%B8/T3.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:51:29.068] [SLOWREQ] 763ms (head 13ms) GET /media/kkutu/%ED%94%BC%EC%95%84%EB%85%B8/T2.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:51:29.185] [SLOWREQ] 837ms (head 4ms) GET /media/kkutu/%ED%94%BC%EC%95%84%EB%85%B8/T0.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:51:29.243] [SLOWREQ] 947ms (head 7ms) GET /media/kkutu/%ED%94%BC%EC%95%84%EB%85%B8/JaqwiBGM.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:51:29.352] [SLOWREQ] 1045ms (head 13ms) GET /media/kkutu/%ED%94%BC%EC%95%84%EB%85%B8/JaqwiFastBGM.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:51:29.795] [SLOWREQ] 1529ms (head 4ms) GET /media/bgm/Calming.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:51:34.159] [NET] gw avg=10ms max=68ms loss=0/12 | ext avg=13ms max=76ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:52:34.170] [NET] gw avg=4ms max=10ms loss=0/12 | ext avg=7ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=72% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:53:10.914] [SLOWQ] 651ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(딱).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:53:20.724] [SLOWQ] 211ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(발).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:53:31.011] [SLOWQ] 526ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(지).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' ORDER BY length(_id) DESC LIMIT 492
+[2026-09-27 19:53:34.176] [NET] gw avg=3ms max=5ms loss=0/12 | ext avg=7ms max=11ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=83% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:53:58.868] [SLOWQ] 479ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(림|임).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 492
+[2026-09-27 19:53:59.420] [SLOWQ] 549ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(림|임).*[팻눕깟좽맙낼갭칫쩡픐럼뼁얍갬컵쐬윽휭닿퀵겝떳룩낡뜽믄졈댑걷션툽휜윔빽푯눙귕]$' AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' AND "flag" & 2 = 0 LIMIT 200
+[2026-09-27 19:54:10.223] [SLOWQ] 475ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(션).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:54:23.885] [SLOWQ] 480ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(랄|날).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:54:32.255] [SLOWQ] 400ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(미).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 492
+[2026-09-27 19:54:32.740] [SLOWQ] 485ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(미).*[릇럴텝튬렁듈븐쾃똠믉돓슭듐뎧릐뮴짗딭픔냑몱빟훕읖븟않횩쓔뀨얺슨덭둏녘깆웝녙]$' AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' AND "flag" & 2 = 0 LIMIT 200
+[2026-09-27 19:54:34.200] [NET] gw avg=3ms max=6ms loss=0/11 | ext avg=8ms max=14ms loss=0/11 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:54:59.833] [SLOWQ] 355ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(리|이).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:55:07.554] [SLOWQ] 244ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(판).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:55:20.831] [SLOWQ] 544ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(스).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:55:34.201] [NET] gw avg=6ms max=34ms loss=0/12 | ext avg=7ms max=16ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:55:37.449] [SLOWQ] 353ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(대).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:56:03.633] [SLOWQ] 497ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(터).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:56:24.450] [SLOWQ] 385ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(사).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:56:34.201] [NET] gw avg=7ms max=28ms loss=0/12 | ext avg=9ms max=28ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=80% rx=57.8Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:56:36.358] [SLOWQ] 265ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(돌).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:57:12.286] [SLOWQ] 491ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(장).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:57:21.450] [SLOWQ] 544ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(실).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:57:27.367] [SLOWQ] 496ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(포).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:57:34.203] [NET] gw avg=3ms max=6ms loss=0/12 | ext avg=7ms max=13ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=78% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:57:40.031] [SLOWQ] 512ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(동).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' ORDER BY length(_id) DESC LIMIT 492
+[2026-09-27 19:57:48.799] [SLOWQ] 454ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(렁).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:57:58.324] [SLOWQ] 465ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(렁).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:58:17.011] [SLOWQ] 465ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(타).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:58:26.169] [SLOWQ] 463ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(렁).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 492
+[2026-09-27 19:58:34.212] [NET] gw avg=3ms max=6ms loss=0/12 | ext avg=6ms max=7ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=58.5Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:58:35.699] [SLOWQ] 482ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(렁).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:58:46.967] [SLOWREQ] 772ms (head 7ms) GET /media/bgm/%EB%81%84%ED%88%AC%EB%AA%85%EC%A0%88.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:58:50.989] [SLOWREQ] 580ms (head 21ms) GET /media/kkutu/%EB%A0%88%ED%8A%B8%EB%A1%9C%E2%85%A1/T6.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:58:51.024] [SLOWREQ] 608ms (head 23ms) GET /media/kkutu/%EB%A0%88%ED%8A%B8%EB%A1%9C%E2%85%A1/T5.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:58:51.057] [SLOWREQ] 707ms (head 3ms) GET /media/kkutu/%EB%A0%88%ED%8A%B8%EB%A1%9C%E2%85%A1/T3.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:58:51.209] [SLOWREQ] 831ms (head 4ms) GET /media/kkutu/%EB%A0%88%ED%8A%B8%EB%A1%9C%E2%85%A1/T2.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:58:51.332] [SLOWREQ] 916ms (head 22ms) GET /media/kkutu/%EB%A0%88%ED%8A%B8%EB%A1%9C%E2%85%A1/T4.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:58:51.375] [SLOWREQ] 955ms (head 21ms) GET /media/kkutu/%EB%A0%88%ED%8A%B8%EB%A1%9C%E2%85%A1/T1.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:58:51.522] [SLOWREQ] 1058ms (head 3ms) GET /media/kkutu/%EB%A0%88%ED%8A%B8%EB%A1%9C%E2%85%A1/T0.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:58:51.971] [SLOWREQ] 1624ms (head 7ms) GET /media/kkutu/%EB%A0%88%ED%8A%B8%EB%A1%9C%E2%85%A1/JaqwiBGM.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:58:52.229] [SLOWREQ] 1871ms (head 9ms) GET /media/kkutu/%EB%A0%88%ED%8A%B8%EB%A1%9C%E2%85%A1/LobbyBGM.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:58:53.141] [SLOWREQ] 2763ms (head 5ms) GET /media/kkutu/%EB%A0%88%ED%8A%B8%EB%A1%9C%E2%85%A1/JaqwiFastBGM.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:58:53.362] [SLOWREQ] 592ms (head 7ms) GET /media/kkutu/%ED%94%BC%EC%95%84%EB%85%B8/LobbyBGM.mp3 -> 200 ip=175.196.144.235 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 19:59:04.513] [SLOWQ] 384ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(동).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:59:28.267] [SLOWQ] 211ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(달).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 19:59:34.215] [NET] gw avg=4ms max=13ms loss=0/12 | ext avg=12ms max=48ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=75% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 19:59:45.699] [SLOWQ] 481ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(렁).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 20:00:30.886] [SLOWQ] 416ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(시).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 492
+[2026-09-27 20:00:31.371] [SLOWQ] 484ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(시).*[튬릇렁쾃럴텝듈븐읆츳븗딭슌텋롭갊랗녁쳡앒헡숳냑핧묗껏윰읃훕둏욤앝삣녙얒깉닓]$' AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' AND "flag" & 2 = 0 LIMIT 200
+[2026-09-27 20:00:34.217] [NET] gw avg=4ms max=14ms loss=0/12 | ext avg=8ms max=21ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=80% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:00:41.687] [SLOWQ] 484ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(렁).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 20:01:12.118] [SLOWQ] 497ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(석).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 20:01:34.223] [NET] gw avg=5ms max=17ms loss=0/12 | ext avg=13ms max=54ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:01:39.910] [SLOWQ] 500ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(렁).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 20:01:45.791] [SLOWQ] 458ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(식).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 20:02:01.414] [SLOWQ] 417ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(비).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 20:02:10.658] [SLOWQ] 528ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(름|늠).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 20:02:30.040] [SLOWQ] 509ms [kkutu_ko/find] SELECT * FROM kkutu_ko WHERE "_id" ~ '^(올).' AND "flag" & 2 = 0 AND "type" ~ '(,|^)(0|1|3|7|8|11|9|16|15|17|2|18|20|26|19|INJEONG)(,|$)' LIMIT 123
+[2026-09-27 20:02:34.230] [NET] gw avg=8ms max=30ms loss=0/12 | ext avg=8ms max=21ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=80% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:03:34.232] [NET] gw avg=4ms max=7ms loss=0/12 | ext avg=8ms max=12ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=80% rx=115.6Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:04:34.232] [NET] gw avg=5ms max=14ms loss=0/12 | ext avg=8ms max=16ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=80% rx=78Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:05:34.233] [NET] gw avg=13ms max=102ms loss=0/12 | ext avg=16ms max=106ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=70% rx=65Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:06:34.235] [NET] gw avg=4ms max=11ms loss=0/12 | ext avg=8ms max=15ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=78% rx=65Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:07:34.235] [NET] gw avg=9ms max=66ms loss=0/12 | ext avg=15ms max=106ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=80% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:08:00.911] [LAG] event loop lag=118ms proc=chan1
+[2026-09-27 20:08:00.683] [LAG] event loop lag=99ms proc=master
+[2026-09-27 20:08:02.757] [LAG] event loop lag=63ms proc=master
+[2026-09-27 20:08:05.107] [CPU] system cpu=100% freeMem=2548MB
+[2026-09-27 20:08:10.089] [CPU] system cpu=99% freeMem=2384MB
+[2026-09-27 20:08:19.707] [LAG] event loop lag=65ms proc=web pid=7556
+[2026-09-27 20:08:25.122] [CPU] system cpu=86% freeMem=2001MB
+[2026-09-27 20:08:34.238] [NET] gw avg=3ms max=6ms loss=0/12 | ext avg=6ms max=9ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=130Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:09:04.429] [LAG] event loop lag=56ms proc=master
+[2026-09-27 20:09:21.466] [PING] ext(1.1.1.1) 696ms
+[2026-09-27 20:09:34.252] [NET] gw avg=4ms max=12ms loss=0/12 | ext avg=65ms max=696ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:09:50.869] [LAG] event loop lag=79ms proc=master
+[2026-09-27 20:10:34.255] [NET] gw avg=3ms max=6ms loss=0/12 | ext avg=7ms max=16ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=82% rx=78Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:11:34.265] [NET] gw avg=3ms max=6ms loss=0/12 | ext avg=8ms max=22ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=69% rx=78Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:12:34.280] [NET] gw avg=7ms max=28ms loss=0/12 | ext avg=10ms max=30ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=80% rx=72.2Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:12:42.339] [LAG] event loop lag=237ms proc=web pid=7556
+[2026-09-27 20:12:45.562] [SLOWREQ] 592ms (head 6ms) GET /media/common/moondust.opus -> 200 ip=121.130.128.96 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154."
+[2026-09-27 20:12:47.133] [SLOWQ] 202ms [kkutu_shop/find] SELECT "cost", "term", "group", "options", "updatedAt", "_id" FROM kkutu_shop WHERE TRUE
+[2026-09-27 20:13:34.289] [NET] gw avg=2ms max=4ms loss=0/12 | ext avg=5ms max=7ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=80% rx=57.8Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:14:34.299] [NET] gw avg=2ms max=10ms loss=0/12 | ext avg=5ms max=8ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=75% rx=57.8Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:14:42.381] [SLOWREQ] 516ms (head 9ms) GET /media/kkutu/T6.mp3 -> 200 ip=121.186.96.19 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+[2026-09-27 20:14:42.560] [SLOWREQ] 697ms (head 9ms) GET /media/kkutu/T0.mp3 -> 200 ip=121.186.96.19 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+[2026-09-27 20:14:42.672] [SLOWREQ] 803ms (head 8ms) GET /media/kkutu/JaqwiFastBGM.mp3 -> 200 ip=121.186.96.19 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+[2026-09-27 20:14:42.734] [SLOWREQ] 840ms (head 4ms) GET /media/kkutu/T2.mp3 -> 200 ip=121.186.96.19 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+[2026-09-27 20:14:42.771] [SLOWREQ] 860ms (head 6ms) GET /media/kkutu/T4.mp3 -> 200 ip=121.186.96.19 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+[2026-09-27 20:15:34.307] [NET] gw avg=5ms max=27ms loss=0/12 | ext avg=8ms max=28ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=78% rx=115.6Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:16:34.308] [NET] gw avg=3ms max=6ms loss=0/12 | ext avg=6ms max=7ms loss=0/12 | wifi connected U+Net9A30 2.4GHz ch=7 signal=81% rx=86.7Mbps bssid=80:ca:4b:5a:9a:32
+[2026-09-27 20:16:46.685] [LAG] event loop lag=123ms proc=master
