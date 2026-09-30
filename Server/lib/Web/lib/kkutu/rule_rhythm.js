@@ -21,10 +21,10 @@ $lib.Rhythm = {};
 // 리듬 게임 (XRG)
 // - 게임 시계: audioContext.currentTime 기준 (Date.now()/setInterval은 밀릴 수 있어 쓰지 않음)
 // - 시작 시각: 서버가 정한 절대 시각(startAt)을 xrgSync 왕복 측정으로 얻은 시계 차이로 로컬 시각으로 변환
-// - 판정은 클라이언트가 하고, 서버는 노트 인덱스와 오차(dt)를 검증해 점수를 합산
-var XRG_LEAD = 500;       // 마커가 나타나서 판정 시점에 닿기까지 (ms)
+// - 클라이언트의 판정(PERFECT/GOOD/...)은 내 화면 표시용일 뿐, 서버에는 눌린 패널과 곡 기준 시각만 보냄
+//   서버가 그 시각으로 노트를 찾아 직접 판정하고 점수를 합산해 모두에게 알림
+var XRG_LEAD = 1000;      // 마커가 나타나서 판정 시점에 닿기까지 (ms)
 var XRG_WIN = [50, 150, 300]; // Perfect / Good / Bad 허용 오차 (ms)
-var XRG_SCORE = [10, 5, 1];
 var XRG_ROUND = 60000;
 var XRG_SYNC_COUNT = 6;
 var XRG_SYNC_GAP = 120;
@@ -40,7 +40,8 @@ $lib.Rhythm.roundReady = function (data, spec) {
 	$data.room.round = 1;
 	if (data.time) $data.room.time = data.time;
 	$(".jjoriping,.rounds,.game-body").addClass("cw");
-	$(".game-body").addClass("rhythm");
+	// 큰 보드(.bb)를 숨기면 판이 왼쪽으로 쏠리므로, flip/center-board처럼 .jjoriping을 가운데 정렬
+	$(".jjoriping,.game-body").addClass("rhythm");
 
 	// 채보 전개: 글자 1개 길이 = (60/BPM) x (4/해상도)초
 	charMs = 60000 / data.bpm * 4 / data.res;
@@ -75,14 +76,13 @@ $lib.Rhythm.roundReady = function (data, spec) {
 		})(j, $panel[0]);
 	}
 	s.$count = $("<div>").addClass("rhythm-count");
-	// 곡 제목은 카운트다운이 시작되기 전까지만 판 위에 표시
+	// 곡 제목은 카운트다운이 시작되기 전까지만 판 중앙에 겹쳐 표시. 판(.rhythm-grid) 안에는 패널만 둠
 	s.$title = $("<div>").addClass("rhythm-title").text("♪ " + data.song.replace(/_/g, " "));
-	$grid.append(s.$count, s.$title);
 	s.$grid = $grid;
 	$stage.game.items.hide();
 	$stage.game.bb.hide();
-	// 큰 보드(.jjo-display, 298x298) 안에 패널 판을 그림
-	$stage.game.display.empty().append($grid);
+	// 큰 보드(.jjo-display, 298x298) 안에 패널 판을 그리고, 제목/카운트는 판 위에 겹침
+	$stage.game.display.empty().append($grid, s.$count, s.$title);
 
 	// 오디오 프리로드
 	if ($sound[s.key]) s.loaded = true;
@@ -201,7 +201,8 @@ $lib.Rhythm.frame = function () {
 			continue;
 		}
 		if (!n.el) {
-			n.el = $("<div>").addClass("rhythm-marker rhythm-m" + n.m);
+			// 패널 번호(1~4)에 따라 좌상/우상/좌하/우하 모서리 테두리만 그림
+			n.el = $("<div>").addClass("rhythm-marker rhythm-m" + n.m + " rhythm-c" + n.lane);
 			s.panels[n.lane].append(n.el);
 		}
 		p = (n.t - st) / XRG_LEAD; // 1 -> 0: 커지며 패널 테두리에 닿는 순간이 판정 시점
@@ -221,7 +222,7 @@ $lib.Rhythm.removeMarker = function (n) {
 $lib.Rhythm.onPress = function (e, lane) {
 	var R = $lib.Rhythm;
 	var s = R.s;
-	var st, i, n, d, best, bd, j, score;
+	var st, i, n, d, best, bd, j;
 
 	e.preventDefault();
 	if (!s || s.spec || s.ended || s.ctxStart === null) return;
@@ -242,16 +243,9 @@ $lib.Rhythm.onPress = function (e, lane) {
 
 	best.done = true;
 	R.removeMarker(best);
-	d = Math.round(st - best.t);
 	j = bd <= XRG_WIN[0] ? 0 : bd <= XRG_WIN[1] ? 1 : 2;
-	score = XRG_SCORE[j];
-	R.splash(lane, j);
-	send('xrgHit', { i: best.i, dt: d });
-
-	// 내 점수는 서버 응답을 기다리지 않고 바로 반영 (이후 서버 합계로 보정됨)
-	addScore($data.id, score);
-	updateScore($data.id, getScore($data.id));
-	drawObtainedScore($("#game-user-" + $data.id), $("<div>").addClass("deltaScore").html("+" + score));
+	R.splash(lane, j); // 내 화면에만 즉시 표시. 점수는 서버가 timestamp로 판정한 결과(turnEnd)로 반영
+	send('xrgHit', { lane: lane, t: Math.round(st) });
 };
 // j: 0=Perfect, 1=Good, 2=Bad, 3=Miss
 $lib.Rhythm.splash = function (lane, j) {
@@ -279,8 +273,7 @@ $lib.Rhythm.turnEnd = function (id, data) {
 		playSound('horr');
 		return;
 	}
-	// 내 타격은 onPress에서 이미 반영함 (서버 합계로 덮으면 RTT만큼 점수가 뒤로 갔다 오는 깜박임이 생김)
-	if (id == $data.id) return;
+	// 내 점수를 포함해 모든 점수는 서버 판정 결과로만 반영
 	addScore(id, data.score, data.totalScore);
 	updateScore(id, getScore(id));
 	drawObtainedScore($("#game-user-" + id), $("<div>").addClass("deltaScore").html("+" + data.score));
@@ -289,7 +282,7 @@ $lib.Rhythm.turnEnd = function (id, data) {
 $lib.Rhythm.cleanup = function () {
 	var s = $lib.Rhythm.s;
 
-	$(".game-body").removeClass("rhythm");
+	$(".jjoriping,.game-body").removeClass("rhythm");
 	if (!s) return;
 	$lib.Rhythm.s = null;
 	cancelAnimationFrame(s.raf);
@@ -300,4 +293,6 @@ $lib.Rhythm.cleanup = function () {
 		if ($data.bgm === s.src) $data.bgm = null;
 	}
 	s.$grid.remove();
+	s.$count.remove();
+	if (s.$title) s.$title.remove();
 };

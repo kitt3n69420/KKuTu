@@ -24,7 +24,7 @@ var DATA_DIR = `${__dirname}/../../data`;
 var BGM_DIR = `${__dirname}/../../Web/public/media/common/bgms`;
 
 var ROUND_MS = 60000;      // 라운드 길이 (고정)
-var START_LEAD = 2000;     // turnStart 방송 후 오디오 0ms까지의 최소 여유 (카운트다운 3박 + 마커 리드인 0.5초 + 클라이언트 스케줄 여유)
+var START_LEAD = 2000;     // turnStart 방송 후 오디오 0ms까지의 최소 여유 (카운트다운 3박 + 마커 리드인 1초 + 클라이언트 스케줄 여유)
 var END_GRACE = 400;       // 종료 직전 마지막 입력을 받아주는 유예
 var HIT_SLACK = 1000;      // 클라이언트가 보고한 타격 시각보다 이 이상 일찍 서버에 도착한 보고는 거부
 var WIN_PERFECT = 50, WIN_GOOD = 150, WIN_BAD = 300; // ms
@@ -54,15 +54,18 @@ function parseChart(name, text) {
 	Object.keys(song.charts).forEach(function (k) {
 		var c = song.charts[k];
 		var charMs = 60000 / song.bpm * 4 / c.res;
-		var j;
+		var j, n;
 
 		// 60초 이후 글자는 잘라서 클라이언트가 같은 시각 계산을 하도록 함
 		c.seq = c.seq.slice(0, Math.ceil(ROUND_MS / charMs));
 		c.bpm = song.bpm;
 		c.notes = [];
+		c.lanes = [[], [], [], []]; // 레인별 노트 (시각 오름차순). 타격 판정 때 해당 레인만 훑기 위함
 		for (j = 0; j < c.seq.length; j++) {
 			if (c.seq.charAt(j) == '.') continue;
-			c.notes.push({ lane: Number(c.seq.charAt(j)) - 1, t: j * charMs, idx: j });
+			n = { lane: Number(c.seq.charAt(j)) - 1, t: j * charMs, idx: j, i: c.notes.length };
+			c.notes.push(n);
+			c.lanes[n.lane].push(n);
 		}
 	});
 	return song;
@@ -165,25 +168,37 @@ exports.submit = function (client, text) {
 	if (!text) return;
 	client.chat(text);
 };
-// 클라이언트가 판정한 타격 {i: 노트 인덱스, dt: 노트 시각 대비 눌린 시각(ms, +면 늦음)}을 검증해 합산
+// 클라이언트가 보낸 타격 {lane: 눌린 패널(0~3), t: 곡 시작 기준 눌린 시각(ms)}만으로
+// 서버가 그 레인에서 가장 가까운 미처리 노트를 찾아 판정하고 점수를 합산 (클라이언트의 판정 표시는 참고하지 않음)
 exports.hit = function (client, msg) {
 	var my = this;
 	var chart = my.game.chart;
-	var i = msg.i, dt = msg.dt;
-	var note, hits, j, score;
+	var lane = msg.lane, t = msg.t;
+	var notes, note, best, bd, hits, i, d, j, score;
 
 	if (my.game.late || !chart || !my.game.startAt) return;
 	if (!my.game.seq || my.game.seq.indexOf(client.id) == -1) return;
-	if (!Number.isInteger(i) || i < 0 || i >= chart.notes.length) return;
-	if (typeof dt != 'number' || !isFinite(dt) || Math.abs(dt) > WIN_BAD) return;
+	if (!Number.isInteger(lane) || lane < 0 || lane >= chart.lanes.length) return;
+	if (typeof t != 'number' || !isFinite(t)) return;
+	if ((new Date()).getTime() < my.game.startAt + t - HIT_SLACK) return;
 
 	hits = my.game.hits[client.id] || (my.game.hits[client.id] = {});
-	if (hits[i]) return;
-	note = chart.notes[i];
-	if ((new Date()).getTime() < my.game.startAt + note.t + dt - HIT_SLACK) return;
+	notes = chart.lanes[lane];
+	bd = Infinity;
+	for (i = 0; i < notes.length; i++) {
+		note = notes[i];
+		if (note.t - t > WIN_BAD) break;
+		if (hits[note.i]) continue;
+		d = Math.abs(t - note.t);
+		if (d <= WIN_BAD && d < bd) {
+			bd = d;
+			best = note;
+		}
+	}
+	if (!best) return;
 
-	hits[i] = true;
-	j = judge(dt);
+	hits[best.i] = true;
+	j = judge(bd);
 	score = SCORE[j];
 	client.game.score += score;
 	client.publish('turnEnd', {
