@@ -67,7 +67,8 @@ exports.build = function (DB) {
 	building = true;
 
 	TableLoader.load('kkutu_ko (landgrab index)', function (timeout, done) {
-		var q = DB.kkutu.ko.find().limit(['hit', true]);
+		// indexDocs가 공백을 뺀 글자 수 2~4만 쓰므로, 같은 조건으로 DB에서 미리 거른다
+		var q = DB.kkutu.ko.find(['_id', /^(\s*\S){2,4}\s*$/]).limit(['hit', true]);
 		if (timeout) q.timeout(timeout);
 		q.on(function (docs) {
 			indexDocs(docs || [], '');

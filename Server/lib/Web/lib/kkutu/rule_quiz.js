@@ -18,19 +18,22 @@
 
 $lib.Quiz = {};
 
-// 문제 표시 영역의 텍스트가 너무 길면 글자 크기를 자동으로 줄임
+// 문제 표시 영역 폭에 딱 맞는 가장 큰 글자 크기를 찾음 (classic/free와 같은 20px가 최대, 넘칠 때만 줄어듦)
 function fitQuizDisplay() {
 	var $el = $stage.game.display;
 	var el = $el[0];
 	if (!el) return;
-	var maxSize = 20;
-	var minSize = 10;
-	var BUFFER = 5; // scrollWidth/clientWidth는 정수로 반올림되어 실제 폭과 오차가 생길 수 있어 여유값을 둠
-	$el.css({ 'font-size': maxSize + 'px', 'white-space': 'nowrap' });
-	while (el.scrollWidth > el.clientWidth - BUFFER && maxSize > minSize) {
-		maxSize -= 1;
-		$el.css('font-size', maxSize + 'px');
+	var lo = 10;
+	var hi = 20;
+	$el.css('white-space', 'nowrap');
+	while (lo < hi) {
+		var mid = Math.ceil((lo + hi) / 2);
+		$el.css('font-size', mid + 'px');
+		// 넘치지 않으면 scrollWidth == clientWidth이므로 여유값을 빼면 항상 넘치는 것으로 판정됨
+		if (el.scrollWidth > el.clientWidth) hi = mid - 1;
+		else lo = mid;
 	}
+	$el.css('font-size', lo + 'px');
 }
 
 $lib.Quiz.roundReady = function (data) {
