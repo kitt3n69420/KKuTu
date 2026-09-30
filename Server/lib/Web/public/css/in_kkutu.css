@@ -312,7 +312,7 @@ iframe {
 	width: 100px;
 	text-align: center;
 }
-야 해.ADBox
+
 .dialog-bar-value {
 	width: calc(100% - 100px) !important;
 	text-align: left !important;
@@ -3012,6 +3012,58 @@ body.dark-mode .cw-cell.sd-wrong {
 	margin: 0 1px 1px 0;
 	font-size: 11px;
 	padding: 0px;
+}
+
+/* ===== 플레이어 스크롤 옵션 (클라이언트 옵션): 인원수와 무관하게 기본(~8명) 카드 UI 유지 + 스크롤 ===== */
+/* 모레미 카드: 한 줄 유지, 9번째부터 가로 스크롤. 기본 카드는 세로로 180px 컨테이너보다 커서(margin 포함 191px)
+   overflow 때문에 잘리지 않도록 컨테이너를 키우고 margin-bottom 음수로 flow 높이는 그대로(180px) 둔다. */
+.game-body.player-scroll:not(.cw) {
+	flex-wrap: nowrap;
+	justify-content: flex-start;
+	align-items: flex-start;
+	overflow-x: auto;
+	overflow-y: hidden;
+	height: 196px;
+	margin-bottom: -16px;
+	scrollbar-width: thin;
+}
+
+.game-body.player-scroll:not(.cw)::-webkit-scrollbar {
+	height: 6px;
+}
+
+.game-body.player-scroll:not(.cw)::-webkit-scrollbar-thumb {
+	border-radius: 3px;
+}
+
+.game-body.player-scroll:not(.cw) .game-user {
+	flex: 0 0 auto;
+}
+
+/* 8명 이하일 때는 가운데 정렬(justify-content:center는 넘칠 때 왼쪽이 잘려 스크롤 불가라서 auto margin 사용) */
+.game-body.player-scroll:not(.cw) .game-user:first-child {
+	margin-left: auto;
+}
+
+.game-body.player-scroll:not(.cw) .game-user:last-child {
+	margin-right: auto;
+}
+
+/* 큰 보드 모드(이름만 목록): 1열 유지 + 세로 스크롤. 8줄(30px x 8) 높이 확보, flow 높이는 그대로 */
+.cw.game-body.player-scroll {
+	height: 240px;
+	margin-bottom: -60px;
+	overflow-y: auto;
+	overflow-x: hidden;
+	scrollbar-width: thin;
+}
+
+.cw.game-body.player-scroll::-webkit-scrollbar {
+	width: 6px;
+}
+
+.cw.game-body.player-scroll::-webkit-scrollbar-thumb {
+	border-radius: 3px;
 }
 
 /* QuickDiag - Special Rules Grid Layout (4 columns like room settings) */

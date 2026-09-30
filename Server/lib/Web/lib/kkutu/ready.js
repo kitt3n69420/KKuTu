@@ -930,6 +930,9 @@ $(document).ready(function () {
 		// 흔들림 없애기 설정 (기본 꺼짐)
 		$("#no-shake").prop('checked', ($data.opts && $data.opts.ns === true));
 
+		// 플레이어 스크롤 설정 (기본 꺼짐)
+		$("#player-scroll").prop('checked', ($data.opts && $data.opts.ps === true));
+
 		// 이스터에그 끄기 설정 (기본 꺼짐)
 		$("#no-easter-egg").prop('checked', savedSettings.noEasterEgg === true);
 		// 봇 설정 자동 적용 (기본 꺼짐)
@@ -1379,7 +1382,7 @@ $(document).ready(function () {
 		// Hide Special Rules Panel if empty
 		if (!$data._injpick) $data._injpick = [];
 		if (!$data._quizpick) $data._quizpick = [];
-		if (rule.rule == "Typing" || rule.rule == "Chainbattle" || rule.rule == "Flip") $("#room-round").val(3);
+		if (rule.rule == "Typing" || rule.rule == "Chainbattle" || rule.rule == "Flip" || rule.rule == "numberclap") $("#room-round").val(3);
 		$("#room-time").children("option").each(function (i, o) {
 			$(o).html(Number($(o).val()) * rule.time + L['SECOND']);
 		});
@@ -1935,6 +1938,7 @@ $(document).ready(function () {
 		var previousSoundPack = $data.opts.sp || "";
 		var previousLevelPack = $data.opts.lp || "";
 		var previousNoEasterEgg = loadVolumeSettings().noEasterEgg === true;
+		var previousPlayerScroll = !!($data.opts && $data.opts.ps);
 		var newSoundPack = $("#sound-pack").val();
 		var newLevelPack = $("#level-pack").val();
 		var newLobbyBGM = $("#lobby-bgm").val();
@@ -1959,6 +1963,7 @@ $(document).ready(function () {
 			srv: $("#simple-room-view").is(":checked"),
 			nf: $("#no-filter").is(":checked"),
 			ns: $("#no-shake").is(":checked"),
+			ps: $("#player-scroll").is(":checked"),
 			sp: newSoundPack,
 			lp: newLevelPack
 		};
@@ -2068,6 +2073,11 @@ $(document).ready(function () {
 		// 흔들림 끄기 옵션 즉시 적용
 		if ($data.opts.ns) {
 			$(".shake").removeClass("shake").css("animation-duration", "");
+		}
+
+		// 플레이어 스크롤 옵션 변경 시 대기실 카드 UI 즉시 다시 그림 (게임 중에는 다음 라운드 렌더부터 반영)
+		if (previousPlayerScroll !== $data.opts.ps && $data.room && !$data.room.gaming && previousLevelPack === newLevelPack) {
+			updateRoom(false);
 		}
 
 		// 레벨 아이콘 팩 변경 시 리렌더링

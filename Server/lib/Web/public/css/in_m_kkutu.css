@@ -1795,11 +1795,24 @@ body.dark-mode .cw-cell.sd-wrong {
    남아서 240px로 늘림(넘치는 줄은 스크롤). 1~8명(기본)과 cw(큰 보드)는 그대로.
    overflow-y:auto만 쓰면 overflow-x도 auto가 되어 가로 스크롤이 생길 수 있어 x는 숨김. */
 .game-body.small-mode:not(.cw),
-.game-body.name-2col:not(.cw) {
+.game-body.name-2col:not(.cw),
+.game-body.player-scroll:not(.cw) {
 	/* 박스는 240px로 그리되 아래 마진 -60px로 flow상 높이는 180px만 차지하게 해서
 	   늘어난 만큼 채팅창이 밀려 내려가지 않고 빈 공간 위에 겹쳐 그려지게 함 */
 	margin-bottom: -60px;
 	height: 240px;
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
+/* 플레이어 스크롤 옵션: 기본(~8명) 행 UI 유지 + 세로 스크롤. 세로 스크롤바가 생기므로 행 폭이 넘치지 않게 함 */
+.game-body.player-scroll .game-user {
+	width: calc(100% - 6px);
+}
+
+.cw.game-body.player-scroll {
+	height: 240px;
+	margin-bottom: -60px;
 	overflow-y: auto;
 	overflow-x: hidden;
 }

@@ -145,7 +145,7 @@ block Middle
 			button.raingame-strategy-btn(data-strategy='2', data-tooltip=L('raingameStrategy2Desc'), data-lang-attr-data-tooltip='raingameStrategy2Desc')
 				i.fa.fa-reply.StratIcon
 				span.StratName(data-lang-key='raingameStrategy2')= L('raingameStrategy2')
-	+Dialog('SettingDiag', 300, 500, 'settingsText')
+	+Dialog('SettingDiag', 300, 525, 'settingsText')
 		div.dialog-bar
 			div.dialog-opt(style="width: 100%;")
 				label(for='mute-bgm', style='float: left; width: 100px; text-align: center; padding-top: 5px;', data-lang-key='bgm')= L('bgm')
@@ -173,10 +173,13 @@ block Middle
 
 		div.dialog-bar
 			h4(data-lang-key='visual')= L('visual')
-			+SettingOption('simple-room-view', 'simpleRoomView', "width: 100px;")
-			+SettingOption('show-rule-category', 'showRuleCategory', "width: 100px;")
-			+SettingOption('no-shake', 'noShake', "width: 100px;")
-			+SettingOption('no-filter', 'noFilter', "width: 100px;")
+			+SettingOption('simple-room-view', 'simpleRoomView', "width: 110px;")
+			+SettingOption('show-rule-category', 'showRuleCategory', "width: 110px;")
+			h4(style="clear: both;")
+			+SettingOption('no-shake', 'noShake', "width: 110px;")
+			+SettingOption('no-filter', 'noFilter', "width: 110px;")
+			h4(style="clear: both;")
+			+SettingOption('player-scroll', 'playerScroll', "width: 150px;")
 		div.dialog-bar
 			h4(data-lang-key='etc')= L('etc')
 			//- +SettingOption('sort-user', L('sortUser'), "width: 200px;")

@@ -1039,6 +1039,9 @@ $(document).ready(function () {
 		// 흔들림 없애기 설정 (기본 꺼짐)
 		$("#no-shake").prop('checked', ($data.opts && $data.opts.ns === true));
 
+		// 플레이어 스크롤 설정 (기본 꺼짐)
+		$("#player-scroll").prop('checked', ($data.opts && $data.opts.ps === true));
+
 		// 이스터에그 끄기 설정 (기본 꺼짐)
 		$("#no-easter-egg").prop('checked', savedSettings.noEasterEgg === true);
 		// 봇 설정 자동 적용 (기본 꺼짐)
@@ -2044,6 +2047,7 @@ $(document).ready(function () {
 		var previousSoundPack = $data.opts.sp || "";
 		var previousLevelPack = $data.opts.lp || "";
 		var previousNoEasterEgg = loadVolumeSettings().noEasterEgg === true;
+		var previousPlayerScroll = !!($data.opts && $data.opts.ps);
 		var newSoundPack = $("#sound-pack").val();
 		var newLevelPack = $("#level-pack").val();
 		var newLobbyBGM = $("#lobby-bgm").val();
@@ -2068,6 +2072,7 @@ $(document).ready(function () {
 			srv: $("#simple-room-view").is(":checked"),
 			nf: $("#no-filter").is(":checked"),
 			ns: $("#no-shake").is(":checked"),
+			ps: $("#player-scroll").is(":checked"),
 			sp: newSoundPack,
 			lp: newLevelPack
 		};
@@ -2177,6 +2182,11 @@ $(document).ready(function () {
 		// 흔들림 끄기 옵션 즉시 적용
 		if ($data.opts.ns) {
 			$(".shake").removeClass("shake").css("animation-duration", "");
+		}
+
+		// 플레이어 스크롤 옵션 변경 시 대기실 카드 UI 즉시 다시 그림 (게임 중에는 다음 라운드 렌더부터 반영)
+		if (previousPlayerScroll !== $data.opts.ps && $data.room && !$data.room.gaming && previousLevelPack === newLevelPack) {
+			updateRoom(false);
 		}
 
 		// 레벨 아이콘 팩 변경 시 리렌더링
@@ -7441,19 +7451,22 @@ function drawChainResult(table) {
 
 $lib.Quiz = {};
 
-// 문제 표시 영역의 텍스트가 너무 길면 글자 크기를 자동으로 줄임
+// 문제 표시 영역 폭에 딱 맞는 가장 큰 글자 크기를 찾음 (classic/free와 같은 20px가 최대, 넘칠 때만 줄어듦)
 function fitQuizDisplay() {
 	var $el = $stage.game.display;
 	var el = $el[0];
 	if (!el) return;
-	var maxSize = 20;
-	var minSize = 10;
-	var BUFFER = 5; // scrollWidth/clientWidth는 정수로 반올림되어 실제 폭과 오차가 생길 수 있어 여유값을 둠
-	$el.css({ 'font-size': maxSize + 'px', 'white-space': 'nowrap' });
-	while (el.scrollWidth > el.clientWidth - BUFFER && maxSize > minSize) {
-		maxSize -= 1;
-		$el.css('font-size', maxSize + 'px');
+	var lo = 10;
+	var hi = 20;
+	$el.css('white-space', 'nowrap');
+	while (lo < hi) {
+		var mid = Math.ceil((lo + hi) / 2);
+		$el.css('font-size', mid + 'px');
+		// 넘치지 않으면 scrollWidth == clientWidth이므로 여유값을 빼면 항상 넘치는 것으로 판정됨
+		if (el.scrollWidth > el.clientWidth) hi = mid - 1;
+		else lo = mid;
 	}
+	$el.css('font-size', lo + 'px');
 }
 
 $lib.Quiz.roundReady = function (data) {
@@ -10676,6 +10689,7 @@ function applyOptions(opt) {
 	$("#simple-room-view").prop('checked', ($data.opts.srv !== undefined) ? $data.opts.srv : true);
 	$("#no-filter").prop('checked', ($data.opts.nf !== undefined) ? $data.opts.nf : true);
 	$("#no-shake").prop('checked', ($data.opts.ns === true));
+	$("#player-scroll").prop('checked', ($data.opts.ps === true));
 
 	// 사운드팩 설정 (localStorage에 값이 있으면 localStorage, 없으면 cookie)
 	var soundPack = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts.sp || "");
@@ -12387,6 +12401,76 @@ function getAIProfile(level) {
 		image: "/img/kkutu/robot.png"
 	};
 }
+// 플레이어 스크롤 옵션(클라이언트 옵션, $data.opts.ps)
+function isPlayerScroll() {
+	return !!($data.opts && $data.opts.ps === true);
+}
+// 플레이어 스크롤: 카드를 .game-body 안에서만 스크롤해 중앙에 오게 함 (0.2초 애니메이션)
+// scrollLeft/scrollTop은 0~최대 범위로 제한하므로 영역을 넘지 않음
+var PLAYER_SCROLL_TURN_RULES = ["Classic", "Hunmin", "Daneo", "Free", "Calcrelay", "Fourrelay", "Numberclap"]; // game-user-current로 차례를 표시하는 턴제 규칙
+function isTurnBasedRule() {
+	var rule = $data.room && RULE[MODE[$data.room.mode]];
+	return !!rule && PLAYER_SCROLL_TURN_RULES.indexOf(rule.rule) >= 0;
+}
+function centerPlayerCard(c) {
+	var $b = $(".GameBox .game-body");
+	if (!c || !$b.hasClass("player-scroll")) return;
+	var b = $b[0];
+	var br = b.getBoundingClientRect(), cr = c.getBoundingClientRect();
+	var horizontal = !mobile && !$b.hasClass("cw");
+	var prop = horizontal ? "scrollLeft" : "scrollTop";
+	var max = horizontal ? b.scrollWidth - b.clientWidth : b.scrollHeight - b.clientHeight;
+	var delta = horizontal
+		? (cr.left + cr.width / 2) - (br.left + br.width / 2)
+		: (cr.top + cr.height / 2) - (br.top + br.height / 2);
+	var to = Math.max(0, Math.min(max, b[prop] + delta));
+	var anim = {};
+	anim[prop] = to;
+	$b.stop(true).animate(anim, 200);
+}
+// 턴제 규칙: 현재 차례 카드를 중앙으로 (game-user-current 클래스는 규칙 파일마다 따로 붙이므로 MutationObserver로 한 곳에서 감지)
+function scrollToCurrentPlayer() {
+	var $b = $(".GameBox .game-body");
+	if (!$b.hasClass("player-scroll") || !isTurnBasedRule()) return;
+	var c = $b.find(".game-user-current")[0];
+	if (c === $data._psLastCurrent) return; // 같은 카드에 대한 클래스 변경(점수 등)으로는 다시 스크롤하지 않음
+	$data._psLastCurrent = c;
+	centerPlayerCard(c);
+}
+// 턴제가 아닌 규칙(및 첫 렌더 직후): 내 카드를 중앙으로
+function scrollToMyPlayer() {
+	centerPlayerCard(document.getElementById("game-user-" + $data.id));
+}
+function bindPlayerScrollWatcher(el) {
+	if (!el || $data._psObserved === el) return;
+	if ($data._psObserver) $data._psObserver.disconnect();
+	$data._psObserved = el;
+	if (window.MutationObserver) {
+		$data._psObserver = new MutationObserver(scrollToCurrentPlayer);
+		$data._psObserver.observe(el, { attributes: true, attributeFilter: ['class'], subtree: true });
+	}
+	// 데스크톱 가로 스크롤: 마우스 휠(세로)을 가로 스크롤로 변환
+	$(el).on('wheel', function (e) {
+		var oe = e.originalEvent;
+		if (mobile || !$(this).hasClass("player-scroll") || $(this).hasClass("cw")) return;
+		if (!oe.deltaY || oe.deltaX || this.scrollWidth <= this.clientWidth) return;
+		$(this).stop(true); // 진행 중인 중앙 정렬 애니메이션 중단
+		this.scrollLeft += oe.deltaY;
+		e.preventDefault();
+	});
+}
+// 말풍선 기준 위치가 스크롤로 컨테이너 밖에 있는 카드면, 스크롤 방향 축으로만 컨테이너 안으로 끌어당김
+function clampPlayerScrollOffset(offset, $card) {
+	var $gb = $(".GameBox .game-body"), go = $gb.offset();
+	if (!go || !$card.length) return offset;
+	var r = { top: offset.top, left: offset.left };
+	if (!mobile && !$gb.hasClass("cw")) {
+		r.left = Math.max(go.left, Math.min(r.left, go.left + $gb.innerWidth() - $card.outerWidth()));
+	} else {
+		r.top = Math.max(go.top, Math.min(r.top, go.top + $gb.innerHeight() - $card.outerHeight()));
+	}
+	return r;
+}
 function updateRoom(gaming) {
 	var i, o, $r;
 	var $y, $z;
@@ -12396,6 +12480,8 @@ function updateRoom(gaming) {
 	var renderer = (mobile || rule.big) ? miniGameUserBar : normalGameUserBar;
 	var spec;
 	var arAcc = false, allReady = true;
+	// 플레이어 스크롤 옵션: 켜져 있으면 인원수와 무관하게 기본(~8명) 카드 UI를 유지하고 넘치면 스크롤
+	var _ps = isPlayerScroll();
 
 	setRoomHead($(".RoomBox .product-title"), $data.room);
 	setRoomHead($(".GameBox .product-title"), $data.room);
@@ -12404,15 +12490,18 @@ function updateRoom(gaming) {
 
 	if (gaming) {
 		$r = $(".GameBox .game-body").empty();
+		bindPlayerScrollWatcher($r[0]);
+		$data._psLastCurrent = undefined;
 		// Apply appropriate CSS class based on mode and player count
 		if (rule.big) {
 			$(".jjoriping,.rounds,.game-body").addClass("cw");
+			$r.toggleClass("player-scroll", _ps);
 			$r.removeClass("small-mode"); // small-mode는 모레미 카드 전용 클래스라 큰 보드 모드에서는 절대 쓰지 않음(이름만 목록과 이름 충돌 방지)
 			// 큰 보드 모드(이름만 목록)도 13명부터 2열이 되어 실제 줄 수가 늘어나므로,
 			// 그 줄 수(인원수/2 올림)가 9줄 이상(=17명↑)이면 더 촘촘한 행 스타일(cw-dense)을 쓴다
 			var _seqLenCw = $data.room.game.seq.length;
 			var _effectiveRowsCw = (_seqLenCw >= 13) ? Math.ceil(_seqLenCw / 2) : _seqLenCw;
-			if (_effectiveRowsCw >= 9) {
+			if (_effectiveRowsCw >= 9 && !_ps) {
 				$r.addClass("cw-dense");
 			} else {
 				$r.removeClass("cw-dense");
@@ -12420,11 +12509,12 @@ function updateRoom(gaming) {
 		} else {
 			$(".jjoriping,.rounds,.game-body").removeClass("cw");
 			$r.removeClass("cw-dense");
+			$r.toggleClass("player-scroll", _ps);
 			var _seqLen = $data.room.game.seq.length;
 			// 모바일: 13명부터 2열이 되며, 13~20명은 지금 16명 이하가 쓰는(일반) 패널 크기를 그대로 쓰고
 			// 21명부터만 축소된 small-mode 패널을 쓴다. 13명 미만은 기존과 동일하게 9명부터 small-mode.
 			// 데스크톱(모레미 카드): 기존과 동일하게 9명부터 small-mode.
-			var _useSmall = (mobile && _seqLen >= 13) ? (_seqLen >= 21) : (_seqLen >= 9);
+			var _useSmall = !_ps && ((mobile && _seqLen >= 13) ? (_seqLen >= 21) : (_seqLen >= 9));
 			if (_useSmall) {
 				$r.addClass("small-mode");
 			} else {
@@ -12434,7 +12524,7 @@ function updateRoom(gaming) {
 			// small-mode 카드를 쓰고, 15명부터는 2줄 전용으로 촘촘하게 재배치한 카드를 씀.
 			// 카드 폭은 항상 24명(12+12) 기준으로 고정(CSS). 위/아래 줄 인원이 균등하도록(홀수면 위쪽에
 			// 1명 더) 위쪽 줄 인원수만 --moremi-top으로 넘기면 CSS가 컨테이너 좌우 여백으로 줄바꿈 지점을 맞춘다.
-			if (!mobile && _seqLen >= 15) {
+			if (!mobile && _seqLen >= 15 && !_ps) {
 				$r.addClass("moremi-dense");
 				var _topCount = Math.ceil(_seqLen / 2);
 				// jQuery .css()는 버전에 따라 커스텀 프로퍼티(--변수)를 제대로 못 다룰 수 있어 DOM API로 직접 설정
@@ -12445,7 +12535,7 @@ function updateRoom(gaming) {
 			}
 		}
 		// 이름만 나오는 목록(모바일 및 큰 보드 모드) 13명부터 2열 표시 — cw/small-mode와 무관하게 인원수만으로 토글
-		if ($data.room.game.seq.length >= 13) {
+		if ($data.room.game.seq.length >= 13 && !_ps) {
 			$(".game-body").addClass("name-2col");
 		} else {
 			$(".game-body").removeClass("name-2col");
@@ -12499,12 +12589,14 @@ function updateRoom(gaming) {
 				applySurvivalKODisplay(o.id);
 			}
 		}
+		if (_ps) scrollToMyPlayer();
 		clearTimeout($data._jamsu);
 		delete $data._jamsu;
 	} else {
 		$r = $(".room-users").empty();
 		$r.removeClass("small-mode size-5col size-6col size-6col-4row");
-		if ($data.room.players.length >= 19) $r.addClass("size-6col-4row");
+		if (_ps) { /* 플레이어 스크롤: 기본 카드 크기 유지 */ }
+		else if ($data.room.players.length >= 19) $r.addClass("size-6col-4row");
 		else if ($data.room.players.length >= 16) $r.addClass("size-6col");
 		else if ($data.room.players.length >= 13) $r.addClass("size-5col");
 		else if ($data.room.players.length >= 9) $r.addClass("small-mode");
@@ -13113,7 +13205,7 @@ function clearBoard() {
 	}
 	$(".jjoriping").css({ "float": "", "margin": "" });
 	// Small-mode class is managed by updateRoom() based on player count, don't remove it here
-	$stage.game.display.removeClass("raingame-board").empty();
+	$stage.game.display.removeClass("raingame-board").css({ 'white-space': '', 'font-size': '' }).empty();
 	$stage.game.chain.hide();
 	$stage.game.hints.empty().hide();
 	$stage.game.cwcmd.hide();
@@ -13760,7 +13852,7 @@ function chatBalloon(text, id, flag) {
 	var img = (flag == 2) ? "chat-balloon-bot" : "chat-balloon-tip";
 	var $obj = $("<div>").addClass("chat-balloon");
 	var targetWidth = 0;
-	if ((flag & 2) && $data.room && $data.room.game && $data.room.game.seq && $data.room.game.seq.length > 8) {
+	if ((flag & 2) && $data.room && $data.room.game && $data.room.game.seq && $data.room.game.seq.length > 8 && !isPlayerScroll()) {
 		$obj.addClass("small-balloon");
 		var $target = $("#game-user-" + id);
 		if ($target.length) targetWidth = $target.width();
@@ -13771,6 +13863,7 @@ function chatBalloon(text, id, flag) {
 	var ot, ol;
 
 	if (!offset) return;
+	if ((flag & 2) && isPlayerScroll()) offset = clampPlayerScrollOffset(offset, $("#game-user-" + id));
 	$stage.balloons.append($obj);
 	if (flag == 1) ot = 0, ol = 220;
 	else if (flag == 2) ot = 35 - $obj.height(), ol = -2;
