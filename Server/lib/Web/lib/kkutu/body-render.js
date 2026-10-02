@@ -1444,6 +1444,12 @@ function playBGM(key, force) {
 
 	return $data.bgm = playSound(key, true);
 }
+// 나가도 라운드가 끝나지 않는(ewq가 거짓인) 게임 모드는 진행 중인 BGM이 게임 그 자체라서, 설정 저장 등으로 끊지 않아야 함
+function isGameBGMKept() {
+	var r = $data.room && $data.room.gaming && RULE[MODE[$data.room.mode]];
+
+	return !!r && !r.ewq;
+}
 function stopBGM() {
 	var old = $data.bgm;
 	$data.bgm = null;
@@ -1500,9 +1506,11 @@ function stopAllSounds() {
 	for (i in $_sound) $_sound[i].stop();
 }
 function changeSoundPack(newPackName, callback) {
-	// 현재 재생 중인 BGM 중지
-	stopBGM();
-	stopAllSounds();
+	// 현재 재생 중인 BGM/소리 중지 (리듬/자음퀴즈 진행 중에는 $_sound에 든 BGM도 끊기므로 통째로 유지)
+	if (!isGameBGMKept()) {
+		stopBGM();
+		stopAllSounds();
+	}
 
 	// 사운드 팩 목록 가져오기
 	$.get("/soundpacks", function (packs) {

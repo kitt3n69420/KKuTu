@@ -3515,16 +3515,108 @@ body.dark-mode .bonus {
 }
 .rhythm-panel {
 	position: relative;
+	z-index: 1;
 	overflow: hidden;
 	box-sizing: border-box;
-	border: 3px solid #FFFFFF;
+	border: 3px solid rgba(255, 255, 255, 0.5);
 	border-radius: 6px;
 	background-color: rgba(255, 255, 255, 0.12);
 	touch-action: none;
 	cursor: pointer;
 }
-.rhythm-panel:active {
+/* 관전자: 클릭해도 눌린 모양이 나오지 않음 */
+.rhythm-spec .rhythm-panel {
+	pointer-events: none;
+	cursor: default;
+}
+.rhythm-panel:active,
+.rhythm-panel.rhythm-down {
 	background-color: rgba(255, 255, 255, 0.3);
+}
+/* 시작 직전 데스크톱 키 안내: 각 패널 중앙 (D/R, K/U, F, J) */
+.rhythm-key {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	width: 100%;
+	margin-top: -24px;
+	text-align: center;
+	font-size: 44px;
+	line-height: 48px;
+	font-weight: bold;
+	color: #FFFFFF;
+	text-shadow: 0 0 4px #000000;
+	pointer-events: none;
+}
+/* 조작 안내(Click!/Touch!, 키 표시): 서서히 나타났다 사라짐. 길이는 JS에서 곡 시작까지로 지정 */
+.rhythm-fade {
+	animation-name: rhythm-fade;
+	animation-timing-function: ease-in-out;
+	animation-fill-mode: both;
+}
+.rhythm-count.rhythm-fade {
+	font-size: 40px;
+}
+/* 콤보: 판 중앙에 숫자만, 패널 뒤(.rhythm-panel의 z-index가 더 높음)에 반투명으로. 페이드인 없이 작아지며 0.3초 동안 사라짐 */
+.rhythm-combo {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 0;
+	width: max-content;
+	max-width: 100%;
+	text-align: center;
+	font-size: 110px;
+	line-height: 110px;
+	font-weight: bold;
+	color: #FFFFFF;
+	pointer-events: none;
+	animation: rhythm-combo 300ms ease-out forwards;
+}
+/* 마지막 스플래시: 풀 콤보(하늘색) / 올 퍼펙트(파스텔 무지개 그라데이션), 1초 */
+.rhythm-finish {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 3;
+	width: max-content;
+	max-width: 100%;
+	text-align: center;
+	white-space: nowrap;
+	font-size: 34px;
+	font-weight: bold;
+	pointer-events: none;
+	animation: rhythm-finish 1s ease-out forwards;
+}
+.rhythm-fc {
+	color: #6EC8FF;
+	text-shadow: 0 0 6px #000000;
+}
+.rhythm-allp {
+	color: transparent;
+	background: linear-gradient(90deg, #FFB3BA, #FFDFBA, #FFFFBA, #BAFFC9, #BAE1FF, #E0BBFF);
+	-webkit-background-clip: text;
+	background-clip: text;
+	filter: drop-shadow(0 0 3px #000000);
+}
+@keyframes rhythm-finish {
+	0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+	15% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+	25% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+	75% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+	100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes rhythm-combo {
+	0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.4); }
+	100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes rhythm-fade {
+	0% { opacity: 0; }
+	25% { opacity: 1; }
+	70% { opacity: 1; }
+	100% { opacity: 0; }
 }
 .rhythm-marker {
 	position: absolute;
@@ -3538,7 +3630,7 @@ body.dark-mode .bonus {
 }
 /* 마커 색: 정박=흰색(기본), 8분음표 엇박=분홍, 16분음표 엇박=파랑 */
 .rhythm-m1 { border-color: #FF7EC8; }
-.rhythm-m2 { border-color: #3E8BFF; }
+.rhythm-m2 { border-color: #7ee5f3; }
 /* 패널 번호별 모서리: 1=좌상, 2=우상, 3=좌하, 4=우하 테두리만 표시.
    확대 기준점은 4패널 판의 정중앙 (패널 모서리에서 테두리 3px + 간격 절반 3px 만큼 바깥) */
 .rhythm-c0 { border-right-width: 0; border-bottom-width: 0; transform-origin: calc(100% + 6px) calc(100% + 6px); }
@@ -3562,7 +3654,7 @@ body.dark-mode .bonus {
 .rhythm-j0 { color: #4FD8FF; }
 .rhythm-j1 { color: #4BE05A; }
 .rhythm-j2 { color: #FF4B4B; }
-.rhythm-j3 { color: #FF8CCF; }
+.rhythm-j3 { color: #b8b8b8; }
 @keyframes rhythm-splash {
 	0% { transform: scale(0.6); opacity: 1; }
 	30% { transform: scale(1.1); opacity: 1; }

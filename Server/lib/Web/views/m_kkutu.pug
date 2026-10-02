@@ -145,7 +145,7 @@ block Middle
 			button.raingame-strategy-btn(data-strategy='2', data-tooltip=L('raingameStrategy2Desc'), data-lang-attr-data-tooltip='raingameStrategy2Desc')
 				i.fa.fa-reply.StratIcon
 				span.StratName(data-lang-key='raingameStrategy2')= L('raingameStrategy2')
-	+Dialog('SettingDiag', 300, 525, 'settingsText')
+	+Dialog('SettingDiag', 300, 605, 'settingsText')
 		div.dialog-bar
 			div.dialog-opt(style="width: 100%;")
 				label(for='mute-bgm', style='float: left; width: 100px; text-align: center; padding-top: 5px;', data-lang-key='bgm')= L('bgm')
@@ -232,6 +232,11 @@ block Middle
 			h4(data-lang-key='lobbyBgm')= L('lobbyBgm')
 			select#lobby-bgm(style="width: 150px;")
 				option(value="", data-lang-key='default')= L('default')
+		div.dialog-bar
+			h4(data-lang-key='rhythmSync')= L('rhythmSync')
+			input#rhythm-sync(type='range', min='-300', max='300', step='5', value='0', style='margin-top: 0px; float: left; width: 105px;')
+			div#rhythm-sync-val(style='float: left; width: 70px; padding: 3px 0 0 8px; text-align: left;') 0 ms
+			div(style='clear: both; width: 100%; padding: 4px 10px 0 10px; box-sizing: border-box; font-size: 12px;', data-lang-key='rhythmSyncExpl')= L('rhythmSyncExpl')
 		div.dialog-bar.tail-button
 			button#setting-ok(data-lang-key='save')= L('save')
 			button#setting-server(data-lang-key='changeServer')= L('changeServer')

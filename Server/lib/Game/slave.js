@@ -340,6 +340,20 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (!temp.gaming || !temp.game || temp.game.late || !temp.rule || temp.rule.rule !== "Rhythm") return;
       temp.route("hit", $c, msg);
       break;
+    case "xrgMiss":
+      // 리듬 게임: 노트를 놓친 시각(곡 기준 ms). 서버가 그 시각으로 미스를 정산해 감점을 바로 반영
+      if ($c.subPlace) temp = $c.pracRoom;
+      else if (!(temp = ROOM[$c.place])) return;
+      if (!temp.gaming || !temp.game || temp.game.late || !temp.rule || temp.rule.rule !== "Rhythm") return;
+      temp.route("miss", $c, msg);
+      break;
+    case "xrgDone":
+      // 리듬 게임: 마지막 노트를 처리(미스 포함)했다는 끝 신호. 모든 참가자의 신호가 모이면 라운드를 조기 종료
+      if ($c.subPlace) temp = $c.pracRoom;
+      else if (!(temp = ROOM[$c.place])) return;
+      if (!temp.gaming || !temp.game || temp.game.late || !temp.rule || temp.rule.rule !== "Rhythm") return;
+      temp.route("done", $c, msg);
+      break;
     case "yell":
       if (!msg.value) return;
       if (!validateInput(msg.value, "string", { maxLength: 200 })) return;

@@ -901,6 +901,11 @@ $(document).ready(function () {
 		$(".bgmVolume").val((isFinite(bgmVol) ? bgmVol : 1) * 100);
 		$(".effectVolume").val((isFinite(effVol) ? effVol : 1) * 100);
 
+		// 리듬 싱크 보정 슬라이더 (ms, 기본 0)
+		var rhythmSync = Number(savedSettings.rhythmSync);
+		if (!isFinite(rhythmSync)) rhythmSync = 0;
+		$("#rhythm-sync").val(rhythmSync).trigger('input');
+
 		// 음소거 체크박스 설정
 		var bgmMute = savedSettings.bgmMute !== null ? savedSettings.bgmMute : $data.muteBGM;
 		var effMute = savedSettings.effectMute !== null ? savedSettings.effectMute : $data.muteEff;
@@ -1984,7 +1989,8 @@ $(document).ready(function () {
 			jaAutoConvert: $("#ja-auto-convert").is(":checked"),
 			theme: newTheme,
 			darkMode: newDarkMode,
-			beatMode: newBeatMode
+			beatMode: newBeatMode,
+			rhythmSync: Number($("#rhythm-sync").val()) || 0
 		});
 		ACTIVE_BEAT = resolveActiveBeat(newBeatMode, newSoundPack);
 
@@ -2045,11 +2051,13 @@ $(document).ready(function () {
 		};
 
 		var reloadBGM = function (url) {
-			// 현재 재생 중인 BGM 중지
-			var old = $data.bgm;
-			$data.bgm = null;
-			if (old) {
-				old.stop();
+			// 현재 재생 중인 BGM 중지 (리듬/자음퀴즈 진행 중에는 그 게임의 BGM이므로 끊지 않음)
+			if (!isGameBGMKept()) {
+				var old = $data.bgm;
+				$data.bgm = null;
+				if (old) {
+					old.stop();
+				}
 			}
 
 			// $sound 캐시 업데이트
@@ -2249,6 +2257,11 @@ $(document).ready(function () {
 		}
 	});
 
+	$("#rhythm-sync").on('input change', function () {
+		var v = Number($(this).val()) || 0;
+
+		$("#rhythm-sync-val").text((v > 0 ? "+" : "") + v + " ms");
+	});
 	$("#mute-bgm").on('click', function () {
 		$data.muteBGM = !$data.muteBGM;
 		saveVolumeSettings({ bgmMute: $data.muteBGM }); // localStorage에 즉시 저장

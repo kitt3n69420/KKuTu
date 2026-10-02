@@ -121,8 +121,8 @@ exports.OPTIONS = {
 	'shf': { name: "Shuffle" },    // 공정랜덤: 셔플 후 한 명씩 술래
 	'stp': { name: "Stop" },       // 멈춰!: 슉슉 글자 이동 정지, 경험치 40%로 감소
 	'rnm': { name: "RandomNumber" }, // 랜덤 숫자: 369 게임에서 라운드마다 박수 대상 숫자 3개를 무작위로 뽑음
-	'rex': { name: "RhythmEasy" },  // 리듬: 이지 채보 사용 (rhd와 동시 선택 시 노멀)
-	'rhd': { name: "RhythmHard" }   // 리듬: 하드 채보 사용
+	'rhd': { name: "RhythmHard" },  // 리듬: 하드 옵션 = 노멀 채보 사용
+	'rcz': { name: "RhythmCrazy" }  // 리듬: 크레이지 옵션 = 하드 채보 사용 (rhd와 동시 선택 시 크레이지)
 
 };
 
@@ -883,14 +883,14 @@ exports.RULE = {
 		survival: false
 	},
 
-	// 리듬 게임: 2x2 4키 채보를 BGM에 맞춰 누르는 비턴제 모드. 1라운드 60초 고정, 봇 없음.
-	// 채보 난이도: 기본 노멀, rex=이지, rhd=하드. 판정은 클라이언트, 서버는 검증·합산
+	// 리듬 게임: 2x2 4키 채보를 BGM에 맞춰 누르는 비턴제 모드. 1라운드 60초 고정. 봇은 레벨별 지연/편차/오타 확률로 노트를 침(rhythm.js).
+	// 채보 난이도: 기본 이지, rhd=노멀 채보, rcz=하드 채보. 판정은 서버가 클라이언트의 타격 시각으로 함
 	'XRG': {
 		lang: "etc",
 		rule: "Rhythm",
-		opts: ["rex", "rhd"],
+		opts: ["rhd", "rcz"],
 		time: 1,
-		ai: false,
+		ai: true,
 		big: true,
 		ewq: false,
 		survival: false
