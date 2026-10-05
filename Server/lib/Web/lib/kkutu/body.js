@@ -54,7 +54,7 @@ function send(type, data, toMaster) {
 	}
 
 	// Exempt 'draw' and 'test' from spam counter
-	if (type != "test" && type != "draw" && type != "fill" && type != "team" && type != "xrgHit" && type != "xrgSync") if (spamCount++ > 10) {
+	if (type != "test" && type != "draw" && type != "fill" && type != "team" && type != "xrgHit" && type != "xrgSync" && type != "rtpHit" && type != "rtpMiss") if (spamCount++ > 10) {
 		if (++spamWarning >= 3) return subj.close();
 		spamCount = 5;
 	}
@@ -749,6 +749,7 @@ function onMessage(data) {
 			break;
 		case 'xrgSync':
 			if ($lib.Rhythm && $lib.Rhythm.onSync) $lib.Rhythm.onSync(data);
+			if ($lib.Rtype && $lib.Rtype.onSync) $lib.Rtype.onSync(data);
 			break;
 		case 'raingameWord':
 			if ($lib.Raingame && $lib.Raingame.onWord) $lib.Raingame.onWord(data);
@@ -1011,6 +1012,49 @@ function onMessage(data) {
 				}
 			}
 			notice(L[data.code + 'Body'], L[data.code]);
+			break;
+		case 'lateJoinAsk':
+			// 게임 중 참여 방 입장: [참여] → 관전으로 들어간 뒤 참여 / [관전] → 관전만 / 닫기 → 입장하지 않음
+			(function (target, queue) {
+				var enterAs = function (join) {
+					$stage.dialog.lateJoin.hide();
+					stopBGM();
+					$data._spectate = true;
+					$data._gaming = true;
+					send('enter', { id: target, password: $data._pw, spectate: true, lateJoin: join }, true);
+				};
+				$stage.dialog.lateJoinText.html(escapeContent(L[queue ? 'lateJoinAskQueue' : 'lateJoinAsk']).replace(/\n/g, '<br>'));
+				$stage.dialog.lateJoinOK.off('click').on('click', function () { enterAs(true); });
+				$stage.dialog.lateJoinSpectate.off('click').on('click', function () { enterAs(false); });
+				showDialog($stage.dialog.lateJoin);
+			})(data.target, data.queue);
+			break;
+		case 'lateJoinQueued':
+		case 'lateJoinClosed':
+			notice(L[data.type]);
+			break;
+		case 'lateJoin':
+			// 누군가 게임 중 참여: seq를 갱신하고 카드를 다시 그린다 (인원에 따라 카드 레이아웃이 바뀔 수 있음).
+			// 기존 카드는 떼어 두었다가 그대로 끼워 넣어 점수·현재 차례 강조·아이템 대기 표시를 보존한다
+			if ($data.room && $data.room.game && data.seq) {
+				var $ljOld = {}, ljGoals = {}, ljId;
+				$(".GameBox .game-body").children("[id^='game-user-']").each(function () {
+					ljId = this.id.slice(10);
+					if ($data["_s" + ljId]) ljGoals[ljId] = $data["_s" + ljId].goal;
+					$ljOld[this.id] = $(this).detach();
+				});
+				$data.room.game.seq = data.seq;
+				if (data.id == $data.id) $data._spectate = false;
+				updateRoom(true);
+				for (var ljKey in $ljOld) {
+					var $ljNew = $("#" + ljKey);
+					if ($ljNew.length) $ljNew.replaceWith($ljOld[ljKey]);
+				}
+				for (ljId in ljGoals) updateScore(ljId, ljGoals[ljId]);
+				updateScore(data.id, 0);
+				var ljUser = $data.users[data.id];
+				notice(L['lateJoinNotice'].replace("{0}", ljUser ? getDisplayName(ljUser) : data.id));
+			}
 			break;
 		default:
 			break;
@@ -1519,12 +1563,26 @@ function processRoom(data) {
 					$lib.Rhythm.roundReady(data.rhythm, true);
 					if (data.rhythm.startAt) $lib.Rhythm.turnStart({ startAt: data.rhythm.startAt, now: data.rhythm.now });
 				}
+				if (data.rtype) {
+					$lib.Rtype.roundReady(data.rtype, true);
+					if (data.rtype.startAt) $lib.Rtype.turnStart({ startAt: data.rtype.startAt, now: data.rtype.now });
+				}
 				if (data.condition) {
 					$lib.Wordcollect.roundReady(data, true);
 					$data._maps = data.words || [];
 					$lib.Wordcollect.drawMaps();
 					if (typeof data.roundTime === 'number') {
 						$lib.Wordcollect.turnStart({ roundTime: data.roundTime });
+					}
+				}
+				// 그 밖의 모드: 서버가 보관한 마지막 roundReady/turnStart를 그대로 재생해 라운드·제시어·미션·남은 시간을 보여줌
+				if (data.specRound) {
+					var replayRule = RULE[MODE[data.room.mode]];
+					var replayLib = replayRule && $lib[replayRule.rule];
+					if (replayLib && replayLib.roundReady) {
+						replayLib.roundReady(data.specRound, true);
+						if (typeof data.chain == 'number') $stage.game.chain.html($data.chain = data.chain);
+						if (data.specTurn && replayLib.turnStart) replayLib.turnStart(data.specTurn);
 					}
 				}
 			}
@@ -2435,6 +2493,7 @@ function clearGame() {
 	$(".jjoriping,.game-body").removeClass("center-board");
 	$(".jjoriping,.rounds,.game-body").removeClass("wordcollect wc-round-active");
 	if ($lib.Rhythm) $lib.Rhythm.cleanup();
+	if ($lib.Rtype) $lib.Rtype.cleanup();
 	if ($data._wcNight) {
 		$data._wcNight.remove();
 		$data._wcNight = null;
@@ -2761,6 +2820,7 @@ function clearBoard() {
 	$(".jjoriping,.game-body").removeClass("center-board");
 	$(".jjoriping,.rounds,.game-body").removeClass("wordcollect wc-round-active");
 	if ($lib.Rhythm) $lib.Rhythm.cleanup();
+	if ($lib.Rtype) $lib.Rtype.cleanup();
 	if ($data._wcNight) {
 		$data._wcNight.remove();
 		$data._wcNight = null;

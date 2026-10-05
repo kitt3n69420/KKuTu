@@ -207,6 +207,7 @@ $lib.Flip._getOwnerTeam = function (ownerId) {
 $lib.Flip.roundReady = function (data, spec) {
 	clearBoard();
 	$data._relay = true;
+	$data._chatter = $stage.talk;
 	$(".jjoriping,.rounds,.game-body").addClass("cw");
 	$(".jjoriping,.game-body").addClass("flip");
 	$data._board = data.board;
@@ -231,6 +232,7 @@ $lib.Flip.turnStart = function (data) {
 	clearInterval($data._tTime);
 	$data._roundTime = data.roundTime;
 	$data._tTime = addInterval(turnGoing, TICK);
+	if (!$data._spectate && !$data._spaced) $lib.Typing.spaceOn();
 	playBGM('jaqwi');
 };
 $lib.Flip.turnEnd = function (id, data) {
@@ -244,6 +246,7 @@ $lib.Flip.turnEnd = function (id, data) {
 	// 라운드 종료 — 점수 표시
 	if (data.ok === false) {
 		$data._relay = false;
+		if ($data._spaced) $lib.Typing.spaceOff();
 		clearInterval($data._tTime);
 		stopBGM();
 		playSound('horr');

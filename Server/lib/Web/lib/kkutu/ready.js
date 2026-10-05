@@ -208,6 +208,10 @@ $(document).ready(function () {
 			confirmText: $("#confirm-text"),
 			confirmOK: $("#confirm-ok"),
 			confirmNo: $("#confirm-no"),
+			lateJoin: $("#LateJoinDiag"),
+			lateJoinText: $("#late-join-text"),
+			lateJoinOK: $("#late-join-ok"),
+			lateJoinSpectate: $("#late-join-spectate"),
 			alert: $("#AlertDiag"),
 			alertText: $("#alert-text"),
 			alertOK: $("#alert-ok"),
@@ -1224,7 +1228,7 @@ $(document).ready(function () {
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp', 'dic', 'arc'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg', 'flu', 'jkp', 'dfb'];
-		var keyRules = ['man', 'gen', 'ext', "jre", "jdk", 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'lng', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'chs', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf', 'stp', 'rnm'];
+		var keyRules = ['man', 'gen', 'ext', "jre", "jdk", 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'lng', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'ljn', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf', 'stp', 'rnm'];
 
 		if (showCategory) {
 			// Categorized view - hide flat panel, show category panels
@@ -1411,7 +1415,7 @@ $(document).ready(function () {
 			$("#room-round-label").text(mobile ? L['numRound'] : L['roundSetting']);
 		}
 		// 달가루 모으기: 라운드 1 / 60초 고정, 사용자가 바꿀 수 없게 잠금
-		if (rule.rule === "Wordcollect" || rule.rule === "Rhythm") {
+		if (rule.rule === "Wordcollect" || rule.rule === "Rhythm" || rule.rule === "Rtype") {
 			$("#room-round").val(1).prop('disabled', true);
 			$("#room-time").val(60).prop('disabled', true);
 		} else {
@@ -1477,6 +1481,19 @@ $(document).ready(function () {
 	});
 	window.RULE_CHECKBOXES['chaos'].on('change', function () {
 		if ($(this).is(':checked')) window.RULE_CHECKBOXES['item'].prop('checked', false);
+	});
+
+	// 게임 중 참여 - 쿵쿵따 체인지/서바이벌 상호배타 (인원이 바뀌면 교대 주기·생존 판정이 깨짐)
+	window.RULE_CHECKBOXES['latejoin'].on('change', function () {
+		if ($(this).is(':checked')) {
+			window.RULE_CHECKBOXES['change'].prop('checked', false);
+			window.RULE_CHECKBOXES['survival'].prop('checked', false);
+		}
+	});
+	['change', 'survival'].forEach(function (opt) {
+		window.RULE_CHECKBOXES[opt].on('change', function () {
+			if ($(this).is(':checked')) window.RULE_CHECKBOXES['latejoin'].prop('checked', false);
+		});
 	});
 
 	// 도돌이 금지 - 첫말잇기/랜덤잇기 상호배타
@@ -1637,7 +1654,7 @@ $(document).ready(function () {
 
 		// 4. 라운드/서바이벌 설정을 규칙이 허용하는 범위 내에서 랜덤화
 		// 달가루 모으기는 라운드 1 / 60초로 고정이므로 랜덤화 대상에서 제외
-		if (rule.rule !== "Wordcollect" && rule.rule !== "Rhythm") {
+		if (rule.rule !== "Wordcollect" && rule.rule !== "Rhythm" && rule.rule !== "Rtype") {
 			var survivalOn = !!rule.survival || !!target['survival'];
 			if (survivalOn) {
 				var hpOptions = [200, 500, 1000, 2000];

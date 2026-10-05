@@ -34,6 +34,7 @@ const KKUTU_LIST = [
     "lib/Web/lib/kkutu/rule_raingame.js",
     "lib/Web/lib/kkutu/rule_wordstack.js",
     "lib/Web/lib/kkutu/rule_rhythm.js",
+    "lib/Web/lib/kkutu/rule_rtype.js",
     "lib/Web/lib/kkutu/body-render.js",
     "lib/Web/lib/kkutu/body.js",
     "lib/Web/lib/kkutu/tail.js"

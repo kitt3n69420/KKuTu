@@ -122,7 +122,8 @@ exports.OPTIONS = {
 	'stp': { name: "Stop" },       // 멈춰!: 슉슉 글자 이동 정지, 경험치 40%로 감소
 	'rnm': { name: "RandomNumber" }, // 랜덤 숫자: 369 게임에서 라운드마다 박수 대상 숫자 3개를 무작위로 뽑음
 	'rhd': { name: "RhythmHard" },  // 리듬: 하드 옵션 = 노멀 채보 사용
-	'rcz': { name: "RhythmCrazy" }  // 리듬: 크레이지 옵션 = 하드 채보 사용 (rhd와 동시 선택 시 크레이지)
+	'rcz': { name: "RhythmCrazy" }, // 리듬: 크레이지 옵션 = 하드 채보 사용 (rhd와 동시 선택 시 크레이지)
+	'ljn': { name: "LateJoin" }    // 게임 중 참여: 게임 진행 중 들어온 사람도 경기에 참여 (LATE_JOIN_RULES의 모드만, kch/sur와 함께 사용 불가)
 
 };
 
@@ -254,7 +255,7 @@ exports.RULE = {
 	'EKT': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "fho", "alp", "itm", "chs"],
+		opts: ["man", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "fho", "alp", "itm", "chs", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -264,7 +265,7 @@ exports.RULE = {
 	'ESH': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -274,7 +275,7 @@ exports.RULE = {
 	'KKT': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "kch", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "rdu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm", "chs", "nsw", "flu", "dfb"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "kch", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "rdu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm", "chs", "nsw", "flu", "dfb", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -284,7 +285,7 @@ exports.RULE = {
 	'KSH': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "rdu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "nsw", "flu", "jkp", "dfb"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "rdu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "nsw", "flu", "jkp", "dfb", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -294,7 +295,7 @@ exports.RULE = {
 	'CSQ': {
 		lang: "ko",
 		rule: "Jaqwi",
-		opts: ["ijp", "vow", "unl", "drg"],
+		opts: ["ijp", "vow", "unl", "drg", "ljn"],
 		time: 0.5,
 		ai: true,
 		big: false,
@@ -314,7 +315,7 @@ exports.RULE = {
 	'KTY': {
 		lang: "ko",
 		rule: "Typing",
-		opts: ["prv", "mir", "one", "lng", "ln2", "ln5", "drg"],
+		opts: ["prv", "mir", "one", "lng", "ln2", "ln5", "drg", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -324,7 +325,7 @@ exports.RULE = {
 	'ETY': {
 		lang: "en",
 		rule: "Typing",
-		opts: ["prv", "mir", "one", "lng", "drg"],
+		opts: ["prv", "mir", "one", "lng", "drg", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -334,7 +335,7 @@ exports.RULE = {
 	'KAP': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "rdu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "nsw", "flu", "jkp", "dfb"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "rdu", "vin", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "nsw", "flu", "jkp", "dfb", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -345,7 +346,7 @@ exports.RULE = {
 	'EAP': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs"],
+		opts: ["man", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "stt", "fir", "ran", "bbg", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -357,7 +358,7 @@ exports.RULE = {
 	'HUN': {
 		lang: "ko",
 		rule: "Hunmin",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god", "rnt", "sur", "obo", "fho", "itm", "chs", "nsw"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "str", "one", "ret", "spd", "drg", "ln3", "bbg", "nar", "god", "rnt", "sur", "obo", "fho", "itm", "chs", "nsw", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -367,16 +368,16 @@ exports.RULE = {
 	'KDA': {
 		lang: "ko",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm", "chs", "nsw"],
+		opts: ["ijp", "mis", "mpl", "eam", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm", "chs", "nsw", "ljn"],
 		time: 1,
 		ai: true,
-		ewq: false,
+		ewq: true,
 		survival: false
 	},
 	'EDA': {
 		lang: "en",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm", "chs"],
+		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm", "chs", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -386,7 +387,7 @@ exports.RULE = {
 	'KSS': {
 		lang: "ko",
 		rule: "Sock",
-		opts: ["no2", "big", "drg", "apl", "nsw"],
+		opts: ["no2", "big", "drg", "apl", "nsw", "ljn"],
 		time: 1,
 		ai: true,
 		big: true,
@@ -396,7 +397,7 @@ exports.RULE = {
 	'ESS': {
 		lang: "en",
 		rule: "Sock",
-		opts: ["no2", "big", "drg"],
+		opts: ["no2", "big", "drg", "ljn"],
 		time: 1,
 		ai: true,
 		big: true,
@@ -416,7 +417,7 @@ exports.RULE = {
 	'KSC': {
 		lang: "ko",
 		rule: "Jaqwi",
-		opts: ["ijp", "unl", "drg"],
+		opts: ["ijp", "unl", "drg", "ljn"],
 		time: 0.5,
 		ai: true,
 		big: false,
@@ -426,7 +427,7 @@ exports.RULE = {
 	'KFR': {
 		lang: "ko",
 		rule: "Free",
-		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm", "chs", "nsw"],
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm", "chs", "nsw", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -436,7 +437,7 @@ exports.RULE = {
 	'EFR': {
 		lang: "en",
 		rule: "Free",
-		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm", "chs"],
+		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm", "chs", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -446,7 +447,7 @@ exports.RULE = {
 	'EKK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "rnt", "sur", "obo", "alp", "itm", "chs"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "rnt", "sur", "obo", "alp", "itm", "chs", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -466,7 +467,7 @@ exports.RULE = {
 	'KAK': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "kch", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "rdu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm", "chs", "nsw", "flu", "dfb"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "k32", "k22", "k44", "k43", "kch", "unk", "one", "ret", "mid", "sch", "fdu", "ndu", "rdu", "vin", "spd", "drg", "spt", "fir", "ran", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "alp", "itm", "chs", "nsw", "flu", "dfb", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -477,7 +478,7 @@ exports.RULE = {
 	'EAK': {
 		lang: "en",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "sur", "obo", "alp", "itm", "chs"],
+		opts: ["man", "gen", "shi", "etq", "dod", "ext", "mis", "rdm", "unk", "one", "ret", "mid", "sch", "spd", "drg", "spt", "fir", "ran", "ln3", "ln4", "ln6", "ln7", "bbg", "sur", "obo", "alp", "itm", "chs", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -488,7 +489,7 @@ exports.RULE = {
 	'KKU': {
 		lang: "ko",
 		rule: "Classic",
-		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "mid", "sch", "spd", "drg", "stt", "fir", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "fho", "alp", "itm", "chs"],
+		opts: ["man", "gen", "shi", "etq", "ext", "mis", "mpl", "eam", "rdm", "loa", "str", "unk", "one", "mid", "sch", "spd", "drg", "stt", "fir", "bbg", "nar", "god", "apd", "rnt", "sur", "obo", "fho", "alp", "itm", "chs", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -509,7 +510,7 @@ exports.RULE = {
 	'KCB': {
 		lang: "ko",
 		rule: "Chainbattle",
-		opts: ["ext", "str", "loa", "one", "drg"],
+		opts: ["ext", "str", "loa", "one", "drg", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -519,7 +520,7 @@ exports.RULE = {
 	'ECB': {
 		lang: "en",
 		rule: "Chainbattle",
-		opts: ["ext", "one", "drg"],
+		opts: ["ext", "one", "drg", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -529,7 +530,7 @@ exports.RULE = {
 	'CAL': {
 		lang: "etc",
 		rule: "Calcbattle",
-		opts: ["one", "drg", "obk"],
+		opts: ["one", "drg", "obk", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -539,7 +540,7 @@ exports.RULE = {
 	'KQZ': {
 		lang: "ko",
 		rule: "Quiz",
-		opts: ["qij", "qz1", "qz2", "qz3", "drg"],
+		opts: ["qij", "qz1", "qz2", "qz3", "drg", "ljn"],
 		time: 0.1,
 		ai: true,
 		big: false,
@@ -549,7 +550,7 @@ exports.RULE = {
 	'EQZ': {
 		lang: "en",
 		rule: "Quiz",
-		opts: ["qij", "qz1", "qz2", "qz3", "drg"],
+		opts: ["qij", "qz1", "qz2", "qz3", "drg", "ljn"],
 		time: 0.1,
 		ai: true,
 		big: false,
@@ -559,7 +560,7 @@ exports.RULE = {
 	'ESQ': {
 		lang: "en",
 		rule: "Jaqwi",
-		opts: ["ijp", "unl", "drg"],
+		opts: ["ijp", "unl", "drg", "ljn"],
 		time: 0.5,
 		ai: true,
 		big: false,
@@ -590,7 +591,7 @@ exports.RULE = {
 		lang: "ko",
 		rule: "Classic",
 		opts: ["ext", "mis", "rdm", "loa", "str", "one", "ret", "spd", "drg",
-			"bbg", "nar", "god", "rnt", "sur", "obo", "itm", "chs", "nsw"],
+			"bbg", "nar", "god", "rnt", "sur", "obo", "itm", "chs", "nsw", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -640,7 +641,7 @@ exports.RULE = {
 	'KTT': {
 		lang: "ko",
 		rule: "Typing",
-		opts: ["ijp", "mir", "lng", "ln2", "ln5", "drg"],
+		opts: ["ijp", "mir", "lng", "ln2", "ln5", "drg", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -650,7 +651,7 @@ exports.RULE = {
 	'ETT': {
 		lang: "en",
 		rule: "Typing",
-		opts: ["ijp", "mir", "lng", "drg"],
+		opts: ["ijp", "mir", "lng", "drg", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -662,7 +663,7 @@ exports.RULE = {
 		rule: "Free",
 		opts: ["ijp", "mis", "mpl", "eam", "rdm", "one", "ret", "spd", "drg",
 			"stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2",
-			"obo", "itm", "chs", "nsw"],
+			"obo", "itm", "chs", "nsw", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -673,7 +674,7 @@ exports.RULE = {
 		lang: "en",
 		rule: "Free",
 		opts: ["ijp", "mis", "rdm", "one", "ret", "spd", "drg", "stt", "bbg",
-			"nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm", "chs"],
+			"nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm", "chs", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -683,7 +684,7 @@ exports.RULE = {
 	'KSK': {
 		lang: "ko",
 		rule: "Shuk",
-		opts: ["drg", "stp"],
+		opts: ["drg", "stp", "ljn"],
 		time: 1,
 		ai: true,
 		big: true,
@@ -693,7 +694,7 @@ exports.RULE = {
 	'ESK': {
 		lang: "en",
 		rule: "Shuk",
-		opts: ["drg", "stp"],
+		opts: ["drg", "stp", "ljn"],
 		time: 1,
 		ai: true,
 		big: true,
@@ -737,7 +738,7 @@ exports.RULE = {
 	'CNC': {
 		lang: "etc",
 		rule: "Numberclap",
-		opts: ["one", "rnt", "chs", "spd", "rnm"],
+		opts: ["one", "rnt", "chs", "spd", "rnm", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -758,7 +759,7 @@ exports.RULE = {
 		lang: "ja",
 		rule: "Classic",
 		// mid/sch/fir(가운데말잇기/세컨드/첫말잇기 링크 지점 변경 옵션)는 v1 범위 밖이라 의도적으로 제외
-		opts: ["dod", "ext", "mis", "rdm", "unk", "one", "ret", "spd", "drg", "spt", "stt", "bbg", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "jre", "jdk"],
+		opts: ["dod", "ext", "mis", "rdm", "unk", "one", "ret", "spd", "drg", "spt", "stt", "bbg", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "jre", "jdk", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -768,7 +769,7 @@ exports.RULE = {
 	'JAP': {
 		lang: "ja",
 		rule: "Classic",
-		opts: ["dod", "ext", "mis", "rdm", "unk", "one", "ret", "spd", "drg", "spt", "stt", "bbg", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "jre", "jdk"],
+		opts: ["dod", "ext", "mis", "rdm", "unk", "one", "ret", "spd", "drg", "spt", "stt", "bbg", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "alp", "itm", "chs", "jre", "jdk", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -780,7 +781,7 @@ exports.RULE = {
 	'JKT': {
 		lang: "ja",
 		rule: "Classic",
-		opts: ["dod", "ext", "mis", "rdm", "unk", "one", "ret", "spd", "drg", "spt", "bbg", "rnt", "sur", "obo", "fho", "alp", "itm", "chs", "jre", "jdk", "k32", "k22", "k44", "k43", "kch"],
+		opts: ["dod", "ext", "mis", "rdm", "unk", "one", "ret", "spd", "drg", "spt", "bbg", "rnt", "sur", "obo", "fho", "alp", "itm", "chs", "jre", "jdk", "k32", "k22", "k44", "k43", "kch", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -791,7 +792,7 @@ exports.RULE = {
 	'JTY': {
 		lang: "ja",
 		rule: "Typing",
-		opts: ["mir", "one", "lng", "ln2", "ln5", "drg"],
+		opts: ["mir", "one", "lng", "ln2", "ln5", "drg", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -802,7 +803,7 @@ exports.RULE = {
 	'JDA': {
 		lang: "ja",
 		rule: "Daneo",
-		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm", "chs"],
+		opts: ["ijp", "mis", "rdm", "trp", "one", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "fho", "itm", "chs", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -813,7 +814,7 @@ exports.RULE = {
 	'JFR': {
 		lang: "ja",
 		rule: "Free",
-		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm", "chs"],
+		opts: ["ext", "mis", "rdm", "one", "unk", "ret", "spd", "drg", "stt", "bbg", "nar", "god", "rnt", "sur", "nol", "nos", "no2", "obo", "itm", "chs", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -824,7 +825,7 @@ exports.RULE = {
 	'JSS': {
 		lang: "ja",
 		rule: "Sock",
-		opts: ["no2", "big", "drg"],
+		opts: ["no2", "big", "drg", "ljn"],
 		time: 1,
 		ai: true,
 		big: true,
@@ -863,7 +864,7 @@ exports.RULE = {
 	'XBB': {
 		lang: "etc",
 		rule: "Free",
-		opts: ["mis", "rdm", "spd", "drg", "nar", "god", "rnt", "chs", "nsw"],
+		opts: ["mis", "rdm", "spd", "drg", "nar", "god", "rnt", "chs", "nsw", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -884,7 +885,7 @@ exports.RULE = {
 	},
 
 	// 리듬 게임: 2x2 4키 채보를 BGM에 맞춰 누르는 비턴제 모드. 1라운드 60초 고정. 봇은 레벨별 지연/편차/오타 확률로 노트를 침(rhythm.js).
-	// 채보 난이도: 기본 이지, rhd=노멀 채보, rcz=하드 채보. 판정은 서버가 클라이언트의 타격 시각으로 함
+	// 채보 난이도: 기본 이지, rhd=노멀 채보, rcz=하드 채보, 둘 다=인세인 채보. 판정은 서버가 클라이언트의 타격 시각으로 함
 	'XRG': {
 		lang: "etc",
 		rule: "Rhythm",
@@ -892,6 +893,19 @@ exports.RULE = {
 		time: 1,
 		ai: true,
 		big: true,
+		ewq: false,
+		survival: false
+	},
+
+	// 리듬 타이퍼: 4패널 치기의 곡/채보를 2마디 단위 그룹으로 나눠 그룹마다 단어(data/typewords.txt)를 배정하고,
+	// 자모 노트(그룹 마지막은 엔터)를 타이밍에 맞춰 입력하는 비턴제 모드. 1라운드 60초 고정. 난이도 옵션은 리듬 게임과 공용(rtype.js)
+	'KRT': {
+		lang: "ko",
+		rule: "Rtype",
+		opts: ["rhd", "rcz"],
+		time: 1,
+		ai: true,
+		big: false,
 		ewq: false,
 		survival: false
 	}
@@ -920,12 +934,18 @@ exports.GAME_CATEGORIES = {
 	},
 	'etc': {
 		name: 'GameCategoryEtc',
-		modes: ['KDA', 'EDA', 'JDA', 'HUN', 'KFR', 'EFR', 'JFR', 'KTF', 'ETF', 'CNC', 'XBB', 'XRG']
+		modes: ['KDA', 'EDA', 'JDA', 'HUN', 'KFR', 'EFR', 'JFR', 'KTF', 'ETF', 'CNC', 'XBB', 'XRG', 'KRT']
 	}
 };
 exports.GAME_TYPE = Object.keys(exports.RULE);
+// 게임 중 참여(ljn)를 지원하는 규칙과 참여 시점
+// turn: 즉시 참여 (seq 맨 끝, 라운드 사이면 다음 라운드부터) / round: 다음 라운드부터
+exports.LATE_JOIN_RULES = {
+	Classic: 'turn', Daneo: 'turn', Hunmin: 'turn', Free: 'turn', Numberclap: 'turn',
+	Quiz: 'round', Jaqwi: 'round', Typing: 'round', Sock: 'round', Shuk: 'round', Chainbattle: 'round', Calcbattle: 'round'
+};
 exports.EXAMPLE_TITLE = {
-	'ko': "이기자도지사상가소법",
+	'ko': "기자도지사상가이소법",
 	'en': "demography",
 	'ja': "いろはにほへとちりぬ"
 };

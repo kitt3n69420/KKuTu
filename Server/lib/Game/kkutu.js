@@ -608,45 +608,22 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 						Const.recordSurvivalKO(room, my);
 						room.byMaster('survivalKO', { target: my.id }, true);
 						var isTurn = room.game.turn == seqIndex;
-						clearTimeout(room.game.turnTimer);
-						clearTimeout(room.game.robotTimer);
-						clearTimeout(room.game._rrt);
+						// 정답 직후 틈이면 이미 예약된 turnNext가 다음 차례를 정한다 (다시 예약하면 다음 사람 차례가 건너뛰어짐)
+						var liveTurn = isTurn && !(room.game.late && room.game.inTurn);
 						var status = Const.checkSurvivalStatus(room, DIC);
-						if (status.gameOver) {
-							room.game._rrt = setTimeout(function () { if (room.gaming) room.roundEnd(); }, 2000);
-						} else if (isTurn) {
-							room.game.loading = false;
-							room.game._rrt = setTimeout(function () { if (room.gaming) room.turnNext(); }, 2000);
-						}
 						// 봇은 퇴장하므로 seq에서 제거하고 turn 인덱스 보정 (버그 #1 수정)
-						room.game.seq.splice(seqIndex, 1);
-						if (room.game.seq.length > 0) {
-							if (room.opts.randomturn) {
-								// randomturn: splice 후 stale 인덱스 방지를 위해 재생성 (alive 플레이어만)
-								room.game.randomTurnOrder = [];
-								room.game.randomTurnIndex = 0;
-								for (var rt = 0; rt < room.game.seq.length; rt++) {
-									var rp = DIC[room.game.seq[rt]] || room.game.seq[rt];
-									if (rp && rp.game && rp.game.alive) {
-										room.game.randomTurnOrder.push(rt);
-										room.game.randomTurnOrder.push(rt);
-									}
-								}
-								room.game.randomTurnOrder = shuffle(room.game.randomTurnOrder);
-								if (room.game.randomTurnOrder.length > 0) {
-									room.game.turn = room.game.randomTurnOrder[0];
-								}
-							} else {
-								if (isTurn) {
-									// 현재 턴 봇 제거: turn을 seqIndex-1로 맞춰 turnNext가 seqIndex를 가리키게 함
-									room.game.turn = (seqIndex - 1 + room.game.seq.length) % room.game.seq.length;
-								} else if (room.game.turn > seqIndex) {
-									// 현재 턴 앞의 봇 제거: 현재 턴 인덱스 보정
-									room.game.turn--;
-									if (room.game.turn < 0) room.game.turn = room.game.seq.length - 1;
-								}
-								if (room.game.turn >= room.game.seq.length) room.game.turn = 0;
-							}
+						// randomturn: 가방은 빠진 봇의 칸만 걸러냄 (다음 차례는 turnNext가 가방에서 뽑음)
+						room.spliceSeq(seqIndex, false);
+						if (status.gameOver) {
+							clearTimeout(room.game.turnTimer);
+							clearTimeout(room.game.robotTimer);
+							clearTimeout(room.game._rrt);
+							room.game._rrt = setTimeout(function () { if (room.gaming) room.roundEnd(); }, 2000);
+						} else if (liveTurn) {
+							// 현재 턴 봇 제거: 남은 타이머를 지우고 2초 뒤 다음 사람에게 넘김
+							// (남의 차례에 나간 경우는 그 사람의 타이머를 건드리지 않는다 — 예전에는 지워서 게임이 멈췄음)
+							room.game.loading = false;
+							room.skipLeftTurn(seqIndex);
 						}
 					} else {
 						// 비서바이벌 모드
@@ -655,27 +632,24 @@ exports.Robot = function (target, place, level, customName, personality, preferr
 							room.game.seq.splice(seqIndex, 1);
 							room.roundEnd();
 						} else {
-							if (isTurn && room.rule.ewq) {
+							var turnEndFailed = false;
+							// 이미 끝난 차례(late)면 turnEnd를 다시 부르지 않는다 (벌점·라운드 종료 중복 방지)
+							if (isTurn && room.rule.ewq && !room.game.late) {
 								clearTimeout(room.game._rrt);
 								room.game.loading = false;
-								if (Cluster.isWorker) room.turnEnd();
-							}
-							room.game.seq.splice(seqIndex, 1);
-							if (room.opts && room.opts.randomturn) {
-								room.game.randomTurnOrder = [];
-								room.game.randomTurnIndex = 0;
-								for (var rt = 0; rt < room.game.seq.length * 2; rt++) {
-									room.game.randomTurnOrder.push(rt % room.game.seq.length);
+								if (Cluster.isWorker) {
+									try {
+										room.turnEnd();
+									} catch (_e) {
+										// 예외로 아래 seq 정리가 건너뛰어지면 봇이 seq에 유령으로 남으므로 기록만 하고 계속한다
+										JLog.error(`[diag#4] rageQuit turnEnd THREW: ${_e && _e.stack || _e}`);
+										turnEndFailed = true;
+									}
 								}
-								room.game.randomTurnOrder = shuffle(room.game.randomTurnOrder);
-								room.game.turn = room.game.randomTurnOrder[0];
-							} else {
-								if (room.game.turn > seqIndex) {
-									room.game.turn--;
-									if (room.game.turn < 0) room.game.turn = room.game.seq.length - 1;
-								}
-								if (room.game.turn >= room.game.seq.length) room.game.turn = 0;
 							}
+							// randomturn: 가방은 빠진 봇의 칸만 걸러내고, 봇 차례가 시간 초과로 끝났으면 다음 첫 차례를 다시 뽑는다
+							room.spliceSeq(seqIndex, isTurn && room.rule.ewq && !turnEndFailed);
+							if (turnEndFailed) room.skipLeftTurn(seqIndex);
 						}
 					}
 				}
@@ -1121,7 +1095,7 @@ exports.Client = function (socket, profile, sid) {
 		}
 	};
 	my.enter = function (room, spec, pass) {
-		var $room, i;
+		var $room, i, askLateJoin = false;
 
 		if (my.place) {
 			my.send('roomStuck');
@@ -1141,12 +1115,22 @@ exports.Client = function (socket, profile, sid) {
 			}
 			if (!spec) {
 				if ($room.gaming) {
-					return my.send('error', { code: 416, target: $room.id });
+					// 게임 중 참여(ljn) 방에 자리가 있으면 바로 거절하지 않는다. 진행 단계(라운드 사이·마지막 라운드)는
+					// 워커만 알기 때문에 master는 워커 예약으로 넘기고, 워커가 아래에서 참여 여부를 묻는다
+					if (!$room.opts.latejoin || $room.practice || $room.countSeated() >= $room.limit || (my.guest && !GUEST_PERMISSION.enter)) {
+						return my.send('error', { code: 416, target: $room.id });
+					}
+					askLateJoin = true;
 				} else if (my.guest) if (!GUEST_PERMISSION.enter) {
 					return my.sendError(401);
 				}
 			}
-			if ($room.players.length >= $room.limit + (spec ? Const.MAX_OBSERVER : 0)) {
+			// 전체 인원은 정원 + 최대 관전자 수를 넘을 수 없고, 참가 입장은 정원 초과 관전자(O)를 뺀 인원으로 판정한다
+			// (O만 남은 자리가 있어도 players.length로 세면 빈자리가 있는데 막히던 문제)
+			if ($room.players.length >= $room.limit + Const.MAX_OBSERVER) {
+				return my.sendError(429);
+			}
+			if (!spec && $room.countSeated() >= $room.limit) {
 				return my.sendError(429);
 			}
 			if ($room.players.indexOf(my.id) != -1) {
@@ -1173,6 +1157,15 @@ exports.Client = function (socket, profile, sid) {
 						$room = undefined;
 						return my.sendError(403);
 					}
+				}
+				// 게임 중 참여: 바로 넣지 않고 먼저 묻는다 (참여/관전/취소 — 응답은 관전 입장 + lateJoin 플래그로 다시 옴).
+				// 그 사이 참여할 수 없게 됐으면(정원 초과·마지막 라운드 이후) 기존 관전 확인창
+				if (askLateJoin) {
+					var ljState = $room.getLateJoinState(my);
+					if (ljState === 'open' || ljState === 'queue') {
+						return my.send('lateJoinAsk', { target: $room.id, queue: ljState === 'queue' });
+					}
+					return my.send('error', { code: 416, target: $room.id });
 				}
 			}
 		} else if (my.guest && !GUEST_PERMISSION.enter) {
@@ -1217,7 +1210,11 @@ exports.Client = function (socket, profile, sid) {
 			}
 		}
 		if ($room) {
-			if (spec) $room.spectate(my, room.password);
+			if (spec) {
+				$room.spectate(my, room.password);
+				// 입장 확인창에서 [참여]를 고른 경우: 관전자로 들어온 뒤 참여 처리 (즉시/대기열/불가는 다시 판정)
+				if (room.lateJoin === true && Cluster.isWorker && !(my.guest && !GUEST_PERMISSION.enter)) $room.requestLateJoin(my);
+			}
 			else $room.come(my, room.password, pass);
 			$room.checkJamsu();
 		}
@@ -1515,14 +1512,4 @@ function getGuestName(sid) {
 		res += sid.charCodeAt(i) * (i + 1);
 	}
 	return "손님" + (1000 + (res % 9000));
-}
-function shuffle(arr) {
-	var r = arr.slice(); // 원본 배열 복사
-	for (var i = r.length - 1; i > 0; i--) {
-		var j = Math.floor(Math.random() * (i + 1));
-		var temp = r[i];
-		r[i] = r[j];
-		r[j] = temp;
-	}
-	return r;
 }

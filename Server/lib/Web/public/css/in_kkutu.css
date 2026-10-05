@@ -3968,7 +3968,7 @@ body.dark-mode .team-6 {
 .rhythm-count.rhythm-fade {
 	font-size: 40px;
 }
-/* 콤보: 판 중앙에 숫자만, 패널 뒤(.rhythm-panel의 z-index가 더 높음)에 반투명으로. 페이드인 없이 작아지며 0.3초 동안 사라짐 */
+/* 콤보: 판 중앙에 숫자만, 패널 뒤(.rhythm-panel의 z-index가 더 높음)에 반투명으로 계속 표시. 투명도는 고정, 콤보가 오를 때마다 살짝 커졌다 돌아옴 */
 .rhythm-combo {
 	position: absolute;
 	top: 50%;
@@ -3982,8 +3982,11 @@ body.dark-mode .team-6 {
 	line-height: 110px;
 	font-weight: bold;
 	color: #FFFFFF;
+	opacity: 0.3;
 	pointer-events: none;
-	animation: rhythm-combo 300ms ease-out forwards;
+}
+.rhythm-combo.rhythm-pop {
+	animation: rhythm-combo 120ms ease-out;
 }
 /* 마지막 스플래시: 풀 콤보(하늘색) / 올 퍼펙트(파스텔 무지개 그라데이션), 1초 */
 .rhythm-finish {
@@ -4020,8 +4023,8 @@ body.dark-mode .team-6 {
 	100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
 }
 @keyframes rhythm-combo {
-	0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.4); }
-	100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+	0% { transform: translate(-50%, -50%) scale(1.08); }
+	100% { transform: translate(-50%, -50%) scale(1); }
 }
 @keyframes rhythm-fade {
 	0% { opacity: 0; }
@@ -4106,3 +4109,68 @@ body.dark-mode .team-6 {
 	text-shadow: 0 0 8px #000000;
 	pointer-events: none;
 }
+
+/* 리듬 타이퍼 (KRT): 쪼리핑 표시창 안에서 자모 노트가 오른쪽 -> 왼쪽으로 흐르고, 가운데 초록 판정선에 닿는 순간이 판정 시점 */
+.jjo-display.rtype-display {
+	position: relative;
+	overflow: hidden;
+}
+.rtype-lane {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	pointer-events: none;
+}
+.rtype-line {
+	position: absolute;
+	top: 3px;
+	bottom: 3px;
+	left: 50%;
+	width: 3px;
+	margin-left: -1px;
+	z-index: 1;
+	background-color: #7EE07E;
+}
+/* 자모 글자는 자퀴 제시어와 같은 스타일(20px 흰 글씨). 판정 후 색: 퍼펙트 하늘 / 굿 초록 / 배드 빨강 / 미스 회색 */
+.rtype-note {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	width: 24px;
+	height: 24px;
+	margin: -12px 0 0 -12px;
+	z-index: 2;
+	line-height: 24px;
+	text-align: center;
+	font-size: 20px;
+	color: #FFFFFF;
+	will-change: transform;
+}
+.rtype-enter { font-size: 18px; }
+/* 표시창 가운데 글자(곡 이름/카운트다운, 풀 콤보/올 퍼펙트): 노트와 판정선 위에 겹침 */
+.rtype-msg {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 3;
+	max-width: calc(100% - 10px);
+	padding: 0 10px;
+	box-sizing: border-box;
+	border-radius: 6px;
+	line-height: 28px;
+	font-size: 20px;
+	font-weight: bold;
+	color: #FFFFFF;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	background-color: rgba(0, 0, 0, 0.85);
+	pointer-events: none;
+}
+.rtype-j0 { color: #4FD8FF; }
+.rtype-j1 { color: #4BE05A; }
+.rtype-j2 { color: #FF4B4B; }
+.rtype-j3 { color: #8C8C8C; }

@@ -19,6 +19,8 @@
 var Cluster = require("cluster");
 var JLog = require('../sub/jjlog');
 var Const = require('../const');
+// 중도 입장 스냅샷에 roundReady/turnStart 재생을 쓰지 않는 규칙 (전용 처리가 있거나 정답이 노출됨)
+var SPEC_REPLAY_SKIP = ["Crossword", "Landgrab", "Flip", "Center", "Sudoku", "Wordcollect", "Picture", "Rhythm", "Rtype"];
 var DB, DIC, ROOM, CHAN, Rule, checkSwearWords, censorSwearWords, narrate, publish, Robot, getEventMults, DiscordRelay;
 
 Room.setContext = function(ctx) {
@@ -478,6 +480,19 @@ function Room(room, channel) {
 		}
 	};
 
+	// 정원 계산용 인원: 참가자(J)+관전자(S)와 봇. 정원 초과로 들어온 관전자(O)는 제외한다.
+	// form은 getData와 같은 방식으로 읽는다 (워커는 client.form, 마스터는 user-publish로 받은 game.form)
+	my.countSeated = function () {
+		var n = 0, p, c, f;
+		for (var i in my.players) {
+			p = my.players[i];
+			if (typeof p === 'object') { n++; continue; }
+			c = DIC[p];
+			f = c ? (c.form || (c.game && c.game.form)) : null;
+			if (f !== "O") n++;
+		}
+		return n;
+	};
 	my.getData = function () {
 		var i, readies = {};
 		var pls = [];
@@ -622,7 +637,29 @@ function Room(room, channel) {
 				var removedBot = my.players[i];
 				if (my.gaming) {
 					j = my.game.seq.indexOf(removedBot);
-					if (j != -1) my.game.seq.splice(j, 1);
+					if (j != -1) {
+						// 예전에는 seq만 splice해서 turn/랜덤 턴 가방이 어긋남 (방장 퇴장 시 봇 일괄 제거 → 현재 차례 주인이 바뀜).
+						// 진행 중인 차례의 봇이 빠지면 사람이 나갈 때와 같게 그 차례를 끝낸다.
+						// 이미 끝난 차례(late)면 turnEnd를 다시 부르지 않는다 (일괄 제거 중 벌점/라운드 종료가 겹치지 않게).
+						var botTurn = my.game.turn == j;
+						var liveTurn = botTurn && !my.game.late;
+						var turnEnded = false;
+						if (liveTurn) {
+							clearTimeout(my.game.robotTimer);
+							if (my.rule.ewq && !my.opts.survival && Cluster.isWorker) {
+								clearTimeout(my.game._rrt);
+								my.game.loading = false;
+								try {
+									my.turnEnd();
+									turnEnded = true;
+								} catch (_e) {
+									JLog.error(`[diag#4] removeAI turnEnd THREW: ${_e && _e.stack || _e}`);
+								}
+							}
+						}
+						my.spliceSeq(j, botTurn && !my.opts.survival && (turnEnded || !liveTurn));
+						if (liveTurn && !turnEnded && Cluster.isWorker) my.skipLeftTurn(j);
+					}
 					// game.robots에서 제거 (roundEnd까지 참조가 남는 누수 방지)
 					if (my.game.robots) {
 						var ri = my.game.robots.indexOf(removedBot);
@@ -858,6 +895,9 @@ function Room(room, channel) {
 					delete my.game.pendingItems[client.id];
 					my.byMaster('item-dequeued', { playerId: client.id }, true);
 				}
+				// 퇴장자의 아이템 보유량/보너스 누적치도 정리 (게임이 끝날 때까지 키가 쌓이는 것 방지)
+				if (my.game.items) delete my.game.items[client.id];
+				if (my.game.bonusScore) delete my.game.bonusScore[client.id];
 
 				var seqIndex = my.game.seq.indexOf(client.id);
 				if (seqIndex != -1) {
@@ -907,7 +947,9 @@ function Room(room, channel) {
 
 							// 현재 턴인 경우 다음 턴으로 진행
 							var isTurn = my.game.turn == seqIndex;
-							if (isTurn && my.rule.ewq) {
+							// 다음 차례가 이미 예약됨: 정답 직후 틈, 또는 봇 일괄 제거(skipLeftTurn)로 차례가 퇴장자에게 넘어온 경우
+							var nextPending = my.game.late && my.game.inTurn;
+							if (isTurn && my.rule.ewq && !nextPending) {
 								clearTimeout(my.game._rrt);
 								my.game.loading = false;
 							}
@@ -945,8 +987,8 @@ function Room(room, channel) {
 										my.roundEnd();
 									}, 2000);
 								}
-							} else if (isTurn) {
-								// 다음 턴으로 진행
+							} else if (isTurn && !nextPending) {
+								// 다음 턴으로 진행 (이미 예약된 turnNext가 있으면 그게 KO된 퇴장자를 건너뛰므로 다시 예약하지 않는다)
 								clearTimeout(my.game.turnTimer);
 								clearTimeout(my.game.robotTimer);
 								clearTimeout(my.game._rrt);
@@ -971,38 +1013,26 @@ function Room(room, channel) {
 							my.roundEnd();
 						} else {
 							var isTurn = my.game.turn == seqIndex;
-							if (isTurn && my.rule.ewq) {
+							var turnEndFailed = false;
+							// 이미 끝난 차례(late)면 turnEnd를 다시 부르지 않는다 (벌점·라운드 종료 중복 방지.
+							// 예: 방장 퇴장으로 봇 차례가 먼저 끝난 뒤 차례가 방장 자리로 넘어온 경우)
+							if (isTurn && my.rule.ewq && !my.game.late) {
 								clearTimeout(my.game._rrt);
 								my.game.loading = false;
 								if (Cluster.isWorker) {
 									try {
 										my.turnEnd();
 									} catch (_e) {
+										// 다시 던지면 아래 seq 정리가 건너뛰어져 퇴장자가 seq에 유령으로 남는다
+										// (매 라운드 유령 차례가 시간 초과로 소모됨) — 기록만 하고 정리는 계속한다
 										JLog.error(`[diag#4] non-survival turnEnd THREW: ${_e && _e.stack || _e}`);
-										throw _e;
+										turnEndFailed = true;
 									}
 								}
 							}
-							my.game.seq.splice(seqIndex, 1);
-
-							// 랜덤 턴 모드: 배열 재생성
-							if (my.opts.randomturn) {
-								my.game.randomTurnOrder = [];
-								my.game.randomTurnIndex = 0;
-
-								for (var rt = 0; rt < my.game.seq.length * 2; rt++) {
-									my.game.randomTurnOrder.push(rt % my.game.seq.length);
-								}
-
-								my.game.randomTurnOrder = shuffle(my.game.randomTurnOrder);
-								my.game.turn = my.game.randomTurnOrder[0];
-							} else {
-								if (my.game.turn > seqIndex) {
-									my.game.turn--;
-									if (my.game.turn < 0) my.game.turn = my.game.seq.length - 1;
-								}
-								if (my.game.turn >= my.game.seq.length) my.game.turn = 0;
-							}
+							// 랜덤 턴: 가방은 빠진 사람만 걸러내고, 차례 주인이 나가 라운드가 끝났으면 다음 첫 차례를 다시 뽑는다
+							my.spliceSeq(seqIndex, isTurn && my.rule.ewq && !turnEndFailed);
+							if (turnEndFailed) my.skipLeftTurn(seqIndex);
 						}
 					}
 				}
@@ -1139,8 +1169,8 @@ function Room(room, channel) {
 			my.round = 1;
 			my.time = 60;
 		}
-		// 리듬 게임: 라운드 1, 제한시간 60초로 고정
-		if (my.rule && my.rule.rule === 'Rhythm') {
+		// 리듬 게임/리듬 타이퍼: 라운드 1, 제한시간 60초로 고정
+		if (my.rule && (my.rule.rule === 'Rhythm' || my.rule.rule === 'Rtype')) {
 			my.round = 1;
 			my.time = 60;
 		}
@@ -1224,6 +1254,97 @@ function Room(room, channel) {
 			my._teams = teams;
 			my.start();
 		} else DIC[my.master].sendError(412);
+	};
+	// 게임 참가자 한 명의 게임 상태 초기화 (게임 시작 시, 게임 중 참여 시 공용)
+	my.initGamePlayer = function (o, now) {
+		o.playAt = now;
+		o.ready = false;
+		// 서바이벌 모드: 점수 대신 체력으로 초기화
+		if (my.opts.survival) {
+			var survivalHP = my.opts.surHP || 500;
+			o.game.score = survivalHP;
+			o.game.alive = true;  // 생존 상태
+			o.game.survivalSubmitted = false;  // 단어 입력 여부 추적
+		} else {
+			o.game.score = 0;
+		}
+		o.game.bonus = 0;
+		o.game.survivalKOOrder = 0;
+		o.game.survivalDamageDealt = 0;
+		o.game.coopTurns = 0;
+		o.game.item = [/*0, 0, 0, 0, 0, 0*/];
+		o.game.wpc = [];
+		delete o.game.lastWord;
+		delete o.game.lastWordLen;
+		o.game.straightStreak = 0;
+		// 플레이어별 아이템 초기화 (항상)
+		var itemObj = { skip: 0, pass: 0, random: 0 };
+		if (my.game.seq.length > 2) itemObj.reverse = 0;
+		if (my.rule.rule === 'Classic') itemObj.linkChange = 0;
+		my.game.items[o.id] = itemObj;
+		my.game.bonusScore[o.id] = 0;
+		if (my.game.pendingItems[o.id]) delete my.game.pendingItems[o.id];
+	};
+	// ========== 게임 중 참여(ljn) ==========
+	// 참여 판정: 'open'(즉시) / 'queue'(다음 라운드부터) / 'full'(정원 초과) / 'closed'(참여 불가)
+	// 턴제는 라운드 진행 중이면 즉시, 라운드가 끝난 뒤 다음 라운드 준비 전이면 대기열.
+	// 라운드 단위 모드는 항상 다음 라운드부터. 마지막 라운드가 끝났거나(턴제)/진행 중이면(라운드 단위) 참여 불가.
+	my.getLateJoinState = function (client) {
+		var kind = my.rule && Const.LATE_JOIN_RULES[my.rule.rule];
+		var i, seated;
+
+		if (!my.gaming || my._roundEnding || my.practice || !my.opts.latejoin || !kind || !my.game.seq) return 'closed';
+		for (i in my.game.seq) if (my.game.seq[i] === client.id) return 'closed';
+		// 이미 관전자로 들어와 있으면 본인 자리는 빼고 센다
+		seated = my.countSeated();
+		if (my.players.indexOf(client.id) != -1 && client.form !== "O") seated--;
+		if (seated >= my.limit) return 'full';
+		if (kind === 'round' || my.game.roundOver) return (my.game.round >= my.round) ? 'closed' : 'queue';
+		return 'open';
+	};
+	// 관전자로 입장한 client의 참여 요청 처리 (입장 확인창 이후 다시 판정 — 그 사이 상태가 바뀌었을 수 있음)
+	my.requestLateJoin = function (client) {
+		var state = my.getLateJoinState(client);
+
+		if (state === 'open') {
+			my.lateJoin(client);
+		} else if (state === 'queue') {
+			if (my.game.lateQueue.indexOf(client.id) == -1) my.game.lateQueue.push(client.id);
+			client.send('lateJoinQueued', {});
+		} else {
+			client.send('lateJoinClosed', {});
+		}
+	};
+	// 관전자를 경기에 넣는다: seq 맨 끝(팀전이어도 개인 자격), 점수 0부터
+	my.lateJoin = function (client) {
+		var id;
+
+		client.cameWhenGaming = false;
+		client.setForm("J");
+		my.game.seq.push(client.id);
+		my.initGamePlayer(client, (new Date()).getTime());
+		// 2인 → 3인: 뒤로가기 아이템 칸이 새로 생김
+		if (my.game.seq.length === 3) {
+			for (id in my.game.items) if (my.game.items[id].reverse === undefined) my.game.items[id].reverse = 0;
+		}
+		if (my.opts.randomturn && my.game.randomTurnOrder) my.addToRandomBag(my.game.seq.length - 1);
+		if (typeof my.game.hum === 'number') my.game.hum++;
+		my.byMaster('lateJoin', { id: client.id, seq: my.game.seq.map(filterRobot) }, true);
+	};
+	// 대기열 반영: roundReady 첫머리에서, 다음 라운드가 있을 때만 호출
+	my.drainLateQueue = function () {
+		var queue = my.game.lateQueue || [];
+		var i, c, state;
+
+		my.game.lateQueue = [];
+		for (i = 0; i < queue.length; i++) {
+			c = DIC[queue[i]];
+			// 대기 중 나간 사람은 버린다
+			if (!c || c.place != my.id || my.players.indexOf(c.id) == -1) continue;
+			state = my.getLateJoinState(c);
+			if (state === 'open' || state === 'queue') my.lateJoin(c);
+			else c.send('lateJoinClosed', {});
+		}
 	};
 	my.start = function (pracLevel, personality, preferredChar, pracMuteGame, pracMuteLobby, pracCanRageQuit, pracFastMode) {
 		if (my._adt) { clearTimeout(my._adt); delete my._adt; }
@@ -1380,6 +1501,15 @@ function Room(room, channel) {
 		if (my.opts.item && my.opts.randomturn) {
 			my.opts.randomturn = false;
 		}
+		// 게임 중 참여 ↔ 쿵쿵따 체인지·서바이벌 상호 배제 (인원이 바뀌면 교대 주기와 생존 판정이 깨짐)
+		if (my.opts.latejoin && (my.opts.change || my.opts.survival)) {
+			my.opts.latejoin = false;
+		}
+		// 게임 중 참여 상태: 대기열(id만 저장)과 "라운드가 끝나 다음 라운드 준비 전" 여부
+		my.game.lateQueue = [];
+		my.game.roundOver = false;
+		my.game.inTurn = false;
+		delete my.game.turnOwnerLeft;
 
 		// 서바이벌 추적 필드 초기화
 		my.game.survivalKOCounter = 0;
@@ -1410,34 +1540,7 @@ function Room(room, channel) {
 			o = DIC[my.game.seq[i]] || my.game.seq[i];
 			if (!o) continue;
 			if (!o.game) continue;
-
-			o.playAt = now;
-			o.ready = false;
-			// 서바이벌 모드: 점수 대신 체력으로 초기화
-			if (my.opts.survival) {
-				var survivalHP = my.opts.surHP || 500;
-				o.game.score = survivalHP;
-				o.game.alive = true;  // 생존 상태
-				o.game.survivalSubmitted = false;  // 단어 입력 여부 추적
-			} else {
-				o.game.score = 0;
-			}
-			o.game.bonus = 0;
-			o.game.survivalKOOrder = 0;
-			o.game.survivalDamageDealt = 0;
-			o.game.coopTurns = 0;
-			o.game.item = [/*0, 0, 0, 0, 0, 0*/];
-			o.game.wpc = [];
-			delete o.game.lastWord;
-			delete o.game.lastWordLen;
-			o.game.straightStreak = 0;
-			// 플레이어별 아이템 초기화 (항상)
-			var itemObj = { skip: 0, pass: 0, random: 0 };
-			if (my.game.seq.length > 2) itemObj.reverse = 0;
-			if (my.rule.rule === 'Classic') itemObj.linkChange = 0;
-			my.game.items[o.id] = itemObj;
-			my.game.bonusScore[o.id] = 0;
-			if (my.game.pendingItems[o.id]) delete my.game.pendingItems[o.id];
+			my.initGamePlayer(o, now);
 		}
 		// 서바이벌/코옵 모드는 my.round를 강제로 바꾸므로, 게임 종료 후 방 설정에 원래 값을 되돌리기 위해 백업
 		if (my.opts.survival || my.rule.coop) {
@@ -1467,6 +1570,11 @@ function Room(room, channel) {
 	my.roundReady = function () {
 		clearTimeout(my.game._rrt);
 		if (!my.gaming) return;
+
+		// 게임 중 참여: 새 라운드가 시작되면 즉시 참여 구간으로 돌아가고, 다음 라운드가 있으면 대기열을 반영한다
+		// (규칙 roundReady가 round++ 하기 전이므로 round < my.round면 다음 라운드가 있음. 카오스 재배치보다 먼저)
+		my.game.roundOver = false;
+		if (my.game.lateQueue && my.game.lateQueue.length && my.game.round < my.round) my.drainLateQueue();
 
 		// 아이템전: 라운드 시작 시 아이템 리셋
 		if (my.opts.item && my.game.seq) {
@@ -1768,7 +1876,8 @@ function Room(room, channel) {
 				? o.game.survivalDamageDealt
 				: o.game.score;
 			var playerScore = (typeof rawScore === 'number' && !isNaN(rawScore)) ? rawScore : 0;
-			sumScore += playerScore;
+			// 음수 점수(리듬 미스 감점 등)는 합산 시 0으로 취급: 점차비(score/sumScore)가 0 근처 분모나 음수 분모로 왜곡되는 것 방지
+			sumScore += Math.max(0, playerScore);
 
 			var actualTeam = o.robot ? o.game.team : o.team;
 			var teamScoreVal = playerScore; // 기본값은 개인 점수
@@ -2151,6 +2260,15 @@ function Room(room, channel) {
 		my.setAutoDelete();
 	};
 	my.byMaster = function (type, data, nob) {
+		// 중도 입장 관전자에게 현재 라운드/차례 정보를 다시 보여주기 위해 마지막 페이로드를 보관
+		if (my.game && (type == "roundReady" || type == "turnStart")) {
+			if (type == "roundReady") {
+				my.game.specRR = data;
+				my.game.specTS = null;
+			} else {
+				my.game.specTS = { data: data, at: (new Date()).getTime() };
+			}
+		}
 		if (DIC[my.master]) DIC[my.master].publish(type, data, nob);
 	};
 	my.export = function (target, kickVote, spec) {
@@ -2214,7 +2332,26 @@ function Room(room, channel) {
 			}
 			if (my.rule.rule == "Rhythm" && my.game.chart) {
 				obj.round = my.game.round;
-				obj.rhythm = { song: my.game.song, bpm: my.game.chart.bpm, res: my.game.chart.res, seq: my.game.chart.seq, win: my.game.chart.win, startAt: my.game.startAt, now: (new Date()).getTime() };
+				obj.rhythm = { song: my.game.song, title: my.game.title, bpm: my.game.chart.bpm, res: my.game.chart.res, seq: my.game.chart.seq, win: my.game.chart.win, speed: my.game.chart.speed, startAt: my.game.startAt, now: (new Date()).getTime() };
+			}
+			if (my.rule.rule == "Rtype" && my.game.notes) {
+				obj.round = my.game.round;
+				obj.rtype = {
+					song: my.game.song, title: my.game.title, bpm: my.game.chart.bpm, res: my.game.chart.res, seq: my.game.chart.seq, win: my.game.chart.win, speed: my.game.chart.speed,
+					keys: my.game.keys, words: my.game.words.map(function (w) { return { text: w.text, n: w.n }; }),
+					startAt: my.game.startAt, now: (new Date()).getTime()
+				};
+			}
+			// 보드형 모드는 위에서 따로 처리. 그림퀴즈는 roundReady에 정답이 들어 있어 제외
+			if (SPEC_REPLAY_SKIP.indexOf(my.rule.rule) == -1 && my.game.specRR) {
+				obj.specRound = my.game.specRR;
+				if (!my.game.late && my.game.specTS) {
+					var specElapsed = (new Date()).getTime() - my.game.specTS.at;
+					obj.specTurn = {};
+					for (i in my.game.specTS.data) obj.specTurn[i] = my.game.specTS.data[i];
+					if (typeof obj.specTurn.turnTime == "number") obj.specTurn.turnTime = Math.max(0, obj.specTurn.turnTime - specElapsed);
+					if (typeof obj.specTurn.roundTime == "number") obj.specTurn.roundTime = Math.max(0, obj.specTurn.roundTime - specElapsed);
+				}
 			}
 			obj.spec = {};
 			for (i in my.game.seq) {
@@ -2241,6 +2378,8 @@ function Room(room, channel) {
 	my.turnStart = function (force) {
 		if (!my.gaming) return;
 
+		// 차례 진행 중 표시: 정답 처리 후 turnNext 예약까지의 틈(late && inTurn)을 라운드 사이(late && !inTurn)와 구분한다
+		my.game.inTurn = true;
 		return my.route("turnStart", force);
 	};
 	// ========== 아이템전 큐/발동/지급 ==========
@@ -2377,6 +2516,76 @@ function Room(room, channel) {
 	// (예전에는 turnNext가 indexOf()로 포인터를 "해당 인덱스의 첫 번째 사본" 위치로
 	// 되돌렸는데, 사본이 2개라 실제 스캔 위치와 달라져 포인터가 좁은 구간에 갇히는
 	// 버그가 있었음 — 특정 인원 사이만 반복되거나 한 사람만 계속 걸리는 원인)
+	// 랜덤턴: seq[seqIndex]가 빠질 때 가방을 새로 섞지 않고 남은 순서를 그대로 보정한다.
+	// (예전에는 새로 섞고 turn을 가방 첫 칸으로 바꿔서, 남이 나가기만 해도 현재 차례 주인이 조용히 바뀌었음
+	//  → 원래 차례인 사람의 제출이 거부되고, 시간 초과 벌점은 차례 알림을 못 받은 사람에게 감)
+	// randomTurnIndex는 "마지막으로 뽑은 칸"이므로, 그 이하에서 빠진 칸 수만큼 당긴다.
+	my.removeFromRandomBag = function (seqIndex) {
+		var order = my.game.randomTurnOrder || [];
+		var drawn = my.game.randomTurnIndex || 0; // 원래 위치와 비교해야 함 (줄여 가는 idx와 비교하면 둘째 칸을 덜 당김)
+		var idx = drawn;
+		var out = [];
+		for (var k = 0; k < order.length; k++) {
+			if (order[k] === seqIndex) {
+				if (k <= drawn) idx--;
+				continue;
+			}
+			out.push(order[k] > seqIndex ? order[k] - 1 : order[k]);
+		}
+		my.game.randomTurnOrder = out;
+		my.game.randomTurnIndex = idx;
+	};
+	// 랜덤턴: 게임 중 참여한 seq[seqIndex]의 칸 2개를 남은 가방에 넣고 남은 부분만 다시 섞는다
+	// (이미 뽑은 칸은 그대로라 현재 차례 주인은 바뀌지 않고, 가방이 끝날 때까지 기다리지 않아도 됨)
+	my.addToRandomBag = function (seqIndex) {
+		var order = my.game.randomTurnOrder || [];
+		var cut = Math.max(0, Math.min((my.game.randomTurnIndex || 0) + 1, order.length));
+		my.game.randomTurnOrder = order.slice(0, cut).concat(shuffle(order.slice(cut).concat([seqIndex, seqIndex])));
+	};
+	// 사람·봇 퇴장 공용: seq[seqIndex]를 빼고 turn과 랜덤 턴 가방을 맞춘다.
+	// 현재 차례가 아닌 사람이 빠지면 현재 차례 주인을 그대로 유지한다.
+	// 현재 차례 주인이 빠지면 순차 진행은 다음 사람이 그 자리를 잇고,
+	// redraw면 랜덤 턴은 가방에서 다음 차례를 다시 뽑는다 (turnEnd로 라운드가 끝나 다음 라운드 첫 차례가 되는 경우).
+	my.spliceSeq = function (seqIndex, redraw) {
+		var isTurn = my.game.turn == seqIndex;
+		// 정답 처리 후 turnNext가 이미 예약된 틈에 차례 주인이 빠짐: 라운드는 그대로 이어지고 예약된 turnNext가 다음 차례를 정한다
+		var gap = isTurn && my.game.late && my.game.inTurn;
+		my.game.seq.splice(seqIndex, 1);
+		if (my.opts.randomturn) my.removeFromRandomBag(seqIndex);
+		if (my.game.turn > seqIndex) {
+			my.game.turn--;
+			if (my.game.turn < 0) my.game.turn = my.game.seq.length - 1;
+		}
+		if (my.game.turn >= my.game.seq.length) my.game.turn = 0;
+		if (gap) {
+			my.setTurnAfterLeft(seqIndex);
+			return;
+		}
+		if (isTurn && redraw && my.opts.randomturn && my.game.seq.length > 0) {
+			var slot = my._nextRandomTurnSlot();
+			if (slot !== null && slot !== undefined) my.game.turn = slot;
+		}
+	};
+	// 현재 차례 주인이 빠졌는데 turnEnd로 라운드를 끝내지 못한 경우(서바이벌·turnEnd 예외 등):
+	// 남은 턴 타이머가 다음 사람에게 대신 벌점을 주지 않도록 지우고, 2초 뒤 다음 차례로 넘긴다. spliceSeq 뒤에 호출.
+	my.skipLeftTurn = function (seqIndex) {
+		if (!my.game.seq.length) return;
+		clearTimeout(my.game.turnTimer);
+		clearTimeout(my.game.robotTimer);
+		clearTimeout(my.game._rrt);
+		my.game.late = true; // 다음 turnStart 전까지 제출을 막아 turnNext가 두 번 실행되지 않게 함
+		my.setTurnAfterLeft(seqIndex);
+		my.game._rrt = setTimeout(function () { if (my.gaming) my.turnNext(); }, 2000);
+	};
+	// 차례 주인 seq[seqIndex]가 빠진 직후(spliceSeq 뒤) 다음 turnNext가 원래 다음 사람에게 가도록 turn을 그 사람에게 두고 표시한다.
+	// (예전에는 turn이 다음 사람을 가리킨 채 turnNext가 한 칸 더 넘겨서, 정답 직후 나가면 다음 사람이 건너뛰어졌음)
+	// 진행 방향이 반대(reverse)면 다음 사람은 빠진 칸의 앞 칸이다.
+	my.setTurnAfterLeft = function (seqIndex) {
+		var n = my.game.seq.length;
+		if (!n) return;
+		my.game.turn = my.game.reversed ? (seqIndex - 1 + n) % n : seqIndex % n;
+		my.game.turnOwnerLeft = true;
+	};
 	my._nextRandomTurnSlot = function () {
 		var n = my.game.seq.length;
 		var maxAttempts = n * 2 + 4;
@@ -2410,7 +2619,8 @@ function Room(room, channel) {
 		}
 		return null;
 	};
-	my.calculateNextTurn = function (peek) {
+	// ownerLeft: 차례 주인이 빠져 turn이 이미 다음 사람을 가리킴(setTurnAfterLeft) — 그 사람부터 따지고, 그 사람의 차례 후 아이템은 발동하지 않는다
+	my.calculateNextTurn = function (peek, ownerLeft) {
 		var seq = my.game.seq;
 		var n = seq.length;
 		var cur = my.game.turn;
@@ -2418,7 +2628,7 @@ function Room(room, channel) {
 		var pending = my.game.pendingItems;
 		// seq에 봇 객체가 섞여 있을 수 있으므로 ID 문자열로 정규화
 		var sid = function (s) { return (s && typeof s === 'object' && s.id) ? s.id : s; };
-		var curPending = pending[sid(currentId)];
+		var curPending = ownerLeft ? null : pending[sid(currentId)];
 		var randomJump = false;
 		var isReversed = my.game.reversed;
 
@@ -2453,7 +2663,7 @@ function Room(room, channel) {
 
 		// 2~3. 반복 계산 루프 (reverse, linkChange, pass를 도달 시 처리)
 		var dir = isReversed ? -1 : 1;
-		var next = cur;
+		var next = ownerLeft ? ((cur - dir) % n + n) % n : cur;
 		var visited = 0;
 		var totalIter = 0; // 절대 카운터: visited--로 인한 무한 루프 방지
 
@@ -2511,7 +2721,7 @@ function Room(room, channel) {
 			break;
 		}
 
-		if (visited > n || totalIter > n * 2 + n) return my._defaultNextTurn();
+		if (visited > n || totalIter > n * 2 + n) return ownerLeft ? cur : my._defaultNextTurn();
 		return next;
 	};
 	// ========== 아이템전 끝 ==========
@@ -2532,6 +2742,8 @@ function Room(room, channel) {
 	my.turnNext = function (force) {
 		if (!my.gaming) return;
 		if (!my.game.seq) return;
+		var ownerLeft = my.game.turnOwnerLeft;
+		delete my.game.turnOwnerLeft;
 
 		// 서바이벌 모드: 생존자 확인 및 게임 종료 체크
 		if (my.opts.survival) {
@@ -2588,10 +2800,10 @@ function Room(room, channel) {
 				// 타임아웃 등 일반 경로
 				var timedOutId = my.game.seq[my.game.turn];
 				var timedOutIdStr = (timedOutId && typeof timedOutId === 'object' && timedOutId.id) ? timedOutId.id : timedOutId;
-				if (force && my.game.pendingItems && my.game.pendingItems[timedOutIdStr]) {
+				if (force && !ownerLeft && my.game.pendingItems && my.game.pendingItems[timedOutIdStr]) {
 					my.dequeueItem(DIC[timedOutIdStr] || { id: timedOutIdStr });
 				}
-				my.game.turn = my.calculateNextTurn();
+				my.game.turn = my.calculateNextTurn(false, ownerLeft);
 			}
 		} else if (my.opts.randomturn) {
 			var _slot;
@@ -2612,7 +2824,7 @@ function Room(room, channel) {
 			}
 		} else {
 			// 기존 로직: 순차 진행
-			my.game.turn = my.calculateNextTurn();
+			my.game.turn = my.calculateNextTurn(false, ownerLeft);
 			// 서바이벌 안전망: _defaultNextTurn 루프 소진 시 dead 플레이어 반환 방지 (버그 #2 수정)
 			if (my.opts.survival) {
 				var _nextP = DIC[my.game.seq[my.game.turn]] || my.game.seq[my.game.turn];
@@ -2628,7 +2840,11 @@ function Room(room, channel) {
 	my.turnEnd = function () {
 		// 서바이벌 모드: 타임아웃 시 KO 처리는 각 게임 규칙 파일에서 처리
 		// 여기서는 route만 호출
-		return my.route("turnEnd");
+		my.game.inTurn = false;
+		var r = my.route("turnEnd");
+		// 게임 중 참여: 턴제는 시간 초과(차례 주인 퇴장 포함)로 라운드가 끝나므로 다음 roundReady 전까지는 대기열로 받는다
+		if (my.gaming && my.game) my.game.roundOver = true;
+		return r;
 	};
 	my.submit = function (client, text, data) {
 		// 욕설 필터: 규칙 활성화 시 다른 조건보다 먼저 검사
@@ -2837,6 +3053,7 @@ function getRewards(mode, score, bonus, rank, all, ss, opts) {
 			rw.score += score * 0.83;
 			break;
 		case 'XBB':
+			rw.score = 0;
 			break;
 		case 'CSD':
 			rw.score += score * 0.6;
@@ -2890,6 +3107,10 @@ function getRewards(mode, score, bonus, rank, all, ss, opts) {
 			break;
 		case 'ESK':
 			rw.score += score * 0.55;
+			break;
+		case 'XRG':
+		case 'KRT':
+			rw.score += score * 0.5;
 			break;
 		default:
 			rw.score += score * 1.25;

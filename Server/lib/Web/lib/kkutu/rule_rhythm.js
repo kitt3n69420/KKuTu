@@ -23,7 +23,7 @@ $lib.Rhythm = {};
 // - 시작 시각: 서버가 정한 절대 시각(startAt)을 xrgSync 왕복 측정으로 얻은 시계 차이로 로컬 시각으로 변환
 // - 클라이언트의 판정(PERFECT/GOOD/...)은 내 화면 표시용일 뿐, 서버에는 눌린 패널과 곡 기준 시각만 보냄
 //   서버가 그 시각으로 노트를 찾아 직접 판정하고 점수를 합산해 모두에게 알림
-var XRG_LEAD = 1000;      // 마커가 나타나서 판정 시점에 닿기까지 (ms)
+var XRG_LEAD = 1000;      // 마커가 나타나서 판정 시점에 닿기까지 (ms): 기본값(보통 난이도). 실제는 서버가 보낸 난이도별 속도 배율로 나눔(s.lead)
 var XRG_WIN = [50, 150, 300]; // Perfect / Good / Bad 허용 오차 (ms): 기본값. 실제 범위는 서버가 난이도별로 보내줌(s.win)
 var XRG_ROUND = 60000;
 var XRG_COUNT = 7;        // 카운트다운 7~0 (8박) 후 다음 박(-1)에 곡이 시작 (곡 시각 0ms = -1)
@@ -63,6 +63,7 @@ $lib.Rhythm.roundReady = function (data, spec) {
 		best: null,
 		syncN: 0,
 		win: data.win || XRG_WIN,
+		lead: XRG_LEAD / (data.speed || 1),
 		sync: Math.max(-XRG_SYNC_MAX, Math.min(XRG_SYNC_MAX, Number(loadVolumeSettings().rhythmSync) || 0)),
 		chain: 0,
 		brk: false,      // Bad/Miss가 한 번이라도 나왔는지 (풀 콤보 판정용)
@@ -93,7 +94,7 @@ $lib.Rhythm.roundReady = function (data, spec) {
 	if (spec) $grid.addClass("rhythm-spec");
 	s.$count = $("<div>").addClass("rhythm-count");
 	// 곡 제목은 카운트다운이 시작되기 전까지만 판 중앙에 겹쳐 표시. 판(.rhythm-grid) 안에는 패널만 둠
-	s.$title = $("<div>").addClass("rhythm-title").text("♪ " + data.song.replace(/_/g, " "));
+	s.$title = $("<div>").addClass("rhythm-title").text("♪ " + (data.title || data.song.replace(/_/g, " ")));
 	s.$grid = $grid;
 	$stage.game.items.hide();
 	$stage.game.bb.hide();
@@ -268,7 +269,7 @@ $lib.Rhythm.frame = function () {
 
 	for (i = s.lo; i < s.notes.length; i++) {
 		n = s.notes[i];
-		if (n.t - st > XRG_LEAD) break;
+		if (n.t - st > s.lead) break;
 		if (n.done) continue;
 		if (st - n.t > s.win[2]) {
 			// 못 누른 노트: 본인 화면에만 미스 표시 (감점 없음)
@@ -278,6 +279,7 @@ $lib.Rhythm.frame = function () {
 				R.splash(n.lane, 3);
 				send('xrgMiss', { t: Math.ceil(st) }); // 서버가 이 시각까지의 미스를 정산해 감점 (점수는 서버 결과로 반영)
 				s.chain = 0; // 미스에서 콤보 끊김
+				R.showCombo(0);
 				s.brk = true;
 				s.allPerfect = false;
 			}
@@ -289,10 +291,10 @@ $lib.Rhythm.frame = function () {
 			n.el = $("<div>").addClass("rhythm-marker rhythm-m" + n.m + " rhythm-c" + n.lane);
 			s.panels[n.lane].append(n.el);
 		}
-		p = (n.t - st) / XRG_LEAD; // 1 -> 0: 커지며 패널 테두리에 닿는 순간이 판정 시점
+		p = (n.t - st) / s.lead; // 1 -> 0: 커지며 패널 테두리에 닿는 순간이 판정 시점
 		n.el.css({
 			transform: "scale(" + (0.2 + 0.8 * Math.min(1, 1 - p)) + ")",
-			opacity: p < 0 ? Math.max(0, 1 + p * XRG_LEAD / s.win[2]) : 1
+			opacity: p < 0 ? Math.max(0, 1 + p * s.lead / s.win[2]) : 1
 		});
 	}
 	while (s.lo < s.notes.length && s.notes[s.lo].done) s.lo++;
@@ -338,6 +340,7 @@ $lib.Rhythm.onPress = function (e, lane) {
 	if (j != 0) s.allPerfect = false;
 	if (j == 2) {
 		s.chain = 0;
+		R.showCombo(0);
 		s.brk = true;
 	} else R.showCombo(++s.chain - 1);
 	send('xrgHit', { lane: lane, t: Math.round(st) });
@@ -349,8 +352,11 @@ $lib.Rhythm.noteDone = function () {
 
 	if (s.spec || --s.left != 0) return;
 	send('xrgDone', {});
-	// 마지막 노트까지 Bad/Miss 없이 처리했으면 풀 콤보, 전부 Perfect면 올 퍼펙트
-	if (!s.brk) $lib.Rhythm.showFinish(s.allPerfect);
+	// 마지막 노트까지 Bad/Miss 없이 처리했으면 풀 콤보, 전부 Perfect면 올 퍼펙트 (success 소리와 함께)
+	if (!s.brk) {
+		playSound('success');
+		$lib.Rhythm.showFinish(s.allPerfect);
+	}
 };
 // 마지막 스플래시: 풀 콤보(하늘색) / 올 퍼펙트(파스텔 무지개) 문구를 판 중앙에 1초 동안 띄움
 $lib.Rhythm.showFinish = function (allPerfect) {
@@ -374,19 +380,23 @@ $lib.Rhythm.onKey = function (e, down) {
 	s.panels[lane].toggleClass("rhythm-down", down);
 	if (down && !e.repeat) R.onPress(e, lane);
 };
-// 판 중앙(패널 뒤)에 콤보 수만 띄움: 페이드인 없이 작아지며 0.3초 동안 사라짐. 1콤보부터 표시
+// 판 중앙(패널 뒤)에 콤보 수를 반투명으로 계속 띄움: 투명도는 그대로, 콤보가 오를 때마다 살짝 커졌다 돌아옴. 1콤보부터 표시, 0이면(끊김) 지움
 $lib.Rhythm.showCombo = function (n) {
 	var s = $lib.Rhythm.s;
-	var $c;
 
-	if (!s || n < 1) return;
-	if (s.$combo) s.$combo.remove();
-	s.$combo = $c = $("<div>").addClass("rhythm-combo").text(n);
-	$stage.game.display.append($c);
-	addTimeout(function () {
-		$c.remove();
-		if (s.$combo === $c) s.$combo = null;
-	}, 300);
+	if (!s) return;
+	if (n < 1) {
+		if (s.$combo) s.$combo.remove();
+		s.$combo = null;
+		return;
+	}
+	if (!s.$combo) {
+		s.$combo = $("<div>").addClass("rhythm-combo");
+		$stage.game.display.append(s.$combo);
+	}
+	s.$combo.text(n).removeClass("rhythm-pop");
+	void s.$combo[0].offsetWidth; // 애니메이션을 처음부터 다시 재생
+	s.$combo.addClass("rhythm-pop");
 };
 // 키보드 입력 가로채기 해제 (게임 종료/정리 때)
 $lib.Rhythm.releaseKeys = function (s) {

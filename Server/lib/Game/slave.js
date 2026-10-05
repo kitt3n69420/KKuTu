@@ -354,6 +354,27 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (!temp.gaming || !temp.game || temp.game.late || !temp.rule || temp.rule.rule !== "Rhythm") return;
       temp.route("done", $c, msg);
       break;
+    case "rtpHit":
+      // 리듬 타이퍼: 입력 {k: 자모/'\n'(엔터)/'BS', t: 곡 기준 ms}. 서버가 판정
+      if ($c.subPlace) temp = $c.pracRoom;
+      else if (!(temp = ROOM[$c.place])) return;
+      if (!temp.gaming || !temp.game || temp.game.late || !temp.rule || temp.rule.rule !== "Rtype") return;
+      temp.route("hit", $c, msg);
+      break;
+    case "rtpMiss":
+      // 리듬 타이퍼: 노트를 놓친 시각(곡 기준 ms). 서버가 그 시각으로 미스를 정산
+      if ($c.subPlace) temp = $c.pracRoom;
+      else if (!(temp = ROOM[$c.place])) return;
+      if (!temp.gaming || !temp.game || temp.game.late || !temp.rule || temp.rule.rule !== "Rtype") return;
+      temp.route("miss", $c, msg);
+      break;
+    case "rtpDone":
+      // 리듬 타이퍼: 마지막 노트를 처리했다는 끝 신호
+      if ($c.subPlace) temp = $c.pracRoom;
+      else if (!(temp = ROOM[$c.place])) return;
+      if (!temp.gaming || !temp.game || temp.game.late || !temp.rule || temp.rule.rule !== "Rtype") return;
+      temp.route("done", $c, msg);
+      break;
     case "yell":
       if (!msg.value) return;
       if (!validateInput(msg.value, "string", { maxLength: 200 })) return;
@@ -589,6 +610,8 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (!msg.mode) return;
       if (!ROOM[$c.place]) return;
       if (ENABLE_FORM.indexOf(msg.mode) == -1) return;
+      // 게임 중에 참가자(J)로 바꾸면 seq에 없는 참가자가 생기므로 막는다 (게임 중 참여는 lateJoin 경로로만)
+      if (msg.mode == "J" && ROOM[$c.place].gaming) return;
 
       $c.setForm(msg.mode);
       break;

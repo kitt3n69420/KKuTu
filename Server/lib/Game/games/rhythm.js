@@ -20,7 +20,7 @@ var File = require('fs');
 var Lizard = require('../../sub/lizard');
 var JLog = require('../../sub/jjlog');
 
-var DATA_DIR = `${__dirname}/../../data`;
+var CHART_DIR = `${__dirname}/../../data/Chart`; // 채보(.txt) 폴더
 var BGM_DIR = `${__dirname}/../../Web/public/media/common/bgms`;
 
 var ROUND_MS = 60000;      // 라운드 길이 (고정)
@@ -30,6 +30,8 @@ var END_GRACE = 2500;      // 종료 직전 마지막 입력을 받아주는 유
 var HIT_SLACK = 1000;      // 클라이언트가 보고한 타격 시각보다 이 이상 일찍 서버에 도착한 보고는 거부
 // 채보 난이도별 판정 범위 [Perfect, Good, Bad] (노트 시각 기준 +-ms)와 미스 1회당 감점
 var WINDOWS = { easy: [60, 180, 300], normal: [50, 150, 250], hard: [40, 120, 200], insane: [30, 90, 150] };
+// 난이도별 스크롤 속도 배율 (클라이언트가 노트 접근 시간 = 기본 시간 / 배율로 계산): 쉬움 2/3배, 보통 1배, 어려움 1.5배, 인세인 2배
+var SPEED = { easy: 2 / 3, normal: 1, hard: 1.5, insane: 2 };
 var MISS_PENALTY = { easy: 1, normal: 3, hard: 5, insane: 8 };
 var SCORE = [10, 5, 1];    // Perfect, Good, Bad
 var COMBO_DIV = 200;       // 콤보 보너스 = floor(판정 점수 x 콤보 / COMBO_DIV). 콤보 = 이어진 성공 노트 수 - 1 (두 번째 노트가 1콤보), Bad/Miss에서 끊김
@@ -58,9 +60,12 @@ function parseChart(name, text) {
 			if (/^[1-4.]+$/.test(line)) cur.seq += line;
 		} else if (!song.bpm && /^\d{2,3}$/.test(line)) {
 			song.bpm = Number(line);
+		} else if (!song.bpm && !song.title) {
+			song.title = line; // 첫 줄: 화면에 표시할 곡 이름
 		}
 	}
 	if (!song.bpm) return null;
+	if (!song.title) song.title = name.replace(/_/g, ' ');
 
 	Object.keys(song.charts).forEach(function (k) {
 		var c = song.charts[k];
@@ -71,6 +76,7 @@ function parseChart(name, text) {
 		c.seq = c.seq.slice(0, Math.ceil(ROUND_MS / charMs));
 		c.bpm = song.bpm;
 		c.win = WINDOWS[k];
+		c.speed = SPEED[k];
 		c.penalty = MISS_PENALTY[k];
 		c.notes = [];
 		c.lanes = [[], [], [], []]; // 레인별 노트 (시각 오름차순). 타격 판정 때 해당 레인만 훑기 위함
@@ -124,19 +130,19 @@ function settleMisses(my, client, upTo) {
 	return cb;
 }
 
-// 서버가 시작될 때마다 data 폴더를 새로 읽어 곡 목록을 만듦: 채보(.txt)를 추가/삭제한 뒤 재시작하면 반영됨
+// 서버가 시작될 때마다 data/Chart 폴더를 새로 읽어 곡 목록을 만듦: 채보(.txt)를 추가/삭제한 뒤 재시작하면 반영됨
 exports.init = function (_DB, _DIC) {
 	var loaded = [];
 
 	DIC = _DIC;
 	SONGS = [];
-	File.readdirSync(DATA_DIR).forEach(function (file) {
+	File.readdirSync(CHART_DIR).forEach(function (file) {
 		var name, text, song;
 
 		if (!/\.txt$/i.test(file)) return;
 		name = file.replace(/\.txt$/i, '');
 		try {
-			text = File.readFileSync(`${DATA_DIR}/${file}`, 'utf8').replace(/^﻿/, '');
+			text = File.readFileSync(`${CHART_DIR}/${file}`, 'utf8').replace(/^﻿/, '');
 			// 다른 용도의 txt(금칙어 목록 등)는 난이도 머리글(Easy 4 등)이 없으므로 채보로 보지 않음
 			if (!/^(Easy|Normal|Hard|Insane)\s+\d+\s*$/im.test(text)) return;
 			song = parseChart(name, text);
@@ -175,8 +181,8 @@ exports.roundReady = function () {
 	my.game.done = {};
 	my.game.startAt = 0;
 
-	// 기본은 이지 채보, 하드 옵션은 노멀 채보, 크레이지 옵션은 하드 채보 (둘 다 켜면 크레이지). 인세인 채보는 보류라 쓰지 않음
-	diff = my.opts.rhythmcrazy ? 'hard' : my.opts.rhythmhard ? 'normal' : 'easy';
+	// 기본은 이지 채보, 하드 옵션은 노멀 채보, 크레이지 옵션은 하드 채보, 둘 다 켜면 인세인 채보
+	diff = my.opts.rhythmhard && my.opts.rhythmcrazy ? 'insane' : my.opts.rhythmcrazy ? 'hard' : my.opts.rhythmhard ? 'normal' : 'easy';
 
 	cands = SONGS.filter(function (s) { return s.charts[diff]; });
 	if (!cands.length) {
@@ -186,15 +192,18 @@ exports.roundReady = function () {
 	song = cands[Math.floor(Math.random() * cands.length)];
 	chart = song.charts[diff];
 	my.game.song = song.name;
+	my.game.title = song.title;
 	my.game.chart = chart;
 
 	my.byMaster('roundReady', {
 		round: my.game.round,
 		song: song.name,
+		title: song.title,
 		bpm: chart.bpm,
 		res: chart.res,
 		seq: chart.seq,
 		win: chart.win,
+		speed: chart.speed,
 		time: my.time
 	}, true);
 	my.game.turnTimer = setTimeout(my.turnStart, 2400);

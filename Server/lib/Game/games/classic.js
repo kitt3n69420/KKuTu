@@ -384,6 +384,9 @@ exports.roundReady = function () {
 	}
 	my.game.pendingAttackDefense = null;
 	my.game.pendingFlushDefense = null;
+	my.game.nextAttackDefense = null;
+	my.game.nextFlushDefense = false;
+	my.game.hanbangAngerNext = false;
 	my.game.flushDefenseState = {};
 	// 전체 사용 가능 단어 수 (공격 판정 임계값용) — 서버 시작 시 캐싱된 값 사용
 	if (my.game.round === 1) {
@@ -471,6 +474,19 @@ exports.turnStart = function (force) {
 	var si;
 
 	if (!my.game.chain) return;
+	// 직전 제출에서 생긴 공격/플러시 방어 기회와 한방 분노는 실제로 이 차례를 받은 사람에게 건다.
+	// 방어 기회는 이 차례에만 유효하고 다음 turnStart에서 덮어써진다 (빗나간 대기값이 남지 않음).
+	var _owner = my.game.seq[my.game.turn];
+	var _ownerId = (_owner && typeof _owner === 'object') ? _owner.id : _owner;
+	my.game.pendingAttackDefense = my.game.nextAttackDefense ? { playerId: _ownerId, wordCount: my.game.nextAttackDefense.wordCount } : null;
+	my.game.pendingFlushDefense = my.game.nextFlushDefense ? _ownerId : null;
+	my.game.nextAttackDefense = null;
+	my.game.nextFlushDefense = false;
+	if (my.game.hanbangAngerNext) {
+		var _ownerObj = (typeof _owner === 'string') ? DIC[_owner] : _owner;
+		if (_ownerObj && _ownerObj.robot) _ownerObj._pendingAnger = (_ownerObj._pendingAnger || 0) + 2;
+		my.game.hanbangAngerNext = false;
+	}
 	my.game.roundTime = Math.min(my.game.roundTime, Math.max(10000, 150000 - my.game.roundChainCount * 1500));
 	speed = my.getTurnSpeed(my.opts.speed ? my.game.roundTime / 2 : my.game.roundTime);
 	clearTimeout(my.game.turnTimer);
@@ -1124,14 +1140,14 @@ exports.submit = function (client, text) {
 								}, 500);
 							}
 						}
-						// 한방을 받는 다음 차례 봇에게 분노 +2 예약 (턴 시작 시 적용)
+						// 한방을 받는 다음 차례 봇에게 분노 +2 예약 (실제로 다음 turnStart를 받은 봇에게 적용)
 						if (isHanbang && my.game.seq) {
 							var _nextSeqIdx = (my.opts.randomturn && my.game.randomTurnOrder && my.game.randomTurnOrder.length > 0)
 								? my.game.randomTurnOrder[(my.game.randomTurnIndex + 1) % my.game.randomTurnOrder.length]
 								: (my.game.turn + 1) % my.game.seq.length;
 							var nextPlayer = my.game.seq[_nextSeqIdx];
 							if (typeof nextPlayer === 'string') nextPlayer = DIC[nextPlayer];
-							if (nextPlayer && nextPlayer.robot) nextPlayer._pendingAnger = (nextPlayer._pendingAnger || 0) + 2;
+							my.game.hanbangAngerNext = true;
 						}
 						// 관전 봇들의 한방 반응 (30% 확률)
 						if (isHanbang && my.game.seq) {
@@ -1204,14 +1220,14 @@ exports.submit = function (client, text) {
 								}, 500);
 							}
 						}
-						// 한방을 받는 다음 차례 봇에게 분노 +2 예약 (턴 시작 시 적용)
+						// 한방을 받는 다음 차례 봇에게 분노 +2 예약 (실제로 다음 turnStart를 받은 봇에게 적용)
 						if (isHanbang && my.game.seq) {
 							var _nextSeqIdx2 = (my.opts.randomturn && my.game.randomTurnOrder && my.game.randomTurnOrder.length > 0)
 								? my.game.randomTurnOrder[(my.game.randomTurnIndex + 1) % my.game.randomTurnOrder.length]
 								: (my.game.turn + 1) % my.game.seq.length;
 							var nextPlayer = my.game.seq[_nextSeqIdx2];
 							if (typeof nextPlayer === 'string') nextPlayer = DIC[nextPlayer];
-							if (nextPlayer && nextPlayer.robot) nextPlayer._pendingAnger = (nextPlayer._pendingAnger || 0) + 2;
+							my.game.hanbangAngerNext = true;
 						}
 						// 관전 봇들의 한방 반응 (30% 확률)
 						if (isHanbang && my.game.seq) {
@@ -1241,13 +1257,10 @@ exports.submit = function (client, text) {
 						if (typeof my.game.nextCharWordCount !== 'undefined') {
 							isAttack = (my.game.nextCharWordCount / Math.max(my.game.totalWordCount, 500000) <= 0.0001);
 						}
+						// 방어 대상은 다음 turnStart에서 실제 차례 주인으로 정한다 (여기서 (turn+1)로 예측하면
+						// 뒤로가기·랜덤 턴·아이템으로 빗나가고, 이번 제출의 방어 판정보다 먼저 덮어쓰게 됨)
 						if (isAttack && my.game.seq) {
-							var nextAtkIdx = (my.game.turn + 1) % my.game.seq.length;
-							var nextAtkP = my.game.seq[nextAtkIdx];
-							my.game.pendingAttackDefense = {
-								playerId: typeof nextAtkP === 'string' ? nextAtkP : (nextAtkP && nextAtkP.id),
-								wordCount: my.game.nextCharWordCount
-							};
+							my.game.nextAttackDefense = { wordCount: my.game.nextCharWordCount };
 						}
 
 						// 플러시 보너스 (앞말잇기·랜덤잇기 제외, 쿵쿵따/앞쿵따 포함)
@@ -1270,11 +1283,7 @@ exports.submit = function (client, text) {
 							}
 							if (f.streak >= 3) {
 								flushBonus = Math.round(baseScoreWithoutMission * 0.20);
-								if (my.game.seq) {
-									var nextFlIdx = (my.game.turn + 1) % my.game.seq.length;
-									var nextFlP = my.game.seq[nextFlIdx];
-									my.game.pendingFlushDefense = typeof nextFlP === 'string' ? nextFlP : (nextFlP && nextFlP.id);
-								}
+								if (my.game.seq) my.game.nextFlushDefense = true;
 							}
 						}
 
@@ -1332,6 +1341,8 @@ exports.submit = function (client, text) {
 							defenseType = null;
 							my.game.pendingAttackDefense = null;
 							my.game.pendingFlushDefense = null;
+							my.game.nextAttackDefense = null;
+							my.game.nextFlushDefense = false;
 						}
 
 						// ========== 서바이벌 모드: 득점 = 다음 사람 데미지 ==========
