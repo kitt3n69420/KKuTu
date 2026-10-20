@@ -387,9 +387,9 @@ exports.turnEnd = function () {
 
 	// 라운드 종료 시, 각 봇이 자기 타이머로 돌리고 있던 다음 제출 예약을 멈춘다.
 	traverse(my, function (o) {
-		if (o.robot && o.data && o.data.landgrabTimer) {
-			clearTimeout(o.data.landgrabTimer);
-			o.data.landgrabTimer = null;
+		if (o.robot && o._landgrabTimer) {
+			clearTimeout(o._landgrabTimer);
+			o._landgrabTimer = null;
 		}
 	});
 
@@ -523,16 +523,17 @@ function jitter(ms) {
 	return Math.round(ms * (0.8 + Math.random() * 0.4));
 }
 
-// 턴제가 아니라 라운드 내내 스스로 반복 제출해야 하므로, robot.data.landgrabTimer 하나로
+// 턴제가 아니라 라운드 내내 스스로 반복 제출해야 하므로, robot._landgrabTimer 하나로
 // "다음 단어를 타이핑 중" / "다음 수를 생각 중" 상태를 번갈아 예약하는 자기 호출 루프로 구현한다.
+// robot.data는 getData()로 방 정보에 실려 IPC(JSON)로 전송되므로 Timeout 객체를 두면 안 된다.
 exports.readyRobot = function (robot) {
 	var my = this;
 	loop();
 
 	function loop() {
-		if (robot.data.landgrabTimer) {
-			clearTimeout(robot.data.landgrabTimer);
-			robot.data.landgrabTimer = null;
+		if (robot._landgrabTimer) {
+			clearTimeout(robot._landgrabTimer);
+			robot._landgrabTimer = null;
 		}
 		if (my.game.late || !my.game.board) return;
 
@@ -542,14 +543,14 @@ exports.readyRobot = function (robot) {
 
 		if (move) {
 			var typeDelay = jitter(move.word.length * (60000 / ROBOT_TYPE_CPM[level]));
-			robot.data.landgrabTimer = setTimeout(function () {
+			robot._landgrabTimer = setTimeout(function () {
 				if (my.game.late || !my.game.board) return;
 				my.turnRobot(robot, move.word, [move.sIdx]);
-				robot.data.landgrabTimer = setTimeout(loop, interDelay);
+				robot._landgrabTimer = setTimeout(loop, interDelay);
 			}, typeDelay);
 		} else {
 			// 지금 당장 둘 곳이 없어도, 다른 플레이어들이 칸을 옮기며 판이 바뀌므로 잠시 후 다시 시도한다.
-			robot.data.landgrabTimer = setTimeout(loop, interDelay);
+			robot._landgrabTimer = setTimeout(loop, interDelay);
 		}
 	}
 };

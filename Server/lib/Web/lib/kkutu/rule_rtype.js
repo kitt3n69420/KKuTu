@@ -601,20 +601,28 @@ $lib.Rtype.drawTyped = function () {
 	if (!s.started) return;
 	$lib.Rtype.setBar(s.$input ? s.$input.val().replace(/\n/g, "") : "");
 };
-$lib.Rtype.turnEnd = function (id, data) {
+// 라운드 종료 처리: 진행을 멈추고 채팅창을 입력창에서 풀어 줌. 이미 끝났으면 아무것도 안 하고 false
+// turnEnd 신호 없이 roundEnd만 오는 경우(2인 게임에서 한 명이 나가 서버가 바로 roundEnd 등)에도 body.js가 부름
+$lib.Rtype.finish = function () {
 	var R = $lib.Rtype;
 	var s = R.s;
-	var i, $sc;
+	var i;
+
+	if (!s || s.ended) return false;
+	s.ended = true;
+	cancelAnimationFrame(s.raf);
+	for (i = 0; i < s.notes.length; i++) R.removeNote(s.notes[i]);
+	R.releaseInput(s);
+	if (!s.spec && !mobile) $stage.talk.focus();
+	return true;
+};
+$lib.Rtype.turnEnd = function (id, data) {
+	var R = $lib.Rtype;
+	var $sc;
 
 	// 라운드 종료 신호
 	if (!data || !data.target) {
-		if (s) {
-			s.ended = true;
-			cancelAnimationFrame(s.raf);
-			for (i = 0; i < s.notes.length; i++) R.removeNote(s.notes[i]);
-			R.releaseInput(s);
-			if (!s.spec && !mobile) $stage.talk.focus();
-		}
+		R.finish();
 		stopBGM();
 		playSound('horr');
 		return;

@@ -2945,3 +2945,39 @@ Error: read ECONNRESET
 :2053 [2026. 10. 2. 오전 1:08:11] MASTER_ERROR: Error: read ECONNRESET
 Error: read ECONNRESET
     at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20)
+:2083 [2026. 10. 19. 오후 3:04:38] MASTER_ERROR: TypeError: Converting circular structure to JSON
+    --> starting at object with constructor 'Timeout'
+    |     property '_idlePrev' -> object with constructor 'TimersList'
+    --- property '_idleNext' closes the circle
+TypeError: Converting circular structure to JSON
+    --> starting at object with constructor 'Timeout'
+    |     property '_idlePrev' -> object with constructor 'TimersList'
+    --- property '_idleNext' closes the circle
+    at stringify (<anonymous>)
+    at writeChannelMessage (node:internal/child_process/serialization:164:20)
+    at target._send (node:internal/child_process:851:17)
+    at target.send (node:internal/child_process:751:19)
+    at exports.publish (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:429:12)
+    at Room.my.export (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:2375:4)
+    at Room.my.spectate (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:774:13)
+    at my.enter (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:1214:11)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\slave.js:256:16
+    at exports.Tail.then (C:\myKKuTu\KKuTu-master\Server\lib\sub\lizard.js:50:8)
+:2083 [2026. 10. 19. 오후 3:05:39] MASTER_ERROR: TypeError: Converting circular structure to JSON
+    --> starting at object with constructor 'Timeout'
+    |     property '_idlePrev' -> object with constructor 'TimersList'
+    --- property '_idleNext' closes the circle
+TypeError: Converting circular structure to JSON
+    --> starting at object with constructor 'Timeout'
+    |     property '_idlePrev' -> object with constructor 'TimersList'
+    --- property '_idleNext' closes the circle
+    at stringify (<anonymous>)
+    at writeChannelMessage (node:internal/child_process/serialization:164:20)
+    at target._send (node:internal/child_process:851:17)
+    at target.send (node:internal/child_process:751:19)
+    at exports.publish (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:429:12)
+    at Room.my.export (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:2375:4)
+    at Room.my.spectate (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:774:13)
+    at my.enter (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:1214:11)
+    at C:\myKKuTu\KKuTu-master\Server\lib\Game\slave.js:256:16
+    at exports.Tail.then (C:\myKKuTu\KKuTu-master\Server\lib\sub\lizard.js:50:8)

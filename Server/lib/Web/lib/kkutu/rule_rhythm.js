@@ -415,22 +415,29 @@ $lib.Rhythm.splash = function (lane, j) {
 	s.panels[lane].append($sp);
 	addTimeout(function () { $sp.remove(); }, 450);
 };
-$lib.Rhythm.turnEnd = function (id, data) {
+// 라운드 종료 처리: 진행을 멈추고 키 입력 가로채기를 풀고 채팅창으로 포커스를 돌려줌. 이미 끝났으면 아무것도 안 하고 false
+// turnEnd 신호 없이 roundEnd만 오는 경우(2인 게임에서 한 명이 나가 서버가 바로 roundEnd 등)에도 body.js가 부름
+$lib.Rhythm.finish = function () {
 	var R = $lib.Rhythm;
 	var s = R.s;
-	var i, $sc;
+	var i;
+
+	if (!s || s.ended) return false;
+	s.ended = true;
+	cancelAnimationFrame(s.raf);
+	for (i = 0; i < s.notes.length; i++) R.removeMarker(s.notes[i]);
+	s.$count.text("");
+	R.releaseKeys();
+	if (!s.spec && !mobile) $stage.talk.focus();
+	return true;
+};
+$lib.Rhythm.turnEnd = function (id, data) {
+	var R = $lib.Rhythm;
+	var $sc;
 
 	// 라운드 종료 신호
 	if (!data || !data.target) {
-		if (s) {
-			s.ended = true;
-			cancelAnimationFrame(s.raf);
-			for (i = 0; i < s.notes.length; i++) R.removeMarker(s.notes[i]);
-			s.$count.text("");
-			// 게임이 끝나면 키 입력 가로채기를 풀고 채팅창으로 포커스를 돌려줌
-			R.releaseKeys();
-			if (!s.spec && !mobile) $stage.talk.focus();
-		}
+		R.finish();
 		stopBGM();
 		playSound('horr');
 		return;

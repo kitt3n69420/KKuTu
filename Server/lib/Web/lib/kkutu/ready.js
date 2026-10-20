@@ -472,6 +472,9 @@ $(document).ready(function () {
 	});
 	// addInterval(checkInput, 1);
 	$stage.chatBtn.on('click', function (e) {
+		// 리듬 타이퍼(데스크톱): 채팅창이 게임 입력창으로 쓰이는 동안은 전송 버튼으로도 보내지 않음
+		// (엔터는 rule_rtype.js가 막음. 버튼으로 보내면 입력 중인 자모가 채팅으로 나가고 입력창이 비워져 단어 보너스도 사라짐)
+		if ($lib.Rtype && $lib.Rtype.s && $lib.Rtype.s.$input === $stage.talk) return;
 		checkInput();
 
 		// hereText를 메인 입력창으로 사용 (talk와 동기화됨)

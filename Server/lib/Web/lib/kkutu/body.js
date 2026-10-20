@@ -761,6 +761,11 @@ function onMessage(data) {
 			if ($lib.Shuk && $lib.Shuk.shukMove) $lib.Shuk.shukMove(data);
 			break;
 		case 'roundEnd':
+			// 리듬 게임/리듬 타이퍼: 인원 이탈 등으로 서버가 turnEnd 없이 바로 roundEnd하면
+			// 키 입력 가로채기/채팅창 점유와 곡 재생이 다음 게임까지 남으므로 여기서 마저 정리 (정상 종료면 이미 끝나 있어 아무것도 안 함)
+			var xrgCut = !!($lib.Rhythm && $lib.Rhythm.finish());
+			if ($lib.Rtype && $lib.Rtype.finish()) xrgCut = true;
+			if (xrgCut) stopBGM();
 			for (i in data.users) {
 				if (data.users[i] && data.users[i].robot) {
 					$data.robots[i] = data.users[i];

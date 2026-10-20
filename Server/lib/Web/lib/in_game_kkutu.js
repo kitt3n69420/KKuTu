@@ -581,6 +581,9 @@ $(document).ready(function () {
 	});
 	// addInterval(checkInput, 1);
 	$stage.chatBtn.on('click', function (e) {
+		// 리듬 타이퍼(데스크톱): 채팅창이 게임 입력창으로 쓰이는 동안은 전송 버튼으로도 보내지 않음
+		// (엔터는 rule_rtype.js가 막음. 버튼으로 보내면 입력 중인 자모가 채팅으로 나가고 입력창이 비워져 단어 보너스도 사라짐)
+		if ($lib.Rtype && $lib.Rtype.s && $lib.Rtype.s.$input === $stage.talk) return;
 		checkInput();
 
 		// hereText를 메인 입력창으로 사용 (talk와 동기화됨)
@@ -9334,22 +9337,29 @@ $lib.Rhythm.splash = function (lane, j) {
 	s.panels[lane].append($sp);
 	addTimeout(function () { $sp.remove(); }, 450);
 };
-$lib.Rhythm.turnEnd = function (id, data) {
+// 라운드 종료 처리: 진행을 멈추고 키 입력 가로채기를 풀고 채팅창으로 포커스를 돌려줌. 이미 끝났으면 아무것도 안 하고 false
+// turnEnd 신호 없이 roundEnd만 오는 경우(2인 게임에서 한 명이 나가 서버가 바로 roundEnd 등)에도 body.js가 부름
+$lib.Rhythm.finish = function () {
 	var R = $lib.Rhythm;
 	var s = R.s;
-	var i, $sc;
+	var i;
+
+	if (!s || s.ended) return false;
+	s.ended = true;
+	cancelAnimationFrame(s.raf);
+	for (i = 0; i < s.notes.length; i++) R.removeMarker(s.notes[i]);
+	s.$count.text("");
+	R.releaseKeys();
+	if (!s.spec && !mobile) $stage.talk.focus();
+	return true;
+};
+$lib.Rhythm.turnEnd = function (id, data) {
+	var R = $lib.Rhythm;
+	var $sc;
 
 	// 라운드 종료 신호
 	if (!data || !data.target) {
-		if (s) {
-			s.ended = true;
-			cancelAnimationFrame(s.raf);
-			for (i = 0; i < s.notes.length; i++) R.removeMarker(s.notes[i]);
-			s.$count.text("");
-			// 게임이 끝나면 키 입력 가로채기를 풀고 채팅창으로 포커스를 돌려줌
-			R.releaseKeys();
-			if (!s.spec && !mobile) $stage.talk.focus();
-		}
+		R.finish();
 		stopBGM();
 		playSound('horr');
 		return;
@@ -9990,20 +10000,28 @@ $lib.Rtype.drawTyped = function () {
 	if (!s.started) return;
 	$lib.Rtype.setBar(s.$input ? s.$input.val().replace(/\n/g, "") : "");
 };
-$lib.Rtype.turnEnd = function (id, data) {
+// 라운드 종료 처리: 진행을 멈추고 채팅창을 입력창에서 풀어 줌. 이미 끝났으면 아무것도 안 하고 false
+// turnEnd 신호 없이 roundEnd만 오는 경우(2인 게임에서 한 명이 나가 서버가 바로 roundEnd 등)에도 body.js가 부름
+$lib.Rtype.finish = function () {
 	var R = $lib.Rtype;
 	var s = R.s;
-	var i, $sc;
+	var i;
+
+	if (!s || s.ended) return false;
+	s.ended = true;
+	cancelAnimationFrame(s.raf);
+	for (i = 0; i < s.notes.length; i++) R.removeNote(s.notes[i]);
+	R.releaseInput(s);
+	if (!s.spec && !mobile) $stage.talk.focus();
+	return true;
+};
+$lib.Rtype.turnEnd = function (id, data) {
+	var R = $lib.Rtype;
+	var $sc;
 
 	// 라운드 종료 신호
 	if (!data || !data.target) {
-		if (s) {
-			s.ended = true;
-			cancelAnimationFrame(s.raf);
-			for (i = 0; i < s.notes.length; i++) R.removeNote(s.notes[i]);
-			R.releaseInput(s);
-			if (!s.spec && !mobile) $stage.talk.focus();
-		}
+		R.finish();
 		stopBGM();
 		playSound('horr');
 		return;
@@ -12369,6 +12387,11 @@ function onMessage(data) {
 			if ($lib.Shuk && $lib.Shuk.shukMove) $lib.Shuk.shukMove(data);
 			break;
 		case 'roundEnd':
+			// 리듬 게임/리듬 타이퍼: 인원 이탈 등으로 서버가 turnEnd 없이 바로 roundEnd하면
+			// 키 입력 가로채기/채팅창 점유와 곡 재생이 다음 게임까지 남으므로 여기서 마저 정리 (정상 종료면 이미 끝나 있어 아무것도 안 함)
+			var xrgCut = !!($lib.Rhythm && $lib.Rhythm.finish());
+			if ($lib.Rtype && $lib.Rtype.finish()) xrgCut = true;
+			if (xrgCut) stopBGM();
 			for (i in data.users) {
 				if (data.users[i] && data.users[i].robot) {
 					$data.robots[i] = data.users[i];
