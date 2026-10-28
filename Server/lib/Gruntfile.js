@@ -58,6 +58,7 @@ const KKUTU_LIST = [
 	"Web/lib/kkutu/rule_rtype.js",
 	"Web/lib/kkutu/body-render.js",
 	"Web/lib/kkutu/body.js",
+	"Web/lib/kkutu/nk.js",
 	"Web/lib/kkutu/tail.js"
 ];
 

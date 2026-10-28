@@ -189,7 +189,8 @@ exports.roundReady = function () {
 		JLog.warn(`[Rhythm] no chart for difficulty: ${diff}`);
 		return my.roundEnd();
 	}
-	song = cands[Math.floor(Math.random() * cands.length)];
+	// 곡 선택(spk)으로 고른 곡이 있으면 그 곡, 없거나 이 난이도 채보가 없으면 무작위
+	song = cands.find(function (s) { return s.name === my.opts.songpick; }) || cands[Math.floor(Math.random() * cands.length)];
 	chart = song.charts[diff];
 	my.game.song = song.name;
 	my.game.title = song.title;

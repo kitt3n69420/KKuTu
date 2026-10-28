@@ -889,7 +889,7 @@ exports.RULE = {
 	'XRG': {
 		lang: "etc",
 		rule: "Rhythm",
-		opts: ["rhd", "rcz"],
+		opts: ["rhd", "rcz", "spk"],
 		time: 1,
 		ai: true,
 		big: true,
@@ -902,7 +902,7 @@ exports.RULE = {
 	'KRT': {
 		lang: "ko",
 		rule: "Rtype",
-		opts: ["rhd", "rcz"],
+		opts: ["rhd", "rcz", "spk"],
 		time: 1,
 		ai: true,
 		big: false,

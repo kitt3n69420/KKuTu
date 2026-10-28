@@ -112,6 +112,8 @@ exports.run = function (Server, page) {
     var RANK_TABLES = { exp: MainDB.redis, ksh: MainDB.redis_ksh, money: MainDB.redis_money };
     var type = RANK_TABLES.hasOwnProperty(req.query.type) ? req.query.type : 'exp';
     var table = RANK_TABLES[type];
+    // 한 페이지 개수: 기본 12(기본 UI 랭킹 창), 신 UI 랭킹 화면은 n=50
+    var lpp = req.query.n === "50" ? 50 : 12;
 
     // 입력 검증
     if (id && !validateInput(id, "string", { maxLength: 50, noSpecialChars: true })) {
@@ -139,14 +141,14 @@ exports.run = function (Server, page) {
     }
 
     if (id) {
-      table.getSurround(id, 12).then(function ($body) {
+      table.getSurround(id, lpp).then(function ($body) {
         withExpScore($body).then(function ($body) {
           res.send($body);
         });
       });
     } else {
       if (isNaN(pg)) pg = 0;
-      table.getPage(pg, 12).then(function ($body) {
+      table.getPage(pg, lpp).then(function ($body) {
         withExpScore($body).then(function ($body) {
           res.send($body);
         });

@@ -21,6 +21,7 @@ const KKUTU_LIST = [
     "lib/Web/lib/kkutu/rule_sock.js",
     "lib/Web/lib/kkutu/rule_shuk.js",
     "lib/Web/lib/kkutu/rule_wordcollect.js",
+    "lib/Web/lib/kkutu/rule_sudoku.js",
     "lib/Web/lib/kkutu/rule_picture.js",
     "lib/Web/lib/kkutu/rule_calcrelay.js",
     "lib/Web/lib/kkutu/rule_fourrelay.js",
@@ -37,6 +38,7 @@ const KKUTU_LIST = [
     "lib/Web/lib/kkutu/rule_rtype.js",
     "lib/Web/lib/kkutu/body-render.js",
     "lib/Web/lib/kkutu/body.js",
+    "lib/Web/lib/kkutu/nk.js",
     "lib/Web/lib/kkutu/tail.js"
 ];
 

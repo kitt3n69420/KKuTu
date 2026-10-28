@@ -90,6 +90,8 @@ $lib.Shuk.drawMaps = function () {
 	$lib.Shuk._renderMaps();
 };
 $lib.Shuk._renderMaps = function () {
+	// 신 UI: 길이별로 묶은 단어 칩으로 그림 (nk.js renderFound)
+	if (NK.active) return NK.renderFound($stage.game.bb, $data._maps);
 	var len = $data._maps.length;
 	// 컬럼(=줄) 증가 간격(STEP)과 축소 시작 시점(MAX_COLS): 모바일은 표시 공간이 훨씬 좁으므로 데스크톱보다 촘촘하게 잡음
 	// SWITCH 이전엔 STEP개당 1컬럼씩, 그 이후는 MAX_COLS²*DIVISOR, (MAX_COLS+1)²*DIVISOR ... 식으로 늘어남

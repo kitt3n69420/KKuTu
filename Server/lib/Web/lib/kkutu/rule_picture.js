@@ -244,7 +244,7 @@ function startStroke(e) {
         clearInterval($data._pqSendTimer);
         $data._pqSendTimer = null;
     }
-    $data._pqSendTimer = setInterval(flushPendingPoints, PQ_THROTTLE_MS);
+    $data._pqSendTimer = _setInterval(flushPendingPoints, PQ_THROTTLE_MS);
 }
 
 function continueStroke(e) {
@@ -308,6 +308,141 @@ function flushPendingPoints() {
     $data._pqPendingPoints = [];
 }
 
+// Canvas element (drawer gets the stroke listeners)
+function pqMakeCanvas(isDrawer) {
+    var canvas = document.createElement('canvas');
+    canvas.width = PQ_CANVAS_W;
+    canvas.height = PQ_CANVAS_H;
+    canvas.className = 'pq-canvas';
+    canvas.style.cursor = isDrawer ? 'crosshair' : 'default';
+
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, PQ_CANVAS_W, PQ_CANVAS_H);
+
+    $data._pqCanvasEl = canvas;
+    $data._pqCtx = ctx;
+
+    if (isDrawer) {
+        canvas.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            startStroke(e);
+        });
+        canvas.addEventListener('mousemove', function (e) {
+            if ($data._pqDrawing) continueStroke(e);
+        });
+        canvas.addEventListener('mouseup', function () { endStroke(); });
+        canvas.addEventListener('mouseleave', function () { if ($data._pqDrawing) endStroke(); });
+
+        canvas.addEventListener('touchstart', function (e) {
+            e.preventDefault();
+            startStroke(e.touches[0]);
+        });
+        canvas.addEventListener('touchmove', function (e) {
+            e.preventDefault();
+            if ($data._pqDrawing) continueStroke(e.touches[0]);
+        });
+        canvas.addEventListener('touchend', function (e) {
+            e.preventDefault();
+            endStroke();
+        });
+    }
+    return canvas;
+}
+
+function pqPass() {
+    playSound('mission');
+    send('pass', {});
+    $(this).prop('disabled', true).css('opacity', '0.5');
+}
+
+function pqClearAll() {
+    showConfirm(L['pqSureClear'] || '정말 모두 지우시겠습니까?', function (res) {
+        if (res) {
+            $data._pqStrokes = [];
+            var c = $data._pqCtx;
+            if (c) { c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, PQ_CANVAS_W, PQ_CANVAS_H); }
+            send('clear', {});
+        }
+    });
+}
+
+// 신 UI(H안, 사용자 결정): 직사각형 캔버스, 위에 색 팔레트(휴대폰은 간격 없는 한 줄)·붓 굵기·붓/채우기/지우개, 아래에 패스·모두 지우기.
+// 모양은 nk.css, 고른 상태는 인라인 테두리 대신 on 클래스(pqMarkNK). 붓 굵기는 붓·지우개 모두에 씀
+function pqDrawDisplayNK() {
+    var isDrawer = $data._pqIsDrawer, $main = $("<div>").addClass("nk-pq").toggleClass("nk-pq-draw", isDrawer), $head = $("<div>").addClass("nk-pq-head"),
+        $pal, $tool, $ctl, customInput;
+
+    $head.append($("<div>").text(L['pqTheme'] + " · " + (L['theme_' + $data._pqTheme] || $data._pqTheme)));
+    if ($data._pqAnswer) $head.append($("<div>").text(isDrawer ? L['pqAnswer'] + " " : "").append($("<b>").text(isDrawer ? $data._pqAnswer : pqLenText())));
+    $main.append($head);
+    if (isDrawer) {
+        $pal = $("<div>").addClass("nk-pq-pal");
+        PQ_COLORS.forEach(function (color) {
+            $pal.append($("<div>").addClass("pq-color-btn").attr('data-color', color).css('background-color', color).on('click', function () { pqPickNK(color); }));
+        });
+        customInput = document.createElement('input');
+        customInput.type = 'color';
+        customInput.value = $data._pqColor;
+        $(customInput).on('input', function () { pqPickNK(this.value); });
+        $pal.append($("<div>").addClass("pq-color-btn pq-custom-btn").append(customInput));
+        $tool = $("<div>").addClass("nk-pq-tool");
+        PQ_BRUSH_SIZES.forEach(function (size) {
+            var dot = Math.round(4 + size * 0.6);
+
+            $tool.append($("<div>").addClass("pq-brush-btn").attr('data-size', size).append($("<div>").css({ width: dot, height: dot }))
+                .on('click', function () { pqSizeNK(size); }));
+        });
+        [['brush', L['pqBrush']], ['fill', L['nkPqFill']], ['eraser', L['pqEraser']]].forEach(function (m) {
+            $tool.append($("<div>").addClass("nk-pq-mode").attr('data-m', m[0]).text(m[1]).on('click', function () { pqModeNK(m[0]); }));
+        });
+        $main.append($("<div>").addClass("nk-pq-tools").append($pal, $tool));
+    }
+    $main.append(pqMakeCanvas(isDrawer));
+    if (isDrawer) {
+        $ctl = $("<div>").addClass("nk-pq-ctl");
+        if ($data._pqPassCount < 3) $ctl.append($("<button>").attr('id', 'pq-pass-btn').text(L['pqPass'] + " (" + (3 - $data._pqPassCount) + ")").on('click', pqPass));
+        $ctl.append($("<button>").attr('id', 'pq-clear-btn').text(L['pqClear']).on('click', pqClearAll));
+        $main.append($ctl);
+    }
+    $stage.game.display.empty().append($main);
+    pqMarkNK();
+}
+
+function pqLenText() {
+    return $data._pqAnswer.replace(/\s/g, '').length + (L['pqChars'] || "글자");
+}
+
+function pqMarkNK() {
+    var $d = $stage.game.display, col = String($data._pqColor).toUpperCase(), preset = PQ_COLORS.indexOf(col) >= 0;
+
+    $d.find(".pq-color-btn[data-color]").each(function () { $(this).toggleClass("on", !$data._pqEraser && $(this).attr('data-color') === col); });
+    $d.find(".pq-custom-btn").toggleClass("on", !$data._pqEraser && !preset).css('background', preset ? '' : $data._pqColor);
+    $d.find(".pq-brush-btn").each(function () { $(this).toggleClass("on", $data._pqMode !== 'fill' && $(this).attr('data-size') == $data._pqBrushSize); });
+    $d.find(".nk-pq-mode").each(function () { $(this).toggleClass("on", $(this).attr('data-m') === ($data._pqEraser ? 'eraser' : $data._pqMode)); });
+}
+
+function pqPickNK(color) {
+    $data._pqColor = color;
+    if ($data._pqEraser) {
+        $data._pqEraser = false;
+        $data._pqMode = 'brush';
+    }
+    pqMarkNK();
+}
+
+function pqSizeNK(size) {
+    $data._pqBrushSize = size;
+    if ($data._pqMode === 'fill') $data._pqMode = 'brush';
+    pqMarkNK();
+}
+
+function pqModeNK(m) {
+    $data._pqEraser = m === 'eraser';
+    $data._pqMode = m === 'fill' ? 'fill' : 'brush';
+    pqMarkNK();
+}
+
 // ============================
 // Main $lib.Picture functions
 // ============================
@@ -362,6 +497,7 @@ $lib.Picture.roundReady = function (data, spec) {
 };
 
 $lib.Picture.drawDisplay = function () {
+    if (NK.active) return pqDrawDisplayNK();
     var $main = $("<div>").css({
         'display': 'flex',
         'flex-direction': 'column',
@@ -550,44 +686,7 @@ $lib.Picture.drawDisplay = function () {
         $main.append($toolRow);
     }
 
-    // Canvas element
-    var canvas = document.createElement('canvas');
-    canvas.width = PQ_CANVAS_W;
-    canvas.height = PQ_CANVAS_H;
-    canvas.className = 'pq-canvas';
-    canvas.style.cursor = isDrawer ? 'crosshair' : 'default';
-
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, PQ_CANVAS_W, PQ_CANVAS_H);
-
-    $data._pqCanvasEl = canvas;
-    $data._pqCtx = ctx;
-
-    if (isDrawer) {
-        canvas.addEventListener('mousedown', function (e) {
-            e.preventDefault();
-            startStroke(e);
-        });
-        canvas.addEventListener('mousemove', function (e) {
-            if ($data._pqDrawing) continueStroke(e);
-        });
-        canvas.addEventListener('mouseup', function () { endStroke(); });
-        canvas.addEventListener('mouseleave', function () { if ($data._pqDrawing) endStroke(); });
-
-        canvas.addEventListener('touchstart', function (e) {
-            e.preventDefault();
-            startStroke(e.touches[0]);
-        });
-        canvas.addEventListener('touchmove', function (e) {
-            e.preventDefault();
-            if ($data._pqDrawing) continueStroke(e.touches[0]);
-        });
-        canvas.addEventListener('touchend', function (e) {
-            e.preventDefault();
-            endStroke();
-        });
-    }
+    var canvas = pqMakeCanvas(isDrawer);
 
     $main.append(canvas);
 
@@ -609,11 +708,7 @@ $lib.Picture.drawDisplay = function () {
                     'box-shadow': '0 2px 4px rgba(0,0,0,0.3)'
                 })
                     .html((L['pqPass'] || '패스') + ' (' + passRemaining + ')')
-                    .on('click', function () {
-                        playSound('mission');
-                        send('pass', {});
-                        $(this).prop('disabled', true).css('opacity', '0.5');
-                    })
+                    .on('click', pqPass)
             );
         }
 
@@ -626,16 +721,7 @@ $lib.Picture.drawDisplay = function () {
                 'box-shadow': '0 2px 4px rgba(0,0,0,0.3)'
             })
                 .html((L['pqClear'] || '모두 지우기'))
-                .on('click', function () {
-                    showConfirm(L['pqSureClear'] || '정말 모두 지우시겠습니까?', function (res) {
-                        if (res) {
-                            $data._pqStrokes = [];
-                            var c = $data._pqCtx;
-                            if (c) { c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, PQ_CANVAS_W, PQ_CANVAS_H); }
-                            send('clear', {});
-                        }
-                    });
-                })
+                .on('click', pqClearAll)
         );
 
         $main.append($controls);
@@ -753,7 +839,7 @@ $lib.Picture.turnEnd = function (id, data) {
         }
 
         $stage.game.display.append(
-            $("<div>").css({
+            $("<div>").addClass("pq-answer").css({
                 'position': 'absolute', 'top': '50%', 'left': '50%',
                 'transform': 'translate(-50%, -50%)',
                 'font-size': '18px', 'font-weight': 'bold',

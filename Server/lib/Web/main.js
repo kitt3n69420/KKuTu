@@ -50,11 +50,12 @@ var Language = {
   nya: require("./lang/nya.json"),
 };
 //볕뉘 수정
-var ROUTES = ["major", "consume", "admin", "login"];
+var ROUTES = ["major", "consume", "admin", "login", "dictsearch"];
 //볕뉘 수정 끝
 var page = WebInit.page;
 var gameServers = [];
 var _noticeCache = { text: null, banner: null, activeIds: [], at: 0 };
+var RHYTHM_SONGS = require("./rhythm-songs"); // 리듬 게임류 곡 선택(spk) 목록 + 채보 레벨
 var NOTICE_CACHE_TTL = 300000; // 5분 (이벤트는 자주 바뀌지 않음)
 
 WebInit.MOBILE_AVAILABLE = ["portal", "main", "kkutu"];
@@ -398,6 +399,7 @@ Server.get("/", function (req, res) {
     JA_THEME: Const.JA_THEME,
     IJP_EXCEPT: Const.IJP_EXCEPT,
     QUIZ_TOPIC: Const.QUIZ_TOPIC,
+    RHYTHM_SONGS: RHYTHM_SONGS,
     ogImage: "https://kkutu-n.xyz/img/kkutu/logo.png",
     ogURL: "https://kkutu-n.xyz/",
     ogTitle: "글자로 놀자! 끄투엔",

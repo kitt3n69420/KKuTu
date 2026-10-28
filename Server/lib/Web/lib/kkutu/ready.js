@@ -200,6 +200,8 @@ $(document).ready(function () {
 			quizPickAll: $("#quizpick-all"),
 			quizPickNo: $("#quizpick-no"),
 			quizPickOK: $("#quizpick-ok"),
+			songPick: $("#SongPickDiag"),
+			songPickOK: $("#songpick-ok"),
 			chatLog: $("#ChatLogDiag"),
 			obtain: $("#ObtainDiag"),
 			obtainOK: $("#obtain-ok"),
@@ -977,10 +979,16 @@ $(document).ready(function () {
 		// 다크 모드 설정
 		$("#dark-mode-setting").val(savedSettings.darkMode || 'light');
 
+		// UI(기본/신) 설정
+		$("#ui-setting").val(savedSettings.ui === 'new' ? 'new' : 'classic');
+		$("#ui-style-setting").val(savedSettings.uiStyle === 'flat' ? 'flat' : 'mixed');
+
 		// 비트 모드 설정
 		$("#beat-setting").val(savedSettings.beatMode || 'auto');
 
-		showDialog($stage.dialog.setting);
+		// 신 UI는 같은 입력 요소를 탭별로 옮겨 둔 새 설정 창을 띄움 (값·저장은 위·아래 기존 코드 그대로)
+		if (NK.active) NK.openSettings();
+		else showDialog($stage.dialog.setting);
 	});
 	$stage.menu.community.on('click', function (e) {
 		if ($data.guest) return fail(451);
@@ -1065,6 +1073,7 @@ $(document).ready(function () {
 		}
 		if (window.updateViewAllRulesBtn) window.updateViewAllRulesBtn();
 		$data._injpick = $data.room.opts.injpick;
+		$data._songpick = $data.room.opts.songpick || "";
 
 		// 서바이벌 HP 설정 복원
 		if ($data.room.opts.surHP) {
@@ -1288,6 +1297,11 @@ $(document).ready(function () {
 			if (rule.opts.indexOf("qij") != -1) $("#room-quizpick-panel").show();
 			else $("#room-quizpick-panel").hide();
 			$("#room-quizpick-panel-flat").hide();
+
+			// Show/hide song pick panel
+			if (rule.opts.indexOf("spk") != -1) $("#room-songpick-panel").show();
+			else $("#room-songpick-panel").hide();
+			$("#room-songpick-panel-flat").hide();
 		} else {
 			// Flat view - hide all category panels, show flat panel
 			$("#room-manner-panel").hide();
@@ -1298,6 +1312,7 @@ $(document).ready(function () {
 			$("#room-misc-panel").hide();
 			$("#room-injpick-panel").hide();
 			$("#room-quizpick-panel").hide();
+			$("#room-songpick-panel").hide();
 
 			// Show flat panel and update options visibility
 			$("#room-all-rules-panel").show();
@@ -1309,6 +1324,10 @@ $(document).ready(function () {
 			// Show/hide quiz topic pick panel in flat mode
 			if (rule.opts.indexOf("qij") != -1) $("#room-quizpick-panel-flat").show();
 			else $("#room-quizpick-panel-flat").hide();
+
+			// Show/hide song pick panel in flat mode
+			if (rule.opts.indexOf("spk") != -1) $("#room-songpick-panel-flat").show();
+			else $("#room-songpick-panel-flat").hide();
 		}
 
 		// Check if simple room view is enabled
@@ -1326,6 +1345,8 @@ $(document).ready(function () {
 			$("#room-quizpick-panel").hide();
 			$("#room-injpick-panel-flat").hide();
 			$("#room-quizpick-panel-flat").hide();
+			$("#room-songpick-panel").hide();
+			$("#room-songpick-panel-flat").hide();
 
 			// Show simple panel instead
 			$("#room-simple-rules-panel").show();
@@ -1344,6 +1365,12 @@ $(document).ready(function () {
 				$("#room-simple-quizpick-panel").show();
 			} else {
 				$("#room-simple-quizpick-panel").hide();
+			}
+
+			if (rule.opts.indexOf("spk") != -1) {
+				$("#room-simple-songpick-panel").show();
+			} else {
+				$("#room-simple-songpick-panel").hide();
 			}
 
 			// Update simple panel options visibility
@@ -1391,6 +1418,7 @@ $(document).ready(function () {
 		// Hide Special Rules Panel if empty
 		if (!$data._injpick) $data._injpick = [];
 		if (!$data._quizpick) $data._quizpick = [];
+		if (!$data._songpick) $data._songpick = "";
 		if (rule.rule == "Typing" || rule.rule == "Chainbattle" || rule.rule == "Flip" || rule.rule == "numberclap") $("#room-round").val(3);
 		$("#room-time").children("option").each(function (i, o) {
 			$(o).html(Number($(o).val()) * rule.time + L['SECOND']);
@@ -1651,6 +1679,7 @@ $(document).ready(function () {
 			applyQuizTopicLang(rule.lang);
 			$data._quizpick = sampleTopics($("#quizpick-list div:visible input"), 10, 0.2);
 		}
+		if (has('spk')) $data._songpick = "";
 
 		// 4. 라운드/서바이벌 설정을 규칙이 허용하는 범위 내에서 랜덤화
 		// 달가루 모으기는 라운드 1 / 60초로 고정이므로 랜덤화 대상에서 제외
@@ -1737,6 +1766,10 @@ $(document).ready(function () {
 			// quiz pick 패널 표시
 			if (rule.opts.indexOf("qij") != -1) $("#view-all-quizpick-panel").show();
 			else $("#view-all-quizpick-panel").hide();
+
+			// song pick 패널 표시
+			if (rule.opts.indexOf("spk") != -1) $("#view-all-songpick-panel").show();
+			else $("#view-all-songpick-panel").hide();
 		} else {
 			// Flat view - hide all category panels, show flat panel
 			$("#view-all-manner-panel").hide();
@@ -1747,6 +1780,7 @@ $(document).ready(function () {
 			$("#view-all-misc-panel").hide();
 			$("#view-all-injpick-panel").hide();
 			$("#view-all-quizpick-panel").hide();
+			$("#view-all-songpick-panel").hide();
 
 			// Show flat panel
 			$("#view-all-flat-panel").show();
@@ -1758,6 +1792,10 @@ $(document).ready(function () {
 			// quiz pick 패널 표시 (flat mode)
 			if (rule.opts.indexOf("qij") != -1) $("#view-all-flat-quizpick-panel").show();
 			else $("#view-all-flat-quizpick-panel").hide();
+
+			// song pick 패널 표시 (flat mode)
+			if (rule.opts.indexOf("spk") != -1) $("#view-all-flat-songpick-panel").show();
+			else $("#view-all-flat-songpick-panel").hide();
 		}
 
 		showDialog($stage.dialog.viewAllRules);
@@ -1993,6 +2031,9 @@ $(document).ready(function () {
 		// localStorage에 볼륨 설정 저장
 		var newDarkMode = $("#dark-mode-setting").val() || 'light';
 		var newBeatMode = $("#beat-setting").val() || 'auto';
+		var newUI = $("#ui-setting").val() === 'new' ? 'new' : 'classic';
+		var newUIStyle = $("#ui-style-setting").val() === 'flat' ? 'flat' : 'mixed';
+		var uiChanged = (loadVolumeSettings().ui === 'new' ? 'new' : 'classic') !== newUI;
 		saveVolumeSettings({
 			bgmVolume: $data.BGMVolume,
 			effectVolume: $data.EffectVolume,
@@ -2007,7 +2048,9 @@ $(document).ready(function () {
 			theme: newTheme,
 			darkMode: newDarkMode,
 			beatMode: newBeatMode,
-			rhythmSync: Number($("#rhythm-sync").val()) || 0
+			rhythmSync: Number($("#rhythm-sync").val()) || 0,
+			ui: newUI,
+			uiStyle: newUIStyle
 		});
 		ACTIVE_BEAT = resolveActiveBeat(newBeatMode, newSoundPack);
 
@@ -2042,6 +2085,13 @@ $(document).ready(function () {
 				return; // 리로드 하니까 여기서 중단
 			}
 		}
+
+		// 기본/신 UI 전환은 화면 틀 전체가 바뀌므로 새로고침, 스타일(단색/혼합)은 즉시 반영
+		if (uiChanged) {
+			location.reload();
+			return;
+		}
+		if (NK.active) document.documentElement.setAttribute('data-nk-style', newUIStyle);
 
 		applyTheme(newTheme);
 		applyDarkMode(newDarkMode);
@@ -2363,7 +2413,8 @@ $(document).ready(function () {
 	$stage.dialog.roomOK.on('click', function (e) {
 		var i, k, opts = {
 			injpick: $data._injpick,
-			quizpick: $data._quizpick
+			quizpick: $data._quizpick,
+			songpick: $data._songpick
 		};
 		for (i in OPTIONS) {
 			k = OPTIONS[i].name.toLowerCase();
@@ -2537,7 +2588,8 @@ $(document).ready(function () {
 		// alert(L['error_555']);
 		if ($data.guest) return fail(421);
 		if ($data._gaming) return fail(438);
-		if (showDialog($stage.dialog.dress)) $.get("/box", function (res) {
+		// 신 UI는 탭으로 묶은 프로필 관리 창의 꾸미기 탭을 엶
+		if (NK.active ? NK.openProfile('dress') : showDialog($stage.dialog.dress)) $.get("/box", function (res) {
 			if (res.error) return fail(res.error);
 
 			$data.box = res;
@@ -2697,7 +2749,7 @@ $(document).ready(function () {
 	});
 	$("#dress-cf").on('click', function (e) {
 		if ($data._gaming) return fail(438);
-		if (showDialog($stage.dialog.charFactory)) drawCharFactory();
+		if (NK.active ? NK.openProfile('cf') : showDialog($stage.dialog.charFactory)) drawCharFactory();
 	});
 	$stage.dialog.cfCompose.on('click', function (e) {
 		if (!$stage.dialog.cfCompose.hasClass("cf-composable")) return fail(436);
@@ -2722,7 +2774,7 @@ $(document).ready(function () {
 	});
 	$("#dress-craft").on('click', function (e) {
 		if ($data._gaming) return fail(438);
-		if (showDialog($stage.dialog.craftWorkshop)) drawCraftWorkshop();
+		if (NK.active ? NK.openProfile('craft') : showDialog($stage.dialog.craftWorkshop)) drawCraftWorkshop();
 	});
 	$stage.menu.exchange.on('click', function (e) {
 		if ($data._gaming) return fail(438);
@@ -2848,7 +2900,8 @@ $(document).ready(function () {
 		showDialog($stage.dialog.injPick);
 	});
 	$stage.dialog.injPickAll.on('click', function (e) {
-		$("#injpick-list input").prop('checked', true);
+		// 보이는 주제만 (주제 검색 중이면 검색에 맞는 것만 — 퀴즈 주제와 같게)
+		$("#injpick-list div:visible > input").prop('checked', true);
 	});
 	$stage.dialog.injPickNo.on('click', function (e) {
 		$("#injpick-list input").prop('checked', false);
@@ -2866,6 +2919,22 @@ $(document).ready(function () {
 		$data._injpick = list;
 		$stage.dialog.injPick.hide();
 	});
+	// 주제 검색: 이름에 검색어가 들어간 주제만 보임(띄어쓰기·대소문자 무시). 언어별 목록·한국어 전용 퀴즈 주제를 고르는
+	// 기존 show/hide와 겹치지 않게 클래스(pick-miss)로 숨김. 창을 열 때마다 비움(showDialog)
+	function filterPicks($list, q) {
+		var $rows = $list.find("input").parent();
+
+		q = (q || "").replace(/\s/g, "").toLowerCase();
+		$rows.each(function () {
+			$(this).toggleClass("pick-miss", $(this).children("label").text().replace(/\s/g, "").toLowerCase().indexOf(q) === -1);
+		});
+		$list.find(".ijp-sec").each(function () {
+			$(this).toggleClass("pick-miss", !$(this).nextUntil(".ijp-sec").not(".pick-miss").length);
+		});
+		$list.children(".pick-empty").toggle(!!q && !$rows.filter(":visible").length);
+	}
+	$("#injpick-search").on('input', function () { filterPicks($("#injpick-list"), $(this).val()); });
+	$("#quizpick-search").on('input', function () { filterPicks($("#quizpick-list"), $(this).val()); });
 	function applyQuizTopicLang(lang) {
 		if (lang === 'en') {
 			$("#quizpick-list div[data-ko-only='true']").hide().find('input').prop('checked', false);
@@ -2936,6 +3005,18 @@ $(document).ready(function () {
 			$("#quiz-pick-" + $data._quizpick[i]).prop('checked', true);
 		}
 		showDialog($stage.dialog.quizPick);
+	});
+	// Song pick handlers: 한 곡만 고름 (빈 값 = 무작위). 목록에 없는 곡이면 무작위에 체크
+	$("#room-song-pick, #room-song-pick-flat, #room-simple-song-pick, #view-all-song-pick, #view-all-flat-song-pick").on('click', function (e) {
+		var $inputs = $("#songpick-list input");
+		var $cur = $inputs.filter(function () { return this.value === ($data._songpick || ""); });
+
+		($cur.length ? $cur : $inputs.first()).prop('checked', true);
+		showDialog($stage.dialog.songPick);
+	});
+	$stage.dialog.songPickOK.on('click', function (e) {
+		$data._songpick = $("#songpick-list input:checked").val() || "";
+		$stage.dialog.songPick.hide();
 	});
 	$stage.dialog.kickVoteY.on('click', function (e) {
 		send('kickVote', { agree: true });

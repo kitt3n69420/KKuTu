@@ -1150,6 +1150,10 @@ function Room(room, channel) {
 				var allowedQuizTopics = my.rule.lang === 'en' ? Const.QUIZ_TOPIC_EN : Const.QUIZ_TOPIC;
 				my.opts.quizpick = rawQuizpick.filter(function (item) { return typeof item === 'string' && allowedQuizTopics.indexOf(item) !== -1; });
 			} else my.opts.quizpick = [];
+			// 곡 선택: 채보 파일 이름(빈 문자열 = 무작위). 없는 곡이면 rhythm.js/rtype.js가 무작위로 고름
+			if (my.rule.opts.includes("spk") && typeof room.opts.songpick === 'string' && /^[\w.-]{1,64}$/.test(room.opts.songpick)) {
+				my.opts.songpick = room.opts.songpick;
+			} else my.opts.songpick = "";
 			// 서바이벌 HP 옵션 처리 (허용 값만 사용)
 			var ALLOWED_SUR_HP = [200, 500, 1000, 2000];
 			if (ALLOWED_SUR_HP.indexOf(room.opts.surHP) !== -1) {

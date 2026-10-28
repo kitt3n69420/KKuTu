@@ -471,6 +471,7 @@ KKuTu.onClientMessage = function ($c, msg) {
         }
         if (msg.opts.injpick !== undefined && !Array.isArray(msg.opts.injpick)) delete msg.opts.injpick;
         if (msg.opts.quizpick !== undefined && !Array.isArray(msg.opts.quizpick)) delete msg.opts.quizpick;
+        if (msg.opts.songpick !== undefined && typeof msg.opts.songpick !== 'string') delete msg.opts.songpick;
       }
 
       // 서버에서는 욕설 필터링을 적용하지 않음 (클라이언트에서 표시 시 처리)

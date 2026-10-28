@@ -579,7 +579,9 @@ function claimMilestone(tier) {
 function drawLeaderboard(data) {
 	var $board = $stage.dialog.lbTable.empty();
 	var fr = data.data[0] ? data.data[0].rank : 0;
-	var page = (data.page || Math.floor(fr / 20)) + 1;
+	// 신 UI 랭킹 화면은 한 페이지 50개 (nk.js가 /ranking 요청에 n=50을 붙임)
+	var lpp = NK.active ? 50 : 12;
+	var page = (data.page || Math.floor(fr / (NK.active ? 50 : 20))) + 1;
 	var type = $data._lbtype || 'exp';
 	var scoreLabelKey = { exp: 'recordScore', ksh: 'rankScoreKsh', money: 'rankScoreMoney' }[type];
 
@@ -608,7 +610,7 @@ function drawLeaderboard(data) {
 	$("#ranking-" + $data.id).addClass("ranking-me");
 	$stage.dialog.lbPage.html(L['page'] + " " + page);
 	$stage.dialog.lbPrev.attr('disabled', page <= 1);
-	$stage.dialog.lbNext.attr('disabled', data.data.length < 12);
+	$stage.dialog.lbNext.attr('disabled', data.data.length < lpp);
 	$stage.dialog.lbMe.attr('disabled', !!$data.guest);
 	$data._lbpage = page - 1;
 }
@@ -653,6 +655,7 @@ function updateCommunity() {
 		});
 	}
 	$("#CommunityDiag .dialog-title").html(L['communityText'] + " (" + len + " / 100)");
+	if (NK.active) NK.renderFriends();
 }
 function requestRoomInfo(id) {
 	var o = $data.rooms[id];
@@ -853,6 +856,7 @@ function loadShop() {
 		});
 		global.expl($body);
 		filterShop(true);
+		if (NK.active) NK.afterShop();
 	});
 	$(".shop-type.selected").removeClass("selected");
 	$("#shop-type-all").addClass("selected");
@@ -889,6 +893,7 @@ function filterShop(by) {
 	} else {
 		$empty.hide();
 	}
+	if (NK.active) NK.shopCount(visibleCount);
 }
 function explainGoods(item, equipped, expire) {
 	var i;
@@ -1218,6 +1223,8 @@ function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraigh
 					anim['font-size'] = 20;
 				}
 				$l.show().animate(anim, 100);
+				// 신 UI(단어 창이 크게 확대됨): 공격·방어·미션 등으로 커진 글자도 다른 글자처럼 곧바로 원래 크기로 돌아옴 (색은 그대로)
+				if (NK.active && anim['font-size'] > 20) $l.animate({ 'font-size': 20 }, 200);
 			}, Number(i) * tick, $l, ta, isSumiChar, isStraightChar, isLinking, isHanbang, text.charAt(charIdx), isFullHouseChar, isLinkPos, isDefPos);
 		}
 		i = $stage.game.display.children("div").get(0);
@@ -1381,6 +1388,7 @@ function pushHistory(text, mean, theme, wc) {
 function loadSounds(list, callback, silent) {
 	var remain = list.length;
 	var onDone = function () {
+		if (NK.active && !silent) NK.loadProgress((list.length - remain + 1) / list.length);
 		if (--remain <= 0) {
 			if (callback) callback();
 		} else if (!silent) {

@@ -274,6 +274,11 @@ body {
 	width: 100px;
 }
 
+/* 주제 검색에 맞지 않는 주제·빈 묶음 제목 (ready.js filterPicks) */
+.pick-miss {
+	display: none !important;
+}
+
 .tail-button {
 	margin-top: 7px;
 }
@@ -2940,9 +2945,43 @@ body.dark-mode .cw-cell.sd-wrong {
 }
 
 #room-quizpick-panel,
-#room-quizpick-panel-flat {
+#room-quizpick-panel-flat,
+#room-songpick-panel,
+#room-songpick-panel-flat {
 	width: auto;
 }
+
+/* 곡 선택 창: 한 줄에 곡 하나, 오른쪽에 채보 난이도 배지 (N 초록 · H 노랑 · C 빨강 · A 보라, 없는 난이도는 빈 칸) */
+#songpick-list label {
+	display: inline-flex;
+	align-items: center;
+	width: calc(100% - 26px);
+	vertical-align: middle;
+}
+#songpick-list .song-title {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-weight: normal;
+}
+#songpick-list .song-lv {
+	flex: none;
+	width: 32px;
+	margin-left: 3px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: bold;
+	line-height: 16px;
+	text-align: center;
+	color: #FFFFFF;
+}
+#songpick-list .song-lv-n { background-color: #2F9E44; }
+#songpick-list .song-lv-h { background-color: #F0B400; color: #222222; }
+#songpick-list .song-lv-c { background-color: #E03131; }
+#songpick-list .song-lv-a { background-color: #8E44D9; }
+#songpick-list .song-lv-none { visibility: hidden; }
 
 #RoomDiag .dialog-opt label {
 	font-size: 11px;
