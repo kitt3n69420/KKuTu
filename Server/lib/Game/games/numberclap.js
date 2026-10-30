@@ -51,9 +51,20 @@ function pickClapDigits() {
 	return out.sort(function (a, b) { return a - b; }).map(String);
 }
 
+function isPrime(n) {
+	var i;
+	if (n < 2) return false;
+	for (i = 2; i * i <= n; i++) {
+		if (n % i === 0) return false;
+	}
+	return true;
+}
+
 // 자릿수 내 박수 대상 숫자(digits) 등장 횟수 = 필요한 박수 수 (0이면 숫자 턴)
+// digits가 없으면 소수 규칙: 소수일 때만 박수 1번
 function requiredClaps(n, digits) {
 	var s = String(n), count = 0, i;
+	if (!digits) return isPrime(n) ? 1 : 0;
 	for (i = 0; i < s.length; i++) {
 		if (digits.indexOf(s[i]) !== -1) count++;
 	}
@@ -113,11 +124,12 @@ exports.roundReady = function () {
 	my.game.roundTime = my.time * 1000; //설정된 초를 밀리초로 바꾼다.
 	my.resetChain(); //1부터 다시 숫자를 시작한다.
 	my.game.n = 1;
-	my.game.clapDigits = my.opts.randomnumber ? pickClapDigits() : DEFAULT_DIGITS;
+	my.game.clapDigits = my.opts.prime ? null : (my.opts.randomnumber ? pickClapDigits() : DEFAULT_DIGITS);
 	if (my.game.round <= my.round) {
 		my.byMaster('roundReady', {
 			round: my.game.round,
-			digits: my.game.clapDigits
+			digits: my.game.clapDigits,
+			prime: !my.game.clapDigits
 		}, true);
 		my.game.turnTimer = setTimeout(my.turnStart, 2400); //라운드 준비 브금을 트는 것 같아.
 	} else {
@@ -145,7 +157,8 @@ exports.turnStart = function (force) {
 		roundTime: my.game.roundTime,
 		turnTime: my.game.turnTime,
 		seq: force ? my.game.seq : undefined,
-		digits: my.game.clapDigits
+		digits: my.game.clapDigits,
+		prime: !my.game.clapDigits
 	}, true);
 	var timeout = my.opts.survival
 		? my.game.turnTime + 100
@@ -190,6 +203,7 @@ exports.turnEnd = function () {
 		ok: false,
 		target: target ? target.id : null,
 		score: score,
+		totalScore: (target && target.game) ? target.game.score : undefined,
 		hint: hint
 	}, true);
 

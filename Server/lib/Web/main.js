@@ -30,9 +30,11 @@ var Server = Express();
 var DB = require("./db");
 //볕뉘 수정 구문삭제 (28)
 var JLog = require("../sub/jjlog");
+var ErrorReport = require("../sub/error-report");
 var WebInit = require("../sub/webinit");
 var GLOBAL = require("../sub/global.json");
 var GuestState = require("../sub/guest-state");
+var PunishmentLog = require("../sub/punishment-log");
 var Secure = require("../sub/secure");
 //볕뉘 수정
 var passport = require("passport");
@@ -55,6 +57,7 @@ var ROUTES = ["major", "consume", "admin", "login"];
 var page = WebInit.page;
 var gameServers = [];
 var _noticeCache = { text: null, banner: null, activeIds: [], at: 0 };
+var RHYTHM_SONGS = require("./rhythm-songs"); // 리듬 게임류 곡 선택(spk) 목록 + 채보 레벨
 var NOTICE_CACHE_TTL = 300000; // 5분 (이벤트는 자주 바뀌지 않음)
 
 WebInit.MOBILE_AVAILABLE = ["portal", "main", "kkutu"];
@@ -62,6 +65,12 @@ WebInit.MOBILE_AVAILABLE = ["portal", "main", "kkutu"];
 require("../sub/checkpub");
 
 JLog.info("<< KKuTu Web >>");
+// 처리되지 않은 promise rejection도 Node 기본 동작으로 여기로 들어온다.
+// 오류 로그 채널로 보낸 뒤 기본 동작처럼 종료한다.
+process.on("uncaughtException", function (err) {
+  JLog.error(`ERROR OCCURRED ON THE WEB SERVER! ${err && err.stack || err}`);
+  ErrorReport.flush(5000).then(function () { process.exit(1); });
+});
 Server.set("views", __dirname + "/views");
 Server.set("view engine", "pug");
 // 방화벽에서 Cloudflare IP 대역만 허용하므로 X-Forwarded-For를 신뢰해도 안전함
@@ -398,6 +407,7 @@ Server.get("/", function (req, res) {
     JA_THEME: Const.JA_THEME,
     IJP_EXCEPT: Const.IJP_EXCEPT,
     QUIZ_TOPIC: Const.QUIZ_TOPIC,
+    RHYTHM_SONGS: RHYTHM_SONGS,
     ogImage: "https://kkutu-n.xyz/img/kkutu/logo.png",
     ogURL: "https://kkutu-n.xyz/",
     ogTitle: "글자로 놀자! 끄투엔",
@@ -415,6 +425,22 @@ Server.get("/servers", function (req, res) {
 });
 
 //볕뉘 수정 구문 삭제(274~353)
+
+// 처벌 내역은 punishment 테이블에서 매번 읽어 온다. (인게임/디스코드 명령어가 기록)
+Server.get("/legal/punishment", function (req, res) {
+  DB.punishment
+    .find()
+    .sort(["createdat", -1], ["_id", -1])
+    .on(
+      function (rows) {
+        page(req, res, "legal/punishment", { punishments: rows.map(PunishmentLog.toView) });
+      },
+      null,
+      function () {
+        page(req, res, "legal/punishment", { punishments: [] });
+      },
+    );
+});
 
 Server.get("/legal/:page", function (req, res) {
   if (!validateInput(req.params.page, "string", { maxLength: 50, noSpecialChars: true })) {

@@ -10,12 +10,13 @@
  *   score    chainLen=0 기준 가치: (5+7L)^0.74 * (1 + 0.3 * mcount)  (game-utils.js getPreScore + 미션 보너스. 한/영/일 동일)
  *   flag     kkutu_<lang>.flag (1=외래어, 2=어인정). 방 옵션에 따라 런타임(mission-table.js)에서 거른다
  * 글자 개수는 미션 글자와 정확히 같은 글자만 센다(영어는 소문자 a-z, 일본어는 히라가나).
- * 제외: 한국어에서 theme 가 정확히 'KPT'(국내 특허) 단독인 단어
+ * 제외: 한국어에서 theme 가 정확히 'KPT'(국내 특허) 단독인 단어, MAX_LEN(80)글자보다 긴 단어
  */
 var MissionTable = require('../Server/lib/Game/games/mission-table');
 
 var TOP_K = 60;
 var CAPS = [0, 8];
+var MAX_LEN = 80; // 이보다 긴 단어는 테이블에 넣지 않는다
 
 function better(a, b) { // a가 b보다 앞서는가
 	if (a.score !== b.score) return a.score > b.score;
@@ -40,7 +41,7 @@ function build(rows, lang) {
 	rows.forEach(function (r) {
 		var word = r._id;
 		var len = word.length;
-		if (!len || (lang === "ko" && r.theme === "KPT")) return;
+		if (!len || len > MAX_LEN || (lang === "ko" && r.theme === "KPT")) return;
 		var hit = r.hit || 0;
 		var flag = r.flag || 0;
 

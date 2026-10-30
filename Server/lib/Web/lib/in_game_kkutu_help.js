@@ -17,13 +17,8 @@
  */
 
 $(document).ready(function(){
-	$("#list").children().each(function(index, obj){
-		var p = "c" + (index + 1);
-
-		$(obj).attr('id', p).find("li").each(function(_index, _obj){
-			$(_obj).attr('id', p + "p" + (_index + 1));
-		});
-	});
+	// 목차 항목의 id는 help.pug에 직접 적는다 (li#c4p57 → div.page-body#box-c4p57).
+	// 예전처럼 위치로 번호를 매기면 중간에 항목을 넣을 때 뒤쪽 페이지 번호가 전부 밀린다
 	$("#list li").each(function(_index, obj){
 		var $li = $(obj);
 		var $childUl = $li.children("ul");

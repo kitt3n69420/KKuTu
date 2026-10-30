@@ -65,12 +65,15 @@ $(document).ready(function () {
 	$data._wblock = {};
 	$data._shut = {};
 	$data.usersR = {};
-	EXP.push(getRequiredScore(1));
+	var rawExp = [getRequiredScore(1)];
 	for (i = 2; i < MAX_LEVEL; i++) {
-		EXP.push(EXP[i - 2] + getRequiredScore(i));
+		rawExp.push(rawExp[i - 2] + getRequiredScore(i));
 	}
-	EXP[MAX_LEVEL - 1] = Infinity;
-	EXP.push(Infinity);
+	// 별렙 구간은 3레벨마다 한 칸만 남겨 s레벨 하나의 목표 경험치로 쓴다
+	for (i = 0; i < rawExp.length; i++) {
+		if (i < STAR_LEVEL || (i - STAR_LEVEL) % 3 == 2) EXP.push(rawExp[i]);
+	}
+	EXP.push(Infinity, Infinity);
 	$stage = {
 		loading: $("#Loading"),
 		nickBlockOverlay: $("#NickBlockOverlay"),
@@ -200,6 +203,8 @@ $(document).ready(function () {
 			quizPickAll: $("#quizpick-all"),
 			quizPickNo: $("#quizpick-no"),
 			quizPickOK: $("#quizpick-ok"),
+			songPick: $("#SongPickDiag"),
+			songPickOK: $("#songpick-ok"),
 			chatLog: $("#ChatLogDiag"),
 			obtain: $("#ObtainDiag"),
 			obtainOK: $("#obtain-ok"),
@@ -1068,6 +1073,7 @@ $(document).ready(function () {
 		}
 		if (window.updateViewAllRulesBtn) window.updateViewAllRulesBtn();
 		$data._injpick = $data.room.opts.injpick;
+		$data._songpick = $data.room.opts.songpick || "";
 
 		// 서바이벌 HP 설정 복원
 		if ($data.room.opts.surHP) {
@@ -1231,7 +1237,7 @@ $(document).ready(function () {
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp', 'dic', 'arc'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg', 'flu', 'jkp', 'dfb'];
-		var keyRules = ['man', 'gen', 'ext', "jre", "jdk", 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'lng', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'ljn', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf', 'stp', 'rnm'];
+		var keyRules = ['man', 'gen', 'ext', "jre", "jdk", 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'lng', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'ljn', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf', 'stp', 'rnm', 'prm', 'inf'];
 
 		if (showCategory) {
 			// Categorized view - hide flat panel, show category panels
@@ -1291,6 +1297,11 @@ $(document).ready(function () {
 			if (rule.opts.indexOf("qij") != -1) $("#room-quizpick-panel").show();
 			else $("#room-quizpick-panel").hide();
 			$("#room-quizpick-panel-flat").hide();
+
+			// Show/hide song pick panel
+			if (rule.opts.indexOf("spk") != -1) $("#room-songpick-panel").show();
+			else $("#room-songpick-panel").hide();
+			$("#room-songpick-panel-flat").hide();
 		} else {
 			// Flat view - hide all category panels, show flat panel
 			$("#room-manner-panel").hide();
@@ -1301,6 +1312,7 @@ $(document).ready(function () {
 			$("#room-misc-panel").hide();
 			$("#room-injpick-panel").hide();
 			$("#room-quizpick-panel").hide();
+			$("#room-songpick-panel").hide();
 
 			// Show flat panel and update options visibility
 			$("#room-all-rules-panel").show();
@@ -1312,6 +1324,10 @@ $(document).ready(function () {
 			// Show/hide quiz topic pick panel in flat mode
 			if (rule.opts.indexOf("qij") != -1) $("#room-quizpick-panel-flat").show();
 			else $("#room-quizpick-panel-flat").hide();
+
+			// Show/hide song pick panel in flat mode
+			if (rule.opts.indexOf("spk") != -1) $("#room-songpick-panel-flat").show();
+			else $("#room-songpick-panel-flat").hide();
 		}
 
 		// Check if simple room view is enabled
@@ -1329,6 +1345,8 @@ $(document).ready(function () {
 			$("#room-quizpick-panel").hide();
 			$("#room-injpick-panel-flat").hide();
 			$("#room-quizpick-panel-flat").hide();
+			$("#room-songpick-panel").hide();
+			$("#room-songpick-panel-flat").hide();
 
 			// Show simple panel instead
 			$("#room-simple-rules-panel").show();
@@ -1347,6 +1365,12 @@ $(document).ready(function () {
 				$("#room-simple-quizpick-panel").show();
 			} else {
 				$("#room-simple-quizpick-panel").hide();
+			}
+
+			if (rule.opts.indexOf("spk") != -1) {
+				$("#room-simple-songpick-panel").show();
+			} else {
+				$("#room-simple-songpick-panel").hide();
 			}
 
 			// Update simple panel options visibility
@@ -1394,6 +1418,7 @@ $(document).ready(function () {
 		// Hide Special Rules Panel if empty
 		if (!$data._injpick) $data._injpick = [];
 		if (!$data._quizpick) $data._quizpick = [];
+		if (!$data._songpick) $data._songpick = "";
 		if (rule.rule == "Typing" || rule.rule == "Chainbattle" || rule.rule == "Flip" || rule.rule == "numberclap") $("#room-round").val(3);
 		$("#room-time").children("option").each(function (i, o) {
 			$(o).html(Number($(o).val()) * rule.time + L['SECOND']);
@@ -1470,20 +1495,32 @@ $(document).ready(function () {
 		});
 	});
 
-	// 아이템전-랜덤턴 상호배타
-	window.RULE_CHECKBOXES['item'].on('change', function () {
-		if ($(this).is(':checked')) window.RULE_CHECKBOXES['randomturn'].prop('checked', false);
-	});
-	window.RULE_CHECKBOXES['randomturn'].on('change', function () {
-		if ($(this).is(':checked')) window.RULE_CHECKBOXES['item'].prop('checked', false);
+	// 아이템전·카오스·랜덤턴 상호배타: 셋 중 하나만 선택 가능
+	var turnItemGroup = ['item', 'chaos', 'randomturn'];
+	turnItemGroup.forEach(function (opt) {
+		window.RULE_CHECKBOXES[opt].on('change', function () {
+			if ($(this).is(':checked')) {
+				turnItemGroup.forEach(function (other) {
+					if (other !== opt) window.RULE_CHECKBOXES[other].prop('checked', false);
+				});
+			}
+		});
 	});
 
-	// 아이템전-카오스 상호배타
-	window.RULE_CHECKBOXES['item'].on('change', function () {
-		if ($(this).is(':checked')) window.RULE_CHECKBOXES['chaos'].prop('checked', false);
+	// 소수-랜덤 숫자 상호배타 (랜덤 턴 종속은 updatePrimeAvailability)
+	window.RULE_CHECKBOXES['prime'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['randomnumber'].prop('checked', false);
 	});
-	window.RULE_CHECKBOXES['chaos'].on('change', function () {
-		if ($(this).is(':checked')) window.RULE_CHECKBOXES['item'].prop('checked', false);
+	window.RULE_CHECKBOXES['randomnumber'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['prime'].prop('checked', false);
+	});
+
+	// 리턴-한 번만! 상호배타
+	window.RULE_CHECKBOXES['return'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['onlyonce'].prop('checked', false);
+	});
+	window.RULE_CHECKBOXES['onlyonce'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['return'].prop('checked', false);
 	});
 
 	// 게임 중 참여 - 쿵쿵따 체인지/서바이벌 상호배타 (인원이 바뀌면 교대 주기·생존 판정이 깨짐)
@@ -1532,6 +1569,8 @@ $(document).ready(function () {
 		var opts = rule.opts || [];
 		var has = function (c) { return opts.indexOf(c) !== -1; };
 		var nameOf = function (c) { return OPTIONS[c].name.toLowerCase(); };
+		// 켤 수 있는 규칙이 10개 이하면 각 규칙 50%, 그 이상이면 평균 5개가 켜지도록 확률을 낮춤
+		var baseProb = Math.min(0.5, 5 / Math.max(opts.length, 1));
 
 		// 2. 규칙을 랜덤으로 선택 (상호배제/의존관계를 순서대로 반영)
 		var target = {};   // name -> boolean
@@ -1550,7 +1589,7 @@ $(document).ready(function () {
 		function pickUnlessBlocked(code, blocked, prob) {
 			if (!has(code)) return;
 			var n = nameOf(code);
-			target[n] = blocked ? false : Math.random() < (prob === undefined ? 0.5 : prob);
+			target[n] = blocked ? false : Math.random() < (prob === undefined ? baseProb : prob);
 			decided[n] = true;
 		}
 
@@ -1581,34 +1620,31 @@ $(document).ready(function () {
 		// 단문금지: 장문금지/2글자금지 모두와 상호배제 (장문금지·2글자금지는 서로 호환)
 		var noshortOn = false;
 		if (has('nos')) {
-			noshortOn = Math.random() < 0.5;
+			noshortOn = Math.random() < baseProb;
 			target['noshort'] = noshortOn;
 			decided['noshort'] = true;
 		}
 		pickUnlessBlocked('nol', noshortOn);
 		pickUnlessBlocked('no2', noshortOn);
 
-		// 아이템전: 카오스/랜덤턴 모두와 상호배제 (카오스·랜덤턴은 서로 호환)
-		var itemOn = false;
-		if (has('itm')) {
-			itemOn = Math.random() < 0.5;
-			target['item'] = itemOn;
-			decided['item'] = true;
-		}
-		pickUnlessBlocked('chs', itemOn);
-		pickUnlessBlocked('rnt', itemOn);
+		// 아이템전/카오스/랜덤턴, 리턴/한 번만! (각각 상호배제)
+		var turnPick = pickRadio(['itm', 'chs', 'rnt']);
+		pickRadio(['ret', 'obo']);
+		// 소수: 랜덤 턴이 켜졌을 때만, 랜덤 숫자와는 상호배제
+		pickUnlessBlocked('prm', turnPick !== 'randomturn');
+		pickUnlessBlocked('rnm', target['prime']);
 
 		// 미션: 켜져 있을 때만 이지미션/랜덤미션/미션플러스 선택 가능
 		var missionOn = false;
 		if (has('mis')) {
-			missionOn = Math.random() < 0.5;
+			missionOn = Math.random() < baseProb;
 			target['mission'] = missionOn;
 			decided['mission'] = true;
 		}
 		['eam', 'rdm', 'mpl'].forEach(function (c) {
 			if (!has(c)) return;
 			var n = nameOf(c);
-			target[n] = missionOn && Math.random() < 0.5;
+			target[n] = missionOn && Math.random() < baseProb;
 			decided[n] = true;
 		});
 
@@ -1620,7 +1656,7 @@ $(document).ready(function () {
 			if (!has(i)) continue;
 			k = nameOf(i);
 			if (decided[k]) continue;
-			target[k] = Math.random() < 0.5;
+			target[k] = Math.random() < baseProb;
 		}
 
 		// 3. 체크박스에 반영 (기본 뷰만 갱신하면 상호배제 핸들러가 나머지 뷰를 동기화함)
@@ -1654,6 +1690,7 @@ $(document).ready(function () {
 			applyQuizTopicLang(rule.lang);
 			$data._quizpick = sampleTopics($("#quizpick-list div:visible input"), 10, 0.2);
 		}
+		if (has('spk')) $data._songpick = "";
 
 		// 4. 라운드/서바이벌 설정을 규칙이 허용하는 범위 내에서 랜덤화
 		// 달가루 모으기는 라운드 1 / 60초로 고정이므로 랜덤화 대상에서 제외
@@ -1740,6 +1777,10 @@ $(document).ready(function () {
 			// quiz pick 패널 표시
 			if (rule.opts.indexOf("qij") != -1) $("#view-all-quizpick-panel").show();
 			else $("#view-all-quizpick-panel").hide();
+
+			// song pick 패널 표시
+			if (rule.opts.indexOf("spk") != -1) $("#view-all-songpick-panel").show();
+			else $("#view-all-songpick-panel").hide();
 		} else {
 			// Flat view - hide all category panels, show flat panel
 			$("#view-all-manner-panel").hide();
@@ -1750,6 +1791,7 @@ $(document).ready(function () {
 			$("#view-all-misc-panel").hide();
 			$("#view-all-injpick-panel").hide();
 			$("#view-all-quizpick-panel").hide();
+			$("#view-all-songpick-panel").hide();
 
 			// Show flat panel
 			$("#view-all-flat-panel").show();
@@ -1761,6 +1803,10 @@ $(document).ready(function () {
 			// quiz pick 패널 표시 (flat mode)
 			if (rule.opts.indexOf("qij") != -1) $("#view-all-flat-quizpick-panel").show();
 			else $("#view-all-flat-quizpick-panel").hide();
+
+			// song pick 패널 표시 (flat mode)
+			if (rule.opts.indexOf("spk") != -1) $("#view-all-flat-songpick-panel").show();
+			else $("#view-all-flat-songpick-panel").hide();
 		}
 
 		showDialog($stage.dialog.viewAllRules);
@@ -2366,7 +2412,8 @@ $(document).ready(function () {
 	$stage.dialog.roomOK.on('click', function (e) {
 		var i, k, opts = {
 			injpick: $data._injpick,
-			quizpick: $data._quizpick
+			quizpick: $data._quizpick,
+			songpick: $data._songpick
 		};
 		for (i in OPTIONS) {
 			k = OPTIONS[i].name.toLowerCase();
@@ -2851,7 +2898,8 @@ $(document).ready(function () {
 		showDialog($stage.dialog.injPick);
 	});
 	$stage.dialog.injPickAll.on('click', function (e) {
-		$("#injpick-list input").prop('checked', true);
+		// 보이는 주제만 (주제 검색 중이면 검색에 맞는 것만 — 퀴즈 주제와 같게)
+		$("#injpick-list div:visible > input").prop('checked', true);
 	});
 	$stage.dialog.injPickNo.on('click', function (e) {
 		$("#injpick-list input").prop('checked', false);
@@ -2869,6 +2917,22 @@ $(document).ready(function () {
 		$data._injpick = list;
 		$stage.dialog.injPick.hide();
 	});
+	// 주제 검색: 이름에 검색어가 들어간 주제만 보임(띄어쓰기·대소문자 무시). 언어별 목록·한국어 전용 퀴즈 주제를 고르는
+	// 기존 show/hide와 겹치지 않게 클래스(pick-miss)로 숨김. 창을 열 때마다 비움(showDialog)
+	function filterPicks($list, q) {
+		var $rows = $list.find("input").parent();
+
+		q = (q || "").replace(/\s/g, "").toLowerCase();
+		$rows.each(function () {
+			$(this).toggleClass("pick-miss", $(this).children("label").text().replace(/\s/g, "").toLowerCase().indexOf(q) === -1);
+		});
+		$list.find(".ijp-sec").each(function () {
+			$(this).toggleClass("pick-miss", !$(this).nextUntil(".ijp-sec").not(".pick-miss").length);
+		});
+		$list.children(".pick-empty").toggle(!!q && !$rows.filter(":visible").length);
+	}
+	$("#injpick-search").on('input', function () { filterPicks($("#injpick-list"), $(this).val()); });
+	$("#quizpick-search").on('input', function () { filterPicks($("#quizpick-list"), $(this).val()); });
 	function applyQuizTopicLang(lang) {
 		if (lang === 'en') {
 			$("#quizpick-list div[data-ko-only='true']").hide().find('input').prop('checked', false);
@@ -2939,6 +3003,18 @@ $(document).ready(function () {
 			$("#quiz-pick-" + $data._quizpick[i]).prop('checked', true);
 		}
 		showDialog($stage.dialog.quizPick);
+	});
+	// Song pick handlers: 한 곡만 고름 (빈 값 = 무작위). 목록에 없는 곡이면 무작위에 체크
+	$("#room-song-pick, #room-song-pick-flat, #room-simple-song-pick, #view-all-song-pick, #view-all-flat-song-pick").on('click', function (e) {
+		var $inputs = $("#songpick-list input");
+		var $cur = $inputs.filter(function () { return this.value === ($data._songpick || ""); });
+
+		($cur.length ? $cur : $inputs.first()).prop('checked', true);
+		showDialog($stage.dialog.songPick);
+	});
+	$stage.dialog.songPickOK.on('click', function (e) {
+		$data._songpick = $("#songpick-list input:checked").val() || "";
+		$stage.dialog.songPick.hide();
 	});
 	$stage.dialog.kickVoteY.on('click', function (e) {
 		send('kickVote', { agree: true });
@@ -3361,6 +3437,15 @@ $(document).ready(function () {
 		if (!missionOn) $(sel).prop('checked', false);
 		$(sel).prop('disabled', !missionOn);
 	}
+	// 소수는 랜덤 턴이 켜져 있을 때만 선택 가능 (아이템전/카오스가 랜덤 턴을 끄는 경우도 포함)
+	function updatePrimeAvailability() {
+		var randomTurnOn = window.RULE_CHECKBOXES['randomturn'].first().is(':checked');
+		if (!randomTurnOn) window.RULE_CHECKBOXES['prime'].prop('checked', false);
+		window.RULE_CHECKBOXES['prime'].prop('disabled', !randomTurnOn);
+	}
+	['item', 'chaos', 'randomturn'].forEach(function (opt) {
+		window.RULE_CHECKBOXES[opt].on('change', updatePrimeAvailability);
+	});
 	function updateLinkExclusionAvailability() {
 		var randomOn = $("#room-random").is(':checked') || $("#view-all-random").is(':checked') || $("#view-all-flat-random").is(':checked');
 		var secondSpeedSel = "#room-second, #room-speedtoss, #room-flat-second, #room-flat-speedtoss, " +
@@ -3385,6 +3470,7 @@ $(document).ready(function () {
 	// 방만들기/설정 다이얼로그가 열릴 때 호출해 체크박스 disabled 표시를 현재 상태에 맞게 초기화
 	function syncRoomDialogDisabledStates() {
 		updateMissionSubAvailability();
+		updatePrimeAvailability();
 		updateLinkExclusionAvailability();
 		updateBbungtwigiAvailability();
 	}

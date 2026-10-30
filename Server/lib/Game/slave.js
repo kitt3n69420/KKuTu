@@ -81,7 +81,7 @@ process.on("uncaughtException", function (err) {
     DIC[i].send("dying");
   }
   File.appendFile("../KKUTU_ERROR.log", text, function (res) {
-    JLog.error(`ERROR OCCURRED! This worker will die in 10 seconds.`);
+    JLog.error(`ERROR OCCURRED! This worker will die in 10 seconds.`, err);
     console.log(text);
   });
   setTimeout(function () {
@@ -471,6 +471,7 @@ KKuTu.onClientMessage = function ($c, msg) {
         }
         if (msg.opts.injpick !== undefined && !Array.isArray(msg.opts.injpick)) delete msg.opts.injpick;
         if (msg.opts.quizpick !== undefined && !Array.isArray(msg.opts.quizpick)) delete msg.opts.quizpick;
+        if (msg.opts.songpick !== undefined && typeof msg.opts.songpick !== 'string') delete msg.opts.songpick;
       }
 
       // 서버에서는 욕설 필터링을 적용하지 않음 (클라이언트에서 표시 시 처리)
@@ -488,6 +489,10 @@ KKuTu.onClientMessage = function ($c, msg) {
 
       if (stable) {
         if (msg.title.length > 20) stable = false;
+        if (ProfanityFilter.isRoomTitleForbidden(msg.title)) {
+          msg.code = 467;
+          stable = false;
+        }
         if (msg.password.length > 20) stable = false;
         if (msg.limit < 2 || msg.limit > 24) {
           msg.code = 432;
@@ -745,6 +750,14 @@ KKuTu.onClientMessage = function ($c, msg) {
       if (!temp.gaming) return;
       if (!temp.handleClear) return;
       temp.handleClear($c, msg);
+      break;
+    case "undo":
+      // Picture Quiz undo handler
+      if ($c.subPlace) temp = $c.pracRoom;
+      else if (!(temp = ROOM[$c.place])) return;
+      if (!temp.gaming) return;
+      if (!temp.handleUndo) return;
+      temp.handleUndo($c);
       break;
     case "pass":
       // Picture Quiz pass button handler

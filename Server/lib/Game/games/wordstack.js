@@ -229,9 +229,10 @@ function scheduleAutoAttack(my) {
 	my.game.autoAtkTimer = setTimeout(function() {
 		if (my.game.late) return;
 		var pool = my.rule.lang === 'ko' ? CHAR_POOL_KO : CHAR_POOL_EN;
+		// 자동 공격 글자는 모두에게 같은 글자
+		var c = pool[Math.floor(Math.random() * pool.length)];
 		traverse(my, function(o) {
 			if (!o.game.alive) return;
-			var c = pool[Math.floor(Math.random() * pool.length)];
 			enqueueChar(my, o, c);
 		});
 		scheduleAutoAttack(my);
@@ -268,9 +269,10 @@ function scanHP(my) {
 				if (s.game && s.game.attacksSent && s.id !== o.id) delete s.game.attacksSent[o.id];
 			});
 			var pool = my.rule.lang === 'ko' ? CHAR_POOL_KO : CHAR_POOL_EN;
+			var koChar = pool[Math.floor(Math.random() * pool.length)];
 			traverse(my, function(s) {
 				if (!s.game.alive) return;
-				enqueueChar(my, s, pool[Math.floor(Math.random() * pool.length)]);
+				enqueueChar(my, s, koChar);
 			});
 			checkGameOver(my);
 		}

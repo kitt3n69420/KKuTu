@@ -503,6 +503,17 @@ exports.handleClear = function (client) {
     }, true);
 };
 
+// Handle undo from drawer (clients restore their own canvas snapshots)
+exports.handleUndo = function (client) {
+    var my = this;
+
+    var drawerId = my.game.drawer;
+    if (drawerId && drawerId.id) drawerId = drawerId.id;
+    if (client.id !== drawerId) return;
+
+    my.byMaster('undo', {}, true);
+};
+
 // Handle pass button from drawer
 exports.handlePass = function (client) {
     var my = this;
@@ -682,8 +693,8 @@ function getAnswer(theme) {
             var isValid = true;
             var wlen = word._id.length;
 
-            // Filter: 2-10 character words
-            if (wlen < 2 || wlen > 10) isValid = false;
+            // Filter: 2-7 character words (unlimited rule: any length)
+            if (!my.opts.unlimited && (wlen < 2 || wlen > 7)) isValid = false;
             if (word.type !== "INJEONG" && word.mean && word.mean.length < 1) isValid = false;
 
             if (isValid) {

@@ -374,7 +374,8 @@ exports.roundReady = function () {
 		JLog.warn(`[Rtype] no chart for difficulty: ${diff}`);
 		return my.roundEnd();
 	}
-	song = cands[Math.floor(Math.random() * cands.length)];
+	// 곡 선택(spk)으로 고른 곡이 있으면 그 곡, 없거나 이 난이도 채보가 없으면 무작위
+	song = cands.find(function (s) { return s.name === my.opts.songpick; }) || cands[Math.floor(Math.random() * cands.length)];
 	chart = song.charts[diff];
 
 	// 그룹마다 단어를 배정: 그룹의 노트는 단어의 자모 순서대로, 마지막 노트는 엔터

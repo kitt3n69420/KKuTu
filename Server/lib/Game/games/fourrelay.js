@@ -147,6 +147,7 @@ exports.turnEnd = function () {
 		ok: false,
 		target: target ? getPlayerId(target) : null,
 		score: 0,
+		totalScore: (target && target.game) ? target.game.score : undefined,
 		answer: problem ? (problem.clue + problem.candidates[0]) : ""
 	}, true);
 

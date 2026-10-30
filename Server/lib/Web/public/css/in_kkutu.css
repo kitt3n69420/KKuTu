@@ -340,6 +340,11 @@ iframe {
 	width: 100px;
 }
 
+/* 주제 검색에 맞지 않는 주제·빈 묶음 제목 (ready.js filterPicks) */
+.pick-miss {
+	display: none !important;
+}
+
 #RoomDiag .dialog-opt {
 	width: 75px;
 }
@@ -350,9 +355,39 @@ iframe {
 }
 
 #room-quizpick-panel,
-#room-quizpick-panel-flat {
+#room-quizpick-panel-flat,
+#room-songpick-panel,
+#room-songpick-panel-flat {
 	width: auto;
 }
+
+/* 곡 선택 창: 한 줄에 곡 하나, 오른쪽에 채보 난이도 배지 (색은 레벨에 따라 페이지에서 지정, 없는 난이도는 빈 칸) */
+#songpick-list label {
+	display: inline-flex;
+	align-items: center;
+	width: calc(100% - 26px);
+	vertical-align: middle;
+}
+#songpick-list .song-title {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-weight: normal;
+}
+#songpick-list .song-lv {
+	flex: none;
+	width: 32px;
+	margin-left: 3px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: bold;
+	line-height: 16px;
+	text-align: center;
+	color: #FFFFFF;
+}
+#songpick-list .song-lv-none { visibility: hidden; }
 
 #RoomDiag .dialog-opt label {
 	font-size: 12px;
@@ -1820,11 +1855,28 @@ body.dark-mode .cw-cell.sd-wrong {
 	width: 100px;
 	font-size: 30px;
 	font-weight: bold;
+	white-space: nowrap;
 }
 
 .game-user-score-char {
 	width: 20px;
 	text-align: center;
+}
+
+/* 점수 자리 글자는 float 대신 줄바꿈 없는 한 줄로 둔다.
+   float면 화면 배율(예: 윈도우 150% × 브라우저 140% = 2.1배)에서 점수 칸 폭이 반올림으로
+   자리 글자 폭 합보다 0.01px 모자라 마지막 자리가 아랫줄로 내려감 (.GameBox div의 float: left를 이겨야 함) */
+.GameBox .game-user-score-char {
+	float: none;
+	display: inline-block;
+}
+
+/* 지수 표기(1.23e7)의 점: 폭 0으로 첫째·둘째 칸 경계 위에 얹어 칸 수(5칸)를 그대로 둠 */
+.GameBox .game-user-score-dot {
+	float: none;
+	display: inline-block;
+	width: 0;
+	text-indent: -0.14em;
 }
 
 .cw .game-user-score {
@@ -2449,6 +2501,8 @@ body.dark-mode .cw-cell.sd-wrong {
 	border-top-left-radius: 0px;
 	border-bottom-left-radius: 0px;
 	margin-top: 5px;
+	/* #Talk + 이 단추가 줄 폭에 딱 맞아서, 화면 배율(예: 90%) 반올림으로 0.2px만 넘쳐도 단추가 아랫줄로 내려감 → 1px 여유 */
+	margin-right: -1px;
 	width: 60px;
 	height: 20px;
 }
@@ -2956,6 +3010,12 @@ body.dark-mode .cw-cell.sd-wrong {
 	width: auto;
 	display: inline-block;
 	text-align: center;
+}
+
+/* 모레미 작은 카드는 칸 폭이 글자 폭이라 지수 표기의 점도 한 글자로 넣음 */
+.game-body.small-mode .game-user-score-dot {
+	width: auto;
+	text-indent: 0;
 }
 
 /* 15명 이상: 모레미 카드 2줄 전용 배치.
@@ -4042,9 +4102,10 @@ body.dark-mode .team-6 {
 	transform: scale(0.2);
 	will-change: transform, opacity;
 }
-/* 마커 색: 정박=흰색(기본), 8분음표 엇박=분홍, 16분음표 엇박=파랑 */
+/* 마커 색: 정박=흰색(기본), 8분음표 엇박=분홍, 16분음표 엇박=하늘색, 그 외=연두색 */
 .rhythm-m1 { border-color: #FF7EC8; }
 .rhythm-m2 { border-color: #7ee5f3; }
+.rhythm-m3 { border-color: #A6F27A; }
 /* 패널 번호별 모서리: 1=좌상, 2=우상, 3=좌하, 4=우하 테두리만 표시.
    확대 기준점은 4패널 판의 정중앙 (패널 모서리에서 테두리 3px + 간격 절반 3px 만큼 바깥) */
 .rhythm-c0 { border-right-width: 0; border-bottom-width: 0; transform-origin: calc(100% + 6px) calc(100% + 6px); }

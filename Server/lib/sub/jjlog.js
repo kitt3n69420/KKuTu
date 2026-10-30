@@ -19,6 +19,7 @@
 // 모듈 호출
 
 var colors = require('colors');
+var ErrorReport = require('./error-report');
 
 function callLog(text){
 	var date = new Date();
@@ -52,6 +53,7 @@ exports.alert = function(text){
 exports.warn = function(text){
 	callLog(text.black.bgYellow);
 };
-exports.error = function(text){
+exports.error = function(text, err){
 	callLog(text.bgRed);
+	ErrorReport.error(text, err);
 };

@@ -174,6 +174,9 @@ exports.run = (Server, page) => {
     if (!req.session.profile) {
       return res.redirect("/");
     } else {
+      // 게임 서버는 접속 키로 Postgres session 표를 조회하므로(Game/master.js), Redis 세션만 지우면
+      // 남아 있는 게임 페이지가 재접속할 때 계속 이 계정으로 인정됨 → 표의 줄도 함께 지움
+      MainDB.session.remove(["_id", req.session.id]).on();
       req.session.destroy();
       res.redirect("/");
     }

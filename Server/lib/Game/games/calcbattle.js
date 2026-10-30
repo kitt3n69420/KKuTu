@@ -56,6 +56,15 @@ exports.init = function (_DB, _DIC) {
 	DIC = _DIC;
 };
 
+// 라운드 공용 문제 순서에서 플레이어의 다음 문제를 꺼냄 (모두 같은 순서로 같은 문제를 받음)
+// 난이도는 문제 번호 기준: 미리 보여주는 문제 수(일반 1, oneback 2)만큼 뒤로 밀어 기존 chain 기준 곡선과 맞춤
+function takeProblem(my, o) {
+	var i = o.game.calcIdx++;
+
+	if (!my.game.problems[i]) my.game.problems[i] = Const.generateCalcProblem(Math.max(0, i - (my.opts.oneback ? 2 : 1)));
+	return my.game.problems[i];
+}
+
 exports.getTitle = function () {
 	var R = new Lizard.Tail();
 	var my = this;
@@ -84,9 +93,11 @@ exports.roundReady = function () {
 
 	if (my.game.round <= my.round) {
 		// 각 플레이어에게 첫 문제 할당
+		my.game.problems = [];
 		traverse.call(my, function (o) {
-			var problem1 = Const.generateCalcProblem(0);
-			var problem2 = Const.generateCalcProblem(0);
+			o.game.calcIdx = 0;
+			var problem1 = takeProblem(my, o);
+			var problem2 = takeProblem(my, o);
 
 			o.game.chain = 0;
 			o.game.miss = 0;
@@ -100,7 +111,7 @@ exports.roundReady = function () {
 				o.game.displayQuestion = problem2.question;
 				o.game.pendingAnswer = problem2.answer;
 				// 다다음 문제 생성
-				var problem3 = Const.generateCalcProblem(0);
+				var problem3 = takeProblem(my, o);
 				o.game.nextQuestion = problem3.question;
 				o.game.nextAnswer = problem3.answer;
 				o.game.nextCalcOp = problem3.op; o.game.nextCalcA = problem3.a; o.game.nextCalcB = problem3.b;
@@ -216,7 +227,7 @@ exports.submit = function (client, text) {
 			client.game.calcOp = client.game.nextCalcOp; client.game.calcA = client.game.nextCalcA; client.game.calcB = client.game.nextCalcB;
 			client.game.displayQuestion = client.game.nextQuestion;
 			client.game.pendingAnswer = client.game.nextAnswer;
-			var newProblem = Const.generateCalcProblem(client.game.chain);
+			var newProblem = takeProblem(my, client);
 			client.game.nextQuestion = newProblem.question;
 			client.game.nextAnswer = newProblem.answer;
 			client.game.nextCalcOp = newProblem.op; client.game.nextCalcA = newProblem.a; client.game.nextCalcB = newProblem.b;
@@ -237,7 +248,7 @@ exports.submit = function (client, text) {
 			client.game.question = client.game.nextQuestion;
 			client.game.answer = client.game.nextAnswer;
 			client.game.calcOp = client.game.nextCalcOp; client.game.calcA = client.game.nextCalcA; client.game.calcB = client.game.nextCalcB;
-			var newProblem = Const.generateCalcProblem(client.game.chain);
+			var newProblem = takeProblem(my, client);
 			client.game.nextQuestion = newProblem.question;
 			client.game.nextAnswer = newProblem.answer;
 			client.game.nextCalcOp = newProblem.op; client.game.nextCalcA = newProblem.a; client.game.nextCalcB = newProblem.b;
@@ -277,7 +288,7 @@ exports.submit = function (client, text) {
 			client.game.displayQuestion = client.game.nextQuestion;
 			client.game.pendingAnswer = client.game.nextAnswer;
 			// 새 문제 생성 (다다음 문제)
-			var newProblem = Const.generateCalcProblem(client.game.chain);
+			var newProblem = takeProblem(my, client);
 			client.game.nextQuestion = newProblem.question;
 			client.game.nextAnswer = newProblem.answer;
 			client.game.nextCalcOp = newProblem.op; client.game.nextCalcA = newProblem.a; client.game.nextCalcB = newProblem.b;
@@ -298,7 +309,7 @@ exports.submit = function (client, text) {
 			client.game.answer = client.game.nextAnswer;
 			client.game.calcOp = client.game.nextCalcOp; client.game.calcA = client.game.nextCalcA; client.game.calcB = client.game.nextCalcB;
 			// 새 문제 생성 (다다음 문제)
-			var newProblem = Const.generateCalcProblem(client.game.chain);
+			var newProblem = takeProblem(my, client);
 			client.game.nextQuestion = newProblem.question;
 			client.game.nextAnswer = newProblem.answer;
 			client.game.nextCalcOp = newProblem.op; client.game.nextCalcA = newProblem.a; client.game.nextCalcB = newProblem.b;

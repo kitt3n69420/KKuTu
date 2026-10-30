@@ -502,6 +502,8 @@ function getAuto(char, subc, type, limit, sort) {
 	}
 	if (!char) {
 	}
+	// 일본어 앞말잇기: 새 단어는 끝의 작은 가나를 빼고 비교하므로(isChainable의 jaEdgeChar) 검색도 끝에 작은 가나가 붙은 단어를 포함
+	if (gameType === 'JAP' && !my.opts.jaexpand) adv = adv.replace(/\$$/, "[" + JA_SMALL_KANA + "]*$");
 
 	// type=1 (존재 여부 확인 Check): kkutu_stats table check
 	// KKU/KJM/JSH/JAP/JKT은 통계 테이블이 없으므로 DB 직접 쿼리로 fallback
@@ -951,8 +953,8 @@ function getLinkIndex(text) {
 			return len - 1;
 		case 'JSH':
 		case 'JKT':
-			// 제거 규칙(기본, jaexpand 꺼짐)이고 마지막 글자가 작은 가나면 그 앞 글자를 하이라이트
-			if (!my.opts.jaexpand && len >= 2 && JA_SMALL_KANA.indexOf(text.slice(-1)) !== -1) return len - 2;
+			// 제거 규칙(기본, jaexpand 꺼짐)이면 끝의 작은 가나를 모두 건너뛴 글자를 하이라이트
+			if (!my.opts.jaexpand && jaEdgeIndex(text) >= 0) return jaEdgeIndex(text);
 			return len - 1;
 		case 'KJM':
 			// KJM: 자모 분해 문자열에서 마지막 자모의 인덱스
@@ -1198,13 +1200,22 @@ function expandJaSmallKana(text) {
 	return out.join('');
 }
 
-// 연결에 실제로 쓰이는 글자 반환 — 작은 가나는 제거(기본, 앞 글자로 대체) 또는 확대(jaexpand 옵션)
+// 끝의 작은 가나를 모두 건너뛴 마지막 글자의 위치 (모두 작은 가나면 -1). 예: しゅっしゅっ → 3(し)
+function jaEdgeIndex(text) {
+	var i = text.length - 1;
+
+	while (i >= 0 && JA_SMALL_KANA.indexOf(text.charAt(i)) !== -1) i--;
+	return i;
+}
+// 연결에 실제로 쓰이는 글자 반환 — 작은 가나는 제거(기본, 끝의 작은 가나를 몇 개든 건너뜀) 또는 확대(jaexpand 옵션)
 function jaEdgeChar(text, my) {
 	if (!text) return '';
 	var last = text.slice(-1);
+	var i;
 	if (JA_SMALL_KANA.indexOf(last) === -1) return last;
 	if (my && my.opts && my.opts.jaexpand) return JA_SMALL_TO_LARGE[last] || last;
-	return text.length >= 2 ? text.charAt(text.length - 2) : last;
+	i = jaEdgeIndex(text);
+	return i >= 0 ? text.charAt(i) : last;
 }
 
 // 두 글자가 연결 가능한지 — 기본은 완전 일치, jadakuten 옵션 켜지면 같은 청탁 그룹도 허용

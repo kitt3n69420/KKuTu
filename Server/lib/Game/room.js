@@ -1150,6 +1150,10 @@ function Room(room, channel) {
 				var allowedQuizTopics = my.rule.lang === 'en' ? Const.QUIZ_TOPIC_EN : Const.QUIZ_TOPIC;
 				my.opts.quizpick = rawQuizpick.filter(function (item) { return typeof item === 'string' && allowedQuizTopics.indexOf(item) !== -1; });
 			} else my.opts.quizpick = [];
+			// 곡 선택: 채보 파일 이름(빈 문자열 = 무작위). 없는 곡이면 rhythm.js/rtype.js가 무작위로 고름
+			if (my.rule.opts.includes("spk") && typeof room.opts.songpick === 'string' && /^[\w.-]{1,64}$/.test(room.opts.songpick)) {
+				my.opts.songpick = room.opts.songpick;
+			} else my.opts.songpick = "";
 			// 서바이벌 HP 옵션 처리 (허용 값만 사용)
 			var ALLOWED_SUR_HP = [200, 500, 1000, 2000];
 			if (ALLOWED_SUR_HP.indexOf(room.opts.surHP) !== -1) {
@@ -1497,9 +1501,24 @@ function Room(room, channel) {
 
 		my.game.mission = null;
 
-		// 아이템전 ↔ 랜덤 턴 상호 배제
-		if (my.opts.item && my.opts.randomturn) {
+		// 아이템전 ↔ 카오스 ↔ 랜덤 턴 상호 배제 (우선순위: 아이템전 > 카오스 > 랜덤 턴)
+		// 카오스 강제 아이템이 걸리면 turnNext가 랜덤 턴 가방 대신 순차 진행을 쓰고, 카오스 재배치는 가방의 seq 칸 번호를 어긋나게 함
+		if (my.opts.item && my.opts.chaos) {
+			my.opts.chaos = false;
+		}
+		if ((my.opts.item || my.opts.chaos) && my.opts.randomturn) {
 			my.opts.randomturn = false;
+		}
+		// 소수 규칙: 차례가 고정이면 소수가 누구에게 걸릴지 미리 정해져 불공평하므로 랜덤 턴과만 허용, 랜덤 숫자와는 상호 배제
+		if (my.opts.prime && !my.opts.randomturn) {
+			my.opts.prime = false;
+		}
+		if (my.opts.prime && my.opts.randomnumber) {
+			my.opts.randomnumber = false;
+		}
+		// 리턴 ↔ 한 번만! 상호 배제
+		if (my.opts.return && my.opts.onlyonce) {
+			my.opts.return = false;
 		}
 		// 게임 중 참여 ↔ 쿵쿵따 체인지·서바이벌 상호 배제 (인원이 바뀌면 교대 주기와 생존 판정이 깨짐)
 		if (my.opts.latejoin && (my.opts.change || my.opts.survival)) {
@@ -1851,6 +1870,11 @@ function Room(room, channel) {
 			o = DIC[my.game.seq[i]] || my.game.seq[i];
 			if (!o) continue;
 			if (!o.game) continue; // Fix: o.game이 없으면 스킵
+			// NaN/비숫자 점수가 팀 합산에 섞이면 팀 점수가 NaN이 되어 순위 정렬이 깨지므로 0으로 보정 (원인 추적용 로그 남김)
+			if (typeof o.game.score !== 'number' || isNaN(o.game.score)) {
+				JLog.warn(`Room ${my.id}: ${o.id} score was ${o.game.score} at roundEnd (mode ${Const.GAME_TYPE[my.mode]}), reset to 0`);
+				o.game.score = 0;
+			}
 			if (o.robot) {
 				if (o.game.team) teams[o.game.team].push(o.game.score);
 			} else if (o.team) teams[o.team].push(o.game.score);
@@ -2891,6 +2915,9 @@ function Room(room, channel) {
 	};
 	my.handleClear = function (client, msg) {
 		return my.route("handleClear", client, msg);
+	};
+	my.handleUndo = function (client) {
+		return my.route("handleUndo", client);
 	};
 	my.handlePass = function (client) {
 		return my.route("handlePass", client);

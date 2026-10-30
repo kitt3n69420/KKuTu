@@ -18,10 +18,11 @@
 
 $lib.Numberclap = {};
 
-// 랜덤 숫자 규칙이면 "157 게임"처럼 뽑힌 숫자로, 아니면 기본 "369 게임" 표지를 만든다.
-function numberclapTitle(digits) {
+// 랜덤 숫자 규칙이면 "157 게임"처럼 뽑힌 숫자로, 소수 규칙이면 "소수 게임", 아니면 기본 "369 게임" 표지를 만든다.
+function numberclapTitle(digits, prime) {
 	var joined = digits ? digits.join('') : '';
 
+	if (prime) return "&lt;" + L['modeCNCPrime'] + "&gt;";
 	if (joined && joined !== '369') return "&lt;" + L['modeCNCRnm'].replace('{0}', joined) + "&gt;";
 	return "&lt;" + L['modeCNC'] + "&gt;";
 }
@@ -31,7 +32,7 @@ $lib.Numberclap.roundReady = function (data) {
 	clearBoard();
 	$data._roundTime = $data.room.time * 1000;
 	// free 모드와 동일하게, 대기 중에는 "<369 게임>" 표지를 계속 띄워둔다.
-	$stage.game.display.html($data._char = numberclapTitle(data.digits));
+	$stage.game.display.html($data._char = numberclapTitle(data.digits, data.prime));
 	$stage.game.chain.show().html('-');
 	drawRound(data.round);
 	playSound('round_start');
@@ -47,7 +48,7 @@ $lib.Numberclap.turnStart = function (data) {
 
 	// 다음 숫자를 미리 보여주면 암산 게임이 무의미해지므로, 이전 턴 결과 대신
 	// "<369 게임>" 표지로 되돌린다 (free 모드가 $data._char를 복원하는 것과 동일).
-	if (data.digits) $data._char = numberclapTitle(data.digits);
+	if (data.digits || data.prime) $data._char = numberclapTitle(data.digits, data.prime);
 	$stage.game.display.html($data._char);
 
 	var $u = $("#game-user-" + data.id).addClass("game-user-current");
@@ -81,7 +82,7 @@ $lib.Numberclap.turnStart = function (data) {
 
 $lib.Numberclap.turnGoing = $lib.Classic.turnGoing;
 
-// pushDisplay(body-render.js)와 같은 느낌(순차 페이드인 + 타이핑/미션 사운드)의
+// pushDisplay(body-render.js)와 같은 beat(free 모드와 동일한 글자별 박자·낙하 애니메이션·끝 바운스)를 쓰는
 // numberclap 전용 표시 함수. pushDisplay는 두 가지가 안 맞는다:
 //   1) 글자를 UTF-16 코드유닛 단위(text.charAt)로 쪼개 반복 표시하므로, 서로게이트
 //      페어인 👏(U+1F44F) 같은 이모지가 절반씩 별개로 그려져 깨진다.
@@ -91,21 +92,49 @@ $lib.Numberclap.turnGoing = $lib.Classic.turnGoing;
 function pushNumberclapDisplay(text, useMissionSound) {
 	var units = Array.from(text);
 	var len = units.length;
+	var beat = (ACTIVE_BEAT || BEAT)[len];
+	var tick = $data.turnTime / 96;
 	var sg = $data.turnTime / 12;
+	var snd = useMissionSound ? 'mission' : ('As' + $data._speed);
 	var j = '';
-	var i;
+	var i, k = 0;
+	var $l;
 
 	$stage.game.display.empty();
-	for (i = 0; i < len; i++) {
-		addTimeout((function (idx) {
-			return function () {
-				playSound(useMissionSound ? 'mission' : ('As' + $data._speed));
+	if (beat) {
+		beat = beat.split("");
+		for (i = 0; i < beat.length; i++) {
+			if (beat[i] == "0") continue;
+			$stage.game.display.append($l = $("<div>")
+				.addClass("display-text")
+				.css({ 'float': "left", 'margin-top': -6, 'font-size': 36 })
+				.hide()
+				.html(units[k++])
+			);
+			addTimeout(function ($l) {
+				playSound(snd);
+				$l.show().animate({ 'margin-top': 0, 'font-size': 20 }, 100);
+			}, i * tick, $l);
+		}
+		$stage.game.display.children("div").first().css('margin-left', ($stage.game.display.width() - 20 * len) * 0.5);
+	} else {
+		// beat 표보다 긴 경우: pushDisplay처럼 sg 동안 고르게 표시
+		for (i = 0; i < len; i++) {
+			addTimeout(function (idx) {
+				playSound(useMissionSound ? 'mission' : 'Al');
 				j += units[idx];
 				$stage.game.display.html(j);
-			};
-		})(i), i * sg / len);
+			}, i * sg / len, i);
+		}
 	}
 	addTimeout(function () {
+		for (i = 0; i < 3; i++) {
+			addTimeout(function () {
+				(beat ? $stage.game.display.children(".display-text") : $stage.game.display)
+					.css('font-size', 21)
+					.animate({ 'font-size': 20 }, tick);
+			}, i * tick * 2);
+		}
 		playSound('K' + $data._speed);
 	}, sg);
 }

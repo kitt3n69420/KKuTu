@@ -30,6 +30,8 @@ var XRG_COUNT = 7;        // 카운트다운 7~0 (8박) 후 다음 박(-1)에 �
 // 데스크톱 키 배치: D/R, K/U, F, J = 1, 2, 3, 4번 패널 (e.code 기준이라 한글 입력 상태에서도 동일)
 var XRG_KEYS = { KeyD: 0, KeyR: 0, KeyK: 1, KeyU: 1, KeyF: 2, KeyJ: 3 };
 var XRG_KEY_LABEL = ["D/R", "K/U", "F", "J"]; // 패널(레인) 순서
+// Z/X: 누르는 순간 마우스가 올라가 있는 패널을 클릭한 것으로 처리
+var XRG_AIM_KEYS = { KeyZ: true, KeyX: true };
 var XRG_SYNC_MAX = 300;   // 개인 싱크 보정 한계 (+-ms). 설정의 슬라이더 값
 var XRG_SYNC_COUNT = 6;
 var XRG_SYNC_GAP = 120;
@@ -38,7 +40,7 @@ $lib.Rhythm.s = null;
 
 $lib.Rhythm.roundReady = function (data, spec) {
 	var R = $lib.Rhythm;
-	var s, i, j, k, c, charMs, $grid, $panel;
+	var s, i, j, k, x, c, charMs, $grid, $panel;
 
 	// 처음부터 관전 중인 사람(참가자가 아님)과 리플레이도 관전자로 취급: 중간 입장 때만 spec 인자가 넘어옴
 	spec = spec || !!$data._spectate || !!$data._replay;
@@ -68,14 +70,17 @@ $lib.Rhythm.roundReady = function (data, spec) {
 		chain: 0,
 		brk: false,      // Bad/Miss가 한 번이라도 나왔는지 (풀 콤보 판정용)
 		allPerfect: true, // 지금까지 전부 Perfect인지 (올 퍼펙트 판정용)
+		hover: null,     // 마우스가 올라가 있는 패널 번호 (Z/X 입력용)
+		aim: {},         // Z/X 키별로 누를 때 고른 패널 번호 (뗄 때 눌린 모양을 되돌리기 위함)
 		ended: false
 	};
 	for (i = 0; i < data.seq.length; i++) {
 		c = data.seq.charAt(i);
 		if (c == '.') continue;
-		// 마커 색: 박 위(정박)=0 흰색, 8분음표 엇박=1 분홍, 16분음표 엇박=2 파랑
-		k = Math.round(i * charMs / s.beat * 4) % 4;
-		s.notes.push({ i: s.notes.length, lane: Number(c) - 1, t: i * charMs, m: k == 0 ? 0 : k == 2 ? 1 : 2, done: false, el: null });
+		// 마커 색: 박 위(정박)=0 흰색, 8분음표 엇박=1 분홍, 16분음표 엇박=2 하늘색, 그 외(16분 격자에서 벗어남)=3 연두색
+		x = i * charMs / s.beat * 4;
+		k = Math.round(x) % 4;
+		s.notes.push({ i: s.notes.length, lane: Number(c) - 1, t: i * charMs, m: Math.abs(x - Math.round(x)) > 0.05 ? 3 : k == 0 ? 0 : k == 2 ? 1 : 2, done: false, el: null });
 	}
 
 	s.left = s.notes.length; // 아직 처리(타격/미스)되지 않은 노트 수. 0이 되면 서버에 끝 신호를 보냄
@@ -89,6 +94,8 @@ $lib.Rhythm.roundReady = function (data, spec) {
 		// 관전자는 노트만 보고 입력은 받지 않음 (클릭/터치 처리 없음)
 		if (!spec) (function (lane, el) {
 			el.addEventListener("pointerdown", function (e) { R.onPress(e, lane); });
+			el.addEventListener("pointerenter", function () { s.hover = lane; });
+			el.addEventListener("pointerleave", function () { if (s.hover === lane) s.hover = null; });
 		})(j, $panel[0]);
 	}
 	if (spec) $grid.addClass("rhythm-spec");
@@ -373,10 +380,18 @@ $lib.Rhythm.onKey = function (e, down) {
 	var R = $lib.Rhythm;
 	var s = R.s;
 	var lane = XRG_KEYS[e.code];
+	var aim = XRG_AIM_KEYS[e.code];
 
-	if (!s || lane === undefined || e.ctrlKey || e.altKey || e.metaKey) return;
+	if (!s || (lane === undefined && !aim) || e.ctrlKey || e.altKey || e.metaKey) return;
 	e.preventDefault();
 	if (down && e.target && e.target !== document.body && e.target.blur) e.target.blur();
+	// Z/X: 처음 누를 때 마우스 아래 패널을 고르고, 뗄 때까지 그 패널을 눌린 모양으로 둠. 패널 밖이면 아무 일도 없음
+	if (aim) {
+		if (down && !e.repeat) s.aim[e.code] = s.hover;
+		lane = s.aim[e.code];
+		if (!down) s.aim[e.code] = null;
+		if (lane == null) return;
+	}
 	s.panels[lane].toggleClass("rhythm-down", down);
 	if (down && !e.repeat) R.onPress(e, lane);
 };

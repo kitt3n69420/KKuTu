@@ -26,6 +26,7 @@ var PQ_CANVAS_W = 288;
 var PQ_CANVAS_H = 180;
 var PQ_BRUSH_SIZES = [3, 8, 16];
 var PQ_THROTTLE_MS = 50;
+var PQ_UNDO_MAX = 10;
 var PQ_COLORS = [
     '#FFFFFF', '#C0C0C0', '#808080', '#000000',
     '#FF0000', '#FF8000', '#FFFF00', '#8df349',
@@ -129,6 +130,36 @@ function pqFloodFill(ctx, startX, startY, fillColor) {
     ctx.putImageData(imgData, 0, 0);
 }
 
+// Undo history: canvas snapshots taken before each action (max PQ_UNDO_MAX)
+// 스냅샷은 재사용 캔버스에 drawImage로 복사 (getImageData와 달리 매번 메모리를 새로 할당하지 않음).
+// 캔버스는 스택 또는 풀 중 한 곳에만 있으므로 생성 개수는 최대 PQ_UNDO_MAX개.
+var pqUndoPool = [];
+
+function pqPushUndo() {
+    if (!$data._pqCtx) return;
+    var snap;
+    if ($data._pqUndo.length >= PQ_UNDO_MAX) snap = $data._pqUndo.shift();
+    else snap = pqUndoPool.pop();
+    if (!snap) {
+        snap = document.createElement('canvas');
+        snap.width = PQ_CANVAS_W;
+        snap.height = PQ_CANVAS_H;
+    }
+    var sctx = snap.getContext('2d');
+    sctx.clearRect(0, 0, PQ_CANVAS_W, PQ_CANVAS_H);
+    sctx.drawImage($data._pqCanvasEl, 0, 0);
+    $data._pqUndo.push(snap);
+}
+
+function pqPopUndo() {
+    var ctx = $data._pqCtx;
+    if (!ctx || $data._pqUndo.length === 0) return false;
+    var snap = $data._pqUndo.pop();
+    ctx.drawImage(snap, 0, 0);
+    pqUndoPool.push(snap);
+    return true;
+}
+
 // Draw a stroke segment with pixel-perfect lines (no AA)
 function drawStrokeSegment(ctx, pts, color, width, fromPt) {
     if (!ctx || !pts || pts.length === 0) return;
@@ -224,6 +255,7 @@ function startStroke(e) {
     var pos = getCanvasPos(e);
     var color = $data._pqEraser ? '#FFFFFF' : $data._pqColor;
 
+    pqPushUndo();
     if ($data._pqMode === 'fill') {
         pqFloodFill($data._pqCtx, pos.x, pos.y, color);
         send('fill', { x: pos.x, y: pos.y, c: color });
@@ -244,7 +276,7 @@ function startStroke(e) {
         clearInterval($data._pqSendTimer);
         $data._pqSendTimer = null;
     }
-    $data._pqSendTimer = setInterval(flushPendingPoints, PQ_THROTTLE_MS);
+    $data._pqSendTimer = _setInterval(flushPendingPoints, PQ_THROTTLE_MS);
 }
 
 function continueStroke(e) {
@@ -321,6 +353,8 @@ $lib.Picture.roundReady = function (data, spec) {
     $data._pqTheme = data.theme;
     $data._pqAnswer = data.answer;
     $data._pqStrokes = [];
+    if ($data._pqUndo) pqUndoPool = pqUndoPool.concat($data._pqUndo);
+    $data._pqUndo = [];
     $data._pqColor = '#000000';
     $data._pqBrushSize = PQ_BRUSH_SIZES[1]; // 8px default
     $data._pqEraser = false;
@@ -618,6 +652,21 @@ $lib.Picture.drawDisplay = function () {
         }
 
         $controls.append(
+            $('<button>').attr('id', 'pq-undo-btn').css({
+                'padding': '4px 12px',
+                'background': 'linear-gradient(135deg, #90A4AE, #78909C)',
+                'color': '#FFFFFF', 'border': 'none', 'border-radius': '4px',
+                'cursor': 'pointer', 'font-size': '11px', 'font-weight': 'bold',
+                'box-shadow': '0 2px 4px rgba(0,0,0,0.3)'
+            })
+                .html((L['pqUndo'] || '되돌리기'))
+                .on('click', function () {
+                    if ($data._pqDrawing) endStroke();
+                    if (pqPopUndo()) send('undo', {});
+                })
+        );
+
+        $controls.append(
             $('<button>').attr('id', 'pq-clear-btn').css({
                 'padding': '4px 12px',
                 'background': 'linear-gradient(135deg, #FFB74D, #FFA726)',
@@ -629,6 +678,7 @@ $lib.Picture.drawDisplay = function () {
                 .on('click', function () {
                     showConfirm(L['pqSureClear'] || '정말 모두 지우시겠습니까?', function (res) {
                         if (res) {
+                            pqPushUndo();
                             $data._pqStrokes = [];
                             var c = $data._pqCtx;
                             if (c) { c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, PQ_CANVAS_W, PQ_CANVAS_H); }
@@ -644,10 +694,13 @@ $lib.Picture.drawDisplay = function () {
     $stage.game.display.empty().append($main);
 };
 
+// 술래는 이미 로컬에 그렸으므로 서버 에코는 무시 (되돌리기 직후 늦게 온 에코가 다시 그리는 것 방지)
 $lib.Picture.handleDraw = function (data) {
     var ctx = $data._pqCtx;
+    if ($data._pqIsDrawer) return;
     if (!ctx || !data.pts || data.pts.length === 0) return;
 
+    if (!data.cont) pqPushUndo();
     var fromPt = (data.cont && $data._pqRemoteLastPt) ? $data._pqRemoteLastPt : null;
     drawStrokeSegment(ctx, data.pts, data.c, data.w, fromPt);
     $data._pqRemoteLastPt = data.pts[data.pts.length - 1];
@@ -656,15 +709,25 @@ $lib.Picture.handleDraw = function (data) {
 
 $lib.Picture.handleFill = function (data) {
     var ctx = $data._pqCtx;
+    if ($data._pqIsDrawer) return;
     if (!ctx) return;
+    pqPushUndo();
     pqFloodFill(ctx, data.x, data.y, data.c);
 };
 
 $lib.Picture.handleClear = function () {
+    if ($data._pqIsDrawer) return;
+    pqPushUndo();
     $data._pqStrokes = [];
     $data._pqRemoteLastPt = null;
     var ctx = $data._pqCtx;
     if (ctx) { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, PQ_CANVAS_W, PQ_CANVAS_H); }
+};
+
+$lib.Picture.handleUndo = function () {
+    if ($data._pqIsDrawer) return;
+    $data._pqRemoteLastPt = null;
+    pqPopUndo();
 };
 
 $lib.Picture.replayStrokes = function (strokes) {

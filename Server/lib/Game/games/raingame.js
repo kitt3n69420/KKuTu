@@ -81,6 +81,23 @@ function traverse(my, func) {
 	}
 }
 
+// 관전자에게는 첫 번째 사람 참가자의 낙하 단어를 그대로 보여줌
+function firstHumanId(my) {
+	for (var i = 0; i < my.game.seq.length; i++) {
+		if (typeof my.game.seq[i] === 'string') return my.game.seq[i];
+	}
+	return null;
+}
+
+function sendToSpectators(my, data) {
+	var i, c;
+	for (i = 0; i < my.players.length; i++) {
+		if (my.game.seq.indexOf(my.players[i]) !== -1) continue;
+		if (!(c = DIC[my.players[i]])) continue;
+		c.send('raingameWord', data);
+	}
+}
+
 function stopTimers(my) {
 	clearInterval(my.game.scanTimer);
 	clearTimeout(my.game.autoAtkTimer);
@@ -196,6 +213,7 @@ function tryPushFromQueue(my, player) {
 					}
 					if (!my.game || my.game.gen !== gen || my.game.late || !player.game || !player.game.alive) return;
 					c.send('raingameWord', { wordId: wo.id, word: wo.word, timeout: tOut });
+					if (player.id === firstHumanId(my)) sendToSpectators(my, { wordId: wo.id, word: wo.word, timeout: tOut });
 				}, delay);
 				if (player.game.sendTimers) player.game.sendTimers.push(t);
 			})(wordObj, sendDelay, sendTimeout, my.game.gen);

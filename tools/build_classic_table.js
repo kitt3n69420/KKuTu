@@ -10,7 +10,7 @@
  * 자주 나오는 끝 글자: 한국어는 exit 글자 빈도 누적 COVER 비율을 덮는 연결 글자만 담는다. 나머지는 봇이 기존 로직을 쓴다. 영어는 전부 담는다.
  * 한방/공격 후보(A/B): exit 글자 뒤로 이어 갈 수 있는 단어 수(kkutu_stats_*, 표준 두음 합산)가 LOW 이하인 단어를
  *   방 상태(16가지)마다 따로 상위 몇 개씩 뽑아 합친다. 실제 판정은 런타임에서 방 옵션과 이미 나온 단어를 반영해 다시 한다.
- * 제외: 한국어에서 theme 가 정확히 'KPT'(국내 특허) 단독인 단어
+ * 제외: 한국어에서 theme 가 정확히 'KPT'(국내 특허) 단독인 단어, MAX_LEN(80)글자보다 긴 단어
  * 영어: 알파벳 단어(Const.ENG_ID)이고 4글자 이상인 단어만(getAuto ESH 규칙 / kkutu_stats_en과 같은 기준).
  */
 var Const = require('../Server/lib/const');
@@ -19,6 +19,7 @@ var T = require('../Server/lib/Game/games/classic-table');
 
 var COVER = 0.97; // 한국어 연결 글자 커버리지
 var LOW = 5; // 이 값 이하로 이을 단어가 남으면 공격 후보
+var MAX_LEN = 80; // 이보다 긴 단어는 테이블에 넣지 않는다
 var K_V = 6, K_V_UNI = 2; // V 풀: 길이 구간마다 상위 K_V개 + 범용 단어 보장
 var K_M = 4, K_M_UNI = 1; // M 풀: 미션 글자마다
 var K_A = 3, K_A_UNI = 1; // A/B 풀: 길이 구간 x 방 상태마다
@@ -149,6 +150,7 @@ function build(rows, lang, stats) {
 		var word = r._id;
 		if (!word) return;
 		var len = word.length;
+		if (len > MAX_LEN) return;
 		var flag = r.flag || 0;
 		var wflag;
 		if (isKo) {

@@ -9,6 +9,7 @@ const JLog = require('./jjlog');
 const LANG = require('../Web/lang/ko_KR.json');
 const Const = require('../const');
 const FallbackLog = require('./discord-fallback-log');
+const PunishmentLog = require('./punishment-log');
 
 // Constants
 const GUILD_ID = '1447976671805182086';
@@ -744,6 +745,42 @@ async function registerCommands(token) {
                 ),
 
             new SlashCommandBuilder()
+                .setName('banlist')
+                .setNameLocalizations({ ko: '제재목록' })
+                .setDescription('Show currently banned users and IPs (admin only)')
+                .setDescriptionLocalizations({
+                    ko: '현재 제재 중인 유저와 IP를 확인해요. (관리자 전용)'
+                }),
+
+            new SlashCommandBuilder()
+                .setName('forcenick')
+                .setNameLocalizations({ ko: '닉네임변경' })
+                .setDescription("Reset a user's nickname to the default (admin only)")
+                .setDescriptionLocalizations({
+                    ko: '유저의 별명을 기본 별명(유저+숫자 5자리)으로 강제로 바꿔요. (관리자 전용)'
+                })
+                .addStringOption(opt =>
+                    opt.setName('user_id')
+                        .setNameLocalizations({ ko: '아이디' })
+                        .setDescription('User ID')
+                        .setDescriptionLocalizations({
+                            ko: '별명을 바꿀 유저 아이디'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(64)
+                )
+                .addStringOption(opt =>
+                    opt.setName('reason')
+                        .setNameLocalizations({ ko: '사유' })
+                        .setDescription('Reason')
+                        .setDescriptionLocalizations({
+                            ko: '변경 사유'
+                        })
+                        .setRequired(true)
+                        .setMaxLength(200)
+                ),
+
+            new SlashCommandBuilder()
                 .setName('guestconnect')
                 .setNameLocalizations({ ko: '손님접속' })
                 .setDescription('Allow or block guest connections (admin only)')
@@ -882,6 +919,12 @@ async function handleCommand(interaction) {
                 break;
             case 'ipunban':
                 await handleIpUnban(interaction);
+                break;
+            case 'banlist':
+                await handleBanList(interaction);
+                break;
+            case 'forcenick':
+                await handleForceNick(interaction);
                 break;
             case 'guestconnect':
                 await handleGuestConnect(interaction);
@@ -1031,6 +1074,16 @@ async function handleHelp(interaction) {
             {
                 name: '✅ /ipunban (ip밴해제) `<ip>`',
                 value: 'IP 주소 제재 해제 (관리자 전용)\n예: `/ipunban 1.2.3.4`',
+                inline: false
+            },
+            {
+                name: '📜 /banlist (제재목록)',
+                value: '현재 제재 중인 유저와 IP 목록 확인 (관리자 전용)\n예: `/banlist`',
+                inline: false
+            },
+            {
+                name: '✏️ /forcenick (닉네임변경) `<아이디>` `<사유>`',
+                value: '별명을 기본 별명(유저+숫자 5자리)으로 강제 변경 (관리자 전용, 오프라인 가능)\n예: `/forcenick abc123 부적절한 닉네임`',
                 inline: false
             },
             {
@@ -1920,6 +1973,7 @@ async function handleBan(interaction) {
         }
 
         DB.users.update(['_id', userId]).set(['black', reason], ['blockeduntil', String(untilDate.getTime())]).on();
+        PunishmentLog.add(DB, userId, 'ban', reason, untilDate.getTime(), 'discord-' + interaction.user.id);
 
         JLog.info(`[Discord Bot] ban ${userId} by discord-${interaction.user.id}: ${reason} (until ${until})`);
         await interaction.editReply({ content: `✅ "${userId}" 유저를 ${until}까지 제재했습니다. (사유: ${reason})` });
@@ -1952,6 +2006,7 @@ async function handleUnban(interaction) {
         }
 
         DB.users.update(['_id', userId]).set(['black', null], ['blockeduntil', '']).on();
+        PunishmentLog.lift(DB, userId, 'ban', 'discord-' + interaction.user.id);
 
         JLog.info(`[Discord Bot] unban ${userId} by discord-${interaction.user.id}`);
         await interaction.editReply({ content: `✅ "${userId}" 유저의 제재를 해제했습니다.` });
@@ -2067,6 +2122,7 @@ async function handleIpBan(interaction) {
         if (!DB || !DB.ip_block) throw new Error('데이터베이스가 준비되지 않았습니다.');
 
         DB.ip_block.upsert(['_id', ip]).set(['reasonBlocked', reason], ['ipBlockedUntil', untilDate.getTime()]).on();
+        PunishmentLog.add(DB, ip, 'ipban', reason, untilDate.getTime(), 'discord-' + interaction.user.id);
 
         JLog.info(`[Discord Bot] ipban ${ip} by discord-${interaction.user.id}: ${reason} (until ${until})`);
         await interaction.editReply({ content: `✅ IP "${ip}"를 ${until}까지 제재했습니다. (사유: ${reason})` });
@@ -2099,12 +2155,121 @@ async function handleIpUnban(interaction) {
         }
 
         DB.ip_block.remove(['_id', ip]).on();
+        PunishmentLog.lift(DB, ip, 'ipban', 'discord-' + interaction.user.id);
 
         JLog.info(`[Discord Bot] ipunban ${ip} by discord-${interaction.user.id}`);
         await interaction.editReply({ content: `✅ IP "${ip}"의 제재를 해제했습니다.` });
     } catch (err) {
         JLog.error(`[Discord Bot] Ipunban error: ${err.message}`);
         await interaction.editReply({ content: `❌ 제재 해제 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
+/**
+ * Runs a raw SQL query on a table with the same timeout as dbFindOne, resolving to the rows.
+ */
+function dbDirect(table, sql) {
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('DB 응답 시간 초과')), DB_TIMEOUT);
+        table.direct(sql, function (err, res) {
+            clearTimeout(timer);
+            if (err) return reject(err);
+            resolve(res && res.rows ? res.rows : []);
+        });
+    });
+}
+
+/**
+ * /banlist command - Show currently banned users and IPs (admin only)
+ * 처벌 기록이 아닌 실제 제재 상태(users.black, ip_block)를 읽는다.
+ */
+async function handleBanList(interaction) {
+    if (!isAdmin(interaction)) {
+        await interaction.reply({ content: '❌ 관리자만 사용할 수 있는 명령어입니다.', ephemeral: true });
+        return;
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+        if (!DB || !DB.users || !DB.ip_block) throw new Error('데이터베이스가 준비되지 않았습니다.');
+
+        const now = Date.now();
+        // blockeduntil이 비어 있으면 영구 제재, 지난 기한은 다음 접속 때 풀리므로 제외한다.
+        const users = (await dbDirect(DB.users, 'SELECT _id, nickname, black, blockeduntil FROM users WHERE black IS NOT NULL'))
+            .filter(u => !u.blockeduntil || Number(u.blockeduntil) > now);
+        const ips = (await dbDirect(DB.ip_block, 'SELECT * FROM ip_block'))
+            .filter(b => b.reasonBlocked && (!b.ipBlockedUntil || Number(b.ipBlockedUntil) > now));
+
+        const untilText = v => v ? `~${PunishmentLog.formatDate(v)}` : '영구';
+        const lines = [
+            ...users.map(u => `🚫 \`${u._id}\`${u.nickname ? ` (${u.nickname})` : ''} · ${untilText(u.blockeduntil)} · ${u.black}`),
+            ...ips.map(b => `🌐 \`${b._id}\` · ${untilText(b.ipBlockedUntil)} · ${b.reasonBlocked}`)
+        ];
+
+        if (!lines.length) {
+            await interaction.editReply({ content: '✅ 현재 제재 중인 유저나 IP가 없습니다.' });
+            return;
+        }
+
+        let description = '';
+        let shown = 0;
+        for (const line of lines) {
+            if (description.length + line.length + 1 > 3900) break;
+            description += line + '\n';
+            shown++;
+        }
+        if (shown < lines.length) description += `…외 ${lines.length - shown}건`;
+
+        const embed = new EmbedBuilder()
+            .setTitle('📜 현재 제재 목록')
+            .setColor(0xE74C3C)
+            .setDescription(description)
+            .setFooter({ text: `유저 ${users.length}명 · IP ${ips.length}개` })
+            .setTimestamp();
+
+        await interaction.editReply({ embeds: [embed] });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Banlist error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 제재 목록 조회 중 오류가 발생했습니다: ${err.message}` });
+    }
+}
+
+/**
+ * /forcenick command - Reset a user's nickname to the default (admin only, works offline)
+ */
+async function handleForceNick(interaction) {
+    if (!isAdmin(interaction)) {
+        await interaction.reply({ content: '❌ 관리자만 사용할 수 있는 명령어입니다.', ephemeral: true });
+        return;
+    }
+
+    const userId = interaction.options.getString('user_id');
+    const reason = interaction.options.getString('reason');
+    const discordId = 'discord-' + interaction.user.id;
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+        if (!DB || !DB.users) throw new Error('데이터베이스가 준비되지 않았습니다.');
+
+        const nick = await new Promise((resolve, reject) => {
+            PunishmentLog.resetNickname(DB, userId, reason, discordId, (err, nick) => err ? reject(err) : resolve(nick));
+        });
+
+        // 접속 중이면 끊어서 바뀐 별명으로 다시 들어오게 한다.
+        if (_kickUser) {
+            await _kickUser(userId);
+        } else if (DIC && DIC[userId] && DIC[userId].socket) {
+            DIC[userId].send('error', { code: 410 });
+            DIC[userId].socket.close();
+        }
+
+        JLog.info(`[Discord Bot] forcenick ${userId} -> ${nick} by ${discordId}: ${reason}`);
+        await interaction.editReply({ content: `✅ "${userId}" 유저의 별명을 "${nick}"(으)로 바꿨습니다. (사유: ${reason})` });
+    } catch (err) {
+        JLog.error(`[Discord Bot] Forcenick error: ${err.message}`);
+        await interaction.editReply({ content: `❌ 별명 변경 중 오류가 발생했습니다: ${err.message}` });
     }
 }
 

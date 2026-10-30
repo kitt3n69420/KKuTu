@@ -737,6 +737,7 @@ exports.turnEnd = function () {
 			ok: false,
 			target: target ? target.id : null,
 			score: score,
+			totalScore: (target && target.game) ? target.game.score : undefined,
 			hint: w
 		}, true);
 

@@ -43,6 +43,11 @@ function isTopicFree(my) {
 function isFool(my) {
     return Const.GAME_TYPE[my.mode] === 'XBB';
 }
+// 점수 증가(inf): 바보 모드에서만 게임 점수를 1만 배로 올린다.
+// 다른 자유 모드는 게임 점수로 보상을 주므로, 옵션 값이 새어 들어와도 곱해지지 않게 isFool로 한 번 더 막는다
+function getInflationMul(my) {
+    return (isFool(my) && my.opts.inflation) ? 10137 : 1;
+}
 function toRegex(theme) {
     if (Array.isArray(theme)) return new RegExp('(^|,)(' + theme.join('|') + ')($|,)');
     return new RegExp('(^|,)' + theme + '($|,)');
@@ -198,7 +203,9 @@ exports.turnEnd = function () {
         if (my.opts.invincible) {
             score = 0;
         } else {
-            score = Const.getPenalty(my.game.chain, target.game.score);
+            // 점수 증가(inf): 원래 점수 기준 감점을 구해 1만 배 (최소 감점 50 같은 고정값도 같이 키우기 위해)
+            var infMul = getInflationMul(my);
+            score = Const.getPenalty(my.game.chain, target.game.score / infMul) * infMul;
             // 나락(nar): 패널티 적용 후에도 점수가 양수면 0으로 만듦
             if (my.opts.narak && (target.game.score + score) > 0) {
                 score = -target.game.score;
@@ -225,6 +232,7 @@ exports.turnEnd = function () {
             ok: false,
             target: target ? target.id : null,
             score: score,
+            totalScore: (target && target.game) ? target.game.score : undefined,
             hint: w
         }, true);
 
@@ -450,6 +458,12 @@ exports.submit = function (client, text) {
                 if (isReturn) {
                     missionBonus = 0;
                 }
+                // 점수 증가(inf): 클라이언트가 score에서 보너스를 빼 기본 점수를 표시하므로 보너스도 같이 1만 배
+                var infMul = getInflationMul(my);
+                score *= infMul;
+                missionBonus *= infMul;
+                straightBonus *= infMul;
+                fullHouseBonus *= infMul;
                 my.logChainWord(text, client);
                 my.game.roundTime -= t;
 

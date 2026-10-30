@@ -23,6 +23,17 @@ mixin Dialog(id, w, h, t, nocls)
 		div.dialog-body(style='font-size: 13px;')
 			block
 	
+//- 주제 고르기 목록: 일반 주제(한 줄 4개)와 어인정 주제(2개) 두 묶음 (사용자 요청). 체크박스 id(<언어>-pick-<주제>)는 기존 코드가 그대로 씀
+mixin PickList(lang, themes, injeong)
+	div.dialog-opt(id=`${lang}-pick-list`, style='width: 100%;')
+		each g in [['ijpGeneral', themes, 'ijp-gen', 'display: inline-block; vertical-align: top; width: 25%;'], ['ijpInjeong', injeong, 'ijp-inj', 'display: inline-block; vertical-align: top; width: 50%;']]
+			div.ijp-sec(data-lang-key=g[0], style='clear: both; padding: 6px 0 2px; font-weight: bold;')= L(g[0])
+			each item in g[1]
+				if locals.IJP_EXCEPT.indexOf(item) == -1
+					div(class=g[2], style=g[3])
+						input(id=`${lang}-pick-${item}`, type='checkbox', style='width: auto;')
+						label(for=`${lang}-pick-${item}`, data-lang-key=('theme_' + item))= L('theme_' + item)
+
 mixin GameOption(key, prefix)
 	- var name = locals.OPTIONS[key].name;
 	- var sid = name.toLowerCase();
@@ -497,6 +508,8 @@ block Middle
 					button#room-injeong-pick(style='font-size: 11px;', data-lang-key='pickInjeong')= L('pickInjeong')
 				div.dialog-opt#room-quizpick-panel
 					button#room-quiz-pick(style='font-size: 11px;', data-lang-key='pickQuizTopic')= L('pickQuizTopic')
+				div.dialog-opt#room-songpick-panel
+					button#room-song-pick(style='font-size: 11px;', data-lang-key='pickSong')= L('pickSong')
 			div.dialog-bar#room-all-rules-panel(style='height: auto; overflow: hidden;')
 				h4(style='height: 45px;', data-lang-key='misc')= L('misc')
 				div(style='float: left; width: calc(100% - 90px);')
@@ -506,26 +519,8 @@ block Middle
 						button#room-injeong-pick-flat(style='font-size: 11px;', data-lang-key='pickInjeong')= L('pickInjeong')
 					div.dialog-opt#room-quizpick-panel-flat
 						button#room-quiz-pick-flat(style='font-size: 11px;', data-lang-key='pickQuizTopic')= L('pickQuizTopic')
-				script.
-					$(function() {
-						var $p = $('#room-all-rules-panel');
-						$p.find('input').change(function() {
-							var id = $(this).attr('id').replace('room-flat-', 'room-');
-							var $t = $('#' + id);
-							if($t.prop('checked') != $(this).prop('checked')) $t.click();
-						});
-						setInterval(function() {
-							$p.find('.dialog-opt').each(function() {
-								var id = $(this).attr('id').replace('room-flat-', 'room-');
-								var $t = $('#' + id);
-								if($t.css('display') == 'none') $(this).hide();
-								else $(this).show();
-								var $i = $(this).find('input');
-								var $ti = $t.find('input');
-								if($i.prop('checked') != $ti.prop('checked')) $i.prop('checked', $ti.prop('checked'));
-							});
-						}, 100);
-					});
+					div.dialog-opt#room-songpick-panel-flat
+						button#room-song-pick-flat(style='font-size: 11px;', data-lang-key='pickSong')= L('pickSong')
 			div.dialog-bar#room-simple-rules-panel(style='height: auto; overflow: hidden; display: none;')
 				h4(style='height: 30px;', data-lang-key='misc')= L('misc')
 				div(style='float: left; width: calc(100% - 90px);')
@@ -535,40 +530,34 @@ block Middle
 						button#room-simple-injeong-pick(style='font-size: 11px;', data-lang-key='pickInjeong')= L('pickInjeong')
 					div.dialog-opt#room-simple-quizpick-panel(style='width: auto; display: none;')
 						button#room-simple-quiz-pick(style='font-size: 11px;', data-lang-key='pickQuizTopic')= L('pickQuizTopic')
+					div.dialog-opt#room-simple-songpick-panel(style='width: auto; display: none;')
+						button#room-simple-song-pick(style='font-size: 11px;', data-lang-key='pickSong')= L('pickSong')
 		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; left: 10px; right: 10px; width: auto;')
 			button#room-ok(style='float: right;', data-lang-key='OK')= L('OK')
 			button#view-all-rules-btn(style='float: right; margin-right: 10px; display: none; min-width: 120px;', data-lang-key='viewAllRules')= L('viewAllRules')
 			button#room-random-btn(style='float: right; margin-right: 10px;', data-lang-key='randomRoomSetting')= L('randomRoomSetting')
-	+Dialog('InjPickDiag', 200, 400, 'pickInjeong')
+	+Dialog('InjPickDiag', 300, 400, 'pickInjeong')
 		h4(data-lang-key='explInjPick')= L('explInjPick')
+		div.dialog-bar.pick-search-bar
+			input#injpick-search.pick-search(type='search', placeholder=L('ijpSearch'), data-lang-attr-placeholder='ijpSearch', autocomplete='off', style='float: none; width: 100%; height: 24px; box-sizing: border-box;')
 		div.dialog-bar
 			button#injpick-all(data-lang-key='injpickAll')= L('injpickAll')
 			button#injpick-no(data-lang-key='injpickNo')= L('injpickNo')
-		div.dialog-bar#injpick-list(style='height: 280px; overflow-y: scroll;')
-			div.dialog-opt#ko-pick-list(style='width: 100%;')
-				- locals.KO_THEME.concat(locals.KO_INJEONG).forEach(function(item){
-					- var name = "ko-pick-" + item;
-					- if(locals.IJP_EXCEPT.indexOf(item) != -1) return;
-					div(style='float: left; width: 100%;')
-						input(id=name, type='checkbox', style='width: auto;')
-						label(for=name, data-lang-key=('theme_' + item))= L('theme_' + item)
-				- });
-			div.dialog-opt#en-pick-list(style='width: 100%;')
-				- locals.EN_THEME.concat(locals.EN_INJEONG).forEach(function(item){
-					- var name = "en-pick-" + item;
-					- if(locals.IJP_EXCEPT.indexOf(item) != -1) return;
-					div(style='float: left; width: 100%;')
-						input(id=name, type='checkbox', style='width: auto;')
-						label(for=name, data-lang-key=('theme_' + item))= L('theme_' + item)
-				- });
+		div.dialog-bar#injpick-list(style='height: 252px; overflow-y: scroll;')
+			+PickList('ko', locals.KO_THEME, locals.KO_INJEONG)
+			+PickList('en', locals.EN_THEME, locals.EN_INJEONG)
+			+PickList('ja', locals.JA_THEME, locals.JA_INJEONG)
+			p.pick-empty(data-lang-key='ijpNoResult', style='display: none; margin: 10px 0; text-align: center;')= L('ijpNoResult')
 		div.dialog-bar.tail-button
 			button#injpick-ok(data-lang-key='OK')= L('OK')
 	+Dialog('QuizPickDiag', 200, 300, 'pickQuizTopic')
 		h4(data-lang-key='explQuizPick')= L('explQuizPick')
+		div.dialog-bar.pick-search-bar
+			input#quizpick-search.pick-search(type='search', placeholder=L('ijpSearch'), data-lang-attr-placeholder='ijpSearch', autocomplete='off', style='float: none; width: 100%; height: 24px; box-sizing: border-box;')
 		div.dialog-bar
 			button#quizpick-all(data-lang-key='injpickAll')= L('injpickAll')
 			button#quizpick-no(data-lang-key='injpickNo')= L('injpickNo')
-		div.dialog-bar#quizpick-list(style='height: 180px; overflow-y: scroll;')
+		div.dialog-bar#quizpick-list(style='height: 152px; overflow-y: scroll;')
 			- var koOnlyTopics = ['MATH', 'NUMG', 'DAJK'];
 			- locals.QUIZ_TOPIC.forEach(function(item){
 				- var name = "quiz-pick-" + item;
@@ -577,8 +566,30 @@ block Middle
 					input(id=name, type='checkbox', style='width: auto;')
 					label(for=name, data-lang-key=('quiz_' + item))= L('quiz_' + item)
 			- });
+			p.pick-empty(data-lang-key='ijpNoResult', style='display: none; margin: 10px 0; text-align: center;')= L('ijpNoResult')
 		div.dialog-bar.tail-button
 			button#quizpick-ok(data-lang-key='OK')= L('OK')
+	+Dialog('SongPickDiag', 300, 300, 'pickSong')
+		h4(data-lang-key='explSongPick')= L('explSongPick')
+		div.dialog-bar#songpick-list(style='height: 152px; overflow-y: scroll;')
+			div(style='float: left; width: 100%;')
+				input#song-pick-0(type='radio', name='song-pick', value='', style='width: auto;')
+				label(for='song-pick-0', data-lang-key='songRandom')= L('songRandom')
+			- (locals.RHYTHM_SONGS || []).forEach(function(song, i){
+				- var name = "song-pick-" + (i + 1);
+				div(style='float: left; width: 100%;')
+					input(id=name, type='radio', name='song-pick', value=song.name, style='width: auto;')
+					label(for=name)
+						b.song-title= song.title
+						//- 채보 난이도 배지 (색: 레벨에 따라 파랑→초록→노랑→빨강→보라→검정, rhythm-songs.js). 없는 난이도는 빈 칸으로 줄 맞춤
+						each d in [['easy', 'N', 'Normal'], ['normal', 'H', 'Hard'], ['hard', 'C', 'Crazy'], ['insane', 'A', 'Astral']]
+							if song.levels[d[0]]
+								b.song-lv(style='background-color: ' + song.colors[d[0]].bg + '; color: ' + song.colors[d[0]].fg + ';', title=d[2] + ' ' + song.levels[d[0]])= d[1] + ' ' + song.levels[d[0]]
+							else
+								b.song-lv.song-lv-none
+			- });
+		div.dialog-bar.tail-button
+			button#songpick-ok(data-lang-key='OK')= L('OK')
 	+Dialog('ViewAllRulesDiag', 300, 310, 'viewAllRules')
 		div#view-all-rules-content(style='height: 230px; overflow-y: auto; overflow-x: hidden;')
 			div.dialog-bar#view-all-manner-panel(style='display: none;')
@@ -628,6 +639,8 @@ block Middle
 					button#view-all-injeong-pick(style='font-size: 11px;', data-lang-key='pickInjeong')= L('pickInjeong')
 				div.dialog-opt#view-all-quizpick-panel
 					button#view-all-quiz-pick(style='font-size: 11px;', data-lang-key='pickQuizTopic')= L('pickQuizTopic')
+				div.dialog-opt#view-all-songpick-panel
+					button#view-all-song-pick(style='font-size: 11px;', data-lang-key='pickSong')= L('pickSong')
 			div.dialog-bar#view-all-flat-panel(style='height: auto;')
 				h4(style='height: 45px;', data-lang-key='misc')= L('misc')
 				div(style='float: left; width: calc(100% - 90px);')
@@ -637,6 +650,8 @@ block Middle
 						button#view-all-flat-injeong-pick(style='font-size: 11px;', data-lang-key='pickInjeong')= L('pickInjeong')
 					div.dialog-opt#view-all-flat-quizpick-panel
 						button#view-all-flat-quiz-pick(style='font-size: 11px;', data-lang-key='pickQuizTopic')= L('pickQuizTopic')
+					div.dialog-opt#view-all-flat-songpick-panel
+						button#view-all-flat-song-pick(style='font-size: 11px;', data-lang-key='pickSong')= L('pickSong')
 		div.dialog-bar.tail-button
 			button#view-all-ok(data-lang-key='OK')= L('OK')
 			button#view-all-uncheck-all(data-lang-key='uncheckAllRules')= L('uncheckAllRules')

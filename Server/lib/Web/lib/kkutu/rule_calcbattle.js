@@ -46,6 +46,11 @@ $lib.Calcbattle.roundReady = function (data) {
 
 	// 내 문제 표시
 	var myProblem = data.problems[$data.id];
+	// 관전자는 첫 번째 참가자의 문제를 보여줌
+	if (!myProblem && $data._spectate) {
+		var firstId = Object.keys(data.problems)[0];
+		if (firstId !== undefined) myProblem = data.problems[firstId];
+	}
 	if (myProblem) {
 		if ($data._oneback) {
 			// oneback 모드: 라운드 준비 중에는 첫 문제(풀어야 할 문제)를 보여줌

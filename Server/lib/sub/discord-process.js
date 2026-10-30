@@ -128,12 +128,12 @@ process.on('message', function (msg) {
 });
 
 process.on('uncaughtException', function (err) {
-    JLog.error('[Discord Process] Uncaught exception: ' + err.message);
+    JLog.error('[Discord Process] Uncaught exception: ' + err.message, err);
     console.error(err);
 });
 
 process.on('unhandledRejection', function (reason) {
-    JLog.error('[Discord Process] Unhandled rejection: ' + String(reason));
+    JLog.error('[Discord Process] Unhandled rejection: ' + String(reason), reason);
 });
 
 var MainDB = require('../Web/db');

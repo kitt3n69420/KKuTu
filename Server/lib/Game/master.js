@@ -29,9 +29,11 @@ var GLOBAL = require("../sub/global.json");
 var Const = require("../const");
 var JLog = require("../sub/jjlog");
 var FallbackLog = require("../sub/discord-fallback-log");
+var ErrorReport = require("../sub/error-report");
 var Secure = require("../sub/secure");
 var Recaptcha = require("../sub/recaptcha");
 var NicknameGuard = require("../sub/nickname-guard");
+var ProfanityFilter = require("../sub/profanity-filter");
 var { validateInput, checkPrototypePollution } = require("../Web/validators");
 
 var MainDB;
@@ -55,6 +57,7 @@ const DEVELOP = (exports.DEVELOP = global.test || false);
 // (최초 실행 등) global.json의 값을 기본값으로 사용한다. Web 서버(main.js)도
 // 같은 파일을 읽어서 포털 페이지에 반영한다.
 var GuestState = require("../sub/guest-state");
+var PunishmentLog = require("../sub/punishment-log");
 var RUNTIME_GUEST = GuestState.read({
   connect: GLOBAL.GUEST_CONNECT_ALLOWED !== false,
   chat: GLOBAL.GUEST_CHAT_ALLOWED !== false,
@@ -411,10 +414,15 @@ function spawnDiscordProcess() {
   });
 }
 
+// 오류 로그 채널로 보내는 중인 크래시 로그가 끊기지 않도록 전송을 기다렸다가 종료
+function exitAfterReport(exitCode) {
+  ErrorReport.flush(5000).then(function () { process.exit(exitCode); });
+}
+
 function shutdownDiscord(err, exitCode) {
   _shuttingDown = true;
   if (!discordProcess) {
-    process.exit(exitCode);
+    exitAfterReport(exitCode);
     return;
   }
   var done = false;
@@ -425,7 +433,7 @@ function shutdownDiscord(err, exitCode) {
       try { discordProcess.removeAllListeners(); discordProcess.kill(); } catch (e) {}
       discordProcess = null;
     }
-    process.exit(exitCode);
+    exitAfterReport(exitCode);
   }
   setTimeout(finish, 5500);
   discordProcess.once("message", function (msg) {
@@ -567,6 +575,7 @@ function processAdmin(id, value) {
         } else return null;
 
         JLog.info(`[Block] 사용자 #${args[0].trim()}(이)가 이용제한 처리되었습니다.`);
+        PunishmentLog.add(MainDB, args[0].trim(), "ban", args[1].trim(), banUntil, id);
 
         if ((temp = DIC[args[0].trim()])) {
           temp.send("error", { code: 410, message: args[1].trim(), blockedUntil: banUntilStr });
@@ -589,6 +598,7 @@ function processAdmin(id, value) {
         } else return null;
 
         JLog.info(`[Block] IP 주소 ${args[0].trim()}(이)가 이용제한 처리되었습니다.`);
+        PunishmentLog.add(MainDB, args[0].trim(), "ipban", args[1].trim(), args.length == 3 ? addDate(parseInt(args[2].trim())) : null, id);
       } catch (e) {
         processAdminErrorCallback(e, id);
       }
@@ -597,6 +607,7 @@ function processAdmin(id, value) {
       try {
         MainDB.users.update(["_id", value]).set(["black", null], ["blockeduntil", ""]).on();
         JLog.info(`[Block] 사용자 #${value}(이)가 이용제한 해제 처리되었습니다.`);
+        PunishmentLog.lift(MainDB, value, "ban", id);
       } catch (e) {
         processAdminErrorCallback(e, id);
       }
@@ -605,11 +616,30 @@ function processAdmin(id, value) {
       try {
         MainDB.ip_block.remove(["_id", value]).on();
         JLog.info(`[Block] IP 주소 ${value}(이)가 이용제한 해제 처리되었습니다.`);
+        PunishmentLog.lift(MainDB, value, "ipban", id);
       } catch (e) {
         processAdminErrorCallback(e, id);
       }
       return null;
     /* Enhanced User Block System [E] */
+    case "nick":
+      temp = value.split(",");
+      if (temp.length < 2 || !temp[0].trim() || !temp.slice(1).join(",").trim()) {
+        if (DIC[id]) DIC[id].send("notice", { value: "사용법: #nick 아이디,사유" });
+        return null;
+      }
+      var nickTarget = temp[0].trim();
+      PunishmentLog.resetNickname(MainDB, nickTarget, temp.slice(1).join(",").trim(), id, function (err, nick) {
+        if (err) return processAdminErrorCallback(err.message, id);
+        JLog.info(`[Admin] 사용자 #${nickTarget}의 별명이 ${nick}(으)로 강제 변경되었습니다.`);
+        if (DIC[id]) DIC[id].send("notice", { value: `#${nickTarget}의 별명을 ${nick}(으)로 바꿨습니다.` });
+        // 접속 중이면 끊어서 바뀐 별명으로 다시 들어오게 한다.
+        if (DIC[nickTarget]) {
+          DIC[nickTarget].send("error", { code: 410 });
+          DIC[nickTarget].socket.close();
+        }
+      });
+      return null;
     case "guestconnect":
       temp = value.trim().toLowerCase();
       if (temp !== "on" && temp !== "off") {
@@ -1431,6 +1461,10 @@ function processClientRequest($c, msg) {
 
       if (stable) {
         if (msg.title.length > 20) stable = false;
+        if (ProfanityFilter.isRoomTitleForbidden(msg.title)) {
+          msg.code = 467;
+          stable = false;
+        }
         if (msg.password.length > 20) stable = false;
         if (msg.limit < 2 || msg.limit > 24) {
           msg.code = 432;

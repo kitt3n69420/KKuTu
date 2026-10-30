@@ -19,21 +19,23 @@ const fs = require('fs');
 const path = require('path');
 const cenkor = require('cenkor');
 
-// 닉네임 금지어 정규식 (head.js의 BAD와 같은 방식: 파일에 한 줄당 패턴 하나씩 적어두고 '|'로 합쳐 컴파일)
-var nicknameBannedRegex = null;
-(function loadNicknameBannedWords() {
-	var listPath = path.join(__dirname, '../data/nickname_banned.txt');
-	var lines;
+// 금지어 정규식 (head.js의 BAD와 같은 방식: 파일에 한 줄당 패턴 하나씩 적어두고 '|'로 합쳐 컴파일)
+function loadBannedRegex(fileNames) {
+	var lines = [];
 
-	try {
-		lines = fs.readFileSync(listPath, 'utf8').split(/\r?\n/).filter(function (w) { return w.length > 0; });
-	} catch (e) {
-		return;
-	}
-	if (!lines.length) return;
+	fileNames.forEach(function (fileName) {
+		var listPath = path.join(__dirname, '../data/' + fileName);
+		try {
+			lines = lines.concat(fs.readFileSync(listPath, 'utf8').split(/\r?\n/).filter(function (w) { return w.length > 0; }));
+		} catch (e) {}
+	});
+	if (!lines.length) return null;
 
-	nicknameBannedRegex = new RegExp(lines.join('|'), 'gi');
-})();
+	return new RegExp(lines.join('|'), 'gi');
+}
+// nickname_banned.txt: 닉네임·방 제목 공통 / nickname_only_banned.txt: 닉네임 전용 / room_title_banned.txt: 방 제목 전용
+var nicknameBannedRegex = loadBannedRegex(['nickname_banned.txt', 'nickname_only_banned.txt']);
+var roomTitleBannedRegex = loadBannedRegex(['nickname_banned.txt', 'room_title_banned.txt']);
 
 /**
  * Cenkor 결과를 사용하여 욕설을 치환합니다.
@@ -127,7 +129,7 @@ exports.filterRoomTitle = function(title) {
 };
 
 /**
- * 텍스트에 닉네임 금지어(lib/data/nickname_banned.txt)가 매치되는지 확인합니다.
+ * 텍스트에 닉네임 금지어(lib/data/nickname_banned.txt + nickname_only_banned.txt)가 매치되는지 확인합니다.
  * 일부만 잘라내는 방식(치환 후 재사용)은 "씨섹스발"에서 "섹스"만 제거하면
  * 남은 부분이 "씨발"이 되어버리는 것처럼, 제거 후 새로운 금지어가 만들어질 수 있습니다.
  * 이를 피하기 위해 원본 텍스트 매치 여부만 검사하고, 통과하지 못하면 통째로 거부하는 용도로 씁니다.
@@ -147,4 +149,18 @@ exports.containsBannedWord = function(text) {
  */
 exports.isNicknameForbidden = function(text) {
 	return exports.hasProfanity(text) || exports.containsBannedWord(text);
+};
+
+/**
+ * 방 제목으로 쓸 수 없는 표현이 포함되어 있는지 확인합니다.
+ * 욕설과 공통 금지어(nickname_banned.txt)에 더해 room_title_banned.txt(가족 호칭 등)를 검사하고,
+ * 닉네임 전용 금지어(nickname_only_banned.txt)는 검사하지 않습니다.
+ * @param {string} text - 검사할 텍스트
+ * @returns {boolean} 금지된 표현 포함 여부
+ */
+exports.isRoomTitleForbidden = function(text) {
+	if (exports.hasProfanity(text)) return true;
+	if (!text || !roomTitleBannedRegex) return false;
+	roomTitleBannedRegex.lastIndex = 0;
+	return roomTitleBannedRegex.test(text);
 };

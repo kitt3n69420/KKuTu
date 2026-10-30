@@ -80,6 +80,8 @@ function showDialog($d, noToggle) {
 		return false;
 	} else {
 		$(".dialog-front").removeClass("dialog-front");
+		// 주제 고르기 창: 열 때마다 검색어를 비움 (ready.js filterPicks)
+		$d.find(".pick-search").val("").trigger('input');
 		$d.show().addClass("dialog-front").css({
 			'left': (size[0] - $d.width()) * 0.5,
 			'top': (size[1] - $d.height()) * 0.5
@@ -266,8 +268,8 @@ function resolveActiveBeat(beatMode, packName) {
 	if (beatMode === 'mid') return BEAT_Mid;
 	if (beatMode === 'default') return BEAT;
 	// auto: 팩 이름 기반 자동 선택
-	if (packName === '오리지널' || packName === '테크노' || packName === '병맛' || packName === '피아노') return BEAT_Mid;
-	return BEAT;
+	if (!packName || packName === '기본' || packName === '레트로' || packName === '물방울') return BEAT;
+	return BEAT_Mid;
 }
 
 function loadVolumeSettings() {
@@ -811,6 +813,11 @@ function onMessage(data) {
 		case 'clear':
 			if ($lib.Picture && $lib.Picture.handleClear) {
 				$lib.Picture.handleClear(data);
+			}
+			break;
+		case 'undo':
+			if ($lib.Picture && $lib.Picture.handleUndo) {
+				$lib.Picture.handleUndo(data);
 			}
 			break;
 		case 'fill':
@@ -1419,8 +1426,9 @@ function toggleShutBlock(target) {
 	}
 }
 function tryDict(text, callback) {
-	var text = text.replace(/[^\sa-zA-Zㄱ-ㅎ0-9가-힣ぁ-んァ-ヶ]/g, "");
-	var lang = text.match(/[ㄱ-ㅎ가-힣]/) ? 'ko' : (text.match(/[ぁ-んァ-ヶ]/) ? 'ja' : 'en');
+	// 자모(ㄱ~ㅎ, ㅏ~ㅣ)로 된 단어도 한국어로 찾음
+	var text = text.replace(/[^\sa-zA-Zㄱ-ㆎ0-9가-힣ぁ-んァ-ヶ]/g, "");
+	var lang = text.match(/[ㄱ-ㆎ가-힣]/) ? 'ko' : (text.match(/[ぁ-んァ-ヶ]/) ? 'ja' : 'en');
 
 	if (text.length < 1) return callback({ error: 404 });
 	$.get("/dict/" + text + "?lang=" + lang, callback);
@@ -1483,6 +1491,7 @@ function processRoom(data) {
 				$data._rLimit = $data.room.limit;
 				$data._rRound = $data.room.round;
 				$data._injpick = $data.room.opts.injpick;
+				$data._songpick = $data.room.opts.songpick || "";
 
 				// Set Linking Method Dropdown
 				var linkVal = 'std';
@@ -1795,7 +1804,7 @@ function updateMe() {
 	$(".my-stat-ping").html(commify(my.money) + L['ping']);
 	$(".my-okg .graph-bar").width(($data._playTime % 600000) / 6000 + "%");
 	$(".my-okg-text").html(prettyTime($data._playTime));
-	$(".my-level").html(L['LEVEL'] + " " + lv);
+	$(".my-level").html(L['LEVEL'] + " " + getLevelText(lv));
 	$(".my-gauge .graph-bar").css('width', ((my.data.score - prev) / (goal - prev) * 100) + "%");
 	$(".my-gauge-text").html(commify(my.data.score) + " / " + commify(goal));
 }
@@ -1987,7 +1996,7 @@ function normalGameUserBar(o) {
 		.append($("<div>").addClass("game-user-title")
 			.append(getLevelImage(o.data.score).addClass("game-user-level"))
 			.append($bar = $("<div>").addClass("game-user-name ellipse").text(getDisplayName(o)))
-			.append($("<div>").addClass("expl").html(L['LEVEL'] + " " + getLevel(o.data.score)))
+			.append($("<div>").addClass("expl").html(L['LEVEL'] + " " + getLevelText(getLevel(o.data.score))))
 		)
 		.append($n = $("<div>").addClass("game-user-score"));
 	renderMoremi($m, o.equip);
@@ -2464,11 +2473,23 @@ function animateScore(o) {
 	drawScore(o.$obj, Math.round(o.now));
 }
 function drawScore($obj, score) {
-	var i, sc = (score > 99999) ? (zeroPadding(Math.round(score * 0.001), 4) + 'k') : zeroPadding(score, 5);
+	var i, d, m, sc;
+
+	if (Math.round(score * 0.001) > 9999) {
+		// 10000k부터는 지수 표기, 다섯 칸에 맞게 소수 자리를 줄임: 1.23e7 → 1.2e10 → 1e100
+		// 칸에는 "123e7"처럼 점 없이, 점은 첫째·둘째 칸 사이에 칸 없이 얹음
+		// 반올림으로 지수가 올라가면(9.96e99 → 1.0e100) 한 자리 줄여 다시 계산
+		for (d = 2; ; d--) {
+			m = score.toExponential(d).split('e');
+			if (+m[1] < [Infinity, 100, 10][d]) break;
+		}
+		sc = m[0].replace('.', '') + 'e' + (+m[1]);
+	} else sc = (score > 99999) ? (zeroPadding(Math.round(score * 0.001), 4) + 'k') : zeroPadding(score, 5);
 
 	$obj.empty();
 	for (i = 0; i < sc.length; i++) {
 		$obj.append($("<div>").addClass("game-user-score-char").html(sc[i]));
+		if (i === 0 && d) $obj.append($("<div>").addClass("game-user-score-dot").html("."));
 	}
 }
 function checkFailCombo(id) {
@@ -2898,6 +2919,8 @@ function addScore(id, score, totalScore) {
 		if (typeof totalScore === 'number') {
 			u.game.score = totalScore;
 		} else {
+			// 늦게 도착한 'user' 이벤트가 game.score를 undefined로 덮어쓴 경우 NaN 방지
+			if (typeof u.game.score !== 'number' || isNaN(u.game.score)) u.game.score = 0;
 			u.game.score += score;
 		}
 	}
@@ -3129,7 +3152,7 @@ function roundEnd(result, data) {
 		draw('current', Math.min(going, $data._result._boing), 0, $data._result.goal - $data._result.before);
 		draw('bonus', Math.max(0, going - $data._result._boing), 0, $data._result.goal - $data._result.before);
 
-		$(".result-me-level-body").html($data._result.level);
+		$(".result-me-level-body").html(getLevelText($data._result.level));
 		$(".result-me-score-text").html(commify(Math.round($data._result.exp)) + " / " + commify($data._result.goal));
 	}
 	function draw(phase, val, before, goal) {
@@ -3335,8 +3358,12 @@ function getLevel(score) {
 	for (i = 0; i < l; i++) if (score < EXP[i]) break;
 	return i + 1;
 }
+function getLevelText(lv) {
+	return lv > STAR_LEVEL ? "s" + (lv - STAR_LEVEL) : lv;
+}
 function getLevelImage(score) {
 	var lv = getLevel(score) - 1;
+	if (lv >= STAR_LEVEL) lv += 15; // 별렙 아이콘은 레벨 팩 16번째 줄(375번 칸)부터
 	var lX = (lv % 25) * -100;
 	var lY = Math.floor(lv * 0.04) * -100;
 
@@ -3382,6 +3409,11 @@ function getPickTopicExpl(rule, opts) {
 			var name = L[prefix + pickArr[i]];
 			if (name) topics.push(name);
 		}
+	}
+	// 곡 선택: 고른 곡 이름은 곡 선택 창(#songpick-list)의 이름표에서 가져옴 (무작위면 표시 안 함)
+	if (rule && rule.opts.indexOf("spk") != -1 && opts.songpick) {
+		var $song = $("#songpick-list input").filter(function () { return this.value === opts.songpick; });
+		if ($song.length) topics.push($song.next("label").find(".song-title").text());
 	}
 	return topics;
 }

@@ -121,9 +121,11 @@ exports.OPTIONS = {
 	'shf': { name: "Shuffle" },    // 공정랜덤: 셔플 후 한 명씩 술래
 	'stp': { name: "Stop" },       // 멈춰!: 슉슉 글자 이동 정지, 경험치 40%로 감소
 	'rnm': { name: "RandomNumber" }, // 랜덤 숫자: 369 게임에서 라운드마다 박수 대상 숫자 3개를 무작위로 뽑음
+	'prm': { name: "Prime" },      // 소수: 369 게임에서 3·6·9 대신 소수에 박수 (랜덤 턴과만 사용 가능, rnm과 함께 사용 불가)
 	'rhd': { name: "RhythmHard" },  // 리듬: 하드 옵션 = 노멀 채보 사용
 	'rcz': { name: "RhythmCrazy" }, // 리듬: 크레이지 옵션 = 하드 채보 사용 (rhd와 동시 선택 시 크레이지)
-	'ljn': { name: "LateJoin" }    // 게임 중 참여: 게임 진행 중 들어온 사람도 경기에 참여 (LATE_JOIN_RULES의 모드만, kch/sur와 함께 사용 불가)
+	'ljn': { name: "LateJoin" },   // 게임 중 참여: 게임 진행 중 들어온 사람도 경기에 참여 (LATE_JOIN_RULES의 모드만, kch/sur와 함께 사용 불가)
+	'inf': { name: "Inflation" }   // 점수 증가: 바보 모드 전용. 게임 점수를 1만 배로 올림 (바보 모드는 보상이 항상 0이라 보상과 무관)
 
 };
 
@@ -407,7 +409,7 @@ exports.RULE = {
 	'KPQ': {
 		lang: "ko",
 		rule: "Picture",
-		opts: ["ijp", "ctc", "drg", "ord", "shf"],
+		opts: ["ijp", "ctc", "unl", "drg", "ord", "shf"],
 		time: 2,
 		ai: false,
 		big: true,
@@ -457,7 +459,7 @@ exports.RULE = {
 	'EPQ': {
 		lang: "en",
 		rule: "Picture",
-		opts: ["ijp", "drg", "ord", "shf"],
+		opts: ["ijp", "unl", "drg", "ord", "shf"],
 		time: 2,
 		ai: false,
 		big: true,
@@ -738,7 +740,7 @@ exports.RULE = {
 	'CNC': {
 		lang: "etc",
 		rule: "Numberclap",
-		opts: ["one", "rnt", "chs", "spd", "rnm", "ljn"],
+		opts: ["one", "rnt", "chs", "spd", "rnm", "prm", "ljn"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -864,7 +866,7 @@ exports.RULE = {
 	'XBB': {
 		lang: "etc",
 		rule: "Free",
-		opts: ["mis", "rdm", "spd", "drg", "nar", "god", "rnt", "chs", "nsw", "ljn"],
+		opts: ["mis", "rdm", "spd", "drg", "nar", "god", "rnt", "chs", "nsw", "ljn", "inf"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -889,7 +891,7 @@ exports.RULE = {
 	'XRG': {
 		lang: "etc",
 		rule: "Rhythm",
-		opts: ["rhd", "rcz"],
+		opts: ["rhd", "rcz", "spk"],
 		time: 1,
 		ai: true,
 		big: true,
@@ -902,7 +904,7 @@ exports.RULE = {
 	'KRT': {
 		lang: "ko",
 		rule: "Rtype",
-		opts: ["rhd", "rcz"],
+		opts: ["rhd", "rcz", "spk"],
 		time: 1,
 		ai: true,
 		big: false,
@@ -945,7 +947,7 @@ exports.LATE_JOIN_RULES = {
 	Quiz: 'round', Jaqwi: 'round', Typing: 'round', Sock: 'round', Shuk: 'round', Chainbattle: 'round', Calcbattle: 'round'
 };
 exports.EXAMPLE_TITLE = {
-	'ko': "기자도지사상가이소법",
+	'ko': "기자도지사상가이소법라고자하",
 	'en': "demography",
 	'ja': "いろはにほへとちりぬ"
 };
@@ -966,19 +968,19 @@ exports.MISSION_ja = ["あ","か","さ","た","な","は","ま","や","ら","わ
 // 바보 모드(XBB) 미션: a-z, 0-9, MISSION_ko(가나다라마바사아자차카타파하) 총 50글자를 균등하게 뽑는다
 exports.MISSION_XBB = exports.MISSION_en.concat(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], exports.MISSION_ko);
 exports.KO_INJEONG = [
-	"KRR", "KDI", "KTV", "KBS", 
-	"KPT", "KHJ", "KSC", "WCH",
-	"BTC", "KOT", "DOT", "ANC", "DGM", "RAG",
-	"JLN", "LVL", "LOL", "RHV", "MMM",
-	"MCJ", "JAN", "MAP", "MKK", "MNG",
-	"MOB", "VAL", "HNK", "BRS", 
-	"BLA", "NEX", "INC", "COL", 
-	"SAO", "HRH", "STA", "OIJ",
-	"KGR", "MAM", "ESB", "ELW", "KMV", "OVW",
-	"GNS", "WEB", "UNE", "KPO", 
-	"VOC", "ETR", "JAT", "ZEL",	"CKR", "TPW", 
-    "FUR", "POK", "FRC", "PSK", "HSS",
-	"HAI", "KPM", "HDC", "HAR", "HOS", "IMS", "MED"
+	"KRR", "KDI", "KTV", "KBS", "KPT", 
+	"KHJ", "KSC", "WCH", "BTC", "KOT", 
+	"DOT", "ANC", "DGM", "RAG", "JLN", 
+	"LVL", "LOL", "RHV", "MMM", "MCJ", 
+	"JAN", "MAP", "MKK", "MNG", "MOB", 
+	"VAL", "HNK", "BRS", "BLA", "NEX", 
+	"INC", "COL", "SAO", "HRH", "STA", 
+	"OIJ", "KGR", "ESB", "ELW", "KMV", 
+	"MAM", "OVW", "GNS", "WEB", "UNE", 
+	"KPO", "VOC", "MED", "ETR", "JAT", 
+	"ZEL", "CKR", "TPW", "FUR", "POK", 
+	"FRC", "PSK", "HSS", "HAI", "KPM", 
+	"HDC", "HAR", "HOS", "IMS"
 
 ];
 exports.EN_INJEONG = [
@@ -1004,7 +1006,7 @@ exports.JA_INJEONG = [
 	"PLC", "EKI", "ORG", "CMP", "WRK", "PRD", "SRV", "CHR", "EVT", "FIC"
 ];
 exports.IJP_EXCEPT = [
-	"OIJ", "TPW", "40", "MMM", "MKK", "1001", "HRH", "MNG", "LVL", "KGR", "KRR", "DOT"
+	"TPW", "40", "MMM", "MKK", "1001", "HRH", "MNG", "LVL", "KGR", "KRR", "DOT"
 ];
 exports.QUIZ_TOPIC = [
 	"MATH", "CAPI", "CHEM", "UNIT", "NUMG", "ASTR", "ARTS", "ANML", "GAME", "LITR", "DAJK", "CHTR", "FDCK", "SBTR" /*, "CNTR" */

@@ -49,7 +49,8 @@ var OPTIONS;
 var KO_INJEONG;
 var EN_INJEONG;
 var JA_INJEONG;
-var MAX_LEVEL = 360;
+var MAX_LEVEL = 720;
+var STAR_LEVEL = 360; // 이 레벨을 넘으면 3레벨씩 묶어 별렙(s1~)으로 표시
 var TICK = 30;
 var EXP = [];
 var BAD = new RegExp(["느으*[^가-힣]*금마?", "(?<!(밀레|심포|도미))니[^가-힣]*(엄|앰|엠)", "(ㅄ|[ㅅㅆ][^가-힣ㄱ-ㅎㅏ-ㅣ]*ㅂ|ㅂ[^가-힣ㄱ-ㅎㅏ-ㅣ]*ㅅ|ㄴ[^가-힣ㄱ-ㅎㅏ-ㅣ]*[ㄱㅇ][^가-힣ㄱ-ㅎㅏ-ㅣ]*ㅁ|ㅈ[^가-힣ㄱ-ㅎㅏ-ㅣ]*ㄹ|ㅗ|ㅅ[^가-힣ㄱ-ㅎㅏ-ㅣ]*ㄲ)", "미(친|찐|틴|띤)(년|놈)?", "(병|븅|빙|벙)[^가-힣]*신", 
@@ -174,12 +175,15 @@ $(document).ready(function () {
 	$data._wblock = {};
 	$data._shut = {};
 	$data.usersR = {};
-	EXP.push(getRequiredScore(1));
+	var rawExp = [getRequiredScore(1)];
 	for (i = 2; i < MAX_LEVEL; i++) {
-		EXP.push(EXP[i - 2] + getRequiredScore(i));
+		rawExp.push(rawExp[i - 2] + getRequiredScore(i));
 	}
-	EXP[MAX_LEVEL - 1] = Infinity;
-	EXP.push(Infinity);
+	// 별렙 구간은 3레벨마다 한 칸만 남겨 s레벨 하나의 목표 경험치로 쓴다
+	for (i = 0; i < rawExp.length; i++) {
+		if (i < STAR_LEVEL || (i - STAR_LEVEL) % 3 == 2) EXP.push(rawExp[i]);
+	}
+	EXP.push(Infinity, Infinity);
 	$stage = {
 		loading: $("#Loading"),
 		nickBlockOverlay: $("#NickBlockOverlay"),
@@ -309,6 +313,8 @@ $(document).ready(function () {
 			quizPickAll: $("#quizpick-all"),
 			quizPickNo: $("#quizpick-no"),
 			quizPickOK: $("#quizpick-ok"),
+			songPick: $("#SongPickDiag"),
+			songPickOK: $("#songpick-ok"),
 			chatLog: $("#ChatLogDiag"),
 			obtain: $("#ObtainDiag"),
 			obtainOK: $("#obtain-ok"),
@@ -1177,6 +1183,7 @@ $(document).ready(function () {
 		}
 		if (window.updateViewAllRulesBtn) window.updateViewAllRulesBtn();
 		$data._injpick = $data.room.opts.injpick;
+		$data._songpick = $data.room.opts.songpick || "";
 
 		// 서바이벌 HP 설정 복원
 		if ($data.room.opts.surHP) {
@@ -1340,7 +1347,7 @@ $(document).ready(function () {
 		var lenOpts = ['no2', 'k32', 'k22', 'k44', 'k43', 'unl', 'ln2', 'ln3', 'ln4', 'ln5', 'ln6', 'ln7', 'nol', 'nos'];
 		var scopeOpts = ['ext', 'str', 'loa', 'unk', 'lng', 'prv', 'ret', 'obo', 'alp', 'dic', 'arc'];
 		var bonusOpts = ['mis', 'eam', 'rdm', 'mpl', 'spt', 'stt', 'fho', 'bbg', 'flu', 'jkp', 'dfb'];
-		var keyRules = ['man', 'gen', 'ext', "jre", "jdk", 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'lng', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'ljn', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf', 'stp', 'rnm'];
+		var keyRules = ['man', 'gen', 'ext', "jre", "jdk", 'mis', 'rdm', 'loa', 'str', 'prv', 'k32', 'lng', 'no2', 'unk', 'trp', 'one', 'ret', 'sur', 'rnt', 'itm', 'ljn', 'mir', 'spd', 'big', 'qz1', 'qz2', 'qz3', 'ijp', 'qij', 'unl', 'vow', 'obo', 'alp', 'ctc', 'apl', 'obk', 'nyh', 'ord', 'shf', 'stp', 'rnm', 'prm', 'inf'];
 
 		if (showCategory) {
 			// Categorized view - hide flat panel, show category panels
@@ -1400,6 +1407,11 @@ $(document).ready(function () {
 			if (rule.opts.indexOf("qij") != -1) $("#room-quizpick-panel").show();
 			else $("#room-quizpick-panel").hide();
 			$("#room-quizpick-panel-flat").hide();
+
+			// Show/hide song pick panel
+			if (rule.opts.indexOf("spk") != -1) $("#room-songpick-panel").show();
+			else $("#room-songpick-panel").hide();
+			$("#room-songpick-panel-flat").hide();
 		} else {
 			// Flat view - hide all category panels, show flat panel
 			$("#room-manner-panel").hide();
@@ -1410,6 +1422,7 @@ $(document).ready(function () {
 			$("#room-misc-panel").hide();
 			$("#room-injpick-panel").hide();
 			$("#room-quizpick-panel").hide();
+			$("#room-songpick-panel").hide();
 
 			// Show flat panel and update options visibility
 			$("#room-all-rules-panel").show();
@@ -1421,6 +1434,10 @@ $(document).ready(function () {
 			// Show/hide quiz topic pick panel in flat mode
 			if (rule.opts.indexOf("qij") != -1) $("#room-quizpick-panel-flat").show();
 			else $("#room-quizpick-panel-flat").hide();
+
+			// Show/hide song pick panel in flat mode
+			if (rule.opts.indexOf("spk") != -1) $("#room-songpick-panel-flat").show();
+			else $("#room-songpick-panel-flat").hide();
 		}
 
 		// Check if simple room view is enabled
@@ -1438,6 +1455,8 @@ $(document).ready(function () {
 			$("#room-quizpick-panel").hide();
 			$("#room-injpick-panel-flat").hide();
 			$("#room-quizpick-panel-flat").hide();
+			$("#room-songpick-panel").hide();
+			$("#room-songpick-panel-flat").hide();
 
 			// Show simple panel instead
 			$("#room-simple-rules-panel").show();
@@ -1456,6 +1475,12 @@ $(document).ready(function () {
 				$("#room-simple-quizpick-panel").show();
 			} else {
 				$("#room-simple-quizpick-panel").hide();
+			}
+
+			if (rule.opts.indexOf("spk") != -1) {
+				$("#room-simple-songpick-panel").show();
+			} else {
+				$("#room-simple-songpick-panel").hide();
 			}
 
 			// Update simple panel options visibility
@@ -1503,6 +1528,7 @@ $(document).ready(function () {
 		// Hide Special Rules Panel if empty
 		if (!$data._injpick) $data._injpick = [];
 		if (!$data._quizpick) $data._quizpick = [];
+		if (!$data._songpick) $data._songpick = "";
 		if (rule.rule == "Typing" || rule.rule == "Chainbattle" || rule.rule == "Flip" || rule.rule == "numberclap") $("#room-round").val(3);
 		$("#room-time").children("option").each(function (i, o) {
 			$(o).html(Number($(o).val()) * rule.time + L['SECOND']);
@@ -1579,20 +1605,32 @@ $(document).ready(function () {
 		});
 	});
 
-	// 아이템전-랜덤턴 상호배타
-	window.RULE_CHECKBOXES['item'].on('change', function () {
-		if ($(this).is(':checked')) window.RULE_CHECKBOXES['randomturn'].prop('checked', false);
-	});
-	window.RULE_CHECKBOXES['randomturn'].on('change', function () {
-		if ($(this).is(':checked')) window.RULE_CHECKBOXES['item'].prop('checked', false);
+	// 아이템전·카오스·랜덤턴 상호배타: 셋 중 하나만 선택 가능
+	var turnItemGroup = ['item', 'chaos', 'randomturn'];
+	turnItemGroup.forEach(function (opt) {
+		window.RULE_CHECKBOXES[opt].on('change', function () {
+			if ($(this).is(':checked')) {
+				turnItemGroup.forEach(function (other) {
+					if (other !== opt) window.RULE_CHECKBOXES[other].prop('checked', false);
+				});
+			}
+		});
 	});
 
-	// 아이템전-카오스 상호배타
-	window.RULE_CHECKBOXES['item'].on('change', function () {
-		if ($(this).is(':checked')) window.RULE_CHECKBOXES['chaos'].prop('checked', false);
+	// 소수-랜덤 숫자 상호배타 (랜덤 턴 종속은 updatePrimeAvailability)
+	window.RULE_CHECKBOXES['prime'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['randomnumber'].prop('checked', false);
 	});
-	window.RULE_CHECKBOXES['chaos'].on('change', function () {
-		if ($(this).is(':checked')) window.RULE_CHECKBOXES['item'].prop('checked', false);
+	window.RULE_CHECKBOXES['randomnumber'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['prime'].prop('checked', false);
+	});
+
+	// 리턴-한 번만! 상호배타
+	window.RULE_CHECKBOXES['return'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['onlyonce'].prop('checked', false);
+	});
+	window.RULE_CHECKBOXES['onlyonce'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['return'].prop('checked', false);
 	});
 
 	// 게임 중 참여 - 쿵쿵따 체인지/서바이벌 상호배타 (인원이 바뀌면 교대 주기·생존 판정이 깨짐)
@@ -1641,6 +1679,8 @@ $(document).ready(function () {
 		var opts = rule.opts || [];
 		var has = function (c) { return opts.indexOf(c) !== -1; };
 		var nameOf = function (c) { return OPTIONS[c].name.toLowerCase(); };
+		// 켤 수 있는 규칙이 10개 이하면 각 규칙 50%, 그 이상이면 평균 5개가 켜지도록 확률을 낮춤
+		var baseProb = Math.min(0.5, 5 / Math.max(opts.length, 1));
 
 		// 2. 규칙을 랜덤으로 선택 (상호배제/의존관계를 순서대로 반영)
 		var target = {};   // name -> boolean
@@ -1659,7 +1699,7 @@ $(document).ready(function () {
 		function pickUnlessBlocked(code, blocked, prob) {
 			if (!has(code)) return;
 			var n = nameOf(code);
-			target[n] = blocked ? false : Math.random() < (prob === undefined ? 0.5 : prob);
+			target[n] = blocked ? false : Math.random() < (prob === undefined ? baseProb : prob);
 			decided[n] = true;
 		}
 
@@ -1690,34 +1730,31 @@ $(document).ready(function () {
 		// 단문금지: 장문금지/2글자금지 모두와 상호배제 (장문금지·2글자금지는 서로 호환)
 		var noshortOn = false;
 		if (has('nos')) {
-			noshortOn = Math.random() < 0.5;
+			noshortOn = Math.random() < baseProb;
 			target['noshort'] = noshortOn;
 			decided['noshort'] = true;
 		}
 		pickUnlessBlocked('nol', noshortOn);
 		pickUnlessBlocked('no2', noshortOn);
 
-		// 아이템전: 카오스/랜덤턴 모두와 상호배제 (카오스·랜덤턴은 서로 호환)
-		var itemOn = false;
-		if (has('itm')) {
-			itemOn = Math.random() < 0.5;
-			target['item'] = itemOn;
-			decided['item'] = true;
-		}
-		pickUnlessBlocked('chs', itemOn);
-		pickUnlessBlocked('rnt', itemOn);
+		// 아이템전/카오스/랜덤턴, 리턴/한 번만! (각각 상호배제)
+		var turnPick = pickRadio(['itm', 'chs', 'rnt']);
+		pickRadio(['ret', 'obo']);
+		// 소수: 랜덤 턴이 켜졌을 때만, 랜덤 숫자와는 상호배제
+		pickUnlessBlocked('prm', turnPick !== 'randomturn');
+		pickUnlessBlocked('rnm', target['prime']);
 
 		// 미션: 켜져 있을 때만 이지미션/랜덤미션/미션플러스 선택 가능
 		var missionOn = false;
 		if (has('mis')) {
-			missionOn = Math.random() < 0.5;
+			missionOn = Math.random() < baseProb;
 			target['mission'] = missionOn;
 			decided['mission'] = true;
 		}
 		['eam', 'rdm', 'mpl'].forEach(function (c) {
 			if (!has(c)) return;
 			var n = nameOf(c);
-			target[n] = missionOn && Math.random() < 0.5;
+			target[n] = missionOn && Math.random() < baseProb;
 			decided[n] = true;
 		});
 
@@ -1729,7 +1766,7 @@ $(document).ready(function () {
 			if (!has(i)) continue;
 			k = nameOf(i);
 			if (decided[k]) continue;
-			target[k] = Math.random() < 0.5;
+			target[k] = Math.random() < baseProb;
 		}
 
 		// 3. 체크박스에 반영 (기본 뷰만 갱신하면 상호배제 핸들러가 나머지 뷰를 동기화함)
@@ -1763,6 +1800,7 @@ $(document).ready(function () {
 			applyQuizTopicLang(rule.lang);
 			$data._quizpick = sampleTopics($("#quizpick-list div:visible input"), 10, 0.2);
 		}
+		if (has('spk')) $data._songpick = "";
 
 		// 4. 라운드/서바이벌 설정을 규칙이 허용하는 범위 내에서 랜덤화
 		// 달가루 모으기는 라운드 1 / 60초로 고정이므로 랜덤화 대상에서 제외
@@ -1849,6 +1887,10 @@ $(document).ready(function () {
 			// quiz pick 패널 표시
 			if (rule.opts.indexOf("qij") != -1) $("#view-all-quizpick-panel").show();
 			else $("#view-all-quizpick-panel").hide();
+
+			// song pick 패널 표시
+			if (rule.opts.indexOf("spk") != -1) $("#view-all-songpick-panel").show();
+			else $("#view-all-songpick-panel").hide();
 		} else {
 			// Flat view - hide all category panels, show flat panel
 			$("#view-all-manner-panel").hide();
@@ -1859,6 +1901,7 @@ $(document).ready(function () {
 			$("#view-all-misc-panel").hide();
 			$("#view-all-injpick-panel").hide();
 			$("#view-all-quizpick-panel").hide();
+			$("#view-all-songpick-panel").hide();
 
 			// Show flat panel
 			$("#view-all-flat-panel").show();
@@ -1870,6 +1913,10 @@ $(document).ready(function () {
 			// quiz pick 패널 표시 (flat mode)
 			if (rule.opts.indexOf("qij") != -1) $("#view-all-flat-quizpick-panel").show();
 			else $("#view-all-flat-quizpick-panel").hide();
+
+			// song pick 패널 표시 (flat mode)
+			if (rule.opts.indexOf("spk") != -1) $("#view-all-flat-songpick-panel").show();
+			else $("#view-all-flat-songpick-panel").hide();
 		}
 
 		showDialog($stage.dialog.viewAllRules);
@@ -2475,7 +2522,8 @@ $(document).ready(function () {
 	$stage.dialog.roomOK.on('click', function (e) {
 		var i, k, opts = {
 			injpick: $data._injpick,
-			quizpick: $data._quizpick
+			quizpick: $data._quizpick,
+			songpick: $data._songpick
 		};
 		for (i in OPTIONS) {
 			k = OPTIONS[i].name.toLowerCase();
@@ -2960,7 +3008,8 @@ $(document).ready(function () {
 		showDialog($stage.dialog.injPick);
 	});
 	$stage.dialog.injPickAll.on('click', function (e) {
-		$("#injpick-list input").prop('checked', true);
+		// 보이는 주제만 (주제 검색 중이면 검색에 맞는 것만 — 퀴즈 주제와 같게)
+		$("#injpick-list div:visible > input").prop('checked', true);
 	});
 	$stage.dialog.injPickNo.on('click', function (e) {
 		$("#injpick-list input").prop('checked', false);
@@ -2978,6 +3027,22 @@ $(document).ready(function () {
 		$data._injpick = list;
 		$stage.dialog.injPick.hide();
 	});
+	// 주제 검색: 이름에 검색어가 들어간 주제만 보임(띄어쓰기·대소문자 무시). 언어별 목록·한국어 전용 퀴즈 주제를 고르는
+	// 기존 show/hide와 겹치지 않게 클래스(pick-miss)로 숨김. 창을 열 때마다 비움(showDialog)
+	function filterPicks($list, q) {
+		var $rows = $list.find("input").parent();
+
+		q = (q || "").replace(/\s/g, "").toLowerCase();
+		$rows.each(function () {
+			$(this).toggleClass("pick-miss", $(this).children("label").text().replace(/\s/g, "").toLowerCase().indexOf(q) === -1);
+		});
+		$list.find(".ijp-sec").each(function () {
+			$(this).toggleClass("pick-miss", !$(this).nextUntil(".ijp-sec").not(".pick-miss").length);
+		});
+		$list.children(".pick-empty").toggle(!!q && !$rows.filter(":visible").length);
+	}
+	$("#injpick-search").on('input', function () { filterPicks($("#injpick-list"), $(this).val()); });
+	$("#quizpick-search").on('input', function () { filterPicks($("#quizpick-list"), $(this).val()); });
 	function applyQuizTopicLang(lang) {
 		if (lang === 'en') {
 			$("#quizpick-list div[data-ko-only='true']").hide().find('input').prop('checked', false);
@@ -3048,6 +3113,18 @@ $(document).ready(function () {
 			$("#quiz-pick-" + $data._quizpick[i]).prop('checked', true);
 		}
 		showDialog($stage.dialog.quizPick);
+	});
+	// Song pick handlers: 한 곡만 고름 (빈 값 = 무작위). 목록에 없는 곡이면 무작위에 체크
+	$("#room-song-pick, #room-song-pick-flat, #room-simple-song-pick, #view-all-song-pick, #view-all-flat-song-pick").on('click', function (e) {
+		var $inputs = $("#songpick-list input");
+		var $cur = $inputs.filter(function () { return this.value === ($data._songpick || ""); });
+
+		($cur.length ? $cur : $inputs.first()).prop('checked', true);
+		showDialog($stage.dialog.songPick);
+	});
+	$stage.dialog.songPickOK.on('click', function (e) {
+		$data._songpick = $("#songpick-list input:checked").val() || "";
+		$stage.dialog.songPick.hide();
 	});
 	$stage.dialog.kickVoteY.on('click', function (e) {
 		send('kickVote', { agree: true });
@@ -3470,6 +3547,15 @@ $(document).ready(function () {
 		if (!missionOn) $(sel).prop('checked', false);
 		$(sel).prop('disabled', !missionOn);
 	}
+	// 소수는 랜덤 턴이 켜져 있을 때만 선택 가능 (아이템전/카오스가 랜덤 턴을 끄는 경우도 포함)
+	function updatePrimeAvailability() {
+		var randomTurnOn = window.RULE_CHECKBOXES['randomturn'].first().is(':checked');
+		if (!randomTurnOn) window.RULE_CHECKBOXES['prime'].prop('checked', false);
+		window.RULE_CHECKBOXES['prime'].prop('disabled', !randomTurnOn);
+	}
+	['item', 'chaos', 'randomturn'].forEach(function (opt) {
+		window.RULE_CHECKBOXES[opt].on('change', updatePrimeAvailability);
+	});
 	function updateLinkExclusionAvailability() {
 		var randomOn = $("#room-random").is(':checked') || $("#view-all-random").is(':checked') || $("#view-all-flat-random").is(':checked');
 		var secondSpeedSel = "#room-second, #room-speedtoss, #room-flat-second, #room-flat-speedtoss, " +
@@ -3494,6 +3580,7 @@ $(document).ready(function () {
 	// 방만들기/설정 다이얼로그가 열릴 때 호출해 체크박스 disabled 표시를 현재 상태에 맞게 초기화
 	function syncRoomDialogDisabledStates() {
 		updateMissionSubAvailability();
+		updatePrimeAvailability();
 		updateLinkExclusionAvailability();
 		updateBbungtwigiAvailability();
 	}
@@ -5719,6 +5806,7 @@ var PQ_CANVAS_W = 288;
 var PQ_CANVAS_H = 180;
 var PQ_BRUSH_SIZES = [3, 8, 16];
 var PQ_THROTTLE_MS = 50;
+var PQ_UNDO_MAX = 10;
 var PQ_COLORS = [
     '#FFFFFF', '#C0C0C0', '#808080', '#000000',
     '#FF0000', '#FF8000', '#FFFF00', '#8df349',
@@ -5822,6 +5910,36 @@ function pqFloodFill(ctx, startX, startY, fillColor) {
     ctx.putImageData(imgData, 0, 0);
 }
 
+// Undo history: canvas snapshots taken before each action (max PQ_UNDO_MAX)
+// 스냅샷은 재사용 캔버스에 drawImage로 복사 (getImageData와 달리 매번 메모리를 새로 할당하지 않음).
+// 캔버스는 스택 또는 풀 중 한 곳에만 있으므로 생성 개수는 최대 PQ_UNDO_MAX개.
+var pqUndoPool = [];
+
+function pqPushUndo() {
+    if (!$data._pqCtx) return;
+    var snap;
+    if ($data._pqUndo.length >= PQ_UNDO_MAX) snap = $data._pqUndo.shift();
+    else snap = pqUndoPool.pop();
+    if (!snap) {
+        snap = document.createElement('canvas');
+        snap.width = PQ_CANVAS_W;
+        snap.height = PQ_CANVAS_H;
+    }
+    var sctx = snap.getContext('2d');
+    sctx.clearRect(0, 0, PQ_CANVAS_W, PQ_CANVAS_H);
+    sctx.drawImage($data._pqCanvasEl, 0, 0);
+    $data._pqUndo.push(snap);
+}
+
+function pqPopUndo() {
+    var ctx = $data._pqCtx;
+    if (!ctx || $data._pqUndo.length === 0) return false;
+    var snap = $data._pqUndo.pop();
+    ctx.drawImage(snap, 0, 0);
+    pqUndoPool.push(snap);
+    return true;
+}
+
 // Draw a stroke segment with pixel-perfect lines (no AA)
 function drawStrokeSegment(ctx, pts, color, width, fromPt) {
     if (!ctx || !pts || pts.length === 0) return;
@@ -5917,6 +6035,7 @@ function startStroke(e) {
     var pos = getCanvasPos(e);
     var color = $data._pqEraser ? '#FFFFFF' : $data._pqColor;
 
+    pqPushUndo();
     if ($data._pqMode === 'fill') {
         pqFloodFill($data._pqCtx, pos.x, pos.y, color);
         send('fill', { x: pos.x, y: pos.y, c: color });
@@ -5937,7 +6056,7 @@ function startStroke(e) {
         clearInterval($data._pqSendTimer);
         $data._pqSendTimer = null;
     }
-    $data._pqSendTimer = setInterval(flushPendingPoints, PQ_THROTTLE_MS);
+    $data._pqSendTimer = _setInterval(flushPendingPoints, PQ_THROTTLE_MS);
 }
 
 function continueStroke(e) {
@@ -6014,6 +6133,8 @@ $lib.Picture.roundReady = function (data, spec) {
     $data._pqTheme = data.theme;
     $data._pqAnswer = data.answer;
     $data._pqStrokes = [];
+    if ($data._pqUndo) pqUndoPool = pqUndoPool.concat($data._pqUndo);
+    $data._pqUndo = [];
     $data._pqColor = '#000000';
     $data._pqBrushSize = PQ_BRUSH_SIZES[1]; // 8px default
     $data._pqEraser = false;
@@ -6311,6 +6432,21 @@ $lib.Picture.drawDisplay = function () {
         }
 
         $controls.append(
+            $('<button>').attr('id', 'pq-undo-btn').css({
+                'padding': '4px 12px',
+                'background': 'linear-gradient(135deg, #90A4AE, #78909C)',
+                'color': '#FFFFFF', 'border': 'none', 'border-radius': '4px',
+                'cursor': 'pointer', 'font-size': '11px', 'font-weight': 'bold',
+                'box-shadow': '0 2px 4px rgba(0,0,0,0.3)'
+            })
+                .html((L['pqUndo'] || '되돌리기'))
+                .on('click', function () {
+                    if ($data._pqDrawing) endStroke();
+                    if (pqPopUndo()) send('undo', {});
+                })
+        );
+
+        $controls.append(
             $('<button>').attr('id', 'pq-clear-btn').css({
                 'padding': '4px 12px',
                 'background': 'linear-gradient(135deg, #FFB74D, #FFA726)',
@@ -6322,6 +6458,7 @@ $lib.Picture.drawDisplay = function () {
                 .on('click', function () {
                     showConfirm(L['pqSureClear'] || '정말 모두 지우시겠습니까?', function (res) {
                         if (res) {
+                            pqPushUndo();
                             $data._pqStrokes = [];
                             var c = $data._pqCtx;
                             if (c) { c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, PQ_CANVAS_W, PQ_CANVAS_H); }
@@ -6337,10 +6474,13 @@ $lib.Picture.drawDisplay = function () {
     $stage.game.display.empty().append($main);
 };
 
+// 술래는 이미 로컬에 그렸으므로 서버 에코는 무시 (되돌리기 직후 늦게 온 에코가 다시 그리는 것 방지)
 $lib.Picture.handleDraw = function (data) {
     var ctx = $data._pqCtx;
+    if ($data._pqIsDrawer) return;
     if (!ctx || !data.pts || data.pts.length === 0) return;
 
+    if (!data.cont) pqPushUndo();
     var fromPt = (data.cont && $data._pqRemoteLastPt) ? $data._pqRemoteLastPt : null;
     drawStrokeSegment(ctx, data.pts, data.c, data.w, fromPt);
     $data._pqRemoteLastPt = data.pts[data.pts.length - 1];
@@ -6349,15 +6489,25 @@ $lib.Picture.handleDraw = function (data) {
 
 $lib.Picture.handleFill = function (data) {
     var ctx = $data._pqCtx;
+    if ($data._pqIsDrawer) return;
     if (!ctx) return;
+    pqPushUndo();
     pqFloodFill(ctx, data.x, data.y, data.c);
 };
 
 $lib.Picture.handleClear = function () {
+    if ($data._pqIsDrawer) return;
+    pqPushUndo();
     $data._pqStrokes = [];
     $data._pqRemoteLastPt = null;
     var ctx = $data._pqCtx;
     if (ctx) { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, PQ_CANVAS_W, PQ_CANVAS_H); }
+};
+
+$lib.Picture.handleUndo = function () {
+    if ($data._pqIsDrawer) return;
+    $data._pqRemoteLastPt = null;
+    pqPopUndo();
 };
 
 $lib.Picture.replayStrokes = function (strokes) {
@@ -6807,10 +6957,11 @@ $lib.Fourrelay.turnEnd = function (id, data) {
 
 $lib.Numberclap = {};
 
-// 랜덤 숫자 규칙이면 "157 게임"처럼 뽑힌 숫자로, 아니면 기본 "369 게임" 표지를 만든다.
-function numberclapTitle(digits) {
+// 랜덤 숫자 규칙이면 "157 게임"처럼 뽑힌 숫자로, 소수 규칙이면 "소수 게임", 아니면 기본 "369 게임" 표지를 만든다.
+function numberclapTitle(digits, prime) {
 	var joined = digits ? digits.join('') : '';
 
+	if (prime) return "&lt;" + L['modeCNCPrime'] + "&gt;";
 	if (joined && joined !== '369') return "&lt;" + L['modeCNCRnm'].replace('{0}', joined) + "&gt;";
 	return "&lt;" + L['modeCNC'] + "&gt;";
 }
@@ -6820,7 +6971,7 @@ $lib.Numberclap.roundReady = function (data) {
 	clearBoard();
 	$data._roundTime = $data.room.time * 1000;
 	// free 모드와 동일하게, 대기 중에는 "<369 게임>" 표지를 계속 띄워둔다.
-	$stage.game.display.html($data._char = numberclapTitle(data.digits));
+	$stage.game.display.html($data._char = numberclapTitle(data.digits, data.prime));
 	$stage.game.chain.show().html('-');
 	drawRound(data.round);
 	playSound('round_start');
@@ -6836,7 +6987,7 @@ $lib.Numberclap.turnStart = function (data) {
 
 	// 다음 숫자를 미리 보여주면 암산 게임이 무의미해지므로, 이전 턴 결과 대신
 	// "<369 게임>" 표지로 되돌린다 (free 모드가 $data._char를 복원하는 것과 동일).
-	if (data.digits) $data._char = numberclapTitle(data.digits);
+	if (data.digits || data.prime) $data._char = numberclapTitle(data.digits, data.prime);
 	$stage.game.display.html($data._char);
 
 	var $u = $("#game-user-" + data.id).addClass("game-user-current");
@@ -6870,7 +7021,7 @@ $lib.Numberclap.turnStart = function (data) {
 
 $lib.Numberclap.turnGoing = $lib.Classic.turnGoing;
 
-// pushDisplay(body-render.js)와 같은 느낌(순차 페이드인 + 타이핑/미션 사운드)의
+// pushDisplay(body-render.js)와 같은 beat(free 모드와 동일한 글자별 박자·낙하 애니메이션·끝 바운스)를 쓰는
 // numberclap 전용 표시 함수. pushDisplay는 두 가지가 안 맞는다:
 //   1) 글자를 UTF-16 코드유닛 단위(text.charAt)로 쪼개 반복 표시하므로, 서로게이트
 //      페어인 👏(U+1F44F) 같은 이모지가 절반씩 별개로 그려져 깨진다.
@@ -6880,21 +7031,49 @@ $lib.Numberclap.turnGoing = $lib.Classic.turnGoing;
 function pushNumberclapDisplay(text, useMissionSound) {
 	var units = Array.from(text);
 	var len = units.length;
+	var beat = (ACTIVE_BEAT || BEAT)[len];
+	var tick = $data.turnTime / 96;
 	var sg = $data.turnTime / 12;
+	var snd = useMissionSound ? 'mission' : ('As' + $data._speed);
 	var j = '';
-	var i;
+	var i, k = 0;
+	var $l;
 
 	$stage.game.display.empty();
-	for (i = 0; i < len; i++) {
-		addTimeout((function (idx) {
-			return function () {
-				playSound(useMissionSound ? 'mission' : ('As' + $data._speed));
+	if (beat) {
+		beat = beat.split("");
+		for (i = 0; i < beat.length; i++) {
+			if (beat[i] == "0") continue;
+			$stage.game.display.append($l = $("<div>")
+				.addClass("display-text")
+				.css({ 'float': "left", 'margin-top': -6, 'font-size': 36 })
+				.hide()
+				.html(units[k++])
+			);
+			addTimeout(function ($l) {
+				playSound(snd);
+				$l.show().animate({ 'margin-top': 0, 'font-size': 20 }, 100);
+			}, i * tick, $l);
+		}
+		$stage.game.display.children("div").first().css('margin-left', ($stage.game.display.width() - 20 * len) * 0.5);
+	} else {
+		// beat 표보다 긴 경우: pushDisplay처럼 sg 동안 고르게 표시
+		for (i = 0; i < len; i++) {
+			addTimeout(function (idx) {
+				playSound(useMissionSound ? 'mission' : 'Al');
 				j += units[idx];
 				$stage.game.display.html(j);
-			};
-		})(i), i * sg / len);
+			}, i * sg / len, i);
+		}
 	}
 	addTimeout(function () {
+		for (i = 0; i < 3; i++) {
+			addTimeout(function () {
+				(beat ? $stage.game.display.children(".display-text") : $stage.game.display)
+					.css('font-size', 21)
+					.animate({ 'font-size': 20 }, tick);
+			}, i * tick * 2);
+		}
 		playSound('K' + $data._speed);
 	}, sg);
 }
@@ -7224,6 +7403,11 @@ $lib.Calcbattle.roundReady = function (data) {
 
 	// 내 문제 표시
 	var myProblem = data.problems[$data.id];
+	// 관전자는 첫 번째 참가자의 문제를 보여줌
+	if (!myProblem && $data._spectate) {
+		var firstId = Object.keys(data.problems)[0];
+		if (firstId !== undefined) myProblem = data.problems[firstId];
+	}
 	if (myProblem) {
 		if ($data._oneback) {
 			// oneback 모드: 라운드 준비 중에는 첫 문제(풀어야 할 문제)를 보여줌
@@ -8952,6 +9136,8 @@ var XRG_COUNT = 7;        // 카운트다운 7~0 (8박) 후 다음 박(-1)에 �
 // 데스크톱 키 배치: D/R, K/U, F, J = 1, 2, 3, 4번 패널 (e.code 기준이라 한글 입력 상태에서도 동일)
 var XRG_KEYS = { KeyD: 0, KeyR: 0, KeyK: 1, KeyU: 1, KeyF: 2, KeyJ: 3 };
 var XRG_KEY_LABEL = ["D/R", "K/U", "F", "J"]; // 패널(레인) 순서
+// Z/X: 누르는 순간 마우스가 올라가 있는 패널을 클릭한 것으로 처리
+var XRG_AIM_KEYS = { KeyZ: true, KeyX: true };
 var XRG_SYNC_MAX = 300;   // 개인 싱크 보정 한계 (+-ms). 설정의 슬라이더 값
 var XRG_SYNC_COUNT = 6;
 var XRG_SYNC_GAP = 120;
@@ -8960,7 +9146,7 @@ $lib.Rhythm.s = null;
 
 $lib.Rhythm.roundReady = function (data, spec) {
 	var R = $lib.Rhythm;
-	var s, i, j, k, c, charMs, $grid, $panel;
+	var s, i, j, k, x, c, charMs, $grid, $panel;
 
 	// 처음부터 관전 중인 사람(참가자가 아님)과 리플레이도 관전자로 취급: 중간 입장 때만 spec 인자가 넘어옴
 	spec = spec || !!$data._spectate || !!$data._replay;
@@ -8990,14 +9176,17 @@ $lib.Rhythm.roundReady = function (data, spec) {
 		chain: 0,
 		brk: false,      // Bad/Miss가 한 번이라도 나왔는지 (풀 콤보 판정용)
 		allPerfect: true, // 지금까지 전부 Perfect인지 (올 퍼펙트 판정용)
+		hover: null,     // 마우스가 올라가 있는 패널 번호 (Z/X 입력용)
+		aim: {},         // Z/X 키별로 누를 때 고른 패널 번호 (뗄 때 눌린 모양을 되돌리기 위함)
 		ended: false
 	};
 	for (i = 0; i < data.seq.length; i++) {
 		c = data.seq.charAt(i);
 		if (c == '.') continue;
-		// 마커 색: 박 위(정박)=0 흰색, 8분음표 엇박=1 분홍, 16분음표 엇박=2 파랑
-		k = Math.round(i * charMs / s.beat * 4) % 4;
-		s.notes.push({ i: s.notes.length, lane: Number(c) - 1, t: i * charMs, m: k == 0 ? 0 : k == 2 ? 1 : 2, done: false, el: null });
+		// 마커 색: 박 위(정박)=0 흰색, 8분음표 엇박=1 분홍, 16분음표 엇박=2 하늘색, 그 외(16분 격자에서 벗어남)=3 연두색
+		x = i * charMs / s.beat * 4;
+		k = Math.round(x) % 4;
+		s.notes.push({ i: s.notes.length, lane: Number(c) - 1, t: i * charMs, m: Math.abs(x - Math.round(x)) > 0.05 ? 3 : k == 0 ? 0 : k == 2 ? 1 : 2, done: false, el: null });
 	}
 
 	s.left = s.notes.length; // 아직 처리(타격/미스)되지 않은 노트 수. 0이 되면 서버에 끝 신호를 보냄
@@ -9011,6 +9200,8 @@ $lib.Rhythm.roundReady = function (data, spec) {
 		// 관전자는 노트만 보고 입력은 받지 않음 (클릭/터치 처리 없음)
 		if (!spec) (function (lane, el) {
 			el.addEventListener("pointerdown", function (e) { R.onPress(e, lane); });
+			el.addEventListener("pointerenter", function () { s.hover = lane; });
+			el.addEventListener("pointerleave", function () { if (s.hover === lane) s.hover = null; });
 		})(j, $panel[0]);
 	}
 	if (spec) $grid.addClass("rhythm-spec");
@@ -9295,10 +9486,18 @@ $lib.Rhythm.onKey = function (e, down) {
 	var R = $lib.Rhythm;
 	var s = R.s;
 	var lane = XRG_KEYS[e.code];
+	var aim = XRG_AIM_KEYS[e.code];
 
-	if (!s || lane === undefined || e.ctrlKey || e.altKey || e.metaKey) return;
+	if (!s || (lane === undefined && !aim) || e.ctrlKey || e.altKey || e.metaKey) return;
 	e.preventDefault();
 	if (down && e.target && e.target !== document.body && e.target.blur) e.target.blur();
+	// Z/X: 처음 누를 때 마우스 아래 패널을 고르고, 뗄 때까지 그 패널을 눌린 모양으로 둠. 패널 밖이면 아무 일도 없음
+	if (aim) {
+		if (down && !e.repeat) s.aim[e.code] = s.hover;
+		lane = s.aim[e.code];
+		if (!down) s.aim[e.code] = null;
+		if (lane == null) return;
+	}
 	s.panels[lane].toggleClass("rhythm-down", down);
 	if (down && !e.repeat) R.onPress(e, lane);
 };
@@ -10656,7 +10855,7 @@ function drawLeaderboard(data) {
 			.append($("<td>").html(item.rank + 1))
 			.append($("<td>")
 				.append(getLevelImage(item.expScore).addClass("ranking-image"))
-				.append($("<label>").css('padding-top', 2).html(getLevel(item.expScore)))
+				.append($("<label>").css('padding-top', 2).html(getLevelText(getLevel(item.expScore))))
 			)
 			.append($("<td>").text(profile))
 			.append($("<td>").html(commify(item.score)))
@@ -10769,7 +10968,7 @@ function requestProfile(id) {
 		)
 		.append($("<div>").addClass("profile-head-item")
 			.append(getLevelImage(o.data.score).addClass("profile-level"))
-			.append($("<div>").addClass("profile-level-text").html(L['LEVEL'] + " " + (i = getLevel(o.data.score))))
+			.append($("<div>").addClass("profile-level-text").html(L['LEVEL'] + " " + getLevelText(i = getLevel(o.data.score))))
 			.append($("<div>").addClass("profile-score-text").html(commify(o.data.score) + " / " + commify(EXP[i - 1]) + L['PTS']))
 		)
 		.append($ex = $("<div>").addClass("profile-head-item profile-exordial ellipse").text(badWords(o.exordial || ""))
@@ -11706,6 +11905,8 @@ function showDialog($d, noToggle) {
 		return false;
 	} else {
 		$(".dialog-front").removeClass("dialog-front");
+		// 주제 고르기 창: 열 때마다 검색어를 비움 (ready.js filterPicks)
+		$d.find(".pick-search").val("").trigger('input');
 		$d.show().addClass("dialog-front").css({
 			'left': (size[0] - $d.width()) * 0.5,
 			'top': (size[1] - $d.height()) * 0.5
@@ -11892,8 +12093,8 @@ function resolveActiveBeat(beatMode, packName) {
 	if (beatMode === 'mid') return BEAT_Mid;
 	if (beatMode === 'default') return BEAT;
 	// auto: 팩 이름 기반 자동 선택
-	if (packName === '오리지널' || packName === '테크노' || packName === '병맛' || packName === '피아노') return BEAT_Mid;
-	return BEAT;
+	if (!packName || packName === '기본' || packName === '레트로' || packName === '물방울') return BEAT;
+	return BEAT_Mid;
 }
 
 function loadVolumeSettings() {
@@ -12437,6 +12638,11 @@ function onMessage(data) {
 		case 'clear':
 			if ($lib.Picture && $lib.Picture.handleClear) {
 				$lib.Picture.handleClear(data);
+			}
+			break;
+		case 'undo':
+			if ($lib.Picture && $lib.Picture.handleUndo) {
+				$lib.Picture.handleUndo(data);
 			}
 			break;
 		case 'fill':
@@ -13045,8 +13251,9 @@ function toggleShutBlock(target) {
 	}
 }
 function tryDict(text, callback) {
-	var text = text.replace(/[^\sa-zA-Zㄱ-ㅎ0-9가-힣ぁ-んァ-ヶ]/g, "");
-	var lang = text.match(/[ㄱ-ㅎ가-힣]/) ? 'ko' : (text.match(/[ぁ-んァ-ヶ]/) ? 'ja' : 'en');
+	// 자모(ㄱ~ㅎ, ㅏ~ㅣ)로 된 단어도 한국어로 찾음
+	var text = text.replace(/[^\sa-zA-Zㄱ-ㆎ0-9가-힣ぁ-んァ-ヶ]/g, "");
+	var lang = text.match(/[ㄱ-ㆎ가-힣]/) ? 'ko' : (text.match(/[ぁ-んァ-ヶ]/) ? 'ja' : 'en');
 
 	if (text.length < 1) return callback({ error: 404 });
 	$.get("/dict/" + text + "?lang=" + lang, callback);
@@ -13109,6 +13316,7 @@ function processRoom(data) {
 				$data._rLimit = $data.room.limit;
 				$data._rRound = $data.room.round;
 				$data._injpick = $data.room.opts.injpick;
+				$data._songpick = $data.room.opts.songpick || "";
 
 				// Set Linking Method Dropdown
 				var linkVal = 'std';
@@ -13421,7 +13629,7 @@ function updateMe() {
 	$(".my-stat-ping").html(commify(my.money) + L['ping']);
 	$(".my-okg .graph-bar").width(($data._playTime % 600000) / 6000 + "%");
 	$(".my-okg-text").html(prettyTime($data._playTime));
-	$(".my-level").html(L['LEVEL'] + " " + lv);
+	$(".my-level").html(L['LEVEL'] + " " + getLevelText(lv));
 	$(".my-gauge .graph-bar").css('width', ((my.data.score - prev) / (goal - prev) * 100) + "%");
 	$(".my-gauge-text").html(commify(my.data.score) + " / " + commify(goal));
 }
@@ -13613,7 +13821,7 @@ function normalGameUserBar(o) {
 		.append($("<div>").addClass("game-user-title")
 			.append(getLevelImage(o.data.score).addClass("game-user-level"))
 			.append($bar = $("<div>").addClass("game-user-name ellipse").text(getDisplayName(o)))
-			.append($("<div>").addClass("expl").html(L['LEVEL'] + " " + getLevel(o.data.score)))
+			.append($("<div>").addClass("expl").html(L['LEVEL'] + " " + getLevelText(getLevel(o.data.score))))
 		)
 		.append($n = $("<div>").addClass("game-user-score"));
 	renderMoremi($m, o.equip);
@@ -14090,11 +14298,23 @@ function animateScore(o) {
 	drawScore(o.$obj, Math.round(o.now));
 }
 function drawScore($obj, score) {
-	var i, sc = (score > 99999) ? (zeroPadding(Math.round(score * 0.001), 4) + 'k') : zeroPadding(score, 5);
+	var i, d, m, sc;
+
+	if (Math.round(score * 0.001) > 9999) {
+		// 10000k부터는 지수 표기, 다섯 칸에 맞게 소수 자리를 줄임: 1.23e7 → 1.2e10 → 1e100
+		// 칸에는 "123e7"처럼 점 없이, 점은 첫째·둘째 칸 사이에 칸 없이 얹음
+		// 반올림으로 지수가 올라가면(9.96e99 → 1.0e100) 한 자리 줄여 다시 계산
+		for (d = 2; ; d--) {
+			m = score.toExponential(d).split('e');
+			if (+m[1] < [Infinity, 100, 10][d]) break;
+		}
+		sc = m[0].replace('.', '') + 'e' + (+m[1]);
+	} else sc = (score > 99999) ? (zeroPadding(Math.round(score * 0.001), 4) + 'k') : zeroPadding(score, 5);
 
 	$obj.empty();
 	for (i = 0; i < sc.length; i++) {
 		$obj.append($("<div>").addClass("game-user-score-char").html(sc[i]));
+		if (i === 0 && d) $obj.append($("<div>").addClass("game-user-score-dot").html("."));
 	}
 }
 function checkFailCombo(id) {
@@ -14524,6 +14744,8 @@ function addScore(id, score, totalScore) {
 		if (typeof totalScore === 'number') {
 			u.game.score = totalScore;
 		} else {
+			// 늦게 도착한 'user' 이벤트가 game.score를 undefined로 덮어쓴 경우 NaN 방지
+			if (typeof u.game.score !== 'number' || isNaN(u.game.score)) u.game.score = 0;
 			u.game.score += score;
 		}
 	}
@@ -14755,7 +14977,7 @@ function roundEnd(result, data) {
 		draw('current', Math.min(going, $data._result._boing), 0, $data._result.goal - $data._result.before);
 		draw('bonus', Math.max(0, going - $data._result._boing), 0, $data._result.goal - $data._result.before);
 
-		$(".result-me-level-body").html($data._result.level);
+		$(".result-me-level-body").html(getLevelText($data._result.level));
 		$(".result-me-score-text").html(commify(Math.round($data._result.exp)) + " / " + commify($data._result.goal));
 	}
 	function draw(phase, val, before, goal) {
@@ -14961,8 +15183,12 @@ function getLevel(score) {
 	for (i = 0; i < l; i++) if (score < EXP[i]) break;
 	return i + 1;
 }
+function getLevelText(lv) {
+	return lv > STAR_LEVEL ? "s" + (lv - STAR_LEVEL) : lv;
+}
 function getLevelImage(score) {
 	var lv = getLevel(score) - 1;
+	if (lv >= STAR_LEVEL) lv += 15; // 별렙 아이콘은 레벨 팩 16번째 줄(375번 칸)부터
 	var lX = (lv % 25) * -100;
 	var lY = Math.floor(lv * 0.04) * -100;
 
@@ -15008,6 +15234,11 @@ function getPickTopicExpl(rule, opts) {
 			var name = L[prefix + pickArr[i]];
 			if (name) topics.push(name);
 		}
+	}
+	// 곡 선택: 고른 곡 이름은 곡 선택 창(#songpick-list)의 이름표에서 가져옴 (무작위면 표시 안 함)
+	if (rule && rule.opts.indexOf("spk") != -1 && opts.songpick) {
+		var $song = $("#songpick-list input").filter(function () { return this.value === opts.songpick; });
+		if ($song.length) topics.push($song.next("label").find(".song-title").text());
 	}
 	return topics;
 }
