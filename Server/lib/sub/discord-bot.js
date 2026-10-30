@@ -13,6 +13,8 @@ const PunishmentLog = require('./punishment-log');
 
 // Constants
 const GUILD_ID = '1447976671805182086';
+// 모든 서버(및 DM)에서 사용 가능한 글로벌 커맨드. 나머지는 GUILD_ID 서버 전용
+const GLOBAL_COMMANDS = new Set(['ping', 'help', 'dict', 'char', 'meaning', 'mission', 'topic', 'random', 'users', 'record']);
 const CHANNEL_ID = '1485462715395870800';
 const REPORT_CHANNEL_ID = '1529461366900133958';
 const BOT_PERMISSIONS = '9193377795136';
@@ -315,7 +317,7 @@ exports.init = async function (token, db, dic, options = {}) {
             }
 
             if (!interaction.isChatInputCommand()) return;
-            if (interaction.guildId !== GUILD_ID) return;
+            if (interaction.guildId !== GUILD_ID && !GLOBAL_COMMANDS.has(interaction.commandName)) return;
 
             await safeExecute(async () => {
                 await handleCommand(interaction);
@@ -825,9 +827,15 @@ async function registerCommands(token) {
 
         const rest = new REST({ version: '10' }).setToken(token);
 
+        const jsons = commands.map(cmd => cmd.toJSON());
+        await rest.put(
+            Routes.applicationCommands(client.user.id),
+            { body: jsons.filter(c => GLOBAL_COMMANDS.has(c.name)) }
+        );
+        // 길드 등록분에서 글로벌 커맨드를 빼서 중복 표시를 방지
         await rest.put(
             Routes.applicationGuildCommands(client.user.id, GUILD_ID),
-            { body: commands.map(cmd => cmd.toJSON()) }
+            { body: jsons.filter(c => !GLOBAL_COMMANDS.has(c.name)) }
         );
 
         JLog.success('[Discord Bot] Slash commands registered');
@@ -1100,6 +1108,12 @@ async function handleHelp(interaction) {
         .setFooter({ text: '한국어 사용자는 괄호 안의 한국어 명령어도 사용할 수 있습니다' })
         .setTimestamp();
 
+    // 다른 서버에서는 관리자 전용 명령어를 빼고 글로벌 커맨드만 보여준다
+    if (interaction.guildId !== GUILD_ID) {
+        const fields = embed.data.fields.filter(f => !f.value.includes('관리자 전용'));
+        embed.setFields(fields).setDescription('이 서버에서 사용 가능한 슬래시 명령어입니다.');
+    }
+
     await interaction.reply({ embeds: [embed] });
 }
 
@@ -1344,7 +1358,7 @@ function lookupWord(word, lang = 'ko') {
 /**
  * /record command - Look up user game records
  * - No argument: look up by discord__<discordId> in DB (works offline)
- * - With argument: search online users (DIC) by nickname or account ID
+ * - With argument: search online users (DIC) by nickname or account ID, falling back to DB (offline users)
  */
 async function handleRecord(interaction) {
     const userQuery = interaction.options.getString('user');
@@ -1380,13 +1394,21 @@ async function handleRecord(interaction) {
                 }
             }
 
-            if (!found) {
-                await interaction.editReply({ content: '❌ 해당 유저가 없거나 오프라인이에요.' });
-                return;
+            if (found) {
+                displayName = (found.profile && found.profile.title) || (found.profile && found.profile.name) || userQuery;
+                userData = found.data || {};
+            } else {
+                // 오프라인: DB에서 계정 ID → 별명 순으로 조회
+                if (!DB || !DB.users) throw new Error('데이터베이스가 준비되지 않았습니다.');
+                let row = await dbFindOne(DB.users, ['_id', userQuery]);
+                if (!row) row = await dbFindOne(DB.users, ['nickname', userQuery]);
+                if (!row) {
+                    await interaction.editReply({ content: '❌ 해당 유저를 찾을 수 없어요. (손님은 접속 중일 때만 조회할 수 있어요)' });
+                    return;
+                }
+                displayName = row.nickname || row.nick || userQuery;
+                userData = row.kkutu || {};
             }
-
-            displayName = (found.profile && found.profile.title) || (found.profile && found.profile.name) || userQuery;
-            userData = found.data || {};
         } else {
             // No argument: look up own record by Discord ID in DB
             const kkutuId = `discord-${discordUser.id}`;
