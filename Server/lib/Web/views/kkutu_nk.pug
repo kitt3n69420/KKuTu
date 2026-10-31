@@ -1,0 +1,399 @@
+//-
+	새로운 끄투, 새로운 시작 — 신 UI 틀.
+	html[data-ui="new"]일 때만 보이고(nk.css), 기본 UI에서는 #nk-app·#nk-icons 모두 숨겨짐.
+	nk.js가 기존 패널(.RoomListBox, .ChatBox 등)을 아래 슬롯으로 옮기고 탭·계정을 채움.
+	주의: style.css의 전역 span { display: none } 때문에 span 대신 div/label을 씀.
+
+svg#nk-icons(xmlns='http://www.w3.org/2000/svg', aria-hidden='true')
+	symbol#nk-i-home(viewBox='0 0 24 24')
+		path(d='M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z')
+	symbol#nk-i-bag(viewBox='0 0 24 24')
+		path(d='M5 7h14l-1 13H6z')
+		path(d='M9 10V6a3 3 0 0 1 6 0v4')
+	symbol#nk-i-book(viewBox='0 0 24 24')
+		path(d='M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5z')
+		path(d='M4 19.5A1.5 1.5 0 0 0 5.5 21H20')
+	symbol#nk-i-trophy(viewBox='0 0 24 24')
+		path(d='M8 4h8v5a4 4 0 0 1-8 0z')
+		path(d='M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 21h8M9 17h6')
+	symbol#nk-i-replay(viewBox='0 0 24 24')
+		circle(cx='12', cy='12', r='9')
+		path(d='m10 8.5 5 3.5-5 3.5z')
+	symbol#nk-i-gift(viewBox='0 0 24 24')
+		rect(x='3', y='8', width='18', height='4', rx='1')
+		path(d='M5 12v8h14v-8M12 8v12M12 8S10.5 3.5 8 4.5 9.5 8 12 8zM12 8s1.5-4.5 4-3.5S14.5 8 12 8z')
+	symbol#nk-i-help(viewBox='0 0 24 24')
+		circle(cx='12', cy='12', r='9')
+		path(d='M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17.5h.01')
+	symbol#nk-i-more(viewBox='0 0 24 24')
+		path(d='M5 12h.01M12 12h.01M19 12h.01', stroke-width='3.2')
+	symbol#nk-i-chev(viewBox='0 0 24 24')
+		path(d='m6 9 6 6 6-6')
+	symbol#nk-i-chevup(viewBox='0 0 24 24')
+		path(d='m6 15 6-6 6 6')
+	symbol#nk-i-user(viewBox='0 0 24 24')
+		circle(cx='12', cy='8', r='4')
+		path(d='M4 21a8 8 0 0 1 16 0')
+	symbol#nk-i-users(viewBox='0 0 24 24')
+		circle(cx='9', cy='8', r='3.5')
+		path(d='M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5')
+	symbol#nk-i-userplus(viewBox='0 0 24 24')
+		circle(cx='9', cy='8', r='4')
+		path(d='M2 21a7 7 0 0 1 14 0M19 8v6M16 11h6')
+	symbol#nk-i-shirt(viewBox='0 0 24 24')
+		path(d='M8 3 3 6l2 5 2-1v11h10V10l2 1 2-5-5-3a4 4 0 0 1-8 0z')
+	symbol#nk-i-heart(viewBox='0 0 24 24')
+		path(d='M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z')
+	symbol#nk-i-volume(viewBox='0 0 24 24')
+		path(d='M4 9.5h3.5L12 5.5v13l-4.5-4H4z')
+		path(d='M15.5 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11')
+	symbol#nk-i-monitor(viewBox='0 0 24 24')
+		rect(x='3', y='4', width='18', height='12', rx='2')
+		path(d='M8 20h8M12 16v4')
+	symbol#nk-i-grid(viewBox='0 0 24 24')
+		rect(x='4', y='4', width='6.5', height='6.5', rx='1.5')
+		rect(x='13.5', y='4', width='6.5', height='6.5', rx='1.5')
+		rect(x='4', y='13.5', width='6.5', height='6.5', rx='1.5')
+		rect(x='13.5', y='13.5', width='6.5', height='6.5', rx='1.5')
+	symbol#nk-i-letters(viewBox='0 0 24 24')
+		path(d='M3 18 7.5 6 12 18M4.7 13.5h5.6M14 9h4.5a2.5 2.5 0 0 1 0 5H14zM14 14h5a2 2 0 0 1 0 4h-5z')
+	symbol#nk-i-merge(viewBox='0 0 24 24')
+		circle(cx='6', cy='6', r='2.5')
+		circle(cx='6', cy='18', r='2.5')
+		circle(cx='18', cy='12', r='2.5')
+		path(d='M8.5 6c4 0 4 6 7 6M8.5 18c4 0 4-6 7-6')
+	symbol#nk-i-sliders(viewBox='0 0 24 24')
+		path(d='M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1')
+		circle(cx='15', cy='6', r='2')
+		circle(cx='9', cy='12', r='2')
+		circle(cx='17', cy='18', r='2')
+	symbol#nk-i-layout(viewBox='0 0 24 24')
+		rect(x='3', y='4', width='18', height='16', rx='2')
+		path(d='M3 9h18M9 9v11')
+	//- 로그아웃은 문 밖으로(왼쪽 문틀에서 오른쪽 화살표), 로그인은 문 안으로
+	symbol#nk-i-logout(viewBox='0 0 24 24')
+		path(d='M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M15 17l5-5-5-5M20 12H9')
+	symbol#nk-i-login(viewBox='0 0 24 24')
+		path(d='M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3')
+	symbol#nk-i-x(viewBox='0 0 24 24')
+		path(d='M6 6l12 12M18 6 6 18')
+	symbol#nk-i-plus(viewBox='0 0 24 24')
+		path(d='M12 5v14M5 12h14')
+	symbol#nk-i-zap(viewBox='0 0 24 24')
+		path(d='M13 3 4 14h7l-1 7 9-11h-7z')
+	symbol#nk-i-search(viewBox='0 0 24 24')
+		circle(cx='11', cy='11', r='7')
+		path(d='m20 20-3.5-3.5')
+	symbol#nk-i-lock(viewBox='0 0 24 24')
+		rect(x='5', y='11', width='14', height='10', rx='2')
+		path(d='M8 11V7a4 4 0 0 1 8 0v4')
+	symbol#nk-i-rounds(viewBox='0 0 24 24')
+		path(d='M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4')
+	symbol#nk-i-clock(viewBox='0 0 24 24')
+		circle(cx='12', cy='12', r='9')
+		path(d='M12 7v5l3 2')
+	symbol#nk-i-info(viewBox='0 0 24 24')
+		circle(cx='12', cy='12', r='9')
+		path(d='M12 11v6M12 7.5h.01')
+	symbol#nk-i-back(viewBox='0 0 24 24')
+		path(d='M19 12H5M11 18l-6-6 6-6')
+	symbol#nk-i-next(viewBox='0 0 24 24')
+		path(d='M5 12h14M13 6l6 6-6 6')
+	symbol#nk-i-send(viewBox='0 0 24 24')
+		path(d='M21 3 10 14M21 3l-7 18-4-7-7-4z')
+	symbol#nk-i-eye(viewBox='0 0 24 24')
+		path(d='M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z')
+		circle(cx='12', cy='12', r='3')
+	symbol#nk-i-target(viewBox='0 0 24 24')
+		circle(cx='12', cy='12', r='9')
+		circle(cx='12', cy='12', r='5')
+		circle(cx='12', cy='12', r='1')
+	symbol#nk-i-check(viewBox='0 0 24 24')
+		path(d='m5 12 5 5 9-10')
+	symbol#nk-i-crown(viewBox='0 0 24 24')
+		path(d='m3 7 4.5 4L12 4l4.5 7L21 7l-2 12H5z')
+	symbol#nk-i-pencil(viewBox='0 0 24 24')
+		path(d='M4 20h4L19 9l-4-4L4 16z')
+	symbol#nk-i-trash(viewBox='0 0 24 24')
+		path(d='M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13')
+	symbol#nk-i-history(viewBox='0 0 24 24')
+		path(d='M3 12a9 9 0 1 0 3-6.7L3 8')
+		path(d='M3 3v5h5M12 7v5l3 2')
+	symbol#nk-i-list(viewBox='0 0 24 24')
+		path(d='M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01')
+	symbol#nk-i-chat(viewBox='0 0 24 24')
+		path(d='M4 5h16v11H9l-5 4z')
+	symbol#nk-i-gamepad(viewBox='0 0 24 24')
+		rect(x='2', y='7', width='20', height='11', rx='4')
+		path(d='M7 11v3M5.5 12.5h3M15 12h.01M18 13.5h.01')
+
+div#nk-app
+	header.nk-header
+		//- 글자 로고(페이퍼로지): "끄투"는 글자색, "엔"은 메인 색. 누르면 사이트 홈
+		a.nk-logo#nk-logo(href='/', title=L('HOME'))
+			div.nk-logo-a 끄투
+			div.nk-logo-b 엔
+		//- 게임 중에만 보이는 방 정보 (nk.js renderGameHead). 나가기·아이템 줄도 게임 중에는 이 뒤로 옮겨 옴
+		div.nk-gamehead#nk-gamehead
+		nav.nk-nav#nk-nav
+		//- 오른쪽 묶음: 게임 중에는 나가기·아이템 줄이 계정 앞으로 들어옴 (방 정보를 가운데에 두려고 로고와 같은 폭 규칙을 씀)
+		div.nk-head-end#nk-head-end
+			//- 리플레이 중에만: 진행 시간과 ← ❚❚ → 단추 (기존 리플레이 조작 요소를 nk.js setReplay가 옮겨 옴)
+			div.nk-replay#nk-replay
+			button.nk-account#nk-account(type='button')
+	div.nk-notice#nk-notice
+		div.nk-notice-label(data-lang-key='nkNotice')= L('nkNotice')
+		div.nk-notice-text#nk-notice-text
+		button.nk-icon-btn#nk-notice-close(type='button')
+			svg.nk-i
+				use(href='#nk-i-x')
+	div.nk-main
+		section.nk-center#nk-center
+			div.nk-actionbar#nk-actionbar
+				div.nk-actions#nk-actions
+			div.nk-center-body#nk-center-body
+				//- 로비 가운데 화면(nk.js 가운데 화면): 상점처럼 방 목록 자리를 차지함
+				//- 랭킹: 기존 랭킹 창의 탭·표·페이지 단추를 nk.js가 옮겨 옴 (불러오기·그리기는 기존 drawLeaderboard)
+				div.nk-panel.nk-page#nk-page-rank(data-page='rank', style='display: none;')
+					div.nk-panel-head
+						div.nk-panel-title
+							label(data-lang-key='nkRank')= L('nkRank')
+						div.nk-spacer
+						div.nk-seg#nk-rank-tabs
+					div.nk-rank-body.nk-scroll#nk-rank-body
+					div.nk-panel-head.nk-rank-foot#nk-rank-foot
+				//- 도움말 (로비 전체 화면): 왼쪽 목차(섹션) + 오른쪽 본문. 내용은 기존 도움말 페이지(/help)를 처음 열 때 불러와 nk.js가 그림.
+				//- 방·게임에서는 기존 도움말 창
+				div.nk-panel.nk-page#nk-page-help(data-page='help', style='display: none;')
+					div.nk-panel-head
+						div.nk-panel-title
+							label(data-lang-key='nkHelp')= L('nkHelp')
+						div.nk-spacer
+						label.nk-search.nk-help-q
+							svg.nk-i
+								use(href='#nk-i-search')
+							input.nk-input#nk-help-q(type='text', maxlength='30', placeholder=L('nkHelpSearch'))
+						//- 휴대폰: 본문이 화면 전체를 쓰고 목차·검색은 이 단추로 여는 시트 (데스크톱에서는 숨김)
+						button.nk-btn.nk-help-toc#nk-help-toc(type='button')
+							svg.nk-i
+								use(href='#nk-i-list')
+							label(data-lang-key='nkHelpToc')= L('nkHelpToc')
+					div.nk-help-body
+						nav.nk-help-nav.nk-scroll#nk-help-nav
+						div.nk-help-main
+							div.nk-help-crumb#nk-help-crumb
+							div.nk-help-title#nk-help-title
+							div.nk-help-page.nk-scroll#nk-help-page
+							div.nk-help-foot
+								button.nk-btn#nk-help-prev(type='button')
+									svg.nk-i
+										use(href='#nk-i-back')
+									label#nk-help-prev-t
+								div.nk-spacer
+								button.nk-btn#nk-help-next(type='button')
+									label#nk-help-next-t
+									svg.nk-i
+										use(href='#nk-i-next')
+				//- 사전: 왼쪽 뜻풀이(기존 /dict), 오른쪽 단어 찾기(/dict-search). 방·게임에서는 기존 사전 창
+				div.nk-panel.nk-page#nk-page-dict(data-page='dict', style='display: none;')
+					div.nk-panel-head
+						div.nk-panel-title
+							label(data-lang-key='dict')= L('dict')
+						//- 휴대폰: [뜻풀이 | 단어 찾기] 한 번에 하나 (데스크톱은 두 칸이라 숨김)
+						div.nk-seg.nk-dict-tabs#nk-dict-tabs
+							button.nk-seg-btn(type='button', data-tab='mean')
+								label(data-lang-key='nkDictMean')= L('nkDictMean')
+							button.nk-seg-btn(type='button', data-tab='find')
+								label(data-lang-key='nkDictFind')= L('nkDictFind')
+					div.nk-dict-body
+						div.nk-dict-mean
+							div.nk-dict-label(data-lang-key='nkDictMean')= L('nkDictMean')
+							label.nk-search
+								svg.nk-i
+									use(href='#nk-i-search')
+								input.nk-input#nk-dict-word(type='text', maxlength='50', placeholder=L('nkDictWordPh'))
+							div.nk-dict-out.nk-scroll#nk-dict-out
+								div.nk-dict-empty(data-lang-key='nkDictMeanHint')= L('nkDictMeanHint')
+							div.nk-dict-label(data-lang-key='nkDictRecent')= L('nkDictRecent')
+							div.nk-dict-recent#nk-dict-recent
+						div.nk-dict-find
+							div.nk-dict-label(data-lang-key='nkDictFind')= L('nkDictFind')
+							div.nk-dict-row
+								input.nk-input.nk-dict-char#nk-dict-char(type='text', maxlength='30', placeholder=L('nkDictFirst'))
+								div.nk-seg#nk-dict-mode
+									button.nk-seg-btn(type='button', data-v='long')
+										label(data-lang-key='nkDictLong')= L('nkDictLong')
+									button.nk-seg-btn(type='button', data-v='attack')
+										label(data-lang-key='nkDictAttack')= L('nkDictAttack')
+									button.nk-seg-btn(type='button', data-v='mission')
+										label(data-lang-key='nkDictMission')= L('nkDictMission')
+								input.nk-input.nk-dict-mis#nk-dict-mis(type='text', maxlength='2', placeholder=L('nkDictMission'))
+								button.nk-btn.primary.nk-dict-go#nk-dict-go(type='button')
+									svg.nk-i
+										use(href='#nk-i-search')
+							div.nk-dict-row
+								//- 언어는 직접 고르지 않고 넣은 글자로 정함 (nk.js dictDetect)
+								div.nk-dict-lang#nk-dict-lang(data-nk-tip=L('nkDictLangTip'))= L('nkDictKo')
+								select.nk-select#nk-dict-dir
+									option(value='end')= L('nkDictEnd')
+									option(value='front')= L('nkDictFront')
+								button.nk-chip(type='button', data-opt='manner')
+									svg.nk-i.nk-i-on
+										use(href='#nk-i-check')
+									label(data-lang-key='optManner')= L('optManner')
+								button.nk-chip(type='button', data-opt='injeong')
+									svg.nk-i.nk-i-on
+										use(href='#nk-i-check')
+									label(data-lang-key='optInjeong')= L('optInjeong')
+								button.nk-chip(type='button', data-opt='allpos')
+									svg.nk-i.nk-i-on
+										use(href='#nk-i-check')
+									label(data-lang-key='optAllpos')= L('optAllpos')
+							div.nk-dict-sum#nk-dict-sum
+							div.nk-dict-res.nk-scroll
+								table.nk-dict-table
+									thead
+										tr
+											td.n #
+											td(data-lang-key='nkDictWord')= L('nkDictWord')
+											td.m(data-lang-key='nkDictMission')= L('nkDictMission')
+											td.e#nk-dict-col-link= L('nkDictLast')
+											td.r(data-lang-key='nkDictNext')= L('nkDictNext')
+									tbody#nk-dict-list
+		aside.nk-side#nk-side
+			div.nk-slot#nk-people(data-ptab='users')
+				div.nk-panel.nk-people
+					div.nk-panel-head
+						div.nk-ptabs
+							button.nk-ptab#nk-ptab-users(type='button', data-ptab='users')
+								svg.nk-i
+									use(href='#nk-i-users')
+								label(data-lang-key='nkUsers')= L('nkUsers')
+								em#nk-users-count
+							button.nk-ptab#nk-ptab-friends(type='button', data-ptab='friends')
+								svg.nk-i
+									use(href='#nk-i-heart')
+								label(data-lang-key='nkFriends')= L('nkFriends')
+								em#nk-friends-count
+					//- nk.js가 기존 .UserListBox를 이 칸 끝으로 옮김
+					div.nk-people-body#nk-pbody-users
+						div.nk-people-search
+							label.nk-search
+								svg.nk-i
+									use(href='#nk-i-search')
+								input.nk-input#nk-user-q(type='text', autocomplete='off', placeholder=L('nkUserSearch'), data-lang-attr-placeholder='nkUserSearch')
+					div.nk-people-body#nk-pbody-friends
+						div.nk-people-list.nk-scroll#nk-friend-list
+						button.nk-btn.ghost.nk-friend-add#nk-friend-add(type='button')
+							svg.nk-i
+								use(href='#nk-i-userplus')
+							label(data-lang-key='friendAdd')= L('friendAdd')
+			div.nk-slot#nk-chat
+				//- 휴대폰: 로비의 채팅은 아래에서 올라오는 시트 — 닫기 단추 (다른 화면에서는 숨김)
+				button.nk-icon-btn.nk-sheet-x#nk-chat-x(type='button')
+					svg.nk-i
+						use(href='#nk-i-x')
+	//- 휴대폰(모바일 화면)에서만 보임 (nk.css 15). 로비 맨 아래 채팅 한 줄 · 아래 탭 · 시트 뒤 어둡게 · 더보기 시트
+	button.nk-chatbar#nk-chatbar(type='button')
+		svg.nk-i
+			use(href='#nk-i-chat')
+		div.nk-chatbar-who#nk-chatbar-who
+		div.nk-chatbar-text#nk-chatbar-text
+		div.nk-chatbar-n#nk-chatbar-n
+	nav.nk-tabbar#nk-tabbar
+	div.nk-dim#nk-dim
+	div.nk-sheet#nk-more-sheet
+		div.nk-sheet-head
+			div.nk-sheet-title(data-lang-key='nkMore')= L('nkMore')
+			button.nk-icon-btn.nk-sheet-x(type='button')
+				svg.nk-i
+					use(href='#nk-i-x')
+		div.nk-sheet-body#nk-more-body
+	//- 휴대폰: 공지 한 줄을 누르면 전체 공지
+	div.nk-sheet#nk-notice-sheet
+		div.nk-sheet-head
+			div.nk-sheet-title(data-lang-key='nkNotice')= L('nkNotice')
+			button.nk-icon-btn.nk-sheet-x(type='button')
+				svg.nk-i
+					use(href='#nk-i-x')
+		div.nk-sheet-body.nk-notice-body#nk-notice-body
+	//- 휴대폰: 도움말 목차 (nk.js가 검색 칸과 목차를 옮겨 담음)
+	div.nk-sheet#nk-help-sheet
+		div.nk-sheet-head
+			div.nk-sheet-title(data-lang-key='nkHelpToc')= L('nkHelpToc')
+			button.nk-icon-btn.nk-sheet-x(type='button')
+				svg.nk-i
+					use(href='#nk-i-x')
+		div.nk-sheet-body#nk-help-sheet-body
+	//- 기존 패널 안에 끼워 넣을 조각. nk.js가 초기화 때 제자리로 옮김
+	div#nk-parts
+		div.nk-room-tools#nk-room-tools
+			div.nk-panel-head
+				div.nk-panel-title
+					label(data-lang-key='nkRoomList')= L('nkRoomList')
+					div.nk-count#nk-room-count
+				div.nk-spacer
+				label.nk-search
+					svg.nk-i
+						use(href='#nk-i-search')
+					input.nk-input#nk-room-q(type='text', autocomplete='off', placeholder=L('nkRoomSearch'), data-lang-attr-placeholder='nkRoomSearch')
+			div.nk-panel-head.nk-filter-row
+				button.nk-chip#nk-f-wait(type='button')
+					svg.nk-i.nk-i-on
+						use(href='#nk-i-check')
+					label(data-lang-key='nkOnlyWaiting')= L('nkOnlyWaiting')
+				button.nk-chip#nk-f-open(type='button')
+					svg.nk-i.nk-i-on
+						use(href='#nk-i-check')
+					label(data-lang-key='nkOnlyOpen')= L('nkOnlyOpen')
+				div.nk-vsep
+				div.nk-seg#nk-f-cat
+				div.nk-spacer
+				select.nk-select#nk-f-sort
+					option(value='id', data-lang-key='nkSortDefault')= L('nkSortDefault')
+					option(value='open', data-lang-key='nkSortOpen')= L('nkSortOpen')
+					option(value='players', data-lang-key='nkSortPlayers')= L('nkSortPlayers')
+		//- 상점 머리: 기존 #shop-search 입력창과 .shop-categories를 nk.js가 이 안으로 옮김
+		div.nk-shop-tools#nk-shop-tools
+			div.nk-panel-head
+				div.nk-panel-title
+					label(data-lang-key='shop')= L('shop')
+					div.nk-count#nk-shop-count
+				div.nk-spacer
+				label.nk-search#nk-shop-search
+					svg.nk-i
+						use(href='#nk-i-search')
+				div.nk-tag.mode#nk-shop-money
+			div.nk-panel-head.nk-filter-row#nk-shop-cats
+		div.nk-empty#nk-rooms-empty
+			div.nk-empty-title#nk-rooms-empty-title
+			div#nk-rooms-empty-sub
+			button.nk-btn#nk-rooms-empty-btn(type='button')
+				svg.nk-i
+					use(href='#nk-i-plus')
+				label
+
+//- 신 UI 설정 창: 기존 설정 창(#SettingDiag)의 입력 요소를 nk.js가 탭별 줄로 옮겨 씀.
+//- 값을 채우는 것·저장(같은 localStorage·쿠키)은 기존 코드 그대로. 기본 UI에서는 열리지 않음
+div.dialog.nk-dlg#nk-settings
+	div.dialog-head
+		div.dialog-title(data-lang-key='settingsText')= L('settingsText')
+		div.closeBtn.nk-dlg-close
+	div.nk-dlg-body
+		nav.nk-dlg-tabs#nk-set-tabs
+		div.nk-dlg-panes#nk-set-panes
+	div.nk-dlg-foot
+		button.nk-btn.ghost#nk-set-server(type='button')
+			label(data-lang-key='changeServer')= L('changeServer')
+		div.nk-spacer
+		button.nk-btn.primary#nk-set-save(type='button')
+			label(data-lang-key='save')= L('save')
+
+//- 신 UI 프로필 관리 창: 기존 프로필 관리·글자 조합소·아이템 조합소 창의 내용을 nk.js가 탭으로 옮겨 씀 (처리는 기존 그대로)
+div.dialog.nk-dlg#nk-profile
+	div.dialog-head
+		div.dialog-title(data-lang-key='dress')= L('dress')
+		div.closeBtn.nk-dlg-close
+	div.nk-dlg-body
+		nav.nk-dlg-tabs#nk-pf-tabs
+		div.nk-dlg-panes#nk-pf-panes

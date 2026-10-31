@@ -985,10 +985,16 @@ $(document).ready(function () {
 		// 다크 모드 설정
 		$("#dark-mode-setting").val(savedSettings.darkMode || 'light');
 
+		// UI(기본/신) 설정
+		$("#ui-setting").val(savedSettings.ui === 'new' ? 'new' : 'classic');
+		$("#ui-style-setting").val(savedSettings.uiStyle === 'flat' ? 'flat' : 'mixed');
+
 		// 비트 모드 설정
 		$("#beat-setting").val(savedSettings.beatMode || 'auto');
 
-		showDialog($stage.dialog.setting);
+		// 신 UI는 같은 입력 요소를 탭별로 옮겨 둔 새 설정 창을 띄움 (값·저장은 위·아래 기존 코드 그대로)
+		if (NK.active) NK.openSettings();
+		else showDialog($stage.dialog.setting);
 	});
 	$stage.menu.community.on('click', function (e) {
 		if ($data.guest) return fail(451);
@@ -2042,6 +2048,9 @@ $(document).ready(function () {
 		// localStorage에 볼륨 설정 저장
 		var newDarkMode = $("#dark-mode-setting").val() || 'light';
 		var newBeatMode = $("#beat-setting").val() || 'auto';
+		var newUI = $("#ui-setting").val() === 'new' ? 'new' : 'classic';
+		var newUIStyle = $("#ui-style-setting").val() === 'flat' ? 'flat' : 'mixed';
+		var uiChanged = (loadVolumeSettings().ui === 'new' ? 'new' : 'classic') !== newUI;
 		saveVolumeSettings({
 			bgmVolume: $data.BGMVolume,
 			effectVolume: $data.EffectVolume,
@@ -2056,7 +2065,9 @@ $(document).ready(function () {
 			theme: newTheme,
 			darkMode: newDarkMode,
 			beatMode: newBeatMode,
-			rhythmSync: Number($("#rhythm-sync").val()) || 0
+			rhythmSync: Number($("#rhythm-sync").val()) || 0,
+			ui: newUI,
+			uiStyle: newUIStyle
 		});
 		ACTIVE_BEAT = resolveActiveBeat(newBeatMode, newSoundPack);
 
@@ -2091,6 +2102,13 @@ $(document).ready(function () {
 				return; // 리로드 하니까 여기서 중단
 			}
 		}
+
+		// 기본/신 UI 전환은 화면 틀 전체가 바뀌므로 새로고침, 스타일(단색/혼합)은 즉시 반영
+		if (uiChanged) {
+			location.reload();
+			return;
+		}
+		if (NK.active) document.documentElement.setAttribute('data-nk-style', newUIStyle);
 
 		applyTheme(newTheme);
 		applyDarkMode(newDarkMode);
@@ -2587,7 +2605,8 @@ $(document).ready(function () {
 		// alert(L['error_555']);
 		if ($data.guest) return fail(421);
 		if ($data._gaming) return fail(438);
-		if (showDialog($stage.dialog.dress)) $.get("/box", function (res) {
+		// 신 UI는 탭으로 묶은 프로필 관리 창의 꾸미기 탭을 엶
+		if (NK.active ? NK.openProfile('dress') : showDialog($stage.dialog.dress)) $.get("/box", function (res) {
 			if (res.error) return fail(res.error);
 
 			$data.box = res;
@@ -2747,7 +2766,7 @@ $(document).ready(function () {
 	});
 	$("#dress-cf").on('click', function (e) {
 		if ($data._gaming) return fail(438);
-		if (showDialog($stage.dialog.charFactory)) drawCharFactory();
+		if (NK.active ? NK.openProfile('cf') : showDialog($stage.dialog.charFactory)) drawCharFactory();
 	});
 	$stage.dialog.cfCompose.on('click', function (e) {
 		if (!$stage.dialog.cfCompose.hasClass("cf-composable")) return fail(436);
@@ -2772,7 +2791,7 @@ $(document).ready(function () {
 	});
 	$("#dress-craft").on('click', function (e) {
 		if ($data._gaming) return fail(438);
-		if (showDialog($stage.dialog.craftWorkshop)) drawCraftWorkshop();
+		if (NK.active ? NK.openProfile('craft') : showDialog($stage.dialog.craftWorkshop)) drawCraftWorkshop();
 	});
 	$stage.menu.exchange.on('click', function (e) {
 		if ($data._gaming) return fail(438);

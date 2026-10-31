@@ -52,7 +52,7 @@ var Language = {
   nya: require("./lang/nya.json"),
 };
 //볕뉘 수정
-var ROUTES = ["major", "consume", "admin", "login"];
+var ROUTES = ["major", "consume", "admin", "login", "dictsearch"];
 //볕뉘 수정 끝
 var page = WebInit.page;
 var gameServers = [];

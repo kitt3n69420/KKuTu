@@ -1079,6 +1079,7 @@ function onMessage(data) {
 }
 function welcome() {
 	playBGM('lobby');
+	if (NK.active) NK.loadDone();
 	$("#Intro").animate({ 'opacity': 1 }, 1000).animate({ 'opacity': 0 }, 1000);
 	$("#intro-text").text(L['welcome']);
 	addTimeout(function () {
@@ -1665,8 +1666,12 @@ function updateUI(myRoom, refresh) {
 	$("#raingame-strategy").hide();
 	for (i in $stage.box) $stage.box[i].hide();
 	if (!mobile) $stage.box.me.show();
-	$stage.box.chat.show().width(790).height(190);
-	$stage.chat.height(120);
+	// 신 UI는 패널 크기를 CSS 그리드로 정하므로 고정 크기를 넣지 않음
+	if (NK.active) $stage.box.chat.show();
+	else {
+		$stage.box.chat.show().width(790).height(190);
+		$stage.chat.height(120);
+	}
 
 	if (only == "for-lobby") {
 		$data._ar_first = true;
@@ -1704,7 +1709,8 @@ function updateUI(myRoom, refresh) {
 			}
 		}
 		$data._shop = false;
-		$stage.box.room.show().height(360);
+		$stage.box.room.show();
+		if (!NK.active) $stage.box.room.height(360);
 		if (only == "for-master") if ($stage.dialog.inviteList.is(':visible')) updateUserList();
 		updateRoom(false);
 		updateMe();
@@ -1717,8 +1723,10 @@ function updateUI(myRoom, refresh) {
 		$data._ar_first = true;
 		$stage.box.me.hide();
 		$stage.box.game.show();
-		$(".ChatBox").width(1000).height(140);
-		$stage.chat.height(70);
+		if (!NK.active) {
+			$(".ChatBox").width(1000).height(140);
+			$stage.chat.height(70);
+		}
 		updateRoom(true);
 	}
 	if (only !== 'for-gaming') {
@@ -1729,6 +1737,7 @@ function updateUI(myRoom, refresh) {
 	$data._only = only;
 	setLocation($data.place);
 	$(".kkutu-menu ." + only).not(".ItemBar").show();
+	if (NK.active) NK.onState(only);
 	if (mobile) {
 		if (only == "for-lobby") {
 			$("body").css("overflow-y", "auto");
@@ -1765,6 +1774,7 @@ function checkRoom(modify) {
 	}
 	if ($data._gaming != $data.room.gaming) {
 		if ($data.room.gaming) {
+			if (NK.active) NK.releaseGameLayout(); // 결과를 닫지 않고 바로 다음 게임이 시작돼도 지난 게임에서 잡아 둔 자리를 풂
 			gameReady();
 			$data._replay = false;
 			startRecord($data.room.game.title);
@@ -1774,6 +1784,8 @@ function checkRoom(modify) {
 				$data._spectate = false;
 				playBGM('lobby');
 			} else {
+				// 신 UI: 서버는 결과(roundEnd)보다 게임 끝 방 정보를 먼저 보내고, 곧이어 updateUI가 플레이어 카드를 비우므로 지금 판 자리를 잡아 둠
+				if (NK.active) NK.holdGameLayout();
 				$stage.dialog.resultSave.show();
 				$data.resulting = true;
 			}
@@ -1807,6 +1819,7 @@ function updateMe() {
 	$(".my-level").html(L['LEVEL'] + " " + getLevelText(lv));
 	$(".my-gauge .graph-bar").css('width', ((my.data.score - prev) / (goal - prev) * 100) + "%");
 	$(".my-gauge-text").html(commify(my.data.score) + " / " + commify(goal));
+	if (NK.active) NK.renderAccount();
 }
 function prettyTime(time) {
 	var min = Math.floor(time / 60000) % 60, sec = Math.floor(time * 0.001) % 60;
@@ -1825,6 +1838,7 @@ function updateUserList(refresh) {
 
 	// refresh = true;
 	// if(!$stage.box.userList.is(':visible')) return;
+	if (NK.active && !refresh && getOnly() != "for-lobby") NK.queueUserList();
 	if ($data.opts.su) {
 		arr = [];
 		for (i in $data.users) {
@@ -1869,10 +1883,12 @@ function updateUserList(refresh) {
 			if (o.place == 0) $stage.dialog.inviteList.append(userListBar(o, true));
 		}
 	}
+	if (NK.active) NK.afterUserList(len);
 }
 function userListBar(o, forInvite) {
 	var $R;
 
+	if (NK.active && !forInvite) return NK.userRow(o);
 	if (forInvite) {
 		$R = $("<div>").attr('id', "invite-item-" + o.id).addClass("invite-item users-item")
 			.append($("<div>").addClass("jt-image users-image").css('background-image', "url('" + o.profile.image + "')"))
@@ -1924,6 +1940,8 @@ function updateRoomList(refresh) {
 	}
 	$stage.lobby.roomListTitle.html(L['RoomList'].replace("FA{bars}", "<i class='fa fa-bars'></i>") + " [" + len + L['GAE'] + "]");
 
+	// 신 UI는 자체 필터·빈 화면을 씀
+	if (NK.active) return NK.afterRoomList();
 	if (len) {
 		$(".rooms-gaming").css('display', $data.opts.ow ? "none" : "");
 		$(".rooms-locked").css('display', $data.opts.ou ? "none" : "");
@@ -1935,6 +1953,7 @@ function updateRoomList(refresh) {
 	}
 }
 function roomListBar(o) {
+	if (NK.active) return NK.roomCard(o);
 	var $R, $ch, $rm;
 	var opts = getOptions(o.mode, o.opts, false, mobile);
 	var rule = RULE[MODE[o.mode]];
@@ -2052,9 +2071,10 @@ function centerPlayerCard(c) {
 	var horizontal = !mobile && !$b.hasClass("cw");
 	var prop = horizontal ? "scrollLeft" : "scrollTop";
 	var max = horizontal ? b.scrollWidth - b.clientWidth : b.scrollHeight - b.clientHeight;
-	var delta = horizontal
+	// 화면 좌표 차이 → 스크롤 단위 (신 UI는 게임 화면을 확대하므로 배율로 나눔, 기본 UI는 1)
+	var delta = (horizontal
 		? (cr.left + cr.width / 2) - (br.left + br.width / 2)
-		: (cr.top + cr.height / 2) - (br.top + br.height / 2);
+		: (cr.top + cr.height / 2) - (br.top + br.height / 2)) / NK.gameZoom;
 	var to = Math.max(0, Math.min(max, b[prop] + delta));
 	var anim = {};
 	anim[prop] = to;
@@ -2096,10 +2116,11 @@ function clampPlayerScrollOffset(offset, $card) {
 	var $gb = $(".GameBox .game-body"), go = $gb.offset();
 	if (!go || !$card.length) return offset;
 	var r = { top: offset.top, left: offset.left };
+	var z = NK.gameZoom; // offset()은 확대된 값, 폭·높이는 확대 전 값 (기본 UI는 1)
 	if (!mobile && !$gb.hasClass("cw")) {
-		r.left = Math.max(go.left, Math.min(r.left, go.left + $gb.innerWidth() - $card.outerWidth()));
+		r.left = Math.max(go.left, Math.min(r.left, go.left + ($gb.innerWidth() - $card.outerWidth()) * z));
 	} else {
-		r.top = Math.max(go.top, Math.min(r.top, go.top + $gb.innerHeight() - $card.outerHeight()));
+		r.top = Math.max(go.top, Math.min(r.top, go.top + ($gb.innerHeight() - $card.outerHeight()) * z));
 	}
 	return r;
 }
@@ -2117,6 +2138,7 @@ function updateRoom(gaming) {
 
 	setRoomHead($(".RoomBox .product-title"), $data.room);
 	setRoomHead($(".GameBox .product-title"), $data.room);
+	if (NK.active) NK.renderRoomHead($data.room);
 
 
 
@@ -2282,6 +2304,7 @@ function updateRoom(gaming) {
 			clearTimeout($data._jamsu);
 			delete $data._jamsu;
 		}
+		if (NK.active) NK.afterRoomUsers();
 	}
 	if ($stage.dialog.profile.is(':visible')) {
 		requestProfile($data._profiled);
@@ -2473,7 +2496,7 @@ function animateScore(o) {
 	drawScore(o.$obj, Math.round(o.now));
 }
 function drawScore($obj, score) {
-	var i, d, m, sc;
+	var i, d, m, sc, lead;
 
 	if (Math.round(score * 0.001) > 9999) {
 		// 10000k부터는 지수 표기, 다섯 칸에 맞게 소수 자리를 줄임: 1.23e7 → 1.2e10 → 1e100
@@ -2486,9 +2509,12 @@ function drawScore($obj, score) {
 		sc = m[0].replace('.', '') + 'e' + (+m[1]);
 	} else sc = (score > 99999) ? (zeroPadding(Math.round(score * 0.001), 4) + 'k') : zeroPadding(score, 5);
 
+	// 앞자리 0 (신 UI가 흐리게 표시, 마지막 자리는 0이어도 제외)
+	lead = sc.length - 1 - sc.slice(0, -1).replace(/^0+/, "").length;
+
 	$obj.empty();
 	for (i = 0; i < sc.length; i++) {
-		$obj.append($("<div>").addClass("game-user-score-char").html(sc[i]));
+		$obj.append($("<div>").addClass("game-user-score-char" + (i < lead ? " nk-z" : "")).html(sc[i]));
 		if (i === 0 && d) $obj.append($("<div>").addClass("game-user-score-dot").html("."));
 	}
 }
@@ -2651,6 +2677,7 @@ function replayReady() {
 	$data._rpause = false;
 	replayStatus();
 	$stage.menu.replay.html(L['exit']).show();
+	if (NK.active) NK.setReplay(true);
 }
 function replayPrev(e) {
 	var ev = $data.room.events[--$data._rf];
@@ -2749,6 +2776,7 @@ function replayStop() {
 	$data._replay = false;
 	$stage.box.room.height(360);
 	clearTimeout($data._rt);
+	if (NK.active) NK.setReplay(false);
 	updateUI();
 	playBGM('lobby');
 	$stage.menu.replay.html(L['replay']);
@@ -2879,6 +2907,7 @@ function drawRound(round) {
 		$stage.game.round.append($l = $("<label>").html($data.room.game.title[i]));
 		if ((i + 1) == round) $l.addClass("rounds-current");
 	}
+	if (NK.active) NK.renderGameHead(round);
 }
 function turnGoing() {
 	route("turnGoing");
@@ -3036,6 +3065,7 @@ function roundEnd(result, data) {
 
 	// 게임 입력창 숨기기 및 relay 플래그 초기화
 	// (게임 끝 후 채팅이 relay=true로 전송되어 서버에서 차단되는 문제 방지)
+	if (NK.active) NK.holdGameLayout();
 	$stage.game.here.hide();
 	$data._relay = false;
 
@@ -3508,17 +3538,19 @@ function badWords(text) {
 function chatBalloon(text, id, flag) {
 	$("#cb-" + id).remove();
 	var offset = ((flag & 2) ? $("#game-user-" + id) : $("#room-user-" + id)).offset();
-	var img = (flag == 2) ? "chat-balloon-bot" : "chat-balloon-tip";
+	// 신 UI 방 화면: 옆이 아니라 캐릭터 위에 띄움 (게임 화면과 같은 아래 꼬리 모양)
+	var nkUp = NK.active && !(flag & 2);
+	var img = (flag == 2 || nkUp) ? "chat-balloon-bot" : "chat-balloon-tip";
 	var $obj = $("<div>").addClass("chat-balloon");
 	var targetWidth = 0;
 	if ((flag & 2) && $data.room && $data.room.game && $data.room.game.seq && $data.room.game.seq.length > 8 && !isPlayerScroll()) {
 		$obj.addClass("small-balloon");
 		var $target = $("#game-user-" + id);
-		if ($target.length) targetWidth = $target.width();
+		if ($target.length) targetWidth = $target.width() * NK.gameZoom;
 	}
 	$obj.attr('id', "cb-" + id)
 		.append($("<div>").addClass("jt-image " + img))
-	[(flag == 2) ? 'prepend' : 'append']($("<h4>").text(text));
+	[(flag == 2 || nkUp) ? 'prepend' : 'append']($("<h4>").text(text));
 	var ot, ol;
 
 	if (!offset) return;
@@ -3528,6 +3560,14 @@ function chatBalloon(text, id, flag) {
 	else if (flag == 2) ot = 35 - $obj.height(), ol = -2;
 	else if (flag == 3) ot = 5, ol = 210;
 	else ot = 40, ol = 110;
+	if (nkUp) {
+		var $img = $("#room-user-" + id + " .room-user-image");
+		if ($img.length) {
+			offset = $img.offset();
+			ot = 8 - $obj.height();
+			ol = $img.outerWidth() / 2 - 61;
+		}
+	}
 
 	if (targetWidth) {
 		$obj.width(targetWidth);

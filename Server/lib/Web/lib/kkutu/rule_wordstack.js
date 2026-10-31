@@ -30,6 +30,8 @@ $lib.Wordstack._updateStackBar = function (len) {
 $lib.Wordstack._renderStack = function () {
 	var parts = $lib.Wordstack._chars.map(function (c, i) {
 		var sub = $lib.Wordstack._subChars[i] || null;
+		// 신 UI: 두음법칙 글자는 작은 괄호로 (nk.css .nk-ws-sub)
+		if (NK.active && sub) return getCharText(c) + "<label class='nk-ws-sub'>(" + getCharText(sub.split('|').join(', ')) + ")</label>";
 		return getCharText(c, sub);
 	});
 	$stage.game.display.html(parts.join(' '));

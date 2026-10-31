@@ -75,14 +75,15 @@ function wcFlyWordToMoon($uc, text) {
 
 	var start = $uc.offset();
 	var end = $moon.offset();
+	var z = NK.gameZoom; // offset()은 확대된 값, 폭·높이는 확대 전 값 (기본 UI는 1)
 	var $fly = $("<div>").addClass("wc-fly-word").text(text).css({
-		left: start.left + $uc.outerWidth() / 2,
-		top: start.top + $uc.outerHeight() / 2
+		left: start.left + $uc.outerWidth() * z / 2,
+		top: start.top + $uc.outerHeight() * z / 2
 	});
 	$("body").append($fly);
 	$fly.animate({
-		left: end.left + $moon.outerWidth() / 2,
-		top: end.top + $moon.outerHeight() / 2,
+		left: end.left + $moon.outerWidth() * z / 2,
+		top: end.top + $moon.outerHeight() * z / 2,
 		opacity: 0
 	}, 700, function () { $fly.remove(); });
 }

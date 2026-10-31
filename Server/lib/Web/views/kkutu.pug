@@ -55,6 +55,15 @@ block Subject
 	title(data-lang-key='title')= L('title')
 	meta(name='google' content='notranslate')
 
+block Preload
+	//- 새로운 끄투(신 UI): 번들(in_game_kkutu.min.js)보다 먼저 html[data-ui]를 정해야 nk.js가 활성 여부를 알 수 있음.
+	//- 신 UI는 color-mix/oklch가 필요하므로 지원하지 않는 브라우저는 설정과 무관하게 기본 UI. ?resetui=1 이면 UI 설정 초기화.
+	if !locals.mobile
+		- var nkV = locals.appVersion || '1.0.0'
+		script.
+			(function(){try{var h=document.documentElement;if(/[?&]resetui=1(&|$)/.test(location.search)){var r=JSON.parse(localStorage.getItem('kkutu_volume')||'{}');delete r.ui;delete r.uiStyle;localStorage.setItem('kkutu_volume',JSON.stringify(r));return;}var s=JSON.parse(localStorage.getItem('kkutu_volume')||'{}');if(s.ui==='new'&&window.CSS&&CSS.supports&&CSS.supports('color','color-mix(in oklch, red 50%, blue)')){h.setAttribute('data-ui','new');h.setAttribute('data-nk-style',s.uiStyle==='flat'?'flat':'mixed');}}catch(e){}})();
+		link(rel='stylesheet', href='/css/nk.css?v=' + nkV)
+
 block JS
 	script(src='https://www.google.com/recaptcha/api.js')
 	script(src='/js/lib/wanakana.min.js')
@@ -94,6 +103,7 @@ block Jungle
 block Middle
 	- var VERSION = L('version');
 	- var nick = SESSION.profile && (SESSION.profile.nickname || SESSION.profile.title || SESSION.profile.name);
+	include kkutu_nk
 	div#Intro
 		img#intro(src='/img/kkutu/intro.png')
 		// img#intro-start(src='/img/kkutu/intro_start.gif')
@@ -207,6 +217,14 @@ block Middle
 				option(value="light", data-lang-key='darkModeLight')= L('darkModeLight')
 				option(value="dark", data-lang-key='darkModeDark')= L('darkModeDark')
 				option(value="system", data-lang-key='darkModeSystem')= L('darkModeSystem')
+		div.dialog-bar
+			h4(data-lang-key='uiSetting')= L('uiSetting')
+			select#ui-setting(style="width:80px")
+				option(value="classic", data-lang-key='uiClassic')= L('uiClassic')
+				option(value="new", data-lang-key='uiNew')= L('uiNew')
+			select#ui-style-setting(style="width:80px; margin-left: 4px;")
+				option(value="mixed", data-lang-key='uiStyleMixed')= L('uiStyleMixed')
+				option(value="flat", data-lang-key='uiStyleFlat')= L('uiStyleFlat')
 		div.dialog-bar
 			h4(data-lang-key='levelPack')= L('levelPack')
 			select#level-pack(style="width: 150px;")
