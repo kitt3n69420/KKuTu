@@ -9424,6 +9424,8 @@ $lib.Rhythm.onPress = function (e, lane) {
 	var st, i, n, d, best, bd, j;
 
 	e.preventDefault();
+	// preventDefault 때문에 탭해도 채팅창 포커스가 풀리지 않아, 모바일에서 패널을 칠 때마다 키보드가 다시 올라오므로 직접 해제
+	if (document.activeElement && document.activeElement !== document.body && document.activeElement.blur) document.activeElement.blur();
 	if (!s || s.spec || s.ended || s.ctxStart === null) return;
 	st = R.songTime();
 	bd = Infinity;
