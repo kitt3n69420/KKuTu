@@ -46,7 +46,8 @@ $lib.Sudoku.turnStart = function (data) {
 	playBGM('jaqwi');
 };
 $lib.Sudoku.onRound = function (e) {
-	var round = $(e.currentTarget).html().charCodeAt(0) - 9311;
+	// 칩 글자(①②③…) 대신 순서로 — 신 UI는 칩을 그냥 숫자로 보여 줌
+	var round = $(".rounds label").index(e.currentTarget) + 1;
 
 	$data._sel = null;
 	$stage.game.cwcmd.css('opacity', 0);

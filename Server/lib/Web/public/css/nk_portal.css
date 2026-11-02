@@ -1,0 +1,469 @@
+/*
+ * 신형 포탈 — 신 UI를 고른 사람만 보임 (portal.pug의 Preload가 html[data-ui="new"]를 정함).
+ *
+ * - 기본 UI에서는 #nk-portal만 숨기고 아무것도 바꾸지 않음. 나머지 규칙은 모두 html[data-ui="new"] 아래.
+ * - 포탈은 nk.css를 읽지 않으므로 의미 토큰(--nk-*)을 nk.css 1)과 같은 식으로 여기서 다시 정의함.
+ *   --nk-second / --nk-second-ink / --nk-on-accent / --nk-accent-d 는 in_portal.js가 nk-boot.js와 같은 계산으로 넣음.
+ * - style.css의 전역 span { display: none } 때문에 글자는 div/label로 씀.
+ * - 시안: nk_mockups/portal (G2 배치 + P2 글자 타일 무늬)
+ */
+
+@font-face {
+	font-family: 'Pretendard Variable';
+	font-weight: 45 920;
+	font-style: normal;
+	font-display: swap;
+	src: url('../media/PretendardVariable.woff2') format('woff2-variations'), url('../media/PretendardVariable.woff2') format('woff2');
+}
+@font-face {
+	font-family: 'Paperlogy Logo';
+	font-weight: 800;
+	font-style: normal;
+	font-display: block;
+	src: url('../media/Paperlogy-ExtraBold-logo.woff2') format('woff2');
+}
+
+#nk-portal, #np-icons { display: none; }
+
+/* 1) 의미 토큰 (nk.css 1)과 같은 식, 단색 스타일) */
+/* 커스텀 테마 미리보기 상자(.np-tprev-box)도 같은 식 — 상자에 넣은 기본 색으로 다시 계산됨 */
+html[data-ui="new"] body, html[data-ui="new"] .np-tprev-box {
+	--nk-font: 'Pretendard Variable', 'Pretendard', 'Malgun Gothic', sans-serif;
+	--nk-second-soft: color-mix(in oklch, var(--nk-second) 30%, var(--color-bg-light));
+	--nk-second-line: color-mix(in oklch, var(--nk-second) 60%, var(--color-bg-light));
+	--nk-bg: color-mix(in oklch, var(--color-bg-light) 84%, var(--nk-second));
+	--nk-surface: var(--color-bg-light);
+	--nk-surface-2: color-mix(in oklch, var(--color-bg-light) 95%, var(--theme-text));
+	--nk-surface-3: color-mix(in oklch, var(--color-bg-light) 89%, var(--theme-text));
+	--nk-line: color-mix(in oklch, color-mix(in oklch, var(--color-bg-light) 88%, var(--theme-text)) 68%, var(--nk-second));
+	--nk-text: var(--theme-text);
+	--nk-text-2: color-mix(in oklch, var(--theme-text) 66%, var(--color-bg-light));
+	--nk-text-3: color-mix(in oklch, var(--theme-text) 44%, var(--color-bg-light));
+	--nk-accent: var(--color-primary);
+	--nk-accent-soft: color-mix(in oklch, var(--color-primary) 12%, var(--color-bg-light));
+	--nk-accent-ink: color-mix(in oklch, var(--color-primary-dark) 82%, var(--theme-text));
+	--nk-r: 12px;
+	--nk-r-sm: 8px;
+	--np-discord: #5865F2;
+}
+html[data-ui="new"] body.dark-mode, html[data-ui="new"] .np-tprev-box.np-tprev-dark {
+	--nk-second-soft: color-mix(in oklch, var(--nk-second) 15%, var(--color-bg-light));
+	--nk-second-line: color-mix(in oklch, var(--nk-second) 34%, var(--color-bg-light));
+	--nk-bg: color-mix(in oklab, color-mix(in oklch, var(--color-bg-light) 85%, #000) 95%, var(--nk-second));
+	--nk-surface: color-mix(in oklch, var(--color-bg-light) 92.5%, var(--theme-text));
+	--nk-surface-2: color-mix(in oklch, var(--color-bg-light) 97.5%, var(--theme-text));
+	--nk-surface-3: color-mix(in oklch, var(--color-bg-light) 86.3%, var(--theme-text));
+	--nk-line: color-mix(in oklab, color-mix(in oklch, var(--color-bg-light) 79%, var(--theme-text)) 85%, var(--nk-second));
+	--nk-text-2: color-mix(in oklch, var(--theme-text) 76%, var(--color-bg-light));
+	--nk-text-3: color-mix(in oklch, var(--theme-text) 58%, var(--color-bg-light));
+	--nk-accent: var(--nk-accent-d, var(--color-primary));
+	--nk-accent-soft: color-mix(in oklab, var(--nk-accent) 20%, var(--nk-surface));
+	--nk-accent-ink: var(--nk-accent-ink-d, var(--color-primary));
+}
+
+/* 2) 기존 포탈 틀 숨김 — 기존 요소는 DOM에 남겨 두고(시작 단추·계정·서버 목록 동작을 그대로 씀) 보이지만 않게 */
+html[data-ui="new"] body { background: var(--nk-bg); color: var(--nk-text); font-family: var(--nk-font); }
+html[data-ui="new"] :is(#Top, #Background, #Bottom),
+html[data-ui="new"] #Middle > :not(#nk-portal) { display: none !important; }
+html[data-ui="new"] #Middle { float: none; width: auto; margin: 0 !important; }
+html[data-ui="new"] #nk-portal { display: block; font-size: 15px; line-height: 1.5; letter-spacing: -0.1px; }
+html[data-ui="new"] #nk-portal, html[data-ui="new"] #nk-portal * { box-sizing: border-box; }
+/* 전체 화면(전체 랭킹 #ranking, 도움말 #help)일 때는 첫 화면·아래 칸 대신 그 화면만 */
+html[data-ui="new"] #nk-portal[data-view] > :is(.np-hero, .np-board, .np-notice) { display: none; }
+
+html[data-ui="new"] #nk-portal :is(button, a) { color: inherit; font: inherit; text-decoration: none; cursor: pointer; }
+html[data-ui="new"] #nk-portal button { display: inline-flex; align-items: center; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; transition: background-color 150ms, border-color 150ms, color 150ms; }
+html[data-ui="new"] #nk-portal button:active { color: inherit; background: none; }
+html[data-ui="new"] #nk-portal button:disabled { cursor: default; opacity: .5; }
+html[data-ui="new"] #nk-portal :is(h1, h2) { margin: 0; }
+html[data-ui="new"] #nk-portal svg.np-i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+html[data-ui="new"] .np-ellipsis { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+/* 공용 조각 */
+html[data-ui="new"] #nk-portal .np-logo { font: 800 30px 'Paperlogy Logo', var(--nk-font); color: var(--nk-text); letter-spacing: -0.5px; line-height: 1; }
+html[data-ui="new"] #nk-portal .np-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 44px; padding: 0 16px; border: 1px solid var(--nk-line); border-radius: 10px; background: var(--nk-surface); font-weight: 600; font-size: 14.5px; white-space: nowrap; }
+html[data-ui="new"] #nk-portal .np-btn:not(:disabled):hover { background: var(--nk-surface-2); }
+html[data-ui="new"] #nk-portal .np-btn.tint { background: var(--nk-second-soft); border-color: var(--nk-second-line); color: var(--nk-second-ink); }
+html[data-ui="new"] #nk-portal .np-btn.tint:hover { background: color-mix(in oklch, var(--nk-second-soft) 70%, var(--nk-second-line)); }
+html[data-ui="new"] #nk-portal .np-btn.primary { background: var(--nk-accent); border-color: var(--nk-accent); color: var(--nk-on-accent, #fff); }
+/* 프리텐다드는 글자가 위로 쏠려 보여서 위쪽에 1px을 더해 가운데로 맞춤 */
+html[data-ui="new"] #nk-portal .np-chip { display: inline-flex; align-items: center; height: 22px; padding: 1px 9px 0; border-radius: 11px; background: var(--nk-second-soft); color: var(--nk-second-ink); font-size: 12px; font-weight: 700; white-space: nowrap; }
+html[data-ui="new"] #nk-portal .np-chip.solid { background: var(--nk-accent); color: var(--nk-on-accent, #fff); }
+html[data-ui="new"] #nk-portal .np-ic { width: 36px; height: 36px; flex: none; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--nk-second-soft); color: var(--nk-second-ink); }
+html[data-ui="new"] #nk-portal .np-msg { padding: 24px 8px; text-align: center; color: var(--nk-text-3); font-size: 14px; }
+html[data-ui="new"] #nk-portal .np-tabs { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--nk-line); border-radius: 10px; background: var(--nk-surface-2); }
+html[data-ui="new"] #nk-portal .np-tabs button { height: 30px; padding: 0 13px; border-radius: 8px; font-size: 13.5px; font-weight: 600; color: var(--nk-text-2); }
+html[data-ui="new"] #nk-portal .np-tabs button:hover { color: var(--nk-text); }
+html[data-ui="new"] #nk-portal .np-tabs button.on { background: var(--nk-accent); color: var(--nk-on-accent, #fff); }
+
+/* 위쪽 공지 (in_portal.js initNotice) — 화면 위에 떠 있는 띠(스크롤해도 그 자리, 페이지 배치는 밀지 않음). 너비는 글 길이에 맞추고 최대 폭을 넘으면 줄바꿈. 창(설정 등, z 50)보다는 아래.
+   게임 신 UI의 공지 띠(nk.css .nk-notice)와 같은 색. 길면 줄을 바꿔 다 보임 */
+html[data-ui="new"] .np-notice { display: none; position: fixed; z-index: 40; top: 12px; left: 50%; width: max-content; max-width: min(760px, calc(100% - 24px)); translate: -50% 0; align-items: flex-start; gap: 10px; padding: 9px 10px 9px 14px;
+	border: 1px solid var(--nk-second-line); border-radius: 12px; background: var(--nk-second-soft); color: var(--nk-second-ink); box-shadow: 0 8px 24px rgb(0 0 0 / .14); font-size: 14px; line-height: 1.55; }
+html[data-ui="new"] .np-notice.on { display: flex; animation: np-notice-in .3s ease-out; }
+@keyframes np-notice-in { from { opacity: 0; translate: -50% -8px; } }
+html[data-ui="new"] .np-notice-label { flex: none; margin-top: 1px; padding: 1px 9px 0; border-radius: 999px; background: var(--nk-accent); color: var(--nk-on-accent, #fff); font-size: 12px; font-weight: 800; line-height: 20px; }
+html[data-ui="new"] .np-notice-text { flex: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+html[data-ui="new"] .np-notice-text br { display: none; }
+html[data-ui="new"] #nk-portal .np-notice-text a { color: inherit; text-decoration: underline; }
+html[data-ui="new"] #nk-portal .np-notice-close { flex: none; width: 28px; height: 28px; margin: -2px 0 -2px auto; justify-content: center; border-radius: 8px; color: inherit; opacity: .75; }
+html[data-ui="new"] #nk-portal .np-notice-close:hover { opacity: 1; background: color-mix(in oklch, var(--nk-second-line) 50%, transparent); }
+html[data-ui="new"] #nk-portal .np-notice-close svg.np-i { width: 16px; height: 16px; }
+
+/* 3) 첫 화면 — 왼쪽(연한 바탕 + 글자 타일 무늬) | 오른쪽(흰 면, 게임 시작) */
+html[data-ui="new"] .np-hero { display: grid; grid-template-columns: 1fr minmax(480px, 36%); min-height: clamp(620px, calc(100vh - 100px), 820px); }
+html[data-ui="new"] .np-intro { position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 32px 56px 40px; }
+html[data-ui="new"] .np-intro > :not(.np-deco) { position: relative; z-index: 1; }
+html[data-ui="new"] .np-intro .np-logo { align-self: flex-start; }
+html[data-ui="new"] .np-deco { position: absolute; inset: 0; pointer-events: none; }
+html[data-ui="new"] .np-tile { position: absolute; display: flex; align-items: center; justify-content: center; border-radius: 22%; font-weight: 800; line-height: 1;
+	background: var(--nk-surface); border: 2px solid var(--nk-second-line); color: var(--nk-second); box-shadow: 0 4px 0 var(--nk-second-soft); }
+html[data-ui="new"] .np-tile.hl { background: var(--nk-second-soft); border-color: var(--nk-second); color: var(--nk-accent); }
+html[data-ui="new"] .np-intro-body { margin: auto 0; max-width: 980px; }
+html[data-ui="new"] .np-title { font-size: 48px; line-height: 1.16; font-weight: 800; letter-spacing: -1.4px; color: var(--nk-text); }
+html[data-ui="new"] .np-title em { font-style: normal; color: var(--nk-accent); }
+html[data-ui="new"] .np-lead { margin: 10px 0 26px; font-size: 17px; color: var(--nk-text-2); }
+html[data-ui="new"] .np-modes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+html[data-ui="new"] #nk-portal .np-mode { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-height: 108px; padding: 14px 14px 12px; text-align: left;
+	border: 1px solid var(--nk-line); border-radius: var(--nk-r); background: var(--nk-surface); box-shadow: 0 1px 2px rgb(0 0 0 / .05); }
+html[data-ui="new"] #nk-portal .np-mode:hover { border-color: var(--nk-second-line); background: color-mix(in oklch, var(--nk-surface) 70%, var(--nk-second-soft)); }
+html[data-ui="new"] .np-mode-ic { width: 34px; height: 34px; margin-bottom: 6px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: var(--nk-second-soft); color: var(--nk-second-ink); font-weight: 800; font-size: 15px; }
+html[data-ui="new"] #nk-portal .np-mode-ic svg.np-i { width: 20px; height: 20px; }
+html[data-ui="new"] .np-mode-name { font-size: 15.5px; font-weight: 700; }
+html[data-ui="new"] .np-mode-desc { font-size: 13px; color: var(--nk-text-3); }
+html[data-ui="new"] #nk-portal .np-textbtn { gap: 2px; margin-top: 14px; font-size: 14px; font-weight: 650; color: var(--nk-accent-ink); }
+html[data-ui="new"] #nk-portal .np-textbtn:hover { text-decoration: underline; }
+
+html[data-ui="new"] .np-play { display: flex; flex-direction: column; justify-content: center; padding: 32px 52px; background: var(--nk-surface); border-left: 1px solid var(--nk-line); }
+html[data-ui="new"] .np-go { width: 100%; max-width: 440px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+html[data-ui="new"] .np-go-title { font-size: 22px; font-weight: 750; }
+html[data-ui="new"] .np-go-hint { margin: -10px 0 4px; font-size: 14px; color: var(--nk-text-3); }
+html[data-ui="new"] #nk-portal #np-start { justify-content: center; gap: 12px; height: 84px; border-radius: 14px; background: var(--nk-accent); color: var(--nk-on-accent, #fff); font-size: 29px; font-weight: 800; letter-spacing: -0.5px; }
+html[data-ui="new"] #nk-portal #np-start:not(:disabled):hover { background: color-mix(in oklch, var(--nk-accent) 88%, #000); }
+html[data-ui="new"] #nk-portal #np-start svg.np-i { width: 26px; height: 26px; }
+html[data-ui="new"] .np-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+html[data-ui="new"] .np-row2 .np-btn { min-width: 0; }
+html[data-ui="new"] .np-sep { height: 1px; margin: 4px 0; background: var(--nk-line); }
+html[data-ui="new"] .np-evbar { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 10px; border: 1px solid var(--nk-second-line); border-radius: var(--nk-r); background: var(--nk-second-soft); }
+html[data-ui="new"] .np-evbar img { width: 64px; height: 44px; flex: none; border-radius: 8px; object-fit: cover; }
+html[data-ui="new"] .np-evbar-body { flex: 1; min-width: 0; }
+html[data-ui="new"] .np-evbar-title { margin-top: 3px; font-weight: 700; font-size: 14.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+html[data-ui="new"] .np-evbar-sub { font-size: 12.5px; color: var(--nk-text-2); }
+html[data-ui="new"] .np-evbar > svg.np-i { color: var(--nk-text-3); }
+html[data-ui="new"] .np-evbar:hover { border-color: var(--nk-second); }
+html[data-ui="new"] .np-latest { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--nk-line); border-radius: var(--nk-r); background: var(--nk-surface-2); }
+html[data-ui="new"] .np-latest:hover { border-color: var(--nk-second-line); }
+html[data-ui="new"] .np-latest-body { flex: 1; min-width: 0; }
+html[data-ui="new"] #np-latest-title { font-weight: 700; font-size: 14.5px; }
+html[data-ui="new"] #np-latest-sub { font-size: 12.5px; color: var(--nk-text-3); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+html[data-ui="new"] .np-latest > svg.np-i { color: var(--nk-text-3); }
+html[data-ui="new"] #nk-portal .np-discord { background: var(--np-discord); border-color: var(--np-discord); color: #fff; }
+html[data-ui="new"] #nk-portal .np-discord:hover { background: color-mix(in oklch, var(--np-discord) 88%, #000); }
+
+/* 4) 아래 — 업데이트 로그 | 랭킹 | 이벤트, 링크, 바닥 */
+html[data-ui="new"] .np-board { max-width: 1280px; margin: 36px auto 0; padding: 0 32px; }
+html[data-ui="new"] .np-grid { display: grid; grid-template-columns: 1.25fr 1fr .9fr; gap: 20px; align-items: start; }
+html[data-ui="new"] .np-card { padding: 18px 20px; border: 1px solid var(--nk-line); border-radius: 14px; background: var(--nk-surface); box-shadow: 0 1px 2px rgb(0 0 0 / .05); }
+html[data-ui="new"] .np-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+html[data-ui="new"] .np-head h2 { display: flex; align-items: center; gap: 8px; font-size: 21px; font-weight: 750; }
+html[data-ui="new"] .np-head h2 svg.np-i { width: 22px; height: 22px; color: var(--nk-accent); }
+html[data-ui="new"] #nk-portal .np-head-more { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; font-size: 14px; font-weight: 600; color: var(--nk-accent-ink); }
+html[data-ui="new"] #nk-portal .np-head-more:hover { text-decoration: underline; }
+html[data-ui="new"] .np-card > .np-tabs { margin-bottom: 14px; }
+/* 업데이트 로그 칸: 탭을 바꿔도 높이가 같도록 고정, 넘치면 안에서 스크롤 */
+html[data-ui="new"] #np-upd-body { height: 398px; overflow-y: auto; margin-right: -8px; padding-right: 8px; scrollbar-width: thin; scrollbar-color: var(--nk-surface-3) transparent; }
+
+html[data-ui="new"] .np-ver { margin-bottom: 10px; border: 1px solid var(--nk-line); border-radius: var(--nk-r); }
+html[data-ui="new"] .np-ver.open { border-color: var(--nk-second-line); background: var(--nk-second-soft); }
+html[data-ui="new"] #nk-portal .np-ver-h { width: 100%; gap: 8px; padding: 11px 16px; text-align: left; font-size: 15px; font-weight: 750; }
+html[data-ui="new"] .np-ver-date { font-size: 13px; font-weight: 500; color: var(--nk-text-3); }
+html[data-ui="new"] .np-ver-n { margin-left: auto; font-size: 13px; font-weight: 500; color: var(--nk-text-3); }
+html[data-ui="new"] .np-ver-h svg.np-i { color: var(--nk-text-3); transition: transform 150ms; }
+html[data-ui="new"] .np-ver.open .np-ver-h svg.np-i { transform: rotate(180deg); }
+html[data-ui="new"] .np-ver.open .np-ver-n { visibility: hidden; }
+html[data-ui="new"] .np-ver ul, html[data-ui="new"] .np-list { margin: 0; padding: 0 16px 12px 34px; font-size: 14px; color: var(--nk-text-2); }
+html[data-ui="new"] .np-ver:not(.open) ul { display: none; }
+html[data-ui="new"] .np-ver li, html[data-ui="new"] .np-list li { margin: 3px 0; }
+html[data-ui="new"] .np-list { padding: 0 4px 4px 22px; }
+html[data-ui="new"] .np-list-h { margin: 12px 0 4px; font-size: 14.5px; font-weight: 750; color: var(--nk-text); }
+html[data-ui="new"] .np-list-h:first-child { margin-top: 0; }
+html[data-ui="new"] #nk-portal :is(.np-ver, .np-list) a { color: var(--nk-accent-ink); text-decoration: underline; }
+
+html[data-ui="new"] .np-rank-list { display: flex; flex-direction: column; gap: 2px; }
+html[data-ui="new"] .np-rk { display: grid; grid-template-columns: 52px 76px minmax(0, 1fr) auto; align-items: center; gap: 8px; height: 38px; padding: 0 10px 0 4px; border-radius: 9px; font-size: 14px; }
+html[data-ui="new"] .np-rk:nth-child(even) { background: var(--nk-surface-2); }
+html[data-ui="new"] .np-rk-n { text-align: center; font-weight: 800; color: var(--nk-text-3); font-variant-numeric: tabular-nums; }
+html[data-ui="new"] .np-rk-n.m1 { color: #D4A017; }
+html[data-ui="new"] .np-rk-n.m2 { color: #8C9BAB; }
+html[data-ui="new"] .np-rk-n.m3 { color: #C07A3E; }
+html[data-ui="new"] .np-rk-lv { display: flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; color: var(--nk-second-ink); }
+html[data-ui="new"] .np-rk-lv > div { width: 18px; height: 18px; flex: none; }
+html[data-ui="new"] .np-rk-name { font-weight: 650; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+html[data-ui="new"] .np-rk-name.hidden { font-weight: 500; color: var(--nk-text-3); }
+html[data-ui="new"] .np-rk-s { font-size: 13.5px; color: var(--nk-text-2); font-variant-numeric: tabular-nums; }
+html[data-ui="new"] .np-rk.me { background: var(--nk-accent-soft); box-shadow: inset 0 0 0 1.5px var(--nk-accent); }
+html[data-ui="new"] #np-rank-list .np-rk.me:not(:first-child) { margin-top: 6px; }
+
+html[data-ui="new"] .np-ev { display: block; overflow: hidden; border: 1px solid var(--nk-line); border-radius: var(--nk-r); }
+html[data-ui="new"] .np-ev img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
+html[data-ui="new"] .np-ev-body { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px 16px; }
+html[data-ui="new"] .np-ev-title { font-size: 16px; font-weight: 700; line-height: 1.4; }
+html[data-ui="new"] .np-ev-date { font-size: 13px; color: var(--nk-text-2); }
+html[data-ui="new"] #nk-portal .np-ev .np-btn { align-self: stretch; margin-top: 4px; }
+html[data-ui="new"] .np-empty { padding: 26px 18px; border: 1.5px dashed var(--nk-line); border-radius: var(--nk-r); text-align: center; font-weight: 650; color: var(--nk-text-2); }
+html[data-ui="new"] .np-empty-sub { margin-top: 4px; font-size: 13px; font-weight: 500; color: var(--nk-text-3); }
+
+html[data-ui="new"] .np-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+html[data-ui="new"] .np-link { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--nk-line); border-radius: 14px; background: var(--nk-surface); }
+html[data-ui="new"] .np-link:hover { border-color: var(--nk-second-line); }
+html[data-ui="new"] .np-link .np-ic { width: 42px; height: 42px; }
+html[data-ui="new"] .np-link-name { font-size: 15.5px; font-weight: 700; }
+html[data-ui="new"] .np-link-sub { font-size: 13px; color: var(--nk-text-3); }
+html[data-ui="new"] .np-foot { margin-top: 28px; padding: 24px 0 36px; border-top: 1px solid var(--nk-line); font-size: 12.5px; color: var(--nk-text-3); }
+html[data-ui="new"] .np-legal { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-bottom: 12px; font-size: 13.5px; font-weight: 550; color: var(--nk-text-2); }
+html[data-ui="new"] .np-legal a:hover { color: var(--nk-text); }
+html[data-ui="new"] #nk-portal .np-legal a.hl { color: var(--nk-text); font-weight: 700; }
+html[data-ui="new"] .np-credit { margin: 6px 0; line-height: 1.6; }
+html[data-ui="new"] .np-credit label { color: inherit !important; }
+html[data-ui="new"] #nk-portal .np-credit a { color: var(--nk-text-2); text-decoration: underline; }
+
+/* 5) 전체 랭킹 화면 */
+html[data-ui="new"] #np-rank-page { display: none; max-width: 860px; margin: 0 auto; padding: 0 32px 48px; }
+html[data-ui="new"] #nk-portal[data-view="ranking"] #np-rank-page { display: block; }
+html[data-ui="new"] .np-page-head { display: flex; align-items: center; gap: 16px; height: 84px; }
+html[data-ui="new"] .np-rank-card .np-head { flex-wrap: wrap; }
+html[data-ui="new"] .np-rank-card .np-head h2 { margin-right: 8px; }
+html[data-ui="new"] #nk-portal .np-rank-card .np-head > .np-btn { margin-left: auto; height: 38px; font-size: 14px; }
+html[data-ui="new"] .np-rank-card .np-rk { height: 42px; font-size: 15px; }
+html[data-ui="new"] .np-pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; }
+html[data-ui="new"] .np-pager .np-btn { width: 44px; padding: 0; }
+html[data-ui="new"] #np-rank-pg { min-width: 80px; text-align: center; font-weight: 650; color: var(--nk-text-2); }
+
+/* 5-1) 업데이트 로그 화면 — kkutu_bulletin.html 내용(목록·표·글)에 신 UI 모양을 입힘. 표의 down = 하향, up = 상향 */
+html[data-ui="new"] #np-updp-page { display: none; max-width: 860px; margin: 0 auto; padding: 0 32px 48px; }
+html[data-ui="new"] #nk-portal[data-view="updates"] #np-updp-page { display: block; }
+/* 탭을 바꿔도 높이가 같도록 화면 높이에 맞춰 고정, 내용은 안에서 스크롤 (도움말 화면과 같은 방식) */
+html[data-ui="new"] .np-updp-card { display: flex; flex-direction: column; height: calc(100vh - 84px - 48px); min-height: 520px; }
+html[data-ui="new"] #np-updp-body { flex: 1; min-height: 0; overflow-y: auto; margin-right: -12px; padding-right: 12px; scrollbar-width: thin; scrollbar-color: var(--nk-surface-3) transparent; }
+html[data-ui="new"] .np-updp-card .np-head { flex-wrap: wrap; }
+html[data-ui="new"] .np-updp-card .np-head h2 { margin-right: 8px; }
+html[data-ui="new"] .np-updp-card .np-head > .np-tabs { margin-left: auto; }
+html[data-ui="new"] .np-updp-ver { padding: 16px 0; border-top: 1px solid var(--nk-line); }
+html[data-ui="new"] .np-updp-ver:first-child { padding-top: 4px; border-top: 0; }
+html[data-ui="new"] .np-updp-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; font-size: 17px; font-weight: 750; }
+html[data-ui="new"] .np-updp-doc { --np-down: #d32f2f; --np-up: #1565c0; font-size: 14.5px; line-height: 1.6; color: var(--nk-text-2); }
+html[data-ui="new"] body.dark-mode .np-updp-doc { --np-down: #ff7b7b; --np-up: #82b1ff; }
+html[data-ui="new"] .np-updp-doc + .np-updp-doc { margin-top: 16px; }
+html[data-ui="new"] .np-updp-doc ul { margin: 0; padding-left: 20px; }
+html[data-ui="new"] .np-updp-doc li { margin: 4px 0; }
+html[data-ui="new"] .np-updp-doc li::marker { color: var(--nk-accent); }
+html[data-ui="new"] .np-updp-doc h3 { margin: 18px 0 6px; font-size: 15.5px; font-weight: 750; color: var(--nk-text); }
+html[data-ui="new"] .np-updp-doc h3:first-child { margin-top: 0; }
+html[data-ui="new"] .np-updp-doc p { margin: 14px 0 0; font-size: 13px; color: var(--nk-text-3); }
+html[data-ui="new"] #nk-portal .np-updp-doc a { color: var(--nk-accent-ink); text-decoration: underline; }
+html[data-ui="new"] .np-updp-doc li strong { color: var(--nk-text); }
+html[data-ui="new"] .np-updp-doc table { width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 13.5px; }
+html[data-ui="new"] .np-updp-doc th { padding: 7px 10px; border-bottom: 1px solid var(--nk-line); background: var(--nk-surface-2); font-weight: 650; color: var(--nk-text); text-align: center; }
+html[data-ui="new"] .np-updp-doc td { padding: 6px 10px; border-bottom: 1px solid var(--nk-line); text-align: center; }
+html[data-ui="new"] .np-updp-doc :is(th, td):first-child { text-align: left; }
+html[data-ui="new"] .np-updp-doc tbody tr:last-child td { border-bottom: 0; }
+html[data-ui="new"] .np-updp-doc td.down { color: var(--np-down); }
+html[data-ui="new"] .np-updp-doc td.up { color: var(--np-up); }
+
+/* 5-2) 도움말 화면 — 신 UI 로비 도움말(nk.css .nk-help-*)과 같은 모양 */
+html[data-ui="new"] #np-help-page { display: none; max-width: 1200px; margin: 0 auto; padding: 0 32px 32px; }
+html[data-ui="new"] #nk-portal[data-view="help"] #np-help-page { display: block; }
+html[data-ui="new"] .np-help-card { display: flex; flex-direction: column; height: calc(100vh - 84px - 32px); min-height: 520px; padding: 0; }
+html[data-ui="new"] .np-help-card > .np-head { margin: 0; padding: 16px 20px; border-bottom: 1px solid var(--nk-line); }
+html[data-ui="new"] .np-search { margin-left: auto; display: flex; align-items: center; gap: 8px; width: 280px; height: 40px; padding: 0 12px; border: 1px solid var(--nk-line); border-radius: 10px; background: var(--nk-surface-2); color: var(--nk-text-3); }
+html[data-ui="new"] .np-search:focus-within { border-color: var(--nk-accent); }
+html[data-ui="new"] .np-search input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; border-radius: 0; background: none; color: var(--nk-text); font: inherit; font-size: 14.5px; }
+html[data-ui="new"] .np-help-body { flex: 1; min-height: 0; display: flex; padding: 12px 14px 14px; }
+html[data-ui="new"] #np-help-nav { flex: 0 0 260px; min-width: 0; overflow-y: auto; padding-right: 10px; border-right: 1px solid var(--nk-line); }
+html[data-ui="new"] .np-hn-items { display: flex; flex-direction: column; gap: 1px; }
+html[data-ui="new"] .np-hn-group > .np-hn-items { margin-left: 12px; padding-left: 8px; border-left: 1px solid var(--nk-line); }
+html[data-ui="new"] .np-hn-group.collapsed > .np-hn-items { display: none; }
+html[data-ui="new"] #nk-portal :is(.np-hn-gh, .np-hn-item) { display: flex; align-items: center; gap: 4px; width: 100%; min-height: 32px; padding: 4px 8px; border-radius: 8px; text-align: left; font-size: 14px; color: var(--nk-text-2); }
+html[data-ui="new"] #nk-portal .np-hn-gh { font-weight: 750; color: var(--nk-text); }
+html[data-ui="new"] .np-hn-gh svg.np-i { width: 15px; height: 15px; color: var(--nk-text-3); transition: transform .15s; }
+html[data-ui="new"] .np-hn-group.collapsed > .np-hn-gh svg.np-i { transform: rotate(-90deg); }
+html[data-ui="new"] #nk-portal .np-hn-item { padding-left: 27px; }
+html[data-ui="new"] #nk-portal .np-hn-item.np-hn-home { padding-left: 8px; font-weight: 750; color: var(--nk-text); }
+html[data-ui="new"] #nk-portal :is(.np-hn-gh, .np-hn-item):hover { background: var(--nk-surface-2); color: var(--nk-text); }
+html[data-ui="new"] #nk-portal .np-hn-item.on { background: var(--nk-accent-soft); color: var(--nk-accent-ink); font-weight: 750; }
+html[data-ui="new"] .np-hn-hide { display: none !important; }
+html[data-ui="new"] .np-help-main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding-left: 24px; }
+html[data-ui="new"] #np-help-crumb { flex: none; min-height: 18px; font-size: 12.5px; font-weight: 650; color: var(--nk-text-3); }
+html[data-ui="new"] #np-help-title { flex: none; margin: 2px 0 10px; font-size: 24px; font-weight: 850; }
+html[data-ui="new"] #np-help-doc { flex: 1; min-height: 0; overflow-y: auto; padding-right: 8px; }
+html[data-ui="new"] #np-help-doc .page-body { max-width: 860px; }
+html[data-ui="new"] .np-help-foot { flex: none; display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid var(--nk-line); }
+html[data-ui="new"] #nk-portal .np-help-foot .np-btn { max-width: 45%; height: 38px; font-size: 13.5px; }
+html[data-ui="new"] #nk-portal #np-help-next { margin-left: auto; }
+html[data-ui="new"] .np-help-foot .np-btn > div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html[data-ui="new"] #nk-portal .np-help-foot .np-btn:disabled { visibility: hidden; }
+
+/* 5-3) 설정 창 */
+html[data-ui="new"] #nk-portal .np-play-set { position: absolute; top: 20px; right: 24px; height: 38px; padding: 0 14px; font-size: 14px; border-color: transparent; background: none; color: var(--nk-text-2); }
+html[data-ui="new"] #nk-portal .np-play-set:hover { background: var(--nk-surface-2); color: var(--nk-text); }
+html[data-ui="new"] .np-play { position: relative; }
+html[data-ui="new"] .np-overlay { display: none; position: fixed; inset: 0; z-index: 50; padding: 40px; background: rgb(0 0 0 / .32); align-items: center; justify-content: center; }
+html[data-ui="new"] .np-overlay.on { display: flex; }
+html[data-ui="new"] #np-theme { z-index: 52; }
+html[data-ui="new"] #np-msg { z-index: 60; }
+/* 창 머리·아래 단추는 고정, 가운데만 스크롤 (낮은 화면에서도 확인 단추가 보이게) */
+html[data-ui="new"] .np-dlg { display: flex; flex-direction: column; width: min(560px, 100%); max-height: 100%; overflow: hidden; border-radius: 16px; background: var(--nk-surface); box-shadow: 0 24px 60px rgb(0 0 0 / .28); }
+html[data-ui="new"] .np-dlg-head { position: relative; padding: 20px 64px 14px 24px; border-bottom: 1px solid var(--nk-line); }
+html[data-ui="new"] .np-dlg-title { font-size: 21px; font-weight: 750; }
+html[data-ui="new"] .np-dlg-head, html[data-ui="new"] .np-dlg-foot { flex: none; }
+html[data-ui="new"] .np-dlg-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 20px 24px 24px; }
+html[data-ui="new"] .np-set-label { margin-bottom: 8px; font-size: 14px; font-weight: 700; color: var(--nk-text-2); }
+html[data-ui="new"] .np-set-hint { margin-top: 6px; font-size: 12.5px; color: var(--nk-text-3); }
+html[data-ui="new"] .np-swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+html[data-ui="new"] #nk-portal .np-swatch { gap: 8px; height: 40px; padding: 0 10px; border: 1px solid var(--nk-line); border-radius: 10px; font-size: 13.5px; font-weight: 600; color: var(--nk-text-2); }
+html[data-ui="new"] #nk-portal .np-swatch:hover { background: var(--nk-surface-2); color: var(--nk-text); }
+html[data-ui="new"] #nk-portal .np-swatch.on { border-color: var(--nk-accent); box-shadow: inset 0 0 0 1px var(--nk-accent); color: var(--nk-text); background: var(--nk-accent-soft); }
+html[data-ui="new"] .np-swatch-dot { width: 18px; height: 18px; flex: none; border-radius: 50%; }
+html[data-ui="new"] .np-swatch > div:last-child { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+html[data-ui="new"] #nk-portal .np-set-more { margin-top: 8px; height: 36px; font-size: 13.5px; }
+html[data-ui="new"] #nk-portal .np-set-act { height: 36px; font-size: 13.5px; }
+html[data-ui="new"] .np-dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 24px 20px; border-top: 1px solid var(--nk-line); }
+html[data-ui="new"] #nk-portal .np-dlg-foot .np-btn { min-width: 84px; }
+html[data-ui="new"] #nk-portal .np-btn.danger { margin-right: auto; color: var(--nk-danger, #d32f2f); }
+html[data-ui="new"] .np-dlg-sm { width: min(400px, 100%); }
+html[data-ui="new"] .np-dlg-sm .np-dlg-body { padding: 26px 24px 20px; }
+html[data-ui="new"] #np-msg-text { font-size: 15.5px; line-height: 1.6; white-space: pre-line; text-align: center; }
+html[data-ui="new"] #np-msg.alert #np-msg-no { display: none; }
+html[data-ui="new"] #nk-portal .np-input { display: block; width: 100%; height: 40px; margin: 0; padding: 0 12px; border: 1px solid var(--nk-line); border-radius: 10px; background: var(--nk-surface-2); color: var(--nk-text); font: inherit; font-size: 14.5px; }
+html[data-ui="new"] #nk-portal .np-input:focus { border-color: var(--nk-accent); outline: none; }
+html[data-ui="new"] .np-field { display: block; }
+/* 커스텀 테마 편집 창 */
+html[data-ui="new"] .np-tprev { display: flex; gap: 10px; }
+/* 미리보기 = 작은 포탈 화면: 바탕(--nk-bg) 위 카드, 로고·이벤트 칩·안내 글·게임 시작 단추 */
+html[data-ui="new"] .np-tprev-box { flex: 1; min-width: 0; padding: 10px; border-radius: 12px; border: 1px solid var(--nk-line); background: var(--nk-bg); color: var(--nk-text); }
+html[data-ui="new"] .np-tprev-label { margin: 0 2px 8px; font-size: 12px; font-weight: 700; color: var(--nk-text-3); }
+html[data-ui="new"] .np-tprev-card { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--nk-line); border-radius: 10px; background: var(--nk-surface); }
+html[data-ui="new"] .np-tprev-top { display: flex; align-items: center; gap: 6px; }
+html[data-ui="new"] .np-tprev-logo { font: 800 17px 'Paperlogy Logo', var(--nk-font); color: var(--nk-text); line-height: 1; }
+/* 로고는 게임 머리줄(nk.css .nk-logo-a/-b)과 같이 "끄투" = 기본 글자색, "엔" = 강조색 */
+html[data-ui="new"] #nk-portal .np-logo b, html[data-ui="new"] .np-tprev-logo b { font-weight: inherit; color: var(--nk-accent); }
+html[data-ui="new"] .np-tprev-chip { margin-left: auto; height: 20px; padding: 1px 8px 0; display: flex; align-items: center; border-radius: 10px; font-size: 11px; font-weight: 700; background: var(--nk-second-soft); color: var(--nk-second-ink); }
+html[data-ui="new"] .np-tprev-text { font-size: 12px; color: var(--nk-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-ui="new"] .np-tprev-btn { height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 13.5px; font-weight: 800; background: var(--nk-accent); color: var(--nk-on-accent, #fff); }
+html[data-ui="new"] .np-swatches-sm { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+html[data-ui="new"] #nk-portal .np-swatches-sm .np-swatch { height: 34px; font-size: 12.5px; }
+html[data-ui="new"] .np-tcolors { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+html[data-ui="new"] .np-tcolor-in { display: flex; gap: 8px; }
+html[data-ui="new"] #nk-portal .np-color { flex: none; width: 40px; height: 40px; margin: 0; padding: 2px; border: 1px solid var(--nk-line); border-radius: 10px; background: var(--nk-surface-2); cursor: pointer; }
+html[data-ui="new"] #nk-portal .np-tcolor-in .np-input { font-family: ui-monospace, Consolas, monospace; }
+html[data-ui="new"] .np-tcode { display: flex; gap: 8px; }
+html[data-ui="new"] #nk-portal .np-tcode .np-input { flex: 1; min-width: 0; font-family: ui-monospace, Consolas, monospace; }
+html[data-ui="new"] #nk-portal .np-tcode .np-btn { height: 40px; }
+html[data-ui="new"] .np-warn { display: none; font-size: 13px; font-weight: 600; color: var(--nk-danger, #d32f2f); }
+html[data-ui="new"] .np-warn.on { display: block; }
+
+/* 6) 게임 모드 설명 창 — 왼쪽 모드 목록 | 오른쪽 도움말 본문 */
+html[data-ui="new"] #np-modal { display: none; position: fixed; inset: 0; z-index: 50; padding: 40px; background: rgb(0 0 0 / .32); align-items: center; justify-content: center; }
+html[data-ui="new"] #np-modal.on { display: flex; }
+html[data-ui="new"] .np-modal-box { display: flex; width: min(980px, 100%); height: min(680px, 100%); overflow: hidden; border-radius: 16px; background: var(--nk-surface); box-shadow: 0 24px 60px rgb(0 0 0 / .28); }
+html[data-ui="new"] #np-modal-nav { width: 240px; flex: none; overflow-y: auto; padding: 14px 10px; border-right: 1px solid var(--nk-line); background: var(--nk-surface-2); }
+html[data-ui="new"] .np-nav-h { padding: 12px 10px 4px; font-size: 12.5px; font-weight: 700; color: var(--nk-text-3); }
+html[data-ui="new"] .np-nav-h:first-child { padding-top: 2px; }
+html[data-ui="new"] #nk-portal .np-nav-item { display: flex; width: 100%; padding: 7px 10px; border-radius: 8px; text-align: left; font-size: 14px; color: var(--nk-text-2); }
+html[data-ui="new"] #nk-portal .np-nav-item:hover { background: var(--nk-surface-3); color: var(--nk-text); }
+html[data-ui="new"] #nk-portal .np-nav-item.on { background: var(--nk-second-soft); color: var(--nk-second-ink); font-weight: 700; }
+html[data-ui="new"] .np-modal-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+html[data-ui="new"] .np-modal-head { position: relative; padding: 20px 64px 14px 28px; border-bottom: 1px solid var(--nk-line); }
+html[data-ui="new"] #np-modal-crumb { font-size: 12.5px; color: var(--nk-text-3); min-height: 18px; }
+html[data-ui="new"] #np-modal-title { font-size: 22px; font-weight: 750; }
+html[data-ui="new"] #nk-portal .np-iconbtn { position: absolute; top: 18px; right: 18px; width: 38px; height: 38px; justify-content: center; border-radius: 10px; color: var(--nk-text-2); }
+html[data-ui="new"] #nk-portal .np-iconbtn:hover { background: var(--nk-surface-2); color: var(--nk-text); }
+html[data-ui="new"] #np-modal-body { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 28px 28px; }
+/* 도움말 본문 (nk.css .nk-help-page와 같은 모양) */
+html[data-ui="new"] .np-help { font-size: 15px; line-height: 1.75; color: var(--nk-text); }
+html[data-ui="new"] .np-help :is(h3, h4, h5) { margin: 14px 0 6px; line-height: 1.4; }
+html[data-ui="new"] .np-help h3 { font-size: 1.25em; }
+html[data-ui="new"] .np-help h4 { font-size: 1.05em; font-weight: 800; }
+html[data-ui="new"] .np-help h5 { font-size: 1em; font-weight: 500; }
+html[data-ui="new"] .np-help p { margin: 6px 0; }
+html[data-ui="new"] .np-help :is(ul, ol) { margin: 4px 0 8px; padding-left: 22px; }
+html[data-ui="new"] .np-help blockquote { margin: 8px 0; padding: 6px 12px; border-left: 4px solid var(--nk-second-line); border-radius: 0 var(--nk-r-sm) var(--nk-r-sm) 0; background: var(--nk-second-soft); }
+html[data-ui="new"] .np-help word { padding: 1px 6px; border-radius: 5px; background: var(--nk-surface-3); font-weight: 650; }
+html[data-ui="new"] #nk-portal .np-help a { color: var(--nk-accent-ink); text-decoration: underline; }
+html[data-ui="new"] .np-help img { max-width: 100%; height: auto; border-radius: var(--nk-r-sm); }
+html[data-ui="new"] .np-help iframe { max-width: 100%; border: 0; border-radius: var(--nk-r-sm); }
+html[data-ui="new"] .np-help table { width: 100%; margin: 8px 0; border-collapse: collapse; font-size: .95em; }
+html[data-ui="new"] .np-help table td { padding: 6px 8px; border-bottom: 1px solid var(--nk-line); }
+html[data-ui="new"] .np-help thead { text-align: center; font-weight: 750; background: var(--nk-surface-2); }
+
+/* 7) 좁은 창 — 첫 화면을 위아래로 쌓음 (휴대폰 포탈은 아래 8) */
+@media (max-width: 1100px) {
+	html[data-ui="new"] .np-hero { grid-template-columns: 1fr; min-height: 0; }
+	html[data-ui="new"] .np-intro { padding: 28px 32px 36px; }
+	html[data-ui="new"] .np-intro-body { margin-top: 48px; }
+	html[data-ui="new"] .np-play { border-left: 0; border-top: 1px solid var(--nk-line); }
+	html[data-ui="new"] .np-grid { grid-template-columns: 1fr 1fr; }
+	html[data-ui="new"] #np-event { grid-column: 1 / -1; }
+}
+@media (max-width: 800px) {
+	html[data-ui="new"] .np-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	html[data-ui="new"] .np-grid, html[data-ui="new"] .np-links { grid-template-columns: 1fr; }
+	html[data-ui="new"] #np-modal-nav { display: none; }
+	html[data-ui="new"] #np-modal { padding: 16px; }
+}
+
+/* 8) 휴대폰 (m_portal.pug, html[data-nk-device="phone"]) — 시안 nk_mockups/m_portal C "첫 화면 꽉 채우기".
+   첫 화면(.np-intro) = 화면 높이 가득 로고·소개·게임 시작(.np-pgo)·"아래로 내려 더 보기", 내리면 이벤트·소식(.np-play) → 모드 카드(.np-pmodes) → 아래 칸.
+   설정 단추는 화면 오른쪽 위. 7)의 좁은 창 규칙 위에 덧씀 */
+/* 모바일 기본 틀(m_style.css)은 html·body를 화면 높이로 고정하고 넘침을 숨김(게임 화면용) → 포탈은 문서 전체가 스크롤되게 (html도 풀어야 손가락 스크롤이 됨) */
+html[data-ui="new"][data-nk-device="phone"], html[data-ui="new"][data-nk-device="phone"] body { height: auto; overflow: visible; overscroll-behavior: auto; }
+html[data-ui="new"][data-nk-device="phone"] body { min-width: 0 !important; }
+html[data-ui="new"][data-nk-device="phone"] #nk-portal { position: relative; font-size: 14.5px; }
+html[data-ui="new"][data-nk-device="phone"] .np-hero { display: block; min-height: 0; }
+html[data-ui="new"][data-nk-device="phone"] .np-intro { min-height: 100svh; padding: 18px 16px 16px; }
+html[data-ui="new"][data-nk-device="phone"] .np-notice { top: 8px; max-width: calc(100% - 16px); padding: 9px 6px 9px 12px; font-size: 13.5px; }
+html[data-ui="new"][data-nk-device="phone"] .np-intro-body { margin: auto 0; padding-top: 40px; }
+html[data-ui="new"][data-nk-device="phone"] .np-title { font-size: 40px; line-height: 1.12; letter-spacing: -0.9px; }
+html[data-ui="new"][data-nk-device="phone"] .np-lead { margin: 8px 0 22px; font-size: 14.5px; }
+html[data-ui="new"][data-nk-device="phone"] .np-pgo { display: flex; flex-direction: column; gap: 10px; }
+html[data-ui="new"][data-nk-device="phone"] #nk-portal #np-start { height: 68px; font-size: 24px; border-radius: 12px; }
+html[data-ui="new"][data-nk-device="phone"] .np-pmore { display: flex; flex-direction: column; align-items: center; margin-top: 14px; font-size: 12.5px; color: var(--nk-text-3); }
+html[data-ui="new"][data-nk-device="phone"] #nk-portal .np-play-set { top: 12px; right: 8px; height: 40px; padding: 0 10px; }
+html[data-ui="new"][data-nk-device="phone"] .np-play { position: static; padding: 20px 16px 4px; border: 0; background: none; }
+html[data-ui="new"][data-nk-device="phone"] .np-go { max-width: none; gap: 12px; }
+html[data-ui="new"][data-nk-device="phone"] .np-pmodes { padding: 14px 16px 0; }
+html[data-ui="new"][data-nk-device="phone"] .np-pmodes > h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 18px; font-weight: 750; }
+html[data-ui="new"][data-nk-device="phone"] .np-pmodes > h2 svg.np-i { width: 20px; height: 20px; color: var(--nk-accent); }
+html[data-ui="new"][data-nk-device="phone"] .np-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+html[data-ui="new"][data-nk-device="phone"] #nk-portal .np-mode { min-height: 0; padding: 12px 12px 10px; }
+html[data-ui="new"][data-nk-device="phone"] .np-mode-ic { width: 30px; height: 30px; margin-bottom: 4px; }
+html[data-ui="new"][data-nk-device="phone"] .np-mode-name { font-size: 14.5px; }
+html[data-ui="new"][data-nk-device="phone"] .np-mode-desc { font-size: 12px; }
+html[data-ui="new"][data-nk-device="phone"] .np-board { margin-top: 18px; padding: 0 16px; }
+html[data-ui="new"][data-nk-device="phone"] .np-grid { grid-template-columns: 1fr; gap: 14px; }
+html[data-ui="new"][data-nk-device="phone"] #np-event { grid-column: auto; }
+html[data-ui="new"][data-nk-device="phone"] .np-card { padding: 16px; }
+html[data-ui="new"][data-nk-device="phone"] .np-head h2 { font-size: 18px; }
+html[data-ui="new"][data-nk-device="phone"] #np-upd-body { height: 330px; }
+html[data-ui="new"][data-nk-device="phone"] .np-links { grid-template-columns: 1fr; gap: 8px; margin-top: 14px; }
+html[data-ui="new"][data-nk-device="phone"] .np-link { padding: 12px 14px; }
+html[data-ui="new"][data-nk-device="phone"] .np-foot { margin-top: 20px; padding: 18px 0 calc(28px + env(safe-area-inset-bottom)); font-size: 12px; }
+html[data-ui="new"][data-nk-device="phone"] .np-legal { flex-wrap: wrap; row-gap: 6px; }
+/* 휴대폰 — 창(설정·테마 편집·내 프로필·알림)은 화면 폭 거의 가득, 칸이 좁아지는 곳은 한 줄씩 */
+html[data-ui="new"][data-nk-device="phone"] .np-overlay { padding: 12px; }
+html[data-ui="new"][data-nk-device="phone"] .np-dlg-body { padding: 18px 16px 20px; }
+html[data-ui="new"][data-nk-device="phone"] .np-swatches { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+html[data-ui="new"][data-nk-device="phone"] .np-tprev { flex-direction: column; }
+html[data-ui="new"][data-nk-device="phone"] .np-tcolors { grid-template-columns: 1fr; gap: 10px; }
+html[data-ui="new"][data-nk-device="phone"] #np-modal { padding: 12px; }
+/* 휴대폰 — 전체 화면(전체 랭킹·업데이트 로그·도움말)은 옆 여백만 줄임. 도움말은 목차(위, 높이 제한) → 본문(아래, 문서 스크롤) */
+html[data-ui="new"][data-nk-device="phone"] :is(#np-rank-page, #np-updp-page, #np-help-page) { padding: 0 12px 24px; }
+html[data-ui="new"][data-nk-device="phone"] .np-page-head { height: 68px; }
+html[data-ui="new"][data-nk-device="phone"] .np-updp-card { height: calc(100svh - 68px - 24px); min-height: 420px; }
+html[data-ui="new"][data-nk-device="phone"] .np-help-card { height: auto; min-height: 0; }
+html[data-ui="new"][data-nk-device="phone"] .np-help-card > .np-head { flex-wrap: wrap; padding: 14px 16px; }
+html[data-ui="new"][data-nk-device="phone"] .np-search { width: 100%; margin-left: 0; }
+html[data-ui="new"][data-nk-device="phone"] .np-help-body { flex-direction: column; padding: 10px 12px 14px; }
+html[data-ui="new"][data-nk-device="phone"] #np-help-nav { flex: none; max-height: 34svh; padding: 0 0 10px; border-right: 0; border-bottom: 1px solid var(--nk-line); }
+html[data-ui="new"][data-nk-device="phone"] .np-help-main { padding: 14px 4px 0; }
+html[data-ui="new"][data-nk-device="phone"] #np-help-doc { overflow: visible; padding-right: 0; }

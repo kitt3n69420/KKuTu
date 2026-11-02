@@ -139,18 +139,39 @@ exports.run = function (Server, page) {
       });
       return R;
     }
+    // 접속하지 않은 유저 이름도 users의 닉네임으로 붙인다 (신 UI 포탈 랭킹·게임 안 랭킹 창 모두).
+    function withNames($body) {
+      var R = new Lizard.Tail();
+
+      if (!$body.data.length) {
+        R.go($body);
+        return R;
+      }
+      MainDB.users.find(["_id", { $in: $body.data.map(function (item) { return item.id; }) }]).limit(["nickname", true]).on(function ($users) {
+        var nick = {};
+
+        ($users || []).forEach(function (u) { nick[u._id] = u.nickname; });
+        $body.data.forEach(function (item) { item.name = nick[item.id] || null; });
+        R.go($body);
+      });
+      return R;
+    }
 
     if (id) {
       table.getSurround(id, lpp).then(function ($body) {
         withExpScore($body).then(function ($body) {
-          res.send($body);
+          withNames($body).then(function ($body) {
+            res.send($body);
+          });
         });
       });
     } else {
       if (isNaN(pg)) pg = 0;
       table.getPage(pg, lpp).then(function ($body) {
         withExpScore($body).then(function ($body) {
-          res.send($body);
+          withNames($body).then(function ($body) {
+            res.send($body);
+          });
         });
       });
     }
@@ -230,6 +251,14 @@ exports.run = function (Server, page) {
   }
 
   // POST
+  // 신 UI 포탈의 내 프로필 창: 로그인한 본인의 지금 별명·소개말 (게임에서는 소켓으로 받음). 바꾸는 것은 아래 POST /profile 그대로
+  Server.get("/profile/me", function (req, res) {
+    if (!req.session.profile) return res.send({ error: 400 });
+    MainDB.users.findOne(["_id", req.session.profile.id]).limit(["nickname", true], ["exordial", true]).on(function ($u) {
+      if (!$u) return res.send({ error: 404 });
+      res.send({ nickname: $u.nickname || "", exordial: $u.exordial || "" });
+    });
+  });
   Server.post("/profile", function (req, res) {
     let nickname = req.body.nickname;
     const exordial = req.body.exordial;

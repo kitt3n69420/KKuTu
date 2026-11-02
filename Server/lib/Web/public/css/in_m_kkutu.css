@@ -2854,7 +2854,7 @@ body.dark-mode .cw-cell.sd-wrong {
 	}
 
 	100% {
-		background-color: var(--color-border);
+		background-color: color-mix(in srgb, var(--color-bg-light) 50%, var(--color-border) 50%);
 	}
 }
 

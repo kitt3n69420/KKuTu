@@ -112,8 +112,11 @@ var L;
 			$("#Middle").css('margin-left', Math.max(0, size[0] * 0.5 - 500));
 			$("#Bottom").width(size[0]);
 		}).on('mousemove', function (e) {
-			if (explSize == null) return;
-			$(".expl-active").css({ 'left': Math.min(e.clientX + 5, size[0] - explSize[0] - 12), 'top': Math.min(e.clientY + 23, size[1] - explSize[1] - 12) });
+			var $a = $(".expl-active"), z;
+
+			if (explSize == null || !$a.length) return;
+			z = $a[0].currentCSSZoom || 1; // 신 UI UI 배율(CSS zoom)이면 화면 값 → CSS 값, 기본 UI는 1
+			$a.css({ 'left': Math.min(e.clientX / z + 5, size[0] / z - explSize[0] - 12), 'top': Math.min(e.clientY / z + 23, size[1] / z - explSize[1] - 12) });
 		}).trigger('resize');
 
 		$("#quick-search-btn").on('click', function (e) {
@@ -151,13 +154,16 @@ var L;
 
 			$q.parent().addClass("expl-mother").on('mouseenter', function (e) {
 				var $e = $(e.currentTarget).children(".expl");
+				var z;
 
 				$(".expl-active").removeClass("expl-active");
 				$e.addClass("expl-active");
 				explSize = [$e.width(), $e.height()];
+				// 화면이 확대(CSS zoom — 신 UI의 UI 배율)돼 있으면 마우스·창 크기(화면 값)를 CSS 값으로 나눔. 기본 UI는 1
+				z = $e[0].currentCSSZoom || 1;
 				$e.css({
-					'left': Math.min(e.clientX + 5, size[0] - explSize[0] - 12),
-					'top': Math.min(e.clientY + 23, size[1] - explSize[1] - 12)
+					'left': Math.min(e.clientX / z + 5, size[0] / z - explSize[0] - 12),
+					'top': Math.min(e.clientY / z + 23, size[1] / z - explSize[1] - 12)
 				});
 			}).on('mouseleave', function (e) {
 				$(e.currentTarget).children(".expl").removeClass("expl-active");

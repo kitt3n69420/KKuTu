@@ -808,6 +808,12 @@ function Room(room, channel) {
 		my.players.splice(x, 1);
 		// 서바이벌: game 초기화 전에 alive 상태 보존 (이미 KO된 플레이어 재처리 방지)
 		var _wasAlive = client.game ? client.game.alive : undefined;
+		// 게임 중 참여: 경기 중 나간 사람의 점수는 이번 게임 동안 보관했다가 다시 참여하면 되돌려 준다
+		// (seq에 있을 때만 — 대기열/관전 중 나가면 이전에 보관한 점수를 덮어쓰지 않음)
+		if (my.gaming && Cluster.isWorker && my.opts.latejoin && my.game.leftScores && my.game.seq && my.game.seq.indexOf(client.id) != -1
+			&& client.game && typeof client.game.score === 'number' && !isNaN(client.game.score)) {
+			my.game.leftScores[client.id] = client.game.score;
+		}
 		client.game = {};
 		if (client.id == my.master) {
 			while (my.removeAI(false, true));
@@ -1020,6 +1026,9 @@ function Room(room, channel) {
 								clearTimeout(my.game._rrt);
 								my.game.loading = false;
 								if (Cluster.isWorker) {
+									// 게임 중 참여: 자기 차례에 나가면 시간 초과로 보고, 보관한 점수 기준으로 벌점을 매겨 다시 보관한다
+									var hasLeftScore = my.game.leftScores && my.game.leftScores.hasOwnProperty(client.id);
+									if (hasLeftScore) client.game.score = my.game.leftScores[client.id];
 									try {
 										my.turnEnd();
 									} catch (_e) {
@@ -1027,6 +1036,9 @@ function Room(room, channel) {
 										// (매 라운드 유령 차례가 시간 초과로 소모됨) — 기록만 하고 정리는 계속한다
 										JLog.error(`[diag#4] non-survival turnEnd THREW: ${_e && _e.stack || _e}`);
 										turnEndFailed = true;
+									}
+									if (hasLeftScore && typeof client.game.score === 'number' && !isNaN(client.game.score)) {
+										my.game.leftScores[client.id] = client.game.score;
 									}
 								}
 							}
@@ -1319,7 +1331,7 @@ function Room(room, channel) {
 			client.send('lateJoinClosed', {});
 		}
 	};
-	// 관전자를 경기에 넣는다: seq 맨 끝(팀전이어도 개인 자격), 점수 0부터
+	// 관전자를 경기에 넣는다: seq 맨 끝(팀전이어도 개인 자격), 점수 0부터 (이번 게임에서 나갔던 사람은 보관한 점수로)
 	my.lateJoin = function (client) {
 		var id;
 
@@ -1327,13 +1339,17 @@ function Room(room, channel) {
 		client.setForm("J");
 		my.game.seq.push(client.id);
 		my.initGamePlayer(client, (new Date()).getTime());
+		if (my.game.leftScores && my.game.leftScores.hasOwnProperty(client.id)) {
+			client.game.score = my.game.leftScores[client.id];
+			delete my.game.leftScores[client.id];
+		}
 		// 2인 → 3인: 뒤로가기 아이템 칸이 새로 생김
 		if (my.game.seq.length === 3) {
 			for (id in my.game.items) if (my.game.items[id].reverse === undefined) my.game.items[id].reverse = 0;
 		}
 		if (my.opts.randomturn && my.game.randomTurnOrder) my.addToRandomBag(my.game.seq.length - 1);
 		if (typeof my.game.hum === 'number') my.game.hum++;
-		my.byMaster('lateJoin', { id: client.id, seq: my.game.seq.map(filterRobot) }, true);
+		my.byMaster('lateJoin', { id: client.id, seq: my.game.seq.map(filterRobot), score: client.game.score }, true);
 	};
 	// 대기열 반영: roundReady 첫머리에서, 다음 라운드가 있을 때만 호출
 	my.drainLateQueue = function () {
@@ -1526,6 +1542,7 @@ function Room(room, channel) {
 		}
 		// 게임 중 참여 상태: 대기열(id만 저장)과 "라운드가 끝나 다음 라운드 준비 전" 여부
 		my.game.lateQueue = [];
+		my.game.leftScores = {};
 		my.game.roundOver = false;
 		my.game.inTurn = false;
 		delete my.game.turnOwnerLeft;
@@ -1724,6 +1741,7 @@ function Room(room, channel) {
 				var o = my.game.seq[i];
 				if (o && o.robot) {
 					if (o.game && o.game.typingTimer) clearTimeout(o.game.typingTimer);
+					if (o.game && o.game.botTimer) clearTimeout(o.game.botTimer);
 					if (o.game && o.game.flipTimer) { clearTimeout(o.game.flipTimer); o.game.flipTimer = null; }
 					if (o._timerCatch) clearTimeout(o._timerCatch);
 					if (o._timer) clearTimeout(o._timer);
@@ -2258,6 +2276,7 @@ function Room(room, channel) {
 		delete my.game.chain;
 		delete my.game.chainLog;
 		delete my.game.robots;
+		delete my.game.leftScores; // 게임 중 참여: 나간 사람의 보관 점수는 이번 게임 한정
 		delete my.game.randomTurnOrder;
 		delete my.game.randomTurnIndex;
 		delete my.game._charCountCache;

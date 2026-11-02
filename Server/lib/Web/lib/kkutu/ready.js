@@ -876,12 +876,12 @@ $(document).ready(function () {
 		if ($data.room) return L['sureExit'];
 	});
 	function startDrag($diag, sx, sy) {
-		var pos = $diag.position();
+		var pos = $diag.position(), z = NK.gameZoom; // 화면 값 → CSS 값 (신 UI UI 배율, 기본 UI는 1)
 		$(window).on('mousemove', function (e) {
 			var dx = e.pageX - sx, dy = e.pageY - sy;
 
-			$diag.css('left', pos.left + dx);
-			$diag.css('top', pos.top + dy);
+			$diag.css('left', (pos.left + dx) / z);
+			$diag.css('top', (pos.top + dy) / z);
 		});
 	}
 	function stopDrag($diag) {
@@ -987,7 +987,8 @@ $(document).ready(function () {
 
 		// UI(기본/신) 설정
 		$("#ui-setting").val(savedSettings.ui === 'new' ? 'new' : 'classic');
-		$("#ui-style-setting").val(savedSettings.uiStyle === 'flat' ? 'flat' : 'mixed');
+		// 신 UI 스타일은 당분간 단색만 (선택 칸은 숨김, 혼합은 다른 스타일로 바꿔 낼 예정 — 2026-11-01 사용자)
+		$("#ui-style-setting").val('flat');
 
 		// 비트 모드 설정
 		$("#beat-setting").val(savedSettings.beatMode || 'auto');
@@ -2105,7 +2106,7 @@ $(document).ready(function () {
 
 		// 기본/신 UI 전환은 화면 틀 전체가 바뀌므로 새로고침, 스타일(단색/혼합)은 즉시 반영
 		if (uiChanged) {
-			location.reload();
+			reloadWithUI(newUI);
 			return;
 		}
 		if (NK.active) document.documentElement.setAttribute('data-nk-style', newUIStyle);
@@ -2289,6 +2290,16 @@ $(document).ready(function () {
 		if ($(this).val() === 'custom') openThemeEditor();
 	});
 	$stage.dialog.themeSettingEdit.on('click', function () { openThemeEditor(); });
+
+	// 기본 UI에서 베타 UI를 고르면 먼저 확인 (UI_BETA_WARN, head.js). 확인을 눌러야만 베타 UI로 남음
+	$("#ui-setting").on('change', function () {
+		var $sel = $(this);
+		if (!UI_BETA_WARN || $sel.val() !== 'new' || loadVolumeSettings().ui === 'new') return;
+		$sel.val('classic');
+		showConfirm(L['uiBetaWarning'], function (ok) {
+			if (ok) $sel.val('new');
+		});
+	});
 
 	$stage.dialog.themeCodeCopy.on('click', function () {
 		var code = $stage.dialog.themeCode.val();
@@ -2622,8 +2633,9 @@ $(document).ready(function () {
 
 		$(e.currentTarget).attr('disabled', true);
 
-		if ($("#dress-nickname").val() && $("#dress-nickname").val() !== $data.nickname) data.nickname = $("#dress-nickname").val();
-		if ($("#dress-exordial").val() !== undefined && $("#dress-exordial").val() !== $data.exordial) data.exordial = $("#dress-exordial").val();
+		// 창을 열 때 지금 별명·소개말을 미리 채우므로 지금 값과 같으면 바꾸지 않음
+		if ($("#dress-nickname").val() && $("#dress-nickname").val() !== myNickname()) data.nickname = $("#dress-nickname").val();
+		if ($("#dress-exordial").val() !== undefined && $("#dress-exordial").val() !== ($data.users[$data.id].exordial || "")) data.exordial = $("#dress-exordial").val();
 
 
 		var processProfile = function (data) {

@@ -116,7 +116,10 @@ Server.use(function (req, res, next) {
         // 배너 규칙: 이미지는 "/event/<이벤트ID>.png", 링크는 ID의 "kkn"을 "events"로 바꾼 "/event/<...>.html"
         _noticeCache.banner = {
           image: "/event/" + top._id + ".png",
-          link: "/event/" + top._id.replace("kkn", "events") + ".html"
+          link: "/event/" + top._id.replace("kkn", "events") + ".html",
+          // 신 UI 포탈의 이벤트 기간 표시용 (1970년이면 해마다 같은 날짜)
+          start: top.start,
+          end: top.end
         };
       }
     });

@@ -1,0 +1,242 @@
+/* 업데이트 로그(kkutu_bulletin.html) 기본 모양 — 기본 포탈 iframe과 파일을 바로 열 때.
+   글과 목차만 있는 파일에 예전 모양(탭·카드)을 입힘. 신 UI 포탈은 이 파일을 쓰지 않음(nk_portal.css) */
+:root {
+	--primary-color: #2196F3;
+	--primary-dark: #1976D2;
+	--accent-color: #E3F2FD;
+	--text-color: #333;
+	--bg-color: #f5f5f5;
+}
+
+body {
+	font-family: 'NaumBarunGothic', 'Malgun Gothic', 'Dotum', sans-serif;
+	background-color: var(--bg-color);
+	margin: 0;
+	padding: 20px;
+	color: var(--text-color);
+}
+
+/* 목차 = 탭. 고른 칸(:target)만 보이고, 아무것도 안 골랐으면 업데이트 로그 */
+nav {
+	overflow: hidden;
+	margin-bottom: 20px;
+	border-bottom: 2px solid var(--primary-color);
+}
+
+nav ol {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+nav li {
+	float: left;
+	margin-right: 5px;
+}
+
+nav a {
+	display: block;
+	padding: 10px 20px;
+	border-radius: 10px 10px 0 0;
+	/* 예전 탭은 button이라 브라우저 기본 단추 글꼴 */
+	font-family: Arial;
+	font-size: 15px;
+	font-weight: bold;
+	color: #555;
+	text-decoration: none;
+	transition: 0.3s;
+}
+
+nav a:hover {
+	background-color: rgba(33, 150, 243, 0.1);
+	color: var(--primary-color);
+}
+
+body:not(:has(section:target)) nav a[href="#updates"],
+body:has(#updates:target) nav a[href="#updates"],
+body:has(#issues:target) nav a[href="#issues"],
+body:has(#plans:target) nav a[href="#plans"] {
+	background-color: var(--primary-color);
+	color: white;
+}
+
+section {
+	display: none;
+	animation: fadeEffect 0.5s;
+	/* 탭을 눌러 이동해도 목차가 위에 남도록 */
+	scroll-margin-top: 100px;
+}
+
+#updates,
+section:target {
+	display: block;
+}
+
+body:has(section:target) #updates:not(:target) {
+	display: none;
+}
+
+@keyframes fadeEffect {
+	from {
+		opacity: 0;
+	}
+
+	to {
+		opacity: 1;
+	}
+}
+
+h2 {
+	margin-bottom: 20px;
+	color: var(--primary-dark);
+	border-left: 5px solid var(--primary-color);
+	padding-left: 10px;
+}
+
+/* 업데이트 로그 칸은 탭 이름과 같아서 제목을 숨김 (예전 모양) */
+#updates > h2 {
+	display: none;
+}
+
+article {
+	background: white;
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	padding: 20px;
+	margin-bottom: 20px;
+	transition: transform 0.2s;
+}
+
+article:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+#issues article {
+	border-left: 4px solid #F44336;
+}
+
+#plans article {
+	border-left: 4px solid #4CAF50;
+}
+
+#updates h3 {
+	margin-top: 0;
+	margin-bottom: 15px;
+	padding-bottom: 10px;
+	border-bottom: 2px solid var(--accent-color);
+	color: var(--primary-color);
+	font-size: 1.2em;
+	display: flex;
+	align-items: center;
+}
+
+#updates h3::before {
+	content: '🚀';
+	margin-right: 8px;
+	font-size: 0.9em;
+}
+
+/* 맨 위(최신) 버전에 New 표시 */
+#updates article:first-of-type h3::after {
+	content: 'New';
+	display: inline-block;
+	background: var(--accent-color);
+	color: var(--primary-dark);
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 0.8em;
+	margin-left: 10px;
+}
+
+#plans h3 {
+	color: var(--primary-color);
+	font-size: 1.1em;
+}
+
+#plans h3:first-child {
+	margin-top: 0;
+}
+
+#plans p {
+	margin-top: 20px;
+	color: #888;
+	font-size: 0.7em;
+}
+
+section ul {
+	list-style-type: none;
+	padding-left: 0;
+}
+
+section li {
+	position: relative;
+	padding-left: 20px;
+	margin-bottom: 8px;
+	line-height: 1.5;
+	font-size: 14px;
+}
+
+section li::before {
+	content: '•';
+	color: var(--primary-color);
+	font-weight: bold;
+	position: absolute;
+	left: 0;
+	font-size: 1.2em;
+	line-height: 1.2;
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+	margin-top: 10px;
+}
+
+thead tr {
+	background: var(--accent-color);
+}
+
+th {
+	padding: 6px 10px;
+	text-align: center;
+	border-bottom: 2px solid var(--primary-color);
+	color: var(--primary-dark);
+}
+
+td {
+	text-align: center;
+	padding: 5px;
+}
+
+th:first-child,
+td:first-child {
+	padding: 5px 10px;
+	text-align: left;
+}
+
+th:first-child {
+	padding: 6px 10px;
+}
+
+tbody tr {
+	border-bottom: 1px solid #f0f0f0;
+}
+
+tbody tr:nth-child(even) {
+	background: #fafafa;
+}
+
+tbody tr:last-child {
+	border-bottom: 0;
+}
+
+/* 표의 값 변화: down = 하향(빨강), up = 상향(파랑) */
+td.down {
+	color: #e53935;
+}
+
+td.up {
+	color: #1565c0;
+}

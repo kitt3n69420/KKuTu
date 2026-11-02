@@ -93,27 +93,30 @@ mixin separator(len)
 	
 mixin PageHead(min)
 	- var v = locals.appVersion || '1.0.0'
+	//- PC 게임 화면(kkutu.pug)은 로딩 화면부터 보이도록 큰 스크립트를 defer: 본문(로딩 화면)을 먼저 그리고, 문서 순서대로 실행.
+	//- theme-engine.js는 본문 첫 테마 적용(layout.pug)이 쓰므로 그대로 바로 실행
+	- var gameDefer = locals._script == 'game_kkutu' && !locals.mobile
 	if !min
 		link(rel='stylesheet', href=((locals.mobile && !locals.as_pc) ? '/css/m_style.css' : '/css/style.css') + '?v=' + v)
 		link(rel='stylesheet', href='/css/fa.css?v=' + v)
 		link(rel='stylesheet', href='/css/expl.css?v=' + v)
-	script(type='text/javascript', src='/js/jquery.js?v=' + v)
+	script(type='text/javascript', src='/js/jquery.js?v=' + v, defer=gameDefer)
 	if locals._script == 'game_kkutu'
-		script(type='text/javascript', src='/language/'+locals.page.replace("/", "_")+'/all?current='+locals.lang+'&v=' + v)
+		script(type='text/javascript', src='/language/'+locals.page.replace("/", "_")+'/all?current='+locals.lang+'&v=' + v, defer=gameDefer)
 	else
 		script(type='text/javascript', src='/language/'+locals.page.replace("/", "_")+'/'+locals.lang + '?v=' + v)
-	
+
 	if PUBLIC && !SESSION.admin
 		//script(type='text/javascript', src='/js/google.js')
-	script(type='text/javascript', src='/js/global.min.js?v=' + v)
+	script(type='text/javascript', src='/js/global.min.js?v=' + v, defer=gameDefer)
 	script(type='text/javascript', src='/js/theme-engine.js?v=' + v)
-	script(type='text/javascript', src='/js/volume-persistence.js?v=' + v)
+	script(type='text/javascript', src='/js/volume-persistence.js?v=' + v, defer=gameDefer)
 	if !min
 		//script(type='text/javascript', src='/js/facebook.js')
 	if block
 		block
 	link(rel='stylesheet', href='/css/in_'+locals.page.replace("/", "_")+'.css?v=' + v)
-	script(type='text/javascript', src='/js/in_'+(locals._script || locals.page.replace("/", "_"))+'.min.js?v=' + v)
+	script(type='text/javascript', src='/js/in_'+(locals._script || locals.page.replace("/", "_"))+'.min.js?v=' + v, defer=gameDefer)
 	
 mixin SearchBox(arg1, arg2)
 	meta(name='description', content=L('meta_desc', arg1, arg2))

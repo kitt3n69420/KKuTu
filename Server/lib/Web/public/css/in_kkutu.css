@@ -54,6 +54,11 @@ equ {
 	text-shadow: 0px 0px 3px #000000;
 }
 
+/* 게임 화면은 스크립트(defer)보다 로딩 화면을 먼저 그리므로, global.js가 가운데로 옮기기 전에도 같은 자리에 둠 (global.js와 같은 식) */
+#Middle {
+	margin-left: max(0px, calc(50% - 500px));
+}
+
 #Loading {
 	position: fixed;
 	padding-top: 200px;
@@ -2645,7 +2650,7 @@ body.dark-mode .cw-cell.sd-wrong {
 	}
 
 	100% {
-		background-color: var(--color-border);
+		background-color: color-mix(in srgb, var(--color-bg-light) 50%, var(--color-border) 50%);
 	}
 }
 

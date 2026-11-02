@@ -73,7 +73,8 @@ function escapeContent(text) {
 	return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&#39;").replace(/"/g, "&quot;");
 }
 function showDialog($d, noToggle) {
-	var size = [$(window).width(), $(window).height()];
+	// 창 크기는 화면 값이고 창의 left·top은 CSS 값이라 UI 배율로 나눔 (신 UI 데스크톱 — 기본 UI는 1)
+	var size = [$(window).width() / NK.gameZoom, $(window).height() / NK.gameZoom];
 
 	if (!noToggle && $d.is(":visible")) {
 		$d.hide();
@@ -284,6 +285,14 @@ function saveVolumeSettings(data) {
 	var current = loadVolumeSettings();
 	for (var key in data) current[key] = data[key];
 	localStorage.setItem('kkutu_volume', JSON.stringify(current));
+}
+
+// UI 전환 후 새로고침. 주소에 ?ui= 가 남아 있으면 로드 때 다시 덮어쓰므로 같이 바꾼다.
+function reloadWithUI(ui) {
+	var search = location.search.replace(/([?&])ui=(new|classic)(&|$)/, function (m, pre, v, post) { return post ? pre : ''; });
+	if (/[?&]ui=/.test(location.search)) search += (search ? '&' : '?') + 'ui=' + ui;
+	if (search !== location.search) location.replace(location.pathname + search + location.hash);
+	else location.reload();
 }
 
 
@@ -1063,7 +1072,7 @@ function onMessage(data) {
 					if ($ljNew.length) $ljNew.replaceWith($ljOld[ljKey]);
 				}
 				for (ljId in ljGoals) updateScore(ljId, ljGoals[ljId]);
-				updateScore(data.id, 0);
+				updateScore(data.id, data.score || 0);
 				var ljUser = $data.users[data.id];
 				notice(L['lateJoinNotice'].replace("{0}", ljUser ? getDisplayName(ljUser) : data.id));
 			}
@@ -2496,7 +2505,7 @@ function animateScore(o) {
 	drawScore(o.$obj, Math.round(o.now));
 }
 function drawScore($obj, score) {
-	var i, d, m, sc, lead;
+	var i, d, m, sc, lead, neg;
 
 	if (Math.round(score * 0.001) > 9999) {
 		// 10000k부터는 지수 표기, 다섯 칸에 맞게 소수 자리를 줄임: 1.23e7 → 1.2e10 → 1e100
@@ -2509,12 +2518,14 @@ function drawScore($obj, score) {
 		sc = m[0].replace('.', '') + 'e' + (+m[1]);
 	} else sc = (score > 99999) ? (zeroPadding(Math.round(score * 0.001), 4) + 'k') : zeroPadding(score, 5);
 
-	// 앞자리 0 (신 UI가 흐리게 표시, 마지막 자리는 0이어도 제외)
-	lead = sc.length - 1 - sc.slice(0, -1).replace(/^0+/, "").length;
+	// 앞자리 0 (신 UI가 흐리게 표시, 마지막 자리는 0이어도 제외). 마이너스 점수는 '-' 뒤의 0들 — 신 UI는 마이너스 점수를 빨갛게(nk-neg)
+	neg = sc.charAt(0) === '-';
+	lead = neg ? 1 : 0;
+	while (lead < sc.length - 1 && sc.charAt(lead) === '0') lead++;
 
-	$obj.empty();
+	$obj.empty().toggleClass("nk-neg", neg);
 	for (i = 0; i < sc.length; i++) {
-		$obj.append($("<div>").addClass("game-user-score-char" + (i < lead ? " nk-z" : "")).html(sc[i]));
+		$obj.append($("<div>").addClass("game-user-score-char" + (i < lead && sc[i] === '0' ? " nk-z" : "")).html(sc[i]));
 		if (i === 0 && d) $obj.append($("<div>").addClass("game-user-score-dot").html("."));
 	}
 }
@@ -2597,6 +2608,7 @@ function gameReady() {
 	$stage.dialog.resultSave.attr('disabled', false);
 	clearBoard();
 	$stage.game.display.html(L['soon']);
+	if (NK.active) NK.prepareBoard();
 	playSound('game_start');
 	forkChat();
 	addTimeout(function () {
@@ -2920,6 +2932,7 @@ function turnError(code, text) {
 		.text((L['turnError_' + code] ? (L['turnError_' + code] + ": ") : "") + text)
 	);
 	playSound('fail');
+	if (code === 411 && NK.active) NK.pulseHistory(text);
 	clearTimeout($data._fail);
 	$data._fail = addTimeout(function () {
 		// 계산 릴레이 / 네글자 이어말하기 모드에서는 _question을 복원, 다른 모드에서는 _char를 복원
@@ -3546,7 +3559,7 @@ function chatBalloon(text, id, flag) {
 	if ((flag & 2) && $data.room && $data.room.game && $data.room.game.seq && $data.room.game.seq.length > 8 && !isPlayerScroll()) {
 		$obj.addClass("small-balloon");
 		var $target = $("#game-user-" + id);
-		if ($target.length) targetWidth = $target.width() * NK.gameZoom;
+		if ($target.length) targetWidth = $target.width();
 	}
 	$obj.attr('id', "cb-" + id)
 		.append($("<div>").addClass("jt-image " + img))
@@ -3577,7 +3590,8 @@ function chatBalloon(text, id, flag) {
 		ol = 0;
 	}
 
-	$obj.css({ top: offset.top + ot, left: offset.left + ol });
+	// offset()은 화면 값, 말풍선의 위치는 CSS 값 → UI 배율로 나눔 (기본 UI는 1)
+	$obj.css({ top: offset.top / NK.gameZoom + ot, left: offset.left / NK.gameZoom + ol });
 	addTimeout(function () {
 		$obj.animate({ 'opacity': 0 }, 500, function () { $obj.remove(); });
 	}, 2500);

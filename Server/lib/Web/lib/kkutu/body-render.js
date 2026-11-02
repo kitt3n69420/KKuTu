@@ -17,6 +17,12 @@
  */
 
 
+// 지금 내 별명: 바꾼 뒤·updateUser 때는 $data.nickname, 접속 직후에는 users의 profile.nickname
+function myNickname() {
+	var my = $data.users[$data.id];
+
+	return $data.nickname || (my && my.profile && my.profile.nickname) || "";
+}
 function drawMyDress(avGroup, resetFields) {
 	var $view = $("#dress-view");
 	var my = $data.users[$data.id];
@@ -26,6 +32,7 @@ function drawMyDress(avGroup, resetFields) {
 	$("#dress-type-all").addClass("selected");
 	$("#dress-category-select").val($("#dress-category-select option:first").val());
 	if (resetFields) {
+		$("#dress-nickname").val(myNickname());
 		$("#dress-exordial").val(my.exordial);
 	}
 	drawMyGoods(avGroup || true);
@@ -592,7 +599,8 @@ function drawLeaderboard(data) {
 		var profile = $data.users[item.id];
 
 		if (profile) profile = profile.profile.title || profile.profile.name;
-		else profile = L['hidden'];
+		// 접속하지 않은 유저는 /ranking이 붙여 준 별명
+		else profile = item.name || L['hidden'];
 
 		item.score = Number(item.score);
 		item.expScore = Number(item.expScore);
@@ -991,6 +999,8 @@ var BONUS_COLORS = {
 };
 Object.defineProperty(BONUS_COLORS, 'linking', {
 	get: function() {
+		// 신 UI: 흰색에 메인 색(테마 설정의 "메인 색")을 조금 섞은 색 (사용자 요청)
+		if (typeof NK !== 'undefined' && NK.active) return 'color-mix(in oklch, var(--nk-second) 30%, #fff)';
 		var dark = document.body.classList.contains('dark-mode');
 		if (document.body.classList.contains('theme-grape')) return dark ? 'rgb(239, 205, 249)' : 'rgb(239, 205, 249)';
 		if (document.body.classList.contains('theme-slate')) return dark ? 'rgb(223, 233, 238)' : 'rgb(223, 233, 238)';

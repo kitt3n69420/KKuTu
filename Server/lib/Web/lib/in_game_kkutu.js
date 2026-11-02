@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Rule the words! KKuTu Online
  * Copyright (C) 2017 JJoriping(op@jjo.kr)
  * 
@@ -51,6 +51,7 @@ var EN_INJEONG;
 var JA_INJEONG;
 var MAX_LEVEL = 720;
 var STAR_LEVEL = 360; // 이 레벨을 넘으면 3레벨씩 묶어 별렙(s1~)으로 표시
+var UI_BETA_WARN = true; // 설정에서 기본 UI → 베타 UI를 고를 때 "불안정할 수 있음" 확인 창 (false면 묻지 않음)
 var TICK = 30;
 var EXP = [];
 var BAD = new RegExp(["느으*[^가-힣]*금마?", "(?<!(밀레|심포|도미))니[^가-힣]*(엄|앰|엠)", "(ㅄ|[ㅅㅆ][^가-힣ㄱ-ㅎㅏ-ㅣ]*ㅂ|ㅂ[^가-힣ㄱ-ㅎㅏ-ㅣ]*ㅅ|ㄴ[^가-힣ㄱ-ㅎㅏ-ㅣ]*[ㄱㅇ][^가-힣ㄱ-ㅎㅏ-ㅣ]*ㅁ|ㅈ[^가-힣ㄱ-ㅎㅏ-ㅣ]*ㄹ|ㅗ|ㅅ[^가-힣ㄱ-ㅎㅏ-ㅣ]*ㄲ)", "미(친|찐|틴|띤)(년|놈)?", "(병|븅|빙|벙)[^가-힣]*신", 
@@ -986,12 +987,12 @@ $(document).ready(function () {
 		if ($data.room) return L['sureExit'];
 	});
 	function startDrag($diag, sx, sy) {
-		var pos = $diag.position();
+		var pos = $diag.position(), z = NK.gameZoom; // 화면 값 → CSS 값 (신 UI UI 배율, 기본 UI는 1)
 		$(window).on('mousemove', function (e) {
 			var dx = e.pageX - sx, dy = e.pageY - sy;
 
-			$diag.css('left', pos.left + dx);
-			$diag.css('top', pos.top + dy);
+			$diag.css('left', (pos.left + dx) / z);
+			$diag.css('top', (pos.top + dy) / z);
 		});
 	}
 	function stopDrag($diag) {
@@ -1097,7 +1098,8 @@ $(document).ready(function () {
 
 		// UI(기본/신) 설정
 		$("#ui-setting").val(savedSettings.ui === 'new' ? 'new' : 'classic');
-		$("#ui-style-setting").val(savedSettings.uiStyle === 'flat' ? 'flat' : 'mixed');
+		// 신 UI 스타일은 당분간 단색만 (선택 칸은 숨김, 혼합은 다른 스타일로 바꿔 낼 예정 — 2026-11-01 사용자)
+		$("#ui-style-setting").val('flat');
 
 		// 비트 모드 설정
 		$("#beat-setting").val(savedSettings.beatMode || 'auto');
@@ -2215,7 +2217,7 @@ $(document).ready(function () {
 
 		// 기본/신 UI 전환은 화면 틀 전체가 바뀌므로 새로고침, 스타일(단색/혼합)은 즉시 반영
 		if (uiChanged) {
-			location.reload();
+			reloadWithUI(newUI);
 			return;
 		}
 		if (NK.active) document.documentElement.setAttribute('data-nk-style', newUIStyle);
@@ -2399,6 +2401,16 @@ $(document).ready(function () {
 		if ($(this).val() === 'custom') openThemeEditor();
 	});
 	$stage.dialog.themeSettingEdit.on('click', function () { openThemeEditor(); });
+
+	// 기본 UI에서 베타 UI를 고르면 먼저 확인 (UI_BETA_WARN, head.js). 확인을 눌러야만 베타 UI로 남음
+	$("#ui-setting").on('change', function () {
+		var $sel = $(this);
+		if (!UI_BETA_WARN || $sel.val() !== 'new' || loadVolumeSettings().ui === 'new') return;
+		$sel.val('classic');
+		showConfirm(L['uiBetaWarning'], function (ok) {
+			if (ok) $sel.val('new');
+		});
+	});
 
 	$stage.dialog.themeCodeCopy.on('click', function () {
 		var code = $stage.dialog.themeCode.val();
@@ -2732,8 +2744,9 @@ $(document).ready(function () {
 
 		$(e.currentTarget).attr('disabled', true);
 
-		if ($("#dress-nickname").val() && $("#dress-nickname").val() !== $data.nickname) data.nickname = $("#dress-nickname").val();
-		if ($("#dress-exordial").val() !== undefined && $("#dress-exordial").val() !== $data.exordial) data.exordial = $("#dress-exordial").val();
+		// 창을 열 때 지금 별명·소개말을 미리 채우므로 지금 값과 같으면 바꾸지 않음
+		if ($("#dress-nickname").val() && $("#dress-nickname").val() !== myNickname()) data.nickname = $("#dress-nickname").val();
+		if ($("#dress-exordial").val() !== undefined && $("#dress-exordial").val() !== ($data.users[$data.id].exordial || "")) data.exordial = $("#dress-exordial").val();
 
 
 		var processProfile = function (data) {
@@ -4267,7 +4280,8 @@ $lib.Crossword.onSwap = function (e) {
 	$stage.game.display.prepend($(e.currentTarget));
 };
 $lib.Crossword.onRound = function (e) {
-	var round = $(e.currentTarget).html().charCodeAt(0) - 9311;
+	// 칩 글자(①②③…) 대신 순서로 — 신 UI는 칩을 그냥 숫자로 보여 줌
+	var round = $(".rounds label").index(e.currentTarget) + 1;
 
 	drawRound($data.selectedRound = round);
 	$(".rounds label").on('click', $lib.Crossword.onRound);
@@ -5476,14 +5490,15 @@ function wcFlyWordToMoon($uc, text) {
 	var start = $uc.offset();
 	var end = $moon.offset();
 	var z = NK.gameZoom; // offset()은 확대된 값, 폭·높이는 확대 전 값 (기본 UI는 1)
+	// 날아가는 글자는 body에 붙으므로 화면 값을 CSS 값으로 (UI 배율 z로 나눔)
 	var $fly = $("<div>").addClass("wc-fly-word").text(text).css({
-		left: start.left + $uc.outerWidth() * z / 2,
-		top: start.top + $uc.outerHeight() * z / 2
+		left: start.left / z + $uc.outerWidth() / 2,
+		top: start.top / z + $uc.outerHeight() / 2
 	});
 	$("body").append($fly);
 	$fly.animate({
-		left: end.left + $moon.outerWidth() * z / 2,
-		top: end.top + $moon.outerHeight() * z / 2,
+		left: end.left / z + $moon.outerWidth() / 2,
+		top: end.top / z + $moon.outerHeight() / 2,
 		opacity: 0
 	}, 700, function () { $fly.remove(); });
 }
@@ -5680,7 +5695,8 @@ $lib.Sudoku.turnStart = function (data) {
 	playBGM('jaqwi');
 };
 $lib.Sudoku.onRound = function (e) {
-	var round = $(e.currentTarget).html().charCodeAt(0) - 9311;
+	// 칩 글자(①②③…) 대신 순서로 — 신 UI는 칩을 그냥 숫자로 보여 줌
+	var round = $(".rounds label").index(e.currentTarget) + 1;
 
 	$data._sel = null;
 	$stage.game.cwcmd.css('opacity', 0);
@@ -10371,7 +10387,7 @@ $lib.Rtype.cleanup = function () {
 	s.$msg.remove();
 };
 
-﻿/**
+/**
  * Rule the words! KKuTu Online
  * Copyright (C) 2017 JJoriping(op@jjo.kr)
  * 
@@ -10390,6 +10406,12 @@ $lib.Rtype.cleanup = function () {
  */
 
 
+// 지금 내 별명: 바꾼 뒤·updateUser 때는 $data.nickname, 접속 직후에는 users의 profile.nickname
+function myNickname() {
+	var my = $data.users[$data.id];
+
+	return $data.nickname || (my && my.profile && my.profile.nickname) || "";
+}
 function drawMyDress(avGroup, resetFields) {
 	var $view = $("#dress-view");
 	var my = $data.users[$data.id];
@@ -10399,6 +10421,7 @@ function drawMyDress(avGroup, resetFields) {
 	$("#dress-type-all").addClass("selected");
 	$("#dress-category-select").val($("#dress-category-select option:first").val());
 	if (resetFields) {
+		$("#dress-nickname").val(myNickname());
 		$("#dress-exordial").val(my.exordial);
 	}
 	drawMyGoods(avGroup || true);
@@ -10965,7 +10988,8 @@ function drawLeaderboard(data) {
 		var profile = $data.users[item.id];
 
 		if (profile) profile = profile.profile.title || profile.profile.name;
-		else profile = L['hidden'];
+		// 접속하지 않은 유저는 /ranking이 붙여 준 별명
+		else profile = item.name || L['hidden'];
 
 		item.score = Number(item.score);
 		item.expScore = Number(item.expScore);
@@ -11364,6 +11388,8 @@ var BONUS_COLORS = {
 };
 Object.defineProperty(BONUS_COLORS, 'linking', {
 	get: function() {
+		// 신 UI: 흰색에 메인 색(테마 설정의 "메인 색")을 조금 섞은 색 (사용자 요청)
+		if (typeof NK !== 'undefined' && NK.active) return 'color-mix(in oklch, var(--nk-second) 30%, #fff)';
 		var dark = document.body.classList.contains('dark-mode');
 		if (document.body.classList.contains('theme-grape')) return dark ? 'rgb(239, 205, 249)' : 'rgb(239, 205, 249)';
 		if (document.body.classList.contains('theme-slate')) return dark ? 'rgb(223, 233, 238)' : 'rgb(223, 233, 238)';
@@ -11948,7 +11974,7 @@ function changeSoundPack(newPackName, callback) {
 		}, true);
 	});
 }
-﻿/**
+/**
  * Rule the words! KKuTu Online
  * Copyright (C) 2017 JJoriping(op@jjo.kr)
  * 
@@ -12023,7 +12049,8 @@ function escapeContent(text) {
 	return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&#39;").replace(/"/g, "&quot;");
 }
 function showDialog($d, noToggle) {
-	var size = [$(window).width(), $(window).height()];
+	// 창 크기는 화면 값이고 창의 left·top은 CSS 값이라 UI 배율로 나눔 (신 UI 데스크톱 — 기본 UI는 1)
+	var size = [$(window).width() / NK.gameZoom, $(window).height() / NK.gameZoom];
 
 	if (!noToggle && $d.is(":visible")) {
 		$d.hide();
@@ -12234,6 +12261,14 @@ function saveVolumeSettings(data) {
 	var current = loadVolumeSettings();
 	for (var key in data) current[key] = data[key];
 	localStorage.setItem('kkutu_volume', JSON.stringify(current));
+}
+
+// UI 전환 후 새로고침. 주소에 ?ui= 가 남아 있으면 로드 때 다시 덮어쓰므로 같이 바꾼다.
+function reloadWithUI(ui) {
+	var search = location.search.replace(/([?&])ui=(new|classic)(&|$)/, function (m, pre, v, post) { return post ? pre : ''; });
+	if (/[?&]ui=/.test(location.search)) search += (search ? '&' : '?') + 'ui=' + ui;
+	if (search !== location.search) location.replace(location.pathname + search + location.hash);
+	else location.reload();
 }
 
 
@@ -13013,7 +13048,7 @@ function onMessage(data) {
 					if ($ljNew.length) $ljNew.replaceWith($ljOld[ljKey]);
 				}
 				for (ljId in ljGoals) updateScore(ljId, ljGoals[ljId]);
-				updateScore(data.id, 0);
+				updateScore(data.id, data.score || 0);
 				var ljUser = $data.users[data.id];
 				notice(L['lateJoinNotice'].replace("{0}", ljUser ? getDisplayName(ljUser) : data.id));
 			}
@@ -14446,7 +14481,7 @@ function animateScore(o) {
 	drawScore(o.$obj, Math.round(o.now));
 }
 function drawScore($obj, score) {
-	var i, d, m, sc, lead;
+	var i, d, m, sc, lead, neg;
 
 	if (Math.round(score * 0.001) > 9999) {
 		// 10000k부터는 지수 표기, 다섯 칸에 맞게 소수 자리를 줄임: 1.23e7 → 1.2e10 → 1e100
@@ -14459,12 +14494,14 @@ function drawScore($obj, score) {
 		sc = m[0].replace('.', '') + 'e' + (+m[1]);
 	} else sc = (score > 99999) ? (zeroPadding(Math.round(score * 0.001), 4) + 'k') : zeroPadding(score, 5);
 
-	// 앞자리 0 (신 UI가 흐리게 표시, 마지막 자리는 0이어도 제외)
-	lead = sc.length - 1 - sc.slice(0, -1).replace(/^0+/, "").length;
+	// 앞자리 0 (신 UI가 흐리게 표시, 마지막 자리는 0이어도 제외). 마이너스 점수는 '-' 뒤의 0들 — 신 UI는 마이너스 점수를 빨갛게(nk-neg)
+	neg = sc.charAt(0) === '-';
+	lead = neg ? 1 : 0;
+	while (lead < sc.length - 1 && sc.charAt(lead) === '0') lead++;
 
-	$obj.empty();
+	$obj.empty().toggleClass("nk-neg", neg);
 	for (i = 0; i < sc.length; i++) {
-		$obj.append($("<div>").addClass("game-user-score-char" + (i < lead ? " nk-z" : "")).html(sc[i]));
+		$obj.append($("<div>").addClass("game-user-score-char" + (i < lead && sc[i] === '0' ? " nk-z" : "")).html(sc[i]));
 		if (i === 0 && d) $obj.append($("<div>").addClass("game-user-score-dot").html("."));
 	}
 }
@@ -14547,6 +14584,7 @@ function gameReady() {
 	$stage.dialog.resultSave.attr('disabled', false);
 	clearBoard();
 	$stage.game.display.html(L['soon']);
+	if (NK.active) NK.prepareBoard();
 	playSound('game_start');
 	forkChat();
 	addTimeout(function () {
@@ -14870,6 +14908,7 @@ function turnError(code, text) {
 		.text((L['turnError_' + code] ? (L['turnError_' + code] + ": ") : "") + text)
 	);
 	playSound('fail');
+	if (code === 411 && NK.active) NK.pulseHistory(text);
 	clearTimeout($data._fail);
 	$data._fail = addTimeout(function () {
 		// 계산 릴레이 / 네글자 이어말하기 모드에서는 _question을 복원, 다른 모드에서는 _char를 복원
@@ -15496,7 +15535,7 @@ function chatBalloon(text, id, flag) {
 	if ((flag & 2) && $data.room && $data.room.game && $data.room.game.seq && $data.room.game.seq.length > 8 && !isPlayerScroll()) {
 		$obj.addClass("small-balloon");
 		var $target = $("#game-user-" + id);
-		if ($target.length) targetWidth = $target.width() * NK.gameZoom;
+		if ($target.length) targetWidth = $target.width();
 	}
 	$obj.attr('id', "cb-" + id)
 		.append($("<div>").addClass("jt-image " + img))
@@ -15527,7 +15566,8 @@ function chatBalloon(text, id, flag) {
 		ol = 0;
 	}
 
-	$obj.css({ top: offset.top + ot, left: offset.left + ol });
+	// offset()은 화면 값, 말풍선의 위치는 CSS 값 → UI 배율로 나눔 (기본 UI는 1)
+	$obj.css({ top: offset.top / NK.gameZoom + ot, left: offset.left / NK.gameZoom + ol });
 	addTimeout(function () {
 		$obj.animate({ 'opacity': 0 }, 500, function () { $obj.remove(); });
 	}, 2500);
@@ -15873,79 +15913,7 @@ var NK = (function () {
 
 	function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
-	/* ------------------------------------------------------------------
-	   색 — 테마 엔진 결과(--color-*)에서 신 UI 보조 색을 파생
-	   ------------------------------------------------------------------ */
-	function oklchToLinear(L, C, H) {
-		var h = H * Math.PI / 180, a = C * Math.cos(h), b = C * Math.sin(h);
-		var l = Math.pow(L + 0.3963377774 * a + 0.2158037573 * b, 3);
-		var m = Math.pow(L - 0.1055613458 * a - 0.0638541728 * b, 3);
-		var s = Math.pow(L - 0.0894841775 * a - 1.2914855480 * b, 3);
-		return [
-			4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-			-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-			-0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s
-		];
-	}
-	function inGamut(c) { return c[0] >= -1e-4 && c[0] <= 1.0001 && c[1] >= -1e-4 && c[1] <= 1.0001 && c[2] >= -1e-4 && c[2] <= 1.0001; }
-	function oklchToHex(L, C, H) {
-		var lo = 0, hi = C, mid, i, rgb = oklchToLinear(L, C, H);
-
-		if (!inGamut(rgb)) {
-			for (i = 0; i < 24; i++) {
-				mid = (lo + hi) / 2;
-				if (inGamut(oklchToLinear(L, mid, H))) lo = mid; else hi = mid;
-			}
-			rgb = oklchToLinear(L, lo, H);
-		}
-		return '#' + rgb.map(function (c) {
-			c = clamp(c, 0, 1);
-			c = c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
-			var x = Math.round(c * 255).toString(16);
-			return x.length === 1 ? '0' + x : x;
-		}).join('');
-	}
-	// 프로토타입(nk-prototype.html)에서 프리셋 11종 × 라이트/다크 대비 검사를 거친 계산식
-	function applyColors(themeName, darkSetting, g) {
-		var TE = window.ThemeEngine;
-		var inputs = TE.baseColorsFor(themeName);
-		var dark = TE.isDarkActive(darkSetting);
-		var p = TE.hexToOklch(g.primary.hex), m = TE.hexToOklch(inputs.medium), p0 = TE.hexToOklch(inputs.primary);
-		var neutral = p0.C < 0.02 && m.C < 0.02;
-		var mC = (neutral || m.C < 0.02) ? 0 : m.C;
-		var dh, accent2, white, black, second, ink, L, i;
-		var b = document.body.style;
-
-		// 장식용 그라데이션 끝색: 색깔 2의 색상(hue), 색깔 1과 25° 이내면 30°로 벌림
-		dh = ((m.C >= 0.03 ? m.H : p.H + 35) - p.H + 540) % 360 - 180;
-		if (Math.abs(dh) < 25) dh = (dh >= 0 ? 1 : -1) * 30;
-		accent2 = oklchToHex(dark ? clamp(p.L - 0.05, 0.55, 0.9) : clamp(p.L + 0.07, 0.42, 0.78), neutral ? 0 : clamp(Math.max(m.C, p.C * 0.9), 0.05, 0.19), p.H + dh);
-		// 강조 배경 위 글자: 버튼 글자는 굵은 15px 이상(큰 글자 기준 3:1)이라 흰 글자가 3:1을 넘으면 흰색 우선
-		white = TE.contrastRatio('#FFFFFF', g.primary.hex);
-		black = TE.contrastRatio('#141414', g.primary.hex);
-		// 색깔 2: 라이트는 그대로, 다크는 테마 엔진의 --color-bg-medium이 거의 검정이라 같은 색상을 밝혀서 씀
-		second = dark ? oklchToHex(0.78, Math.min(mC, 0.12), m.H) : inputs.medium;
-		// 색깔 2 글자색: 같은 색상으로 배경 대비 5:1이 될 때까지 명도 조정
-		L = dark ? 0.8 : 0.5;
-		for (i = 0; i < 25; i++) {
-			ink = oklchToHex(L, mC ? Math.min(Math.max(mC, 0.04), 0.16) : 0, m.H);
-			if (TE.contrastRatio(ink, g.bgLight.hex) >= 5) break;
-			L += dark ? 0.02 : -0.025;
-		}
-		b.setProperty('--nk-accent-2', accent2);
-		b.setProperty('--nk-on-accent', (white >= 3 || white >= black) ? '#FFFFFF' : '#141414');
-		b.setProperty('--nk-second', second);
-		b.setProperty('--nk-second-ink', ink);
-	}
-	// 번들은 <head>에서 실행되므로, layout.pug의 첫 테마 적용(body 시작 직후)보다 먼저 감쌀 수 있음 → 깜빡임 없음
-	if (my.active && window.ThemeEngine) {
-		var _themeApply = window.ThemeEngine.apply;
-		window.ThemeEngine.apply = function (themeName, darkSetting) {
-			var g = _themeApply.apply(this, arguments);
-			try { applyColors(themeName || 'blue', darkSetting || 'light', g); } catch (e) { }
-			return g;
-		};
-	}
+	/* 색 — 신 UI 보조 색 계산은 /js/nk-boot.js (번들보다 먼저 <head>에서 실행, 로딩 화면부터 색이 맞게) */
 
 	/* ------------------------------------------------------------------
 	   공용 조각
@@ -16041,21 +16009,36 @@ var NK = (function () {
 	   쓰는 법: 요소에 tip(el, [줄, 줄...] 또는 { title, lines }) — 마우스를 올리면 마우스 옆에 표시
 	   ------------------------------------------------------------------ */
 	var $tip;
+	// UI 배율(데스크톱 신 UI는 body에 zoom): 화면 좌표(getBoundingClientRect·마우스·창 크기)는 확대된 값, CSS로 주는 위치·크기는 확대 전 값이라
+	// 배율(my.gameZoom — 기존 코드도 같은 값으로 나눔, 기본 UI·휴대폰은 1)로 나눠서 씀
+	function crect(el) {
+		var r = el.getBoundingClientRect(), z = my.gameZoom;
+
+		return { left: r.left / z, top: r.top / z, right: r.right / z, bottom: r.bottom / z, width: r.width / z, height: r.height / z };
+	}
+	function winW() { return innerWidth / my.gameZoom; }
+	function winH() { return innerHeight / my.gameZoom; }
 	function tip($el, content) { return $el.attr('data-nk-tip', "").data('nkTip', content); }
+	// 고른 주제·퀴즈 주제·곡 — 곡 선택 모드(spk)는 "선택된 곡"으로, 고르지 않았으면 "무작위" (사용자 요청)
+	function pickInfo(room) {
+		var rule = RULE[MODE[room.mode]], song = rule.opts.indexOf("spk") != -1, list = getPickTopicExpl(rule, room.opts);
+
+		return { title: song ? text('nkSong') : L['pickTopicTitle'], list: song && !list.length ? [L['songRandom']] : list };
+	}
 	function tipMove(e) {
 		if (!$tip) return;
 		$tip.css({
-			left: Math.min(e.clientX + 5, window.innerWidth - $tip.outerWidth() - 12),
-			top: Math.min(e.clientY + 23, window.innerHeight - $tip.outerHeight() - 12)
+			left: Math.min(e.clientX / my.gameZoom + 5, winW() - $tip.outerWidth() - 12),
+			top: Math.min(e.clientY / my.gameZoom + 23, winH() - $tip.outerHeight() - 12)
 		});
 	}
 	function tipFill(c) {
 		$tip = $tip || $("<div>").addClass("nk-tip").appendTo("body");
 		$tip.empty();
 		if (c.title) $tip.append($("<div>").addClass("nk-tip-title").text(c.title));
-		$tip.append($("<div>").addClass("nk-tip-body").append((c.lines || c).map(function (l) { return $("<div>").text(l); })));
+		$tip.append($("<div>").addClass("nk-tip-body").toggleClass("nk-col", !!c.col).append((c.lines || c).map(function (l) { return $("<div>").text(l); })));
 		// 고른 주제(게임 화면 상단 바): 규칙 아래에 제목과 함께 한 묶음 더
-		if (c.topics && c.topics.length) $tip.append($("<div>").addClass("nk-tip-title").text(L['pickTopicTitle']))
+		if (c.topics && c.topics.length) $tip.append($("<div>").addClass("nk-tip-title").text(c.topicsTitle || L['pickTopicTitle']))
 			.append($("<div>").addClass("nk-tip-body").append(c.topics.map(function (l) { return $("<div>").text(l); })));
 		$tip.show();
 	}
@@ -16076,12 +16059,12 @@ var NK = (function () {
 		if (my._tipOwner === el) return tapTipHide();
 		tipFill(c);
 		my._tipOwner = el;
-		r = el.getBoundingClientRect();
+		r = crect(el);
 		w = $tip.outerWidth();
 		h = $tip.outerHeight();
 		top = r.bottom + 6;
-		if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
-		$tip.css({ left: clamp(r.left, 8, window.innerWidth - w - 8), top: top });
+		if (top + h > winH() - 8) top = Math.max(8, r.top - h - 6);
+		$tip.css({ left: clamp(r.left, 8, winW() - w - 8), top: top });
 	}
 	function tapTipHide() {
 		my._tipOwner = null;
@@ -16117,7 +16100,7 @@ var NK = (function () {
 			$p.append($it);
 		});
 		$("body").append($p);
-		r = anchor.getBoundingClientRect();
+		r = crect(anchor);
 		w = $p.outerWidth();
 		$p.css({ top: r.bottom + 6, left: Math.max(8, align === 'right' ? r.right - w : r.left) });
 		my._pop = $p;
@@ -16163,17 +16146,28 @@ var NK = (function () {
 		if (!me) return null;
 		return $("<div>").addClass("nk-pop-head").append($("#nk-account .nk-account-text").clone());
 	}
+	// 오끄감 버프 (기본 UI는 내 정보 칸에 막대·시간): 쌓인 버프 수/18, 다음 버프까지(10분마다) 막대, 오늘 플레이 시간
+	function okgNode() {
+		var t = $data._playTime || 0;
+
+		return $("<div>").addClass("nk-okg")
+			.append($("<div>").addClass("nk-okg-top")
+				.append($("<div>").addClass("nk-okg-k").attr('data-lang-key', 'nkOkg').text(text('nkOkg')))
+				.append($("<div>").addClass("nk-okg-n").text(($data._okg || 0) + "/18"))
+				.append($("<div>").addClass("nk-okg-t").text(prettyTime(t))))
+			.append($("<div>").addClass("nk-mini-bar").append($("<div>").css('width', (t % 600000) / 6000 + "%")));
+	}
 	function openAccount(anchor) {
 		var head = my.phone && accountHead();
 
 		if (my._pop) return closePop();
-		openPop(anchor, (head ? [{ node: head }, { sep: true }] : []).concat([
+		openPop(anchor, (head ? [{ node: head }] : []).concat([{ node: okgNode() }, { sep: true }]).concat([
 			{ icon: 'user', labelKey: 'nkMyProfile', run: function () { requestProfile($data.id); } },
 			{ icon: 'shirt', labelKey: 'dress', disabled: $data._gaming, run: function () { $stage.dialog.profileDress.trigger('click'); } },
 			{ icon: 'heart', labelKey: 'nkFriends', run: function () { $stage.menu.community.trigger('click'); } },
 			{ sep: true },
 			{ icon: 'sliders', labelKey: 'nkSettings', run: function () { $stage.menu.setting.trigger('click'); } },
-			{ icon: 'layout', labelKey: 'nkToClassic', run: function () { saveVolumeSettings({ ui: 'classic' }); location.reload(); } },
+			{ icon: 'layout', labelKey: 'nkToClassic', run: function () { saveVolumeSettings({ ui: 'classic' }); reloadWithUI('classic'); } },
 			{ sep: true },
 			// 기존 #account-info 클릭이 손님이면 로그인, 회원이면 로그아웃을 함 (global.js)
 			$data.guest
@@ -16265,7 +16259,7 @@ var NK = (function () {
 	}
 	/* ------------------------------------------------------------------
 	   도움말 화면 (로비) — 기존 도움말 페이지(/help)의 목차(#list)와 본문(.page-body)을 그대로 가져와 신 UI로 그림.
-	   항목 번호(c1, c1p2 …)는 기존 도움말 스크립트(in_game_kkutu_help.js)와 같은 규칙. 스크립트는 실행하지 않음(DOMParser)
+	   항목 id(li#c4p57 → div.page-body#box-c4p57)는 help.pug에 직접 적힌 것을 그대로 씀 (기존 도움말 스크립트와 같음). 스크립트는 실행하지 않음(DOMParser)
 	   본문은 고른 것 하나만 화면에 넣음 (동영상 iframe 등이 미리 불러와지지 않게)
 	   ------------------------------------------------------------------ */
 	var HELP = { state: 0, pages: {}, order: [], titles: {}, path: {}, cur: null };
@@ -16279,11 +16273,6 @@ var NK = (function () {
 
 			if (!list) return helpFail();
 			$(doc).find("script").remove();
-			$(list).children("li").each(function (i) {
-				var p = "c" + (i + 1);
-
-				$(this).attr('id', p).find("li").each(function (j) { $(this).attr('id', p + "p" + (j + 1)); });
-			});
 			// 레벨 아이콘 표: 설정한 레벨 아이콘으로 (기존 도움말 페이지와 같은 처리)
 			try { lp = (JSON.parse(localStorage.getItem("kkutu_volume")) || {}).levelPack; } catch (e) { }
 			$(doc).find(".page-body").each(function () {
@@ -16706,7 +16695,7 @@ var NK = (function () {
 		var full = o.players.length >= o.limit;
 		var state = o.gaming ? 'gaming' : full ? 'full' : 'waiting';
 		var stKey = state === 'gaming' ? 'nkGaming' : state === 'full' ? 'nkFull' : 'nkWaiting';
-		var pickTopics = getPickTopicExpl(RULE[MODE[o.mode]], o.opts);
+		var pick = pickInfo(o), pickTopics = pick.list;
 		var $R, $top, $rules;
 
 		$R = $("<div>").attr('id', "room-" + o.id).addClass("nk-room").attr('data-state', state)
@@ -16729,7 +16718,7 @@ var NK = (function () {
 		$top.append($("<div>").addClass("nk-room-cap").text(o.players.length + "/" + o.limit));
 		opts.slice(1).forEach(function (c) { $rules.append(document.createTextNode(" · " + c)); });
 		// 한 줄에 다 안 들어가는 규칙·고른 주제는 마우스를 올리면 전부 (휴대폰은 ⓘ 방 정보)
-		if (opts.length > 1 || pickTopics.length) tip($rules, { title: opts[0], lines: opts.slice(1), topics: pickTopics });
+		if (opts.length > 1 || pickTopics.length) tip($rules, { title: opts[0], lines: opts.slice(1), topics: pickTopics, topicsTitle: pick.title });
 		applyRoom($R, o);
 		return $R;
 	};
@@ -16892,19 +16881,24 @@ var NK = (function () {
 	// updateRoom()에서 setRoomHead() 다음에 호출. 깜빡임은 기존 animModified('.room-head-*')가 같은 클래스에 걸어 줌
 	my.renderRoomHead = function (room) {
 		var opts = getOptions(room.mode, room.opts, false, false);
-		var pick = getPickTopicExpl(RULE[MODE[room.mode]], room.opts);
+		var pick = pickInfo(room);
 		var ri = roundInfo(room);
-		var $h = $("#nk-roomhead").empty(), $rules, $meta;
+		var $h = $("#nk-roomhead").empty(), $rules, $meta, keys = [], i;
 
 		if (!$h.length) return;
-		// 방 번호·제목은 동작 줄(데스크톱)·상단 바(휴대폰)에 있고, 여기는 방 정보 글자만 (사용자 결정, 정리안 — 칩 대신 글자)
-		$h.append($rules = $("<div>").addClass("nk-rh-rules room-head-mode").append($("<b>").text(opts[0])))
+		// 켜진 규칙의 이름 — getOptions와 같은 순서라 opts[1..]과 짝이 맞음
+		for (i in OPTIONS) if (room.opts[OPTIONS[i].name.toLowerCase()]) keys.push(OPTIONS[i].name);
+		// 방 번호·제목은 동작 줄(데스크톱)·상단 바(휴대폰)에 있고, 여기는 방 정보 글자만 (사용자 결정, 정리안 — 칩 대신 글자).
+		// 모드·규칙 이름마다 마우스를 올리면(휴대폰은 누르면) 설명 (사용자 요청)
+		$h.append($rules = $("<div>").addClass("nk-rh-rules room-head-mode").append(explTip($("<b>"), opts[0], L['modex' + room.mode])))
 			.append($meta = $("<div>").addClass("nk-rh-meta"));
-		opts.slice(1).forEach(function (c) { $rules.append(document.createTextNode(" · " + c)); });
+		opts.slice(1).forEach(function (c, j) {
+			$rules.append(document.createTextNode(" · ")).append(explTip($("<label>").addClass("nk-rh-rule"), c, L['expl' + keys[j]]));
+		});
 		meta(L['players'] + " " + room.players.length + "/" + room.limit, "room-head-limit");
 		meta(ri.text, "room-head-round");
 		meta((Math.round(room.time * 10) / 10) + L['SECOND'], "room-head-time");
-		if (pick.length) meta(L['pickTopicTitle'] + " " + pick.join(", "), "room-head-pick");
+		if (pick.list.length) meta(pick.title + " " + pick.list.join(", "), "room-head-pick");
 
 		renderActRoom();
 		my.renderGameHead();
@@ -16912,12 +16906,16 @@ var NK = (function () {
 		function meta(txt, cls) {
 			$meta.append($("<div>").addClass(cls).text(txt));
 		}
+		function explTip($e, name, expl) {
+			$e.text(name);
+			return expl ? tip($e, { title: name, col: true, lines: expl.split(/<br\s*\/?>/i).map(function (l) { return $("<div>").html(l).text(); }) }) : $e;
+		}
 	};
 
 	/* ------------------------------------------------------------------
 	   게임 화면 — 게임 중에는 상단 바 한 줄에 방 정보·나가기·아이템 (A안).
-	   게임 화면은 H안(nk.css 17)으로 기존 DOM을 다시 배치하며 확대하지 않음 → NK.gameZoom은 늘 1
-	   (화면 좌표를 섞어 쓰는 기존 코드가 NK.gameZoom으로 나누므로 남겨 둠)
+	   게임 화면은 H안(nk.css 17)으로 기존 DOM을 다시 배치하며 게임 화면만 따로 확대하지 않음 → NK.gameZoom은 UI 배율(applyScale, 기본 1)
+	   (화면 좌표를 섞어 쓰는 기존 코드가 NK.gameZoom으로 나눔)
 	   ------------------------------------------------------------------ */
 	my.gameZoom = 1;
 	// 상단 바의 방 정보: 번호 · 제목 · 모드 · 현재/전체 라운드 · 시간. updateRoom(renderRoomHead)과 drawRound(라운드 바뀔 때)에서 갱신
@@ -16927,8 +16925,14 @@ var NK = (function () {
 
 		if (round !== undefined) my._round = round;
 		if (!room) return;
+		// 시작 글자가 없는 모드의 라운드 칩(서버가 ①②③…을 보냄)은 그냥 숫자로 (사용자 요청)
+		if (round !== undefined) $stage.game.round.children("label").each(function () {
+			var c = this.textContent.charCodeAt(0);
+
+			if (this.textContent.length === 1 && c >= 0x2460 && c <= 0x2473) this.textContent = c - 0x245F;
+		});
 		opts = getOptions(room.mode, room.opts, false, false);
-		pick = getPickTopicExpl(RULE[MODE[room.mode]], room.opts);
+		pick = pickInfo(room);
 		ri = roundInfo(room);
 		// 라운드제는 "현재/전체" (생존 HP·협동 목표는 기존 표시 그대로)
 		rtext = (ri.icon === 'rounds' && room.coopTarget === undefined && my._round) ? my._round + "/" + ri.text : ri.text;
@@ -16936,10 +16940,11 @@ var NK = (function () {
 		root.setAttribute('data-nk-rule', RULE[MODE[room.mode]].rule);
 		// 게임 화면 미션·체인 칸 이름표 (nk.css 17이 data-k를 보여 줌). 리듬 타이퍼의 체인 칸은 내 콤보 (사용자 결정)
 		$stage.game.items.attr('data-k', L['optMission']);
+		$stage.game.hints.attr('data-k', L['nkHint']);
 		$stage.game.chain.attr('data-k', L[RULE[MODE[room.mode]].rule === 'Rtype' ? 'nkCombo' : 'chainCount']);
 		$sub = $("<div>").addClass("nk-gamehead-sub").text([opts[0], rtext, (Math.round(room.time * 10) / 10) + L['SECOND']].join(" · "));
 		// 휴대폰은 말풍선 대신 상단 바를 누르면 방 정보 시트 (buildGameSheet)
-		if (!my.phone && (opts.length > 1 || pick.length)) tip($sub, { title: opts[0], lines: opts.slice(1), topics: pick });
+		if (!my.phone && (opts.length > 1 || pick.list.length)) tip($sub, { title: opts[0], lines: opts.slice(1), topics: pick.list, topicsTitle: pick.title });
 		$("#nk-gamehead").empty()
 			.append($("<div>").addClass("nk-room-no").text(my._replay ? L['replay'] : room.practice ? L['practice'] : room.id))
 			.append($("<div>").addClass("nk-gamehead-title").text(badWords(room.title)))
@@ -16951,14 +16956,20 @@ var NK = (function () {
 	// 채팅 칸도 확대된 게임 화면과 같은 폭으로 맞춤 (#nk-app의 --nk-gw, 사용자 요청)
 	// H안(nk.css 17): 게임 화면은 확대하지 않고 칸에 맞춰 다시 배치하므로 배율은 늘 1, 채팅도 전체 폭.
 	// 칸 크기가 바뀌면 단어 창 글자 맞춤만 다시 함
+	// 게임 판이 게임 칸보다 커서 아래(채팅)로 넘치는지
+	function gameOverflow() {
+		var gb = $stage.box.game[0], pb = gb && gb.querySelector(".product-body");
+
+		return !!pb && pb.offsetHeight > gb.clientHeight + 1;
+	}
 	function fitGame() {
 		var area = document.getElementById("nk-center-body"), app = document.getElementById("nk-app");
 
 		if (!area) return;
+		fitGameZoom();
 		area.style.removeProperty('--nk-gz');
 		app.style.removeProperty('--nk-gw');
 		app.style.removeProperty('--nk-cz');
-		my.gameZoom = 1;
 		if (my._only === 'for-gaming') {
 			fitDisplay();
 			fitHistory();
@@ -16987,9 +16998,15 @@ var NK = (function () {
 		// 잴 때는 글자를 21px로 둠(nk-dfull) — "쿵" 효과가 글자를 20 → 21px로 잠깐 키워도 넘치지 않게 (박자 표시는 글자 칸 폭이 고정)
 		sw = d.scrollWidth;
 		d.classList.remove('nk-dfull');
-		if (sw <= d.clientWidth + 1) return;
 		// 겉보기 폭(양옆 여백 뺀 글자 칸)·높이는 배율을 바꿔도 같음 (nk.css가 여백·높이를 배율만큼 되돌림)
 		wv = (d.clientWidth - pw) * z0;
+		// 타자 대결(단어 다섯 개): 단어마다 크기가 바뀌지 않게 "5글자 단어 5개"가 들어가는 크기로 고정, 그보다 긴 줄만 더 줄임 (사용자 요청)
+		if (RULE[MODE[$data.room.mode]].rule === 'Typing' && !$data.room.opts.proverb && !$data.long) {
+			z = Math.min(z0, wv / textWidth(Array(6).join((MODE[$data.room.mode] === 'ETT' ? "abcde" : "가나다라마") + " ").trim(), cs), wv / (sw - pw));
+			d.style.setProperty('--nk-dz', Math.floor(z * 100) / 100);
+			return;
+		}
+		if (sw <= d.clientWidth + 1) return;
 		hv = d.clientHeight * z0;
 		z = wv / (sw - pw);
 		if (z >= z0 / 4 || beat) {
@@ -17020,6 +17037,7 @@ var NK = (function () {
 	// 높이는 게임 화면 칸에서 판을 뺀 나머지 줄(라운드·막대·여백)을 빼고, 폭은 데스크톱은 양옆 칸(300px씩)을, 휴대폰은 판 여백을 뺌
 	// 휴대폰에서 떠 있는 입력창을 쓰는 모드(입력줄이 채팅 대신, 채팅은 남는 높이 — 최소 140px)는 높이가 모자라면 판을 세로로만 줄임(직사각형, --nk-bh)
 	var FLOAT_INPUT = /^(Sock|Shuk|Flip|Raingame|Center|Picture)$/;
+	var SQUARE_BOARD = /^(Crossword|Sudoku)$/;
 	function fitBoard() {
 		var d = $stage.game.display[0], jj = $(d).closest(".jjoriping")[0], pb, cb = document.getElementById("nk-center-body"), dv, rows, other, w, h, z;
 
@@ -17032,13 +17050,20 @@ var NK = (function () {
 			return;
 		}
 		pb = $(jj).closest(".product-body")[0];
-		dv = d.getBoundingClientRect().height;
+		dv = crect(d).height;
 		rows = getComputedStyle(pb).gridTemplateRows.split(" ").reduce(function (a, v) { return a + (parseFloat(v) || 0); }, 0);
 		other = rows - dv;
 		if (root.getAttribute('data-nk-rule') === 'Picture') return fitPicture(d, jj, pb, cb, other);
-		// 휴대폰: 폭에 맞추고, 높이가 모자라면 세로로만 줄임(직사각형) — 떠 있는 입력창 모드는 채팅 몫(140px)을 남김
+		// 휴대폰: 폭에 맞추고, 높이가 모자라면 세로로만 줄임(직사각형) — 떠 있는 입력창 모드는 채팅 몫(140px)을 남김.
+		// 십자말·스도쿠는 정사각형을 지킴(폭과 높이 중 작은 쪽에 맞춤), 채팅 몫은 입력줄까지 180px (사용자 결정, M8)
 		if (my.phone) {
 			w = jj.clientWidth - 16;
+			if (SQUARE_BOARD.test(root.getAttribute('data-nk-rule'))) {
+				h = $(".nk-main")[0].clientHeight - 192 - other - (cb.offsetHeight - pb.offsetHeight) - 12;
+				jj.style.setProperty('--nk-bz', (Math.max(140, Math.min(w, h, 760)) / 308).toFixed(4));
+				jj.style.removeProperty('--nk-bh');
+				return placeBubble();
+			}
 			if (FLOAT_INPUT.test(root.getAttribute('data-nk-rule'))) h = $(".nk-main")[0].clientHeight - 140 - other - (cb.offsetHeight - pb.offsetHeight) - 12;
 			else h = cb.clientHeight - other - 6;
 			z = Math.max(140, Math.min(w, 760)) / 308;
@@ -17060,7 +17085,7 @@ var NK = (function () {
 
 		if (!cv) return;
 		for (i = 0; i < 2; i++) {
-			extra = d.getBoundingClientRect().height - cv.getBoundingClientRect().height;
+			extra = crect(d).height - crect(cv).height;
 			if (my.phone) {
 				w = parseFloat(getComputedStyle(pb).gridTemplateColumns.split(" ")[1]) - 16;
 				h = $(".nk-main")[0].clientHeight - 140 - other - (cb.offsetHeight - pb.offsetHeight) - 12;
@@ -17097,8 +17122,8 @@ var NK = (function () {
 		sel = (sel && sel.length === 4 && document.getElementById("cw-" + sel[1] + "-" + sel[2] + "-" + sel[3])) || $stage.game.display.find(".sd-sel, .landgrab-selected")[0];
 		if (!sel) return;
 		pb = $(c).closest(".product-body")[0];
-		r = sel.getBoundingClientRect();
-		pr = pb.getBoundingClientRect();
+		r = crect(sel);
+		pr = crect(pb);
 		inp = document.getElementById("cw-q-input");
 		sdk = root.getAttribute('data-nk-rule') === 'Sudoku';
 		c.classList.toggle("nk-incell", sdk);
@@ -17118,7 +17143,7 @@ var NK = (function () {
 		bw = c.offsetWidth;
 		bh = c.offsetHeight;
 		// 게임 화면 칸과 실제 화면(창) 모두의 안쪽으로
-		left = Math.max(10, 10 - pr.left, Math.min(pr.width - bw - 10, innerWidth - pr.left - bw - 10, r.left + r.width / 2 - pr.left - bw / 2));
+		left = Math.max(10, 10 - pr.left, Math.min(pr.width - bw - 10, winW() - pr.left - bw - 10, r.left + r.width / 2 - pr.left - bw / 2));
 		top = r.bottom - pr.top + 12;
 		up = top + bh > pr.height - 10 && r.top - pr.top - bh - 12 > 0;
 		if (up) top = r.top - pr.top - bh - 12;
@@ -17129,12 +17154,12 @@ var NK = (function () {
 		pb.style.setProperty('--nk-ba', Math.max(18, Math.min(bw - 18, r.left + r.width / 2 - pr.left - left)) + "px");
 	}
 	// 네모 판 모드 왼쪽 부가 칸(.nk-cwside, 데스크톱 — nk.css 18). 판을 다시 그리거나 선택이 바뀔 때마다 새로 그림
-	// 십자말풀이: 이 판의 단어 [번호 · 방향 · 글자 수 · 맞힌 단어] — 뜻은 기존 UI와 맞추려고 뺌(나중에 다시 넣을 수 있음, 사용자 결정).
-	//   번호는 시작 칸을 읽는 순서(위 → 아래, 왼쪽 → 오른쪽)로 매기고 판의 첫 칸에도 붙임(data-n). 눌러서 그 단어를 고름
+	// 십자말풀이: 맞힌 개수 + 지금 고른 단어의 [번호 · 방향 · 글자 수 · 뜻풀이] — 데스크톱은 뜻풀이를 여기서 보고 말풍선은 입력칸만 (사용자 결정, 단어 목록은 뺌).
+	//   번호는 시작 칸을 읽는 순서(위 → 아래, 왼쪽 → 오른쪽)로 매기고 판의 첫 칸에도 붙임(data-n)
 	// 스도쿠: 남은 칸 · 내가 채운 칸 · 틀린 횟수. 남이 채운 칸은 주어진 칸과 구별되게 nk-other
 	function renderCwSide() {
 		var $s = my.$cwside, rule = $data.room && RULE[MODE[$data.room.mode]], sel = $data._sel, open = $stage.game.cwcmd.css('opacity') !== "0",
-			b, nums = {}, starts, done = 0, $l, left = 0, mine = 0;
+			b, nums = {}, starts, done = 0, left = 0, mine = 0, known = {}, cur, m;
 
 		if (!$s) return;
 		$s.empty();
@@ -17146,25 +17171,33 @@ var NK = (function () {
 			starts.forEach(function (p) {
 				if (!nums[p]) nums[p] = Object.keys(nums).length + 1;
 			});
-			$stage.game.display.find(".cw-bar").removeClass("nk-sel");
-			$l = $("<div>").addClass("nk-cw-list");
+			// 겹치는 칸: 고른 막대를 맨 위로 올리므로(nk.css) 맞힌 단어의 글자를 아래에 깔린 다른 막대의 같은 칸에도 채움 — 기존 코드는 먼저 그린 막대 글자만 나중 막대에 채움
 			b.forEach(function (w) {
-				var n = nums[[Number(w[0]), Number(w[1])]], on = !!(open && sel && sel.length === 4 && sel[1] == w[0] && sel[2] == w[1] && sel[3] == w[2]),
-					$bar = $("#cw-" + w[0] + "-" + w[1] + "-" + w[2]);
+				var x = Number(w[0]), y = Number(w[1]), j;
+
+				if (w[4]) for (j = 0; j < w[3]; j++) known[(w[2] == "1" ? x + "-" + (y + j) : (x + j) + "-" + y)] = [w[4].charAt(j), w[5] == $data.id];
+			});
+			$stage.game.display.find(".cw-bar:not(.cw-open) .cw-cell").each(function () {
+				var k = known[this.id.slice(4)];
+
+				if (k && !this.textContent) this.textContent = k[0];
+				this.classList.toggle("nk-known", !!k && !k[1]);
+				this.classList.toggle("nk-known-mine", !!k && k[1]);
+			});
+			b.forEach(function (w) {
+				var on = !!(open && sel && sel.length === 4 && sel[1] == w[0] && sel[2] == w[1] && sel[3] == w[2]);
 
 				if (w[4]) done++;
-				$bar.children(".cw-cell").first().attr('data-n', n);
-				if (on) $bar.addClass("nk-sel");
-				$l.append($("<div>").addClass("nk-cw-item").toggleClass("mine", !!w[4] && w[5] == $data.id).toggleClass("open", !!w[4] && w[5] != $data.id).toggleClass("sel", on)
-					.append($("<div>").addClass("nk-cw-no").text(n))
-					.append($("<div>").addClass("nk-cw-dir").text(L[w[2] == "1" ? 'cwVert' : 'cwHorz'] + w[3] + L['cwL']))
-					.append($("<div>").addClass("nk-cw-word").text(w[4] || ""))
-					.on('click', function () {
-						if (!w[4]) $bar.trigger('click');
-					}));
+				$("#cw-" + w[0] + "-" + w[1] + "-" + w[2]).toggleClass("nk-sel", on).children(".cw-cell").first().attr('data-n', nums[[Number(w[0]), Number(w[1])]]);
+				if (on) cur = w;
 			});
-			$l.children().sort(function (p, q) { return $(p).children(".nk-cw-no").text() - $(q).children(".nk-cw-no").text(); }).appendTo($l);
-			$s.append($("<div>").addClass("nk-cwside-head").text(L['nkCwWords']).append($("<label>").text(done + " / " + b.length + " " + L['nkCwSolved'])), $l);
+			$s.append($("<div>").addClass("nk-cwside-head").text(L['nkCwMean']).append($("<label>").text(done + " / " + b.length + " " + L['nkCwSolved'])));
+			m = cur && ($data._means[$data.selectedRound - 1] || {})[[cur[0], cur[1], cur[2]].join(',')];
+			if (m) $s.append($("<div>").addClass("nk-cw-cur")
+				.append($("<div>").addClass("nk-cw-no").text(nums[[Number(cur[0]), Number(cur[1])]]))
+				.append($("<div>").addClass("nk-cw-dir").text(L[cur[2] == "1" ? 'cwVert' : 'cwHorz'] + cur[3] + L['cwL'])),
+				$("<div>").addClass("nk-cw-mean").append(processWord("★", m.mean, m.theme, m.type.split(','))));
+			else $s.append($("<div>").addClass("nk-cw-pick").text(L['nkCwPick']));
 		} else if (rule.rule === 'Sudoku' && $data._sdk) {
 			b = $data._sdk[$data.selectedRound - 1];
 			if (my._sdkRef !== $data._sdk) {
@@ -17253,6 +17286,36 @@ var NK = (function () {
 			if (t.data !== s) t.data = s;
 		});
 	}
+	// 게임 시작 ~ 첫 라운드 사이(잠시 후 게임이 시작됩니다!)에도 판 틀을 미리 그려 둠 — 첫 라운드에 라운드 칩·체인 칸이 생기며
+	// 판이 밀리지 않게 (사용자 요청). 각 모드의 roundReady가 그리는 것만: 라운드 칩은 리듬류 빼고 모두, 체인 칸은 아래 모드 (rule_*.js)
+	var ROUND_RULES = /^(Rhythm|Rtype)$/, CHAIN_RULES = /^(Classic|Daneo|Free|Hunmin|Typing|Rtype|Numberclap|Calcbattle|Calcrelay|Chainbattle|Fourrelay)$/;
+	my.prepareBoard = function () {
+		var room = $data.room, rule = room && RULE[MODE[room.mode]].rule;
+
+		if (!rule || !room.game || !room.game.title) return;
+		if (!ROUND_RULES.test(rule)) drawRound(0);
+		if (CHAIN_RULES.test(rule)) $stage.game.chain.show().html("");
+	};
+	// 리턴: 최근 다섯 단어와 겹친 단어(turnError 411)를 기록에서 빨갛게 깜빡임 (사용자 요청) — 휴대폰은 줄인 단어라 원래 단어(data-w)로 찾음
+	my.pulseHistory = function (text) {
+		var w = badWords(text);
+
+		$stage.game.history.children(".history-item").each(function () {
+			var t = this.getAttribute('data-w') || (this.firstChild && this.firstChild.nodeType === 3 ? this.firstChild.data : "");
+
+			if (t !== w) return;
+			this.classList.remove("nk-dup");
+			void this.offsetWidth;
+			this.classList.add("nk-dup");
+		});
+	};
+	// 단어 창 글꼴(굵기·글꼴은 cs, 크기는 잴 때의 21px)로 쓴 글의 폭
+	var measureCtx;
+	function textWidth(text, cs) {
+		measureCtx = measureCtx || document.createElement('canvas').getContext('2d');
+		measureCtx.font = cs.fontWeight + " 21px " + cs.fontFamily;
+		return measureCtx.measureText(text).width;
+	}
 	// 글자가 실제로 차지한 줄 수 (한글 글꼴은 줄 높이 값보다 줄이 높게 잡혀 높이 ÷ 줄 높이로는 더 많이 셈) — 글자 조각들의 서로 다른 윗선 개수
 	function lineCount(d) {
 		var r = document.createRange(), tops = [];
@@ -17280,25 +17343,79 @@ var NK = (function () {
 
 		$pb.removeClass("nk-hold-in nk-found-open").children(".game-body").css('min-height', "");
 	}
+	// 데스크톱 단어 창 모드의 위쪽 입력창을 쓰는 중인지 (네모 판·리듬 타이퍼는 자기 입력창을 씀)
+	function topInputOn() {
+		return !my.phone && my._only === 'for-gaming' && root.getAttribute('data-nk-rule') !== 'Rtype'
+			&& !$stage.box.game.find(".game-body").hasClass("cw") && $stage.game.hereText.is(":visible");
+	}
+	// fromTalk: 게임 화면에 들어올 때는 방에서 쓰던 채팅칸의 포커스도 위 칸으로 옮김
+	function focusTopInput(fromTalk) {
+		var a = document.activeElement;
+
+		if ((!a || a === document.body || (fromTalk === true && a === $stage.talk[0])) && topInputOn()) $stage.game.hereText.focus();
+	}
 	// H안 게임 화면 준비: 미션·체인 이름표, 시간 막대 글자(막대 끝 고정 · nk.css가 data-t를 보여 줌), 단어 창 글자 맞춤
 	function initGameH() {
 		var $d = $stage.game.display, gb = $stage.box.game.find(".game-body")[0];
 
 		// 휴대폰 떠 있는 입력창 안내 글 (모드와 상관없이 기본 문구, 사용자 결정)
 		$stage.game.hereText.attr('placeholder', L['inputHere']);
+		// 데스크톱 리듬 타이퍼: 입력창 자리에 흐린 "채팅" 칸 (nk.css 22) ::after가 이 글자를 씀)
+		$stage.box.game.children(".product-body").attr('data-nk-chat', text('Chat').replace(/FA\{[^}]*\}/g, ""));
+		// 데스크톱 위쪽 입력창: 기존 코드는 데스크톱에서 아래 채팅칸에 포커스를 주고 위 칸은 비춰 보이기만 함 →
+		// 신 UI는 위 칸에서 바로 입력 (남 차례에도 보임, nk.css 22) — 남 차례에 보낸 말은 서버가 채팅으로 처리, 휴대폰과 같음).
+		// 코드가 부르는 $stage.talk.focus()만 위 칸으로 돌림 — 아래 채팅칸을 직접 누르면 그대로 아래에서 입력
+		var talkFocus = $stage.talk.focus;
+		$stage.talk.focus = function () {
+			if (topInputOn()) {
+				$stage.game.hereText.focus();
+				return this;
+			}
+			return talkFocus.apply(this, arguments);
+		};
+		// 남 차례에도 위 칸에 포커스 — 기존 코드는 내 차례에만 포커스를 줌. 차례가 바뀔 때(입력창 style이 바뀜)·게임 화면에 들어올 때,
+		// 아무 입력칸에도 포커스가 없을 때만 (아래 채팅칸·창 안 입력칸은 뺏지 않음)
+		new MutationObserver(focusTopInput).observe($stage.game.here[0], { attributes: true, attributeFilter: ['style'] });
+		// 위 칸·아래 채팅칸은 글을 서로 베껴 쓰는데(ready.js), 포커스 없는 쪽은 스크롤이 처음에 머물러 오른쪽으로 넘친 글이 안 보였음
+		// → 베낀 쪽도 커서 위치(글자 순서 비율로 어림)가 보이게 스크롤 (사용자 요청)
+		[[$stage.talk, $stage.game.hereText], [$stage.game.hereText, $stage.talk]].forEach(function (p) {
+			p[0].on('input compositionend keyup', function () {
+				var a = this, b = p[1][0];
+
+				requestAnimationFrame(function () {
+					var f = a.value.length ? a.selectionStart / a.value.length : 0, x = b.scrollWidth * f;
+
+					if (!b.offsetWidth || b === document.activeElement) return;
+					if (f >= 1) b.scrollLeft = b.scrollWidth;
+					else if (x < b.scrollLeft + 16) b.scrollLeft = x - 16;
+					else if (x > b.scrollLeft + b.clientWidth - 16) b.scrollLeft = x - b.clientWidth + 16;
+				});
+			});
+		});
 
 		[$stage.game.turnBar, $stage.game.roundBar].forEach(function ($b) {
 			var g = $b.parent()[0], b = $b[0];
 
 			new MutationObserver(function () {
-				var t = b.textContent;
+				var t = b.textContent, w = b.style.width;
 
+				// 채운 비율(--nk-gp)·막대 폭(--nk-gw): 막대 위 글자가 채움 끝을 따라가고, 채움 위·빈 칸 위에서 다른 색으로 (nk.css 17 막대 글자)
+				g.style.setProperty('--nk-gp', clamp((/%$/.test(w) ? parseFloat(w) / 100 : b.offsetWidth / (g.clientWidth || 1)) || 0, 0, 1));
+				g.style.setProperty('--nk-gw', g.clientWidth + "px");
+				// 남은 시간이 0 아래로 내려가 "-0.3초"처럼 보이던 것은 0으로 (사용자 요청 — 기존 코드는 틱마다 그대로 빼서 적음)
+				t = t.replace(/^-(\d+(?:\.\d+)?)/, function (m, n) { return n.replace(/\d/g, "0"); });
 				if (g.getAttribute('data-t') === t) return;
 				g.setAttribute('data-t', t);
 				if (t.length > 12) g.setAttribute('data-long', "");
 				else g.removeAttribute('data-long');
-			}).observe(b, { childList: true, characterData: true, subtree: true });
+			}).observe(b, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['style'] });
 		});
+		// 긴 힌트(자음퀴즈 뜻풀이)는 미션 칸 자리에서 작은 글자로 (nk.css 17 힌트)
+		new MutationObserver(function () {
+			$stage.game.hints.children(".hint-item").each(function () {
+				$(this).toggleClass("nk-long", $(this).children("label").text().length > 12);
+			});
+		}).observe($stage.game.hints[0], { childList: true });
 		new MutationObserver(function () {
 			if (my._only !== 'for-gaming' || my._dispRaf) return;
 			my._dispRaf = requestAnimationFrame(function () {
@@ -17311,10 +17428,29 @@ var NK = (function () {
 		new MutationObserver(function () {
 			requestAnimationFrame(fitBoard);
 		}).observe($d.closest(".jjoriping")[0], { attributes: true, attributeFilter: ['class'] });
+		// UI 배율이 있을 때 카드 등이 나중에 그려져 판이 넘치면 배율을 다시 맞춤 (다음 그림 때 — ResizeObserver 안에서 크기를 바꾸지 않게)
+		if (window.ResizeObserver) new ResizeObserver(function () {
+			if (my.gameZoom === 1 || my._only !== 'for-gaming' || !gameOverflow()) return;
+			requestAnimationFrame(function () {
+				fitGameZoom();
+				fitDisplay();
+				fitHistory();
+				fitBoard();
+			});
+		}).observe(gb.parentNode);
 		// 라운드 줄 높이가 바뀌어도(라운드 칩이 나중에 그려짐) 판을 다시 맞춤
 		if (window.ResizeObserver) new ResizeObserver(function () {
 			if (my._only === 'for-gaming') requestAnimationFrame(fitBoard);
 		}).observe($stage.game.round[0]);
+		// 라운드가 끝나 칩이 지워져도(십자말풀이 시간 끝 등 — 기존 코드가 비움) 줄 높이는 그대로 — 판이 위로 올라가거나 커지지 않게 (사용자 요청)
+		new MutationObserver(function () {
+			var r = $stage.game.round[0];
+
+			if (r.children.length) {
+				r.style.minHeight = "";
+				my._roundH = parseFloat(getComputedStyle(r).height);
+			} else if (my._roundH) r.style.minHeight = my._roundH + "px";
+		}).observe($stage.game.round[0], { childList: true });
 		new MutationObserver(function () {
 			requestAnimationFrame(function () {
 				renderCwSide();
@@ -17538,6 +17674,13 @@ var NK = (function () {
 		// 신 UI 전용 설정 "항상 규칙 펼치기": 기존 설정 창에 없으므로 입력을 만들어 두고, 열 때 읽고 [저장] 때 같은 localStorage에 씀
 		$("#nk-settings").append($("<input type='checkbox'>").attr('id', "nk-rule-open"));
 		setRefresh.push(function () { $("#nk-rule-open").prop('checked', loadVolumeSettings().nkRuleOpen === true); });
+		// 신 UI 전용 "UI 배율"(데스크톱, 사용자 요청): 50~200%. 손을 떼면 바로 적용해 보고 [저장]해야 남음, 저장 없이 닫으면 되돌림
+		// 화면이 작으면 최대값이 줄어듦(scaleMax)
+		$("#nk-settings").append($("<input type='range' min='50' max='200' step='5'>").attr('id', "nk-scale"),
+			$("<div>").addClass("nk-set-val").attr('id', "nk-scale-val"));
+		$("#nk-scale").on('input', function () { $("#nk-scale-val").text(this.value + "%"); })
+			.on('change', function () { applyScale(this.value); });
+		setRefresh.push(function () { $("#nk-scale").attr('max', Math.floor(scaleMax() * 20) * 5).val(savedScale()).trigger('input'); });
 
 		setTabs.sort(byOrder);
 		setRows.sort(byOrder);
@@ -17557,11 +17700,14 @@ var NK = (function () {
 		$left = $src.children(".dialog-bar").not(".tail-button").filter(function () { return $(this).find("input, select, textarea").length; });
 		if ($left.length) addSettingTab({ id: 'etc', icon: 'grid', labelKey: 'etc' }, $("<div>").addClass("nk-set-pane nk-set-legacy").attr('data-tab', 'etc').append($left));
 
-		$("#nk-settings .nk-dlg-close").on('click', function () { $("#nk-settings").hide(); });
+		$("#nk-settings .nk-dlg-close").on('click', function () {
+			$("#nk-settings").hide();
+			applyScale(savedScale());
+		});
 		$("#nk-set-server").on('click', function () { $stage.dialog.settingServer.trigger('click'); });
 		// 저장은 기존 저장 단추가 함 (UI를 바꿨으면 거기서 새로고침)
 		$("#nk-set-save").on('click', function () {
-			saveVolumeSettings({ nkRuleOpen: $("#nk-rule-open").is(':checked') });
+			saveVolumeSettings({ nkRuleOpen: $("#nk-rule-open").is(':checked'), nkScale: Number($("#nk-scale").val()) });
 			$stage.dialog.settingOK.trigger('click');
 			$("#nk-settings").hide();
 		});
@@ -17572,6 +17718,58 @@ var NK = (function () {
 			$b.children("label").attr('data-lang-key', t.labelKey).text(text(t.labelKey));
 			$tabs.append($b.on('click', function () { setSettingTab(t.id); }));
 			$panes.append($pane);
+		}
+	}
+	// UI 배율 (%, 저장값 nkScale): 데스크톱은 body zoom + html의 --nk-scale (nk.css 28). 휴대폰은 늘 1.
+	// 브라우저 확대처럼: 200%면 모든 것이 두 배로 그려지고, 배치는 화면의 절반 크기(실제로 쓸 수 있는 크기)에 맞춤
+	function savedScale() { return clamp(Number(loadVolumeSettings().nkScale) || 100, 50, 200); }
+	// 배율 최대값(작은 창에서 제한)·고해상도 글자 단계(--nk-up) 계산은 /js/nk-boot.js (로딩 화면 전에 같은 계산으로 먼저 적용함).
+	// 창이 커지면 저장한 배율까지 다시 올라감
+	function scaleMax() { return NKBoot.scaleMax(); }
+	function upFor(w) { return NKBoot.upFor(w); }
+	// 배율 z를 실제로 적용 (바뀌었으면 true). zoom은 스타일시트에서 var()를 못 받아(크롬) body에 직접 줌. --nk-scale은 창 높이·창 크기 단위 계산용 (nk.css 28)
+	function setZoom(z) {
+		if (z === my.gameZoom && (z === 1 || document.body.style.getPropertyValue('--nk-up') == upFor(innerWidth / z))) return false;
+		if (z === 1) root.style.removeProperty('--nk-scale');
+		else root.style.setProperty('--nk-scale', z);
+		document.body.style.zoom = z === 1 ? "" : z;
+		if (z === 1) document.body.style.removeProperty('--nk-up');
+		else document.body.style.setProperty('--nk-up', upFor(innerWidth / z));
+		my.gameZoom = z;
+		return true;
+	}
+	// 게임 중에는 100% 배치(게임 화면 높이 단계는 창 높이 그대로)가 들어가는 만큼만 배율을 올림 (5% 단위, 100% 밑으로는 안 내림).
+	// 큰 화면은 100%에서도 게임 판이 높이를 거의 다 써서, 배율대로 키우면 판이 채팅 밑으로 넘치고, 작은 화면용 단계로 바꾸면 판·글자·카드가 오히려 작아짐 (사용자 지적)
+	// 돌려주는 값: 들어올 때와 비교해 배율·글자 단계가 실제로 바뀌었는지 (게임 중에는 먼저 원하는 배율로 놓고 줄여 가므로 중간 값은 따지지 않음)
+	function fitGameZoom() {
+		var want = my._scaleZ || 1, lo = 1, hi = want, z0 = my.gameZoom, u0 = document.body.style.getPropertyValue('--nk-up'), i, mid;
+
+		setZoom(want);
+		if (want > 1 && my._only === 'for-gaming' && gameOverflow()) {
+			for (i = 0; i < 7; i++) {
+				mid = (lo + hi) / 2;
+				setZoom(mid);
+				if (gameOverflow()) hi = mid;
+				else lo = mid;
+			}
+			setZoom(Math.floor(lo * 20) / 20);
+		}
+		return my.gameZoom !== z0 || document.body.style.getPropertyValue('--nk-up') !== u0;
+	}
+	function applyScale(pct) {
+		// 아래에서 일으킨 resize가 창 크기 감시(applyScale)를 다시 부르면 끝없이 되풀이돼 브라우저가 멈췄음
+		// (게임 중 배율 100% 초과 — 예전에는 fitGameZoom이 늘 "바뀜"을 돌려줌. 사용자 신고: 십자말풀이 시작·게임 중 창 크기 조정 때 응답 없음)
+		if (my._scaling) return;
+		my._scalePct = pct;
+		my._scaleZ = my.phone ? 1 : Math.min(clamp(Number(pct) || 100, 50, 200) / 100, scaleMax());
+		if (!fitGameZoom()) return;
+		$tip && $tip.hide();
+		closePop();
+		my._scaling = true;
+		try {
+			$(window).trigger('resize');
+		} finally {
+			my._scaling = false;
 		}
 	}
 	// 탭 창(.nk-dlg) 공용: 탭 단추와 내용 칸 전환
@@ -17611,6 +17809,7 @@ var NK = (function () {
 		{ tab: 'sound', labelKey: 'soundPack', descKey: 'nkDescSoundPack', controls: ['#sound-pack', '#beat-setting'] },
 		{ tab: 'sound', labelKey: 'rhythmSync', descKey: 'rhythmSyncExpl', controls: ['#rhythm-sync', '#rhythm-sync-val'] },
 		{ tab: 'screen', labelKey: 'uiSetting', descKey: 'nkDescUi', controls: ['#ui-setting', '#ui-style-setting'] },
+		{ tab: 'screen', labelKey: 'nkScale', descKey: 'nkDescScale', controls: ['#nk-scale', '#nk-scale-val', '#nk-scale-reset'] },
 		{ tab: 'screen', labelKey: 'theme', controls: ['#theme-setting', '#theme-setting-edit', '#dark-mode-setting'] },
 		{ tab: 'screen', labelKey: 'levelPack', descKey: 'nkDescLevelPack', controls: ['#level-pack'] },
 		// 간단 방 보기·규칙 묶어보기는 기본 UI 전용(사용자) — 값은 기존대로 저장되게 줄은 두고 숨김. 신 UI는 아래 "항상 규칙 펼치기"
@@ -17672,10 +17871,8 @@ var NK = (function () {
 		var tips = (window.L && L.tips) || [];
 		var $intro = $("#Intro"), $tip, $tipText, n = -1, timer;
 
-		// 기존 이미지 로고는 nk.css가 숨김
-		$intro.prepend($("#nk-logo").clone().removeAttr('id href title').removeClass("nk-logo").addClass("nk-intro-logo"));
-		$("#intro-text").after($("<div>").addClass("nk-intro-load")
-			.append($("<div>").addClass("nk-intro-bar").append($("<div>")), $("<div>").addClass("nk-intro-pct").text("0%")));
+		// 로고·진행 막대는 kkutu.pug에 처음부터 있음(스크립트보다 먼저 보이게). 기존 이미지 로고는 nk.css가 숨김
+		introWords($intro);
 		if (!tips.length) return;
 		$tipText = $("<div>").addClass("nk-intro-tip-text");
 		$tip = $("<div>").addClass("nk-intro-tip").append($("<div>").addClass("nk-intro-tip-label").text("TIP"), $tipText).appendTo($intro);
@@ -17697,6 +17894,109 @@ var NK = (function () {
 			n = i;
 			$tipText.text(tips[i]);
 		}
+	}
+	// 로딩 화면 장식 단어 (목록은 사용자 지정). 묶음마다 랜덤으로 뽑음:
+	// 이어지는 단어 4개 한 줄(차례대로 약한 선으로 이음), 긴 단어 2개, 일반 2·공격 2·방어 1 (자리는 섞음). 같은 단어는 두 번 안 나옴
+	var INTRO_WORDS = {
+		chain: [
+			["이빨", "빨대", "대나무", "무지개"],
+			["늣하르방", "방듸", "듸림부채", "채그릇"],
+			["늣치", "치마기슭", "슭곰", "곰븨님븨"],
+			["션믈", "믈구븨", "븨피", "피넬"],
+			["다람쥐", "쥐덫", "덫사냥", "냥냥"],
+			["이믜", "믜신것", "것셥", "셥삭질"],
+			["다다이즘", "즘슉", "슉슉로봇", "봇짐"]
+		],
+		normal: ["늠름", "기러기", "이빨", "빨대", "대나무", "무지개", "레미콘", "다람쥐", "역지사지", "트라이앵글", "역사", "기체", "값어치", "사랑", "아이스크림", "나라"],
+		attack: ["이리듐", "기쁨", "법딍", "기동돓", "다이디뮴", "곰븨님븨", "이수산화크로뮴", "지르코늄", "수산화나트륨", "산기슭", "방듸", "지읒", "리튬", "마그네슘", "구듨곬", "치읓", "다다이즘", "스좌좡", "이렁셩", "이제껏", "왕듸", "이슷"],
+		defense: ["늣치", "윰라대왕", "늣하르방", "슭곰", "션믈", "즈믄", "윰차", "슘페터", "븨피"],
+		long: ["기체크로마토질량분석법", "스리랑카민주사회주의공화국", "자라투스트라는이렇게말했다", "이상한나라의앨리스", "이멋진세계에축복을", "기체크로마토그래피", "트라이메틸렌트라이나이트라민", "터미네이터미래전쟁의시작"]
+	};
+	// 자리 = [단어 칸 가운데 x %, y %, 크기 배율]. 가운데(로고·진행 막대)와 아래 팁 칸은 비움.
+	// chain = 위쪽에 물결 모양으로 왼쪽→오른쪽, word = 로고를 둘러싼 고리 위에 양쪽으로(바깥일수록 조금 작게),
+	// long = 왼쪽 아래 중간·오른쪽 아래 고정, 일반 단어와 같은 크기 (사용자 지정)
+	var INTRO_SLOTS = {
+		chain: [[18, 15, 1.05], [39, 24, 1.05], [61, 13, 1.05], [82, 22, 1.05]],
+		word: [[19, 40, 1], [13, 87, .88], [81, 38, 1], [75, 61, .88], [89, 77, .8]],
+		long: [[23, 67, 1], [71.5, 89, 1]]
+	};
+	// 휴대폰(세로 화면): 단어 7개만 (사용자 지정) — 이어지는 단어 4개는 위에서부터 왼쪽·오른쪽 번갈아 내려가고,
+	// 짧은 단어 2개는 진행 막대와 팁 사이 양쪽, 긴 단어 1개는 맨 아래. 짧은 단어는 일반·공격·방어를 섞은 것 중 앞의 2개
+	var INTRO_SLOTS_PHONE = {
+		chain: [[28, 7, 1], [72, 15, 1], [28, 23, 1], [72, 31, 1]],
+		word: [[26, 64, 1], [74, 64, 1]],
+		long: [[50, 91, 1]]
+	};
+	function introWords($intro) {
+		var S = my.phone ? INTRO_SLOTS_PHONE : INTRO_SLOTS;
+		var used = {}, $w = $("<div>").addClass("nk-intro-words").attr('aria-hidden', 'true');
+		var chain = INTRO_WORDS.chain[Math.floor(Math.random() * INTRO_WORDS.chain.length)];
+		var items = [], words, lines = "", i, j, t;
+
+		function pick(list, n, kind) {
+			var pool = list.filter(function (w) { return !used[w]; }), out = [], w;
+
+			while (out.length < n && pool.length) {
+				w = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+				used[w] = true;
+				out.push([w, kind]);
+			}
+			return out;
+		}
+		// --s 크기 배율, --d 나타나는 때, --f 떠 있는 움직임의 시작점 (jQuery 1.9 .css는 변수를 못 넣으므로 setProperty)
+		function put(w, kind, at, delay) {
+			var el = $("<div>").addClass("nk-iw nk-iw-" + kind).text(w)[0];
+
+			el.style.setProperty('--s', at[2]);
+			el.style.setProperty('--d', delay.toFixed(2) + "s");
+			el.style.setProperty('--f', (-Math.random() * 7).toFixed(1) + "s");
+			$w.append(el);
+			items.push({ el: el, at: at });
+		}
+		// 자리 잡기: 글자 가운데를 자리 %에 두되 화면 밖으로 나가지 않게 안쪽으로 당김.
+		// 이어지는 단어 사이 선은 글자를 지나지 않도록 글자 상자에서 조금 떨어진 곳에서 시작·끝 (items 앞 4개 = 이어지는 단어)
+		function layout() {
+			var W = $w.width(), H = $w.height();
+
+			items.forEach(function (o) {
+				var w = o.el.offsetWidth, h = o.el.offsetHeight;
+
+				o.x = clamp(o.at[0] * W / 100, w / 2 + 16, W - w / 2 - 16);
+				o.y = o.at[1] * H / 100;
+				o.el.style.left = o.x + "px";
+				o.el.style.top = o.y + "px";
+				o.hw = w / 2 + 14;
+				o.hh = h * 0.36 + 8;
+			});
+			$w.find("line").each(function (k) {
+				var a = items[k], b = items[k + 1], dx = b.x - a.x, dy = b.y - a.y;
+				var ta = Math.min(a.hw / Math.abs(dx || 1e-6), a.hh / Math.abs(dy || 1e-6));
+				var tb = Math.min(b.hw / Math.abs(dx || 1e-6), b.hh / Math.abs(dy || 1e-6));
+
+				this.setAttribute('x1', a.x + dx * ta);
+				this.setAttribute('y1', a.y + dy * ta);
+				this.setAttribute('x2', b.x - dx * tb);
+				this.setAttribute('y2', b.y - dy * tb);
+			});
+		}
+
+		chain.forEach(function (w) { used[w] = true; });
+		words = pick(INTRO_WORDS.normal, 2, 'normal').concat(pick(INTRO_WORDS.attack, 2, 'attack'), pick(INTRO_WORDS.defense, 1, 'defense'));
+		for (i = words.length - 1; i > 0; i--) {
+			j = Math.floor(Math.random() * (i + 1));
+			t = words[i]; words[i] = words[j]; words[j] = t;
+		}
+		// 이어지는 단어: 하나씩 나타나고 그 사이 선이 차례로 그어짐
+		for (i = 0; i < chain.length - 1; i++) lines += "<line pathLength='1' style='--d: " + (i * 0.3 + 0.2).toFixed(2) + "s'/>";
+		$w.append("<svg class='nk-intro-chain'>" + lines + "</svg>");
+		chain.forEach(function (w, k) { put(w, 'chain', S.chain[k], k * 0.3); });
+		words.slice(0, S.word.length).forEach(function (o, k) { put(o[0], o[1], S.word[k], 0.5 + k * 0.12); });
+		pick(INTRO_WORDS.long, S.long.length, 'long').forEach(function (o, k) { put(o[0], o[1], S.long[k], 0.9 + k * 0.15); });
+		$intro.prepend($w);
+		layout();
+		// 글꼴을 다 받으면 글자 폭이 바뀌므로 다시, 창 크기가 바뀌어도 다시 (로딩 화면이 보일 때만)
+		if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+		$(window).on('resize', function () { if ($intro.is(":visible")) layout(); });
 	}
 	// 진행률(0~1): 효과음·배경음 파일을 받는 동안 0→90% (loadSounds), 서버 접속이 끝나면 100% (welcome).
 	// 로딩 화면이 사라진 뒤(음향 팩 변경 등의 loadSounds)는 무시하고, 뒤로 가지 않음
@@ -17787,10 +18087,10 @@ var NK = (function () {
 			$(".dialog:visible").each(function () { clampDialog(this); });
 		});
 		function clampDialog(el) {
-			var vv = window.visualViewport, vw = vv ? vv.width : innerWidth, vh = vv ? vv.height : innerHeight, r, t, l;
+			var vv = window.visualViewport, vw = (vv ? vv.width : innerWidth) / my.gameZoom, vh = (vv ? vv.height : innerHeight) / my.gameZoom, r, t, l;
 
 			if (!el.classList.contains("dialog") || el.classList.contains("nk-dlg-ghost") || !el.offsetWidth) return;
-			r = el.getBoundingClientRect();
+			r = crect(el);
 			t = Math.max(8, Math.min(r.top, vh - r.height - 8));
 			if (Math.abs(t - r.top) > 1) el.style.top = (parseFloat(el.style.top) || 0) + t - r.top + "px";
 			// 휴대폰은 CSS가 가로 가운데에 고정함
@@ -17826,6 +18126,8 @@ var NK = (function () {
 	var PHONE_TABS = [
 		{ id: 'lobby', icon: 'home', labelKey: 'nkLobby' },
 		{ id: 'people', icon: 'users', labelKey: 'nkUsers' },
+		// 채팅은 화면이 아니라 채팅 시트를 엶 — 아래 채팅 줄 대신 (사용자 결정 B안), 안 읽은 말이 있으면 점
+		{ id: 'chat', icon: 'chat', labelKey: 'nkChat' },
 		{ id: 'shop', icon: 'bag', labelKey: 'shop' },
 		{ id: 'more', icon: 'grid', labelKey: 'nkMore' }
 	];
@@ -17853,7 +18155,7 @@ var NK = (function () {
 		$("#nk-tabbar > .nk-tabbar-btn").each(function () { $(this).toggleClass("active", $(this).attr('data-tab') === v); });
 	}
 	function runPhoneTab(id) {
-		if (id === 'more') return openSheet('more');
+		if (id === 'more' || id === 'chat') return openSheet(id);
 		closeSheet();
 		my._mtab = id === 'people' ? 'people' : null;
 		if (id !== 'people') runTab(findTab(id));
@@ -17927,7 +18229,9 @@ var NK = (function () {
 			.append($("<div>").addClass("nk-gs-top").append($("#nk-gamehead > .nk-room-no").clone(), $("<div>").addClass("nk-gs-title").text(badWords(room.title))))
 			.append($("<div>").addClass("nk-gs-sub").text($("#nk-gamehead > .nk-gamehead-sub").text()));
 		group(L['nkRdRules'], opts.slice(1));
-		group(L['pickTopicTitle'], getPickTopicExpl(RULE[MODE[room.mode]], room.opts));
+		var pick = pickInfo(room);
+
+		group(pick.title, pick.list);
 		$("#nk-game-sheet").empty().append($b);
 
 		function group(title, list) {
@@ -17948,6 +18252,7 @@ var NK = (function () {
 		$("#nk-chatbar-who").text(c ? c.who : text('Chat').replace(/FA\{[^}]*\}/g, ""));
 		$("#nk-chatbar-text").text(c ? c.msg : "");
 		$("#nk-chatbar-n").text(my._unread > 99 ? "99+" : my._unread).toggle(my._unread > 0);
+		$("#nk-tabbar > .nk-tabbar-btn[data-tab='chat']").toggleClass("has-new", my._unread > 0);
 	}
 	function watchChat() {
 		var last = $stage.chat.children(".chat-item").not("hr").last()[0];
@@ -18004,9 +18309,9 @@ var NK = (function () {
 		// 게임 중 상단 바의 방 정보를 누르면 방 정보 시트 (위에서 내려옴, 바깥·뒤로 가기로 닫힘)
 		$("#nk-help-sheet").after($("<div>").addClass("nk-sheet").attr('id', "nk-game-sheet"));
 		$("#nk-gamehead").on('click', function () { if (my._only !== 'for-lobby') openSheet('game'); });
-		// 방 대기 화면: 로고 자리에 뒤로(= 나가기) 단추 (사용자 결정, 정리안)
+		// 방 대기·게임 화면: 로고 자리에 뒤로(= 나가기, 리플레이 중에는 리플레이 끝내기) 단추 (사용자 결정, 정리안·조작 자리 통일)
 		$(".nk-header").prepend($("<button type='button'>").addClass("nk-icon-btn nk-head-back").attr('id', "nk-head-back")
-			.attr('aria-label', text('exit')).html(ico('back')).on('click', function () { $stage.menu.exit.trigger('click'); }));
+			.attr('aria-label', text('exit')).html(ico('back')).on('click', function () { (my._replay ? $stage.menu.replay : $stage.menu.exit).trigger('click'); }));
 		$("#nk-dim, #nk-app .nk-sheet-x").on('click', function () { closeSheet(); });
 		$(window).on('popstate', function () {
 			if (my._skipPop) {
@@ -18193,7 +18498,7 @@ var NK = (function () {
 			setTimeout(function () { mo.disconnect(); }, 400);
 		}, true);
 		function place(el, seg) {
-			var r = el.getBoundingClientRect(), s = seg.getBoundingClientRect();
+			var r = crect(el), s = crect(seg);
 
 			return { x: r.left - s.left - seg.clientLeft, y: r.top - s.top - seg.clientTop, w: r.width, h: r.height };
 		}
@@ -18300,7 +18605,8 @@ var NK = (function () {
 		$round.append($("#room-round").parent(), $("#room-sur-hp"));
 		$info.append($("<div>").addClass("nk-fd-row").append($("#room-round-label").addClass("nk-fd-k"), $round));
 		syncs.push(selSeg($("#room-time"), function (o) { return $(o).text().replace(/[^\d.]/g, ""); }));
-		$info.append(fdRow('nkRdTime', $("#room-time").prev(".nk-fd-seg")).append($("#room-time")));
+		// 시간 칸은 같은 폭 — 모드 배수로 글자가 바뀌어도 칸 자리가 그대로 (nk.css .nk-fd-num)
+		$info.append(fdRow('nkRdTime', $("#room-time").prev(".nk-fd-seg").addClass("nk-fd-num")).append($("#room-time")));
 
 		syncRules = ruleChips($rules, 'room', [
 			{ code: 'ijp', labelKey: 'pickInjeong', target: "#room-injeong-pick" },
@@ -18343,16 +18649,16 @@ var NK = (function () {
 			var w, left;
 
 			if (my.phone || $d.hasClass("is-wide") === on) return;
-			w = Math.min(on ? 840 : 600, window.innerWidth - 16);
+			w = Math.min(on ? 840 : 600, winW() - 16);
 			if (opening) {
 				// 열 때는 효과 없이 바꾸고 바뀐 폭으로 다시 가운데 (showDialog는 이전 폭으로 맞췄음)
-				$d.toggleClass("is-wide", on).css('left', Math.max(8, (window.innerWidth - w) / 2));
+				$d.toggleClass("is-wide", on).css('left', Math.max(8, (winW() - w) / 2));
 				return;
 			}
 			left = parseFloat($d.css('left')) || 0;
 			clearTimeout(my._rdAnim);
 			$d.addClass("nk-rd-anim").toggleClass("is-wide", on);
-			if (left + w > window.innerWidth - 8) $d.css('left', Math.max(8, window.innerWidth - 8 - w));
+			if (left + w > winW() - 8) $d.css('left', Math.max(8, winW() - 8 - w));
 			my._rdAnim = setTimeout(function () { $d.removeClass("nk-rd-anim"); }, 320);
 		}
 	}
@@ -18535,7 +18841,7 @@ var NK = (function () {
 		}
 	}
 
-	// 알림·확인·입력 등 작은 창 — 아이콘 · 제목 · 내용 · 오른쪽 단추 (CSS nk.css 16). warn: 빨간 아이콘
+	// 알림·확인·입력 등 작은 창 — 가운데 카드: 위 아이콘 · 제목 · 내용 · 폭을 나눈 단추 (CSS nk.css 16). warn: 빨간 아이콘
 	var SMALL_DLGS = [
 		["#AlertDiag", 'info'], ["#ConfirmDiag", 'help'], ["#InputDiag", 'pencil'], ["#LateJoinDiag", 'gamepad'],
 		["#NickSetupDiag", 'user'], ["#ObtainDiag", 'gift'], ["#KickVoteDiag", 'users', true], ["#AfkWarnDiag", 'clock', true]
@@ -18546,6 +18852,12 @@ var NK = (function () {
 		});
 		// 주제 고르기: 규칙 줄과 같은 체크 목록 (사용자 요청). 기존 label(for)이 체크박스를 켜고 끄므로 모양만 바꿈 (nk.css)
 		$("#InjPickDiag, #QuizPickDiag, #SongPickDiag").addClass("nk-fdlg nk-pk");
+		// 결과창 1~3등 메달 색(nk.css 31)은 순위 숫자로 — 2쪽(랭킹)은 41등부터일 수 있어 줄 순서로는 안 됨
+		new MutationObserver(function () {
+			$("#ResultDiag .result-board-rank").each(function () {
+				if (+this.textContent <= 3) this.setAttribute('data-medal', this.textContent);
+			});
+		}).observe($("#ResultDiag .result-board")[0], { childList: true });
 	}
 	my.init = function () {
 		var gn = $.trim($("#gn-content").html() || "");
@@ -18569,6 +18881,8 @@ var NK = (function () {
 		initHelp();
 		initIntro();
 		buildSettings();
+		applyScale(savedScale());
+		$(window).on('resize', function () { if (my._scalePct !== undefined) applyScale(my._scalePct); });
 		buildProfile();
 		initRoomDlg();
 		initQuickDlg();
@@ -18666,6 +18980,8 @@ var NK = (function () {
 		my._only = only;
 		root.setAttribute('data-nk-place', place);
 		if (place !== 'gaming') releaseGameLayout();
+		// 게임에서 나오면 게임 중에 낮춘 UI 배율을 설정값으로 되돌림 (fitGameZoom)
+		if (prev === 'gaming' && place !== 'gaming') fitGameZoom();
 		if (my.phone) phoneState(place, prev);
 		// 화면 전환 효과 (nk.css): 방 → 게임은 방 화면이 왼쪽으로 빠지고 게임 화면이 나타나며 채팅이 아래에서 올라옴,
 		// 게임 → 방은 방 화면이 다시 나타남. updateUI가 자주 불리므로 바뀌는 순간에만 잠깐 켬
@@ -18695,6 +19011,7 @@ var NK = (function () {
 				my._round = 0;
 			}
 			setTimeout(fitGame, 0);
+			if (place === 'gaming') setTimeout(function () { focusTopInput(true); }, 0);
 		}
 		// 기본 UI는 방·게임 화면에서 접속자 목록을 숨기지만, 신 UI는 오른쪽 열에 둠 (게임 중에는 nk.css가 숨김)
 		$stage.box.userList.show();

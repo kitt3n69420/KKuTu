@@ -26,6 +26,14 @@ block CSS
 block JS
 	script(type='text/javascript', src='/js/in_portal.min.js')
 
+block Preload
+	//- 신형 포탈 휴대폰 화면: portal.pug와 같은 조건으로 html[data-ui]를 정하고, 휴대폰 배치용으로 html[data-nk-device="phone"]을 둠 (m_kkutu.pug와 같음).
+	//- 기본 UI에서는 #nk-portal이 숨겨지고 아래 기존 모바일 포탈 그대로
+	- var nkV = locals.appVersion || '1.0.0'
+	script.
+		(function(){try{var h=document.documentElement;addEventListener('storage',function(e){if(e.key!=='kkutu_volume')return;try{var n=JSON.parse(e.newValue||'{}').ui==='new',o=JSON.parse(e.oldValue||'{}').ui==='new';if(n!==o)location.replace(location.pathname+location.search.replace(/([?&])ui=(new|classic)(&|$)/,function(m,p,v,t){return t?p:''})+location.hash);}catch(x){}});h.setAttribute('data-nk-device','phone');var s=JSON.parse(localStorage.getItem('kkutu_volume')||'{}');var q=location.search.match(/[?&]ui=(new|classic)(&|$)/);if(q){s.ui=q[1];localStorage.setItem('kkutu_volume',JSON.stringify(s));}if(s.ui==='new'&&window.CSS&&CSS.supports&&CSS.supports('color','color-mix(in oklch, red 50%, blue)')){h.setAttribute('data-ui','new');h.setAttribute('data-nk-style','flat');}}catch(e){}})();
+	link(rel='stylesheet', href='/css/nk_portal.css?v=' + nkV)
+
 
 block Middle
 	+separator(5)
@@ -63,6 +71,9 @@ block Middle
 	div(style='float: left; width: calc(100% - 4px); border: 2px solid #CCC; margin-top: 10px; background-color: #EEE;')
 		iframe#kkutu-bulletin(width='100%', height='400px', src='/kkutu_bulletin.html')
 	+separator(10)
+	//- 신형 포탈 (신 UI일 때만 보임) — 데스크톱과 같은 portal_nk.pug, 휴대폰 배치(npPhone)
+	- var npPhone = true
+	include portal_nk
 
 block Bottom
 	div.bottom-legal!= L('dictionarySupport')

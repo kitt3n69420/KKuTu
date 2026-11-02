@@ -76,8 +76,10 @@ block Preload
 	//- 게임 화면 배치는 기존 모바일 CSS(in_m_kkutu.css)와 모바일 JS 분기를 그대로 쓰고 신 UI는 겉모양만 입힘
 	- var nkV = locals.appVersion || '1.0.0'
 	script.
-		(function(){try{var h=document.documentElement;h.setAttribute('data-nk-device','phone');if(/[?&]resetui=1(&|$)/.test(location.search)){var r=JSON.parse(localStorage.getItem('kkutu_volume')||'{}');delete r.ui;delete r.uiStyle;localStorage.setItem('kkutu_volume',JSON.stringify(r));return;}var s=JSON.parse(localStorage.getItem('kkutu_volume')||'{}');if(s.ui==='new'&&window.CSS&&CSS.supports&&CSS.supports('color','color-mix(in oklch, red 50%, blue)')){h.setAttribute('data-ui','new');h.setAttribute('data-nk-style',s.uiStyle==='flat'?'flat':'mixed');}}catch(e){}})();
+		(function(){try{var h=document.documentElement;addEventListener('storage',function(e){if(e.key!=='kkutu_volume')return;try{var n=JSON.parse(e.newValue||'{}').ui==='new',o=JSON.parse(e.oldValue||'{}').ui==='new';if(n!==o)location.replace(location.pathname+location.search.replace(/([?&])ui=(new|classic)(&|$)/,function(m,p,v,t){return t?p:''})+location.hash);}catch(x){}});h.setAttribute('data-nk-device','phone');if(/[?&]resetui=1(&|$)/.test(location.search)){var r=JSON.parse(localStorage.getItem('kkutu_volume')||'{}');delete r.ui;delete r.uiStyle;localStorage.setItem('kkutu_volume',JSON.stringify(r));return;}var s=JSON.parse(localStorage.getItem('kkutu_volume')||'{}');var q=location.search.match(/[?&]ui=(new|classic)(&|$)/);if(q){s.ui=q[1];localStorage.setItem('kkutu_volume',JSON.stringify(s));}if(s.ui==='new'&&window.CSS&&CSS.supports&&CSS.supports('color','color-mix(in oklch, red 50%, blue)')){h.setAttribute('data-ui','new');h.setAttribute('data-nk-style','flat');}}catch(e){}})();
 	link(rel='stylesheet', href='/css/nk.css?v=' + nkV)
+	//- 신 UI 보조 색: layout의 첫 테마 적용 전에 ThemeEngine.apply를 감쌈 (kkutu.pug와 같음, 원래 번들 안 nk.js에 있던 계산)
+	script(src='/js/nk-boot.js?v=' + nkV)
 
 block JS
 	script(src='https://www.google.com/recaptcha/api.js')
@@ -126,10 +128,18 @@ block Middle
 	- var nick = SESSION.profile && (SESSION.profile.nickname || SESSION.profile.title || SESSION.profile.name);
 	include kkutu_nk
 	div#Intro
+		//- 신 UI 로딩 화면의 로고·진행 막대 (kkutu.pug와 같음). 기본 UI에서는 nk.css가 숨김
+		div.nk-intro-logo
+			div.nk-logo-a 끄투
+			div.nk-logo-b 엔
 		img#intro(src='/img/kkutu/m_intro.png')
 		//- img#intro-start(src='/img/kkutu/intro_start.gif')
 		div#version(data-lang-key='version', data-lang-suffix=VERSION.slice(L('version').length))= VERSION
 		div#intro-text(data-lang-key='LOADING')= L('LOADING')
+		div.nk-intro-load
+			div.nk-intro-bar
+				div
+			div.nk-intro-pct 0%
 	div.kkutu-menu
 		button#HelpBtn.for-lobby.for-master.for-normal.for-gaming(style='display: none; background-color: #BBBBBB;', data-lang-key='help', data-lang-raw)!= L('help')
 		button#SettingBtn.for-lobby.for-master.for-normal.for-gaming(style='display: none; background-color: #CCCCCC;', data-lang-key='settings', data-lang-raw)!= L('settings')
@@ -239,10 +249,11 @@ block Middle
 				option(value="system", data-lang-key='darkModeSystem')= L('darkModeSystem')
 		div.dialog-bar
 			h4(data-lang-key='uiSetting')= L('uiSetting')
-			select#ui-setting(style="width:80px")
+			select#ui-setting(style="width:150px;")
 				option(value="classic", data-lang-key='uiClassic')= L('uiClassic')
 				option(value="new", data-lang-key='uiNew')= L('uiNew')
-			select#ui-style-setting(style="width:80px; margin-left: 4px;")
+			//- 단색/혼합 선택은 숨김: 지금은 단색만 씀, 혼합은 다른 스타일로 바꿔 낼 예정 (2026-11-01 사용자)
+			select#ui-style-setting(style="display:none; width:80px; margin-left: 4px;")
 				option(value="mixed", data-lang-key='uiStyleMixed')= L('uiStyleMixed')
 				option(value="flat", data-lang-key='uiStyleFlat')= L('uiStyleFlat')
 		div.dialog-bar

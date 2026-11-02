@@ -353,7 +353,7 @@ exports.submit = function (client, text) {
 
 		// 봇이면 재시도
 		if (client.robot) {
-			setTimeout(function () {
+			client.game.typingTimer = setTimeout(function () {
 				exports.playRobot.call(my, client);
 			}, 200);
 		}
