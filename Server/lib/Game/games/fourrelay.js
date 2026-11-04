@@ -218,7 +218,7 @@ exports.submit = function (client, text, data) {
 		t = tv - my.game.turnAt;
 		score = my.getScore(answer, t);
 		my.logChainWord(full, client);
-		my.game.roundTime -= t;
+		my.game.roundTime = Math.max(0, my.game.roundTime - t);
 		client.game.coopTurns = (client.game.coopTurns || 0) + 1;
 		client.game.score += score;
 		if (!client.robot) client.invokeWordPiece(full, 1);

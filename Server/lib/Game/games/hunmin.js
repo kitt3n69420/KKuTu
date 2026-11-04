@@ -324,7 +324,7 @@ exports.submit = function (client, text, data) {
 						missionBonus = 0;
 					}
 					my.logChainWord(text, client);
-					my.game.roundTime -= t;
+					my.game.roundTime = Math.max(0, my.game.roundTime - t);
 
 					// ========== 서바이벌 모드: 득점 = 다음 사람 데미지 ==========
 					if (my.opts.survival) {
@@ -520,7 +520,7 @@ exports.readyRobot = function (robot) {
 			robot.data.candidates = [w].concat(list);
 			robot.data.candidateIndex = 0;
 			text = w._id;
-			delay += 500 * ROBOT_THINK_COEF[level] * Math.random() / Math.log(1.1 + w.hit);
+			delay += 500 * ROBOT_THINK_COEF[level] * Math.random() / Math.log(1.1 + Math.max(0, w.hit || 0));
 			after();
 		} else denied();
 	}

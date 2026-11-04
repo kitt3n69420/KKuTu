@@ -175,9 +175,11 @@ process.on("message", function (msg) {
       JLog.warn(`Unhandled IPC message type: ${msg.type}`);
   }
 });
+var DB_READY = false;
 MainDB.ready = function () {
   JLog.success("DB is ready.");
   KKuTu.init(MainDB, DIC, ROOM, GUEST_PERMISSION);
+  DB_READY = true;
 };
 Server.on("connection", function (socket, info) {
   var chunk = info.url.slice(1).split("&");
@@ -199,6 +201,12 @@ Server.on("connection", function (socket, info) {
   });
   if (CHAN != Number(chunk[1])) {
     JLog.warn(`Wrong channel value ${chunk[1]} on @${CHAN}`);
+    socket.close();
+    return;
+  }
+  // 워커 재시작 직후 DB 연결 전에 재접속이 들어오면 MainDB.session이 없어 크래시 — 예약은 남겨 두고(만료 시 마스터에 통보) 끊는다
+  if (!DB_READY) {
+    JLog.warn(`DB not ready yet, rejecting #${key} on @${CHAN}`);
     socket.close();
     return;
   }

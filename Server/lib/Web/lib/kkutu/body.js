@@ -246,6 +246,7 @@ function applyOptions(opt) {
 	$("#no-filter").prop('checked', ($data.opts.nf !== undefined) ? $data.opts.nf : true);
 	$("#no-shake").prop('checked', ($data.opts.ns === true));
 	$("#player-scroll").prop('checked', ($data.opts.ps === true));
+	$("#kana-reading").prop('checked', ($data.opts.kr !== false));
 
 	// 사운드팩 설정 (localStorage에 값이 있으면 localStorage, 없으면 cookie)
 	var soundPack = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts.sp || "");
@@ -3369,6 +3370,7 @@ function processWord(word, _mean, _theme, _wcs) {
 function getCharText(char, subChar, wordLength) {
 	// subChar가 파이프로 구분된 경우 콤마로 표시
 	var displaySubChar = subChar ? subChar.split('|').join(', ') : null;
+	var kanaReading = getKanaReadingText(char);
 
 	if ($data.room && $data.room.opts && $data.room.opts.drg) {
 		char = char.split('').map(function (c) {
@@ -3382,11 +3384,55 @@ function getCharText(char, subChar, wordLength) {
 		}
 	}
 
-	var res = char + (displaySubChar ? ("(" + displaySubChar + ")") : "");
+	var res = char + (displaySubChar ? ("(" + displaySubChar + ")") : "") + kanaReading;
 
 	if (wordLength) res += "<label class='jjo-display-word-length'>(" + wordLength + ")</label>";
 
 	return res;
+}
+// 가나 발음 보기($data.opts.kr): 클래식 일본어 모드(JSH/JAP/JKT)의 이을 가나 뒤에 발음을 쿵쿵따 글자수 표시와 같은 모양으로 붙임.
+// 한국어/냥냥 화면은 한글 발음(あ(아)), 그 밖의 언어(영어/일본어 등)는 헵번식 로마자(あ(a))
+var KANA_HANGUL = {
+	'あ': '아', 'い': '이', 'う': '우', 'え': '에', 'お': '오',
+	'か': '카', 'き': '키', 'く': '쿠', 'け': '케', 'こ': '코',
+	'が': '가', 'ぎ': '기', 'ぐ': '구', 'げ': '게', 'ご': '고',
+	'さ': '사', 'し': '시', 'す': '스', 'せ': '세', 'そ': '소',
+	'ざ': '자', 'じ': '지', 'ず': '즈', 'ぜ': '제', 'ぞ': '조',
+	'た': '타', 'ち': '치', 'つ': '츠', 'て': '테', 'と': '토',
+	'だ': '다', 'ぢ': '지', 'づ': '즈', 'で': '데', 'ど': '도',
+	'な': '나', 'に': '니', 'ぬ': '누', 'ね': '네', 'の': '노',
+	'は': '하', 'ひ': '히', 'ふ': '후', 'へ': '헤', 'ほ': '호',
+	'ば': '바', 'び': '비', 'ぶ': '부', 'べ': '베', 'ぼ': '보',
+	'ぱ': '파', 'ぴ': '피', 'ぷ': '푸', 'ぺ': '페', 'ぽ': '포',
+	'ま': '마', 'み': '미', 'む': '무', 'め': '메', 'も': '모',
+	'や': '야', 'ゆ': '유', 'よ': '요',
+	'ら': '라', 'り': '리', 'る': '루', 'れ': '레', 'ろ': '로',
+	'わ': '와', 'ゐ': '이', 'ゑ': '에', 'を': '오', 'ん': '응', 'ゔ': '부'
+};
+var KANA_ROMAJI = {
+	'あ': 'a', 'い': 'i', 'う': 'u', 'え': 'e', 'お': 'o',
+	'か': 'ka', 'き': 'ki', 'く': 'ku', 'け': 'ke', 'こ': 'ko',
+	'が': 'ga', 'ぎ': 'gi', 'ぐ': 'gu', 'げ': 'ge', 'ご': 'go',
+	'さ': 'sa', 'し': 'shi', 'す': 'su', 'せ': 'se', 'そ': 'so',
+	'ざ': 'za', 'じ': 'ji', 'ず': 'zu', 'ぜ': 'ze', 'ぞ': 'zo',
+	'た': 'ta', 'ち': 'chi', 'つ': 'tsu', 'て': 'te', 'と': 'to',
+	'だ': 'da', 'ぢ': 'ji', 'づ': 'zu', 'で': 'de', 'ど': 'do',
+	'な': 'na', 'に': 'ni', 'ぬ': 'nu', 'ね': 'ne', 'の': 'no',
+	'は': 'ha', 'ひ': 'hi', 'ふ': 'fu', 'へ': 'he', 'ほ': 'ho',
+	'ば': 'ba', 'び': 'bi', 'ぶ': 'bu', 'べ': 'be', 'ぼ': 'bo',
+	'ぱ': 'pa', 'ぴ': 'pi', 'ぷ': 'pu', 'ぺ': 'pe', 'ぽ': 'po',
+	'ま': 'ma', 'み': 'mi', 'む': 'mu', 'め': 'me', 'も': 'mo',
+	'や': 'ya', 'ゆ': 'yu', 'よ': 'yo',
+	'ら': 'ra', 'り': 'ri', 'る': 'ru', 'れ': 're', 'ろ': 'ro',
+	'わ': 'wa', 'ゐ': 'i', 'ゑ': 'e', 'を': 'o', 'ん': 'n', 'ゔ': 'vu'
+};
+function getKanaReadingText(char) {
+	if (($data.opts && $data.opts.kr === false) || !$data.room) return "";
+	var rule = RULE[MODE[$data.room.mode]];
+	if (!rule || rule.rule !== "Classic" || rule.lang !== "ja") return "";
+	var lang = localStorage.getItem('kkutu_lang') || 'ko_KR';
+	var reading = (lang === 'ko_KR' || lang === 'nya') ? KANA_HANGUL[char] : KANA_ROMAJI[char];
+	return reading ? "<label class='jjo-display-word-length'>(" + reading + ")</label>" : "";
 }
 function getRequiredScore(lv) {
 	return Math.round(
@@ -3555,11 +3601,15 @@ function chatBalloon(text, id, flag) {
 	var nkUp = NK.active && !(flag & 2);
 	var img = (flag == 2 || nkUp) ? "chat-balloon-bot" : "chat-balloon-tip";
 	var $obj = $("<div>").addClass("chat-balloon");
-	var targetWidth = 0;
+	var targetWidth = 0, nkFit = false;
 	if ((flag & 2) && $data.room && $data.room.game && $data.room.game.seq && $data.room.game.seq.length > 8 && !isPlayerScroll()) {
 		$obj.addClass("small-balloon");
 		var $target = $("#game-user-" + id);
 		if ($target.length) targetWidth = $target.width();
+	} else if ((flag & 2) && NK.active && !NK.phone) {
+		// 신 UI 데스크톱 게임 화면: 말풍선 폭 = 카드 폭 (말풍선 글자가 커서 기존 폭은 줄이 많고, 좁은 카드에서는 옆 말풍선과 겹침)
+		targetWidth = $("#game-user-" + id).outerWidth() || 0;
+		nkFit = true;
 	}
 	$obj.attr('id', "cb-" + id)
 		.append($("<div>").addClass("jt-image " + img))
@@ -3569,6 +3619,8 @@ function chatBalloon(text, id, flag) {
 	if (!offset) return;
 	if ((flag & 2) && isPlayerScroll()) offset = clampPlayerScrollOffset(offset, $("#game-user-" + id));
 	$stage.balloons.append($obj);
+	// 높이(ot)를 재기 전에 폭부터 맞춤 — 폭이 줄면 줄 수가 늘어남
+	if (nkFit && targetWidth) $obj.width(targetWidth);
 	if (flag == 1) ot = 0, ol = 220;
 	else if (flag == 2) ot = 35 - $obj.height(), ol = -2;
 	else if (flag == 3) ot = 5, ol = 210;
@@ -3578,7 +3630,8 @@ function chatBalloon(text, id, flag) {
 		if ($img.length) {
 			offset = $img.offset();
 			ot = 8 - $obj.height();
-			ol = $img.outerWidth() / 2 - 61;
+			// 말풍선 폭은 CSS가 정함 (데스크톱 신 UI 160px, 그 밖 123px)
+			ol = ($img.outerWidth() - $obj.outerWidth()) / 2;
 		}
 	}
 

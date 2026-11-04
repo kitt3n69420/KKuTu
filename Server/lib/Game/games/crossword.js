@@ -233,7 +233,7 @@ exports.roundReady = function () {
 		my.game.started = true;
 		my.game.roundTime = my.time * 1000;
 		my.byMaster('roundReady', {
-			seq: my.game.seq
+			seq: my.game.seq.map(function (o) { return (o && o.robot && o.getData) ? o.getData() : o; })
 		}, true);
 		setTimeout(my.turnStart, 2400);
 	} else {

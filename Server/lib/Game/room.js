@@ -670,6 +670,9 @@ function Room(room, channel) {
 					if (removedBot._timerCatch) { clearTimeout(removedBot._timerCatch); removedBot._timerCatch = null; }
 					if (removedBot._cwTimer) { clearTimeout(removedBot._cwTimer); removedBot._cwTimer = null; }
 					if (removedBot.game && removedBot.game.flipTimer) { clearTimeout(removedBot.game.flipTimer); removedBot.game.flipTimer = null; }
+					// seq에서 빠진 봇은 interrupt()가 못 지우므로 여기서 정리 (계산 대결 등: 방 삭제 후 my.game={}에 제출해 크래시)
+					if (removedBot.game && removedBot.game.typingTimer) { clearTimeout(removedBot.game.typingTimer); removedBot.game.typingTimer = null; }
+					if (removedBot.game && removedBot.game.botTimer) { clearTimeout(removedBot.game.botTimer); removedBot.game.botTimer = null; }
 				}
 				my.players.splice(i, 1);
 				// rageQuit 중인 봇은 이미 disconnRoom을 전송했으므로 제외

@@ -1039,7 +1039,7 @@ exports.submit = function (client, text) {
 
 				my.logChainWord(text, client);
 				my.game.roundChainCount++;
-				my.game.roundTime -= t;
+				my.game.roundTime = Math.max(0, my.game.roundTime - t);
 
 				// Random Linking Logic
 				if (my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second) {

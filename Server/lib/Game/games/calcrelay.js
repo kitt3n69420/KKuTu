@@ -357,7 +357,7 @@ exports.submit = function (client, text, data) {
 
 		score = my.getScore(my.game.chain.length, t);
 		my.logChainWord(inputAnswer, client);
-		my.game.roundTime -= t;
+		my.game.roundTime = Math.max(0, my.game.roundTime - t);
 
 		// 새 문제 생성
 		var problem = generateProblem(my.game.chain.length);

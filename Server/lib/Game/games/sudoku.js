@@ -139,7 +139,7 @@ exports.roundReady = function () {
 		return n + p.given.filter(function (v) { return !v; }).length;
 	}, 0);
 	my.byMaster('roundReady', {
-		seq: my.game.seq
+		seq: my.game.seq.map(function (o) { return (o && o.robot && o.getData) ? o.getData() : o; })
 	}, true);
 	my.game.turnTimer = setTimeout(my.turnStart, 2400);
 };

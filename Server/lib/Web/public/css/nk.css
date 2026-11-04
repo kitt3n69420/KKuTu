@@ -43,7 +43,8 @@ html[data-ui="new"] body {
 	--nk-line-accent: color-mix(in oklch, var(--color-primary) 50%, var(--color-bg-light));
 	--nk-text: var(--theme-text);
 	--nk-text-2: color-mix(in oklch, var(--theme-text) 66%, var(--color-bg-light));
-	--nk-text-3: color-mix(in oklch, var(--theme-text) 44%, var(--color-bg-light));
+	/* 흰 바탕 대비 5.2:1, 페이지 바탕 4.7:1 (32) 가독성 정리 C — 예전 44%는 3.3:1) */
+	--nk-text-3: color-mix(in oklch, var(--theme-text) 58%, var(--color-bg-light));
 	--nk-accent: var(--color-primary);
 	--nk-accent-soft: color-mix(in oklch, var(--color-primary) 12%, var(--color-bg-light));
 	--nk-accent-ink: color-mix(in oklch, var(--color-primary-dark) 82%, var(--theme-text));
@@ -148,8 +149,8 @@ html[data-ui="new"] #Intro::before {
 @keyframes nk-intro-drift { to { background-position: 26px 26px; } }
 html[data-ui="new"] #Intro #intro { display: none; }
 .nk-intro-logo { justify-content: center; margin: 0 auto 26px; font-size: calc((clamp(64px, 11vw, 132px)) * var(--nk-fs, 1)); }
-html[data-ui="new"] #Intro #intro-text { position: static; width: auto; max-width: 640px; font-size: calc((15px) * var(--nk-fs, 1)); font-weight: 650; line-height: 1.6; color: var(--nk-text-2); text-shadow: none; }
-html[data-ui="new"] #Intro #version { top: 12px; left: 16px; font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 600; color: var(--nk-text-3); text-shadow: none; }
+html[data-ui="new"] #Intro #intro-text { position: static; width: auto; max-width: 640px; font-size: calc((15px) * var(--nk-fs, 1)); font-weight: 400; line-height: 1.6; color: var(--nk-text-2); text-shadow: none; }
+html[data-ui="new"] #Intro #version { top: 12px; left: 16px; font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-3); text-shadow: none; }
 /* 진행 막대: 폭 = 진행률 (nk.js loadProgress) */
 /* 막대는 가운데, % 글자는 막대 오른쪽 바깥에 */
 .nk-intro-load { position: relative; margin-top: 16px; }
@@ -168,7 +169,7 @@ html:not([data-ui="new"]) #Intro :is(.nk-intro-logo, .nk-intro-load) { display: 
 }
 .nk-intro-tip.is-out { opacity: 0; }
 .nk-intro-tip-label { flex: none; margin-top: 1px; padding: 1px 8px; border-radius: 999px; background: var(--nk-second-soft); color: var(--nk-second-ink); font-size: calc((11.5px) * var(--nk-fs, 1)); font-weight: 800; }
-.nk-intro-tip-text { flex: 1; min-width: 0; color: var(--nk-text); font-weight: 550; }
+.nk-intro-tip-text { flex: 1; min-width: 0; color: var(--nk-text); font-weight: 400; }
 /* 장식 단어 (nk.js introWords): 점 무늬 위·로고 아래 층. 테두리·배경 그림 없는 크고 연한 글자, 기울이지 않고 천천히 떠 있음.
    자리(left/top = 글자 가운데)와 이어지는 단어 사이 선의 끝점은 nk.js가 글자 크기를 재서 정함.
    이어지는 단어 = 강조색, 나머지(일반·공격·방어·긴 단어)는 같은 글자색·같은 크기 (모두 옅게, 사용자 지정) */
@@ -295,7 +296,7 @@ html[data-nk-style="mixed"] .nk-tab.active { --nkb-bg: var(--nk-fill); --nkb-fg:
 html[data-nk-style="mixed"] .nk-notice { background: color-mix(in oklch, var(--nk-second-soft) 70%, transparent); border: 1px solid var(--nk-panel-line); backdrop-filter: var(--nk-blur); }
 .nk-notice.is-empty { display: none; }
 .nk-notice-label { flex: none; font-weight: 800; font-size: calc((11.5px) * var(--nk-fs, 1)); padding: 2px 8px; border-radius: 999px; background: var(--nk-fill); color: var(--nk-on-accent); }
-.nk-notice-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.nk-notice-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 400; }
 .nk-notice-text * { display: inline !important; margin: 0 !important; padding: 0 !important; font-size: inherit !important; color: inherit !important; background: none !important; }
 .nk-notice-text br { display: none !important; }
 
@@ -398,7 +399,7 @@ html[data-ui="new"] #nk-app :is(.nk-input, .nk-select):focus { border-color: var
 .nk-search .nk-i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--nk-text-3); pointer-events: none; }
 html[data-ui="new"] #nk-app .nk-search .nk-input { padding-left: 32px; }
 
-.nk-tag { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: var(--nk-second-soft); color: var(--nk-second-ink); font-size: calc((11.5px) * var(--nk-fs, 1)); font-weight: 650; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.nk-tag { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: var(--nk-second-soft); color: var(--nk-second-ink); font-size: calc((11.5px) * var(--nk-fs, 1)); font-weight: 400; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .nk-tag.more { background: transparent; border: 1px dashed var(--nk-second-line); }
 
 /* ---------- 패널 머리 ---------- */
@@ -427,7 +428,7 @@ html[data-nk-style="flat"] :is(.nk-room-tools, .nk-people > .nk-panel-head) { bo
 	animation: nk-pop .14s ease;
 }
 @keyframes nk-pop { from { opacity: 0; transform: translateY(-4px); } }
-.nk-menu-item { display: flex; align-items: center; gap: 10px; width: 100%; height: 38px; margin: 0; padding: 0 10px; border: 0; border-radius: 8px; --nkb-bg: transparent; --nkb-fg: var(--nk-text); text-align: left; font-size: calc((14px) * var(--nk-fs, 1)); font-weight: 600; cursor: pointer; }
+.nk-menu-item { display: flex; align-items: center; gap: 10px; width: 100%; height: 38px; margin: 0; padding: 0 10px; border: 0; border-radius: 8px; --nkb-bg: transparent; --nkb-fg: var(--nk-text); text-align: left; font-size: calc((14px) * var(--nk-fs, 1)); font-weight: 400; cursor: pointer; }
 @media (hover: hover) { .nk-menu-item:hover { --nkb-bg: var(--nk-surface-2); } }
 .nk-menu-item .nk-i { color: var(--nk-text-2); }
 .nk-menu-item.disabled { opacity: .4; cursor: default; }
@@ -558,14 +559,14 @@ html[data-ui="new"] #nk-pbody-users .users-item { display: flex; align-items: ce
 @media (hover: hover) { html[data-ui="new"] #nk-pbody-users .users-item:hover { background-color: var(--nk-second-soft); } }
 @media (hover: hover) { html[data-ui="new"] body.dark-mode #nk-pbody-users .users-item:hover { background-color: var(--nk-second-soft) !important; } }
 html[data-ui="new"] #nk-pbody-users .users-level { flex: none; width: 16px; height: 16px; margin: 0; }
-html[data-ui="new"] #nk-pbody-users .users-name { flex: 1; min-width: 0; width: auto; padding: 0; font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-ui="new"] #nk-pbody-users .users-name { flex: 1; min-width: 0; width: auto; padding: 0; font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nk-place { flex: none; font-size: calc((11px) * var(--nk-fs, 1)); font-weight: 700; color: var(--nk-accent-ink); font-variant-numeric: tabular-nums; }
 
 /* 친구 */
 .nk-person { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: var(--nk-r-sm); cursor: pointer; }
 @media (hover: hover) { .nk-person:hover { background: var(--nk-second-soft); } }
 .nk-person-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.nk-person-name { font-weight: 650; font-size: calc((13px) * var(--nk-fs, 1)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nk-person-name { font-weight: 400; font-size: calc((13px) * var(--nk-fs, 1)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nk-person-sub { font-size: calc((11.5px) * var(--nk-fs, 1)); color: var(--nk-text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nk-person.offline .nk-person-name { color: var(--nk-text-2); }
 .nk-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--nk-surface-3); }
@@ -623,7 +624,7 @@ html[data-ui="new"] #nk-app #shop-shelf .goods-title {
 	grid-area: name; float: none; width: auto; margin: 0; font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 700; line-height: 1.35;
 	overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; min-height: 2.7em;
 }
-html[data-ui="new"] #nk-app #shop-shelf .goods-cost { grid-area: cost; float: none; width: auto; margin: 0; font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 750; color: var(--nk-accent-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-ui="new"] #nk-app #shop-shelf .goods-cost { grid-area: cost; float: none; width: auto; margin: 0; font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 700; color: var(--nk-accent-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 html[data-ui="new"] #nk-app #shop-shelf .nk-goods-buy { grid-area: buy; height: 30px; padding: 0 12px; font-size: calc((12.5px) * var(--nk-fs, 1)); }
 html[data-ui="new"] #nk-app #shop-search-empty { grid-column: 1 / -1; padding: 60px 20px; color: var(--nk-text-2); font-size: calc((13px) * var(--nk-fs, 1)); }
 
@@ -643,34 +644,34 @@ html[data-nk-style="flat"] .nk-help-body { padding-top: 10px; }
 	border: 0; border-radius: var(--nk-r-sm); --nkb-fg: var(--nk-text-2); text-align: left; cursor: pointer;
 	font-family: inherit; font-size: calc((calc(13.5px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 650; line-height: 1.35;
 }
-.nk-help-gh { --nkb-fg: var(--nk-text); font-weight: 750; }
+.nk-help-gh { --nkb-fg: var(--nk-text); font-weight: 700; }
 .nk-help-gh label { cursor: inherit; }
 .nk-help-gh .nk-i { width: 15px; height: 15px; color: var(--nk-text-3); transition: transform .15s; }
 .nk-help-group.collapsed > .nk-help-gh .nk-i { transform: rotate(-90deg); }
 .nk-help-item { padding-left: 27px; }
-.nk-help-item.nk-help-home { padding-left: 8px; --nkb-fg: var(--nk-text); font-weight: 750; }
+.nk-help-item.nk-help-home { padding-left: 8px; --nkb-fg: var(--nk-text); font-weight: 700; }
 @media (hover: hover) { .nk-help-gh:hover, .nk-help-item:hover { --nkb-bg: var(--nk-surface-2); --nkb-fg: var(--nk-text); } }
-.nk-help-item.on, .nk-help-item.on:hover { --nkb-bg: var(--nk-accent-soft); --nkb-fg: var(--nk-accent-ink); font-weight: 750; }
+.nk-help-item.on, .nk-help-item.on:hover { --nkb-bg: var(--nk-accent-soft); --nkb-fg: var(--nk-accent-ink); font-weight: 700; }
 .nk-help-none, .nk-help-msg { padding: 16px 8px; font-size: calc((13px) * var(--nk-fs, 1)); color: var(--nk-text-3); }
 .nk-help-main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding-left: 20px; }
-.nk-help-crumb { flex: none; min-height: 18px; font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 650; color: var(--nk-text-3); }
-.nk-help-title { flex: none; margin: 2px 0 10px; font-size: calc((calc(22px + var(--nk-up, 0) * 1.5px)) * var(--nk-fs, 1)); font-weight: 850; }
+.nk-help-crumb { flex: none; min-height: 18px; font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-3); }
+.nk-help-title { flex: none; margin: 2px 0 10px; font-size: calc((calc(22px + var(--nk-up, 0) * 1.5px)) * var(--nk-fs, 1)); font-weight: 800; }
 .nk-help-page { flex: 1; min-height: 0; padding-right: 8px; font-size: calc((calc(14px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); line-height: 1.75; color: var(--nk-text); }
 .nk-help-page .page-body { max-width: 860px; }
 .nk-help-page :is(h3, h4, h5) { margin: 14px 0 6px; line-height: 1.4; }
 .nk-help-page h3 { font-size: 1.25em; }
 .nk-help-page h4 { font-size: 1.05em; font-weight: 800; }
-.nk-help-page h5 { font-size: 1em; font-weight: 500; }
+.nk-help-page h5 { font-size: 1em; font-weight: 400; }
 .nk-help-page p { margin: 6px 0; }
 .nk-help-page :is(ul, ol) { margin: 4px 0 8px; padding-left: 22px; }
 .nk-help-page blockquote { margin: 8px 0; padding: 6px 12px; border-left: 4px solid var(--nk-second-line); border-radius: 0 var(--nk-r-sm) var(--nk-r-sm) 0; background: var(--nk-second-soft); }
-.nk-help-page word { padding: 1px 6px; border-radius: 5px; background: var(--nk-surface-2); font-weight: 650; }
+.nk-help-page word { padding: 1px 6px; border-radius: 5px; background: var(--nk-surface-2); font-weight: 400; }
 .nk-help-page a { color: var(--nk-accent-ink); }
 .nk-help-page img { max-width: 100%; height: auto; border-radius: var(--nk-r-sm); cursor: zoom-in; }
 .nk-help-page iframe { max-width: 100%; border: 0; border-radius: var(--nk-r-sm); }
 .nk-help-page table { width: 100%; margin: 8px 0; border-collapse: collapse; font-size: .95em; }
 .nk-help-page table td { padding: 6px 8px; border-bottom: 1px solid var(--nk-line); }
-.nk-help-page thead { text-align: center; font-weight: 750; background: var(--nk-surface-2); }
+.nk-help-page thead { text-align: center; font-weight: 700; background: var(--nk-surface-2); }
 .nk-help-foot { flex: none; display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid var(--nk-line); }
 html[data-ui="new"] .nk-help-foot .nk-btn { max-width: 45%; height: calc(34px + var(--nk-up, 0) * 2px); font-size: calc((13px) * var(--nk-fs, 1)); }
 html[data-ui="new"] .nk-help-foot .nk-btn label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -678,12 +679,12 @@ html[data-ui="new"] .nk-help-foot .nk-btn:disabled { visibility: hidden; }
 /* 랭킹: 기존 #ranking 표 (인라인 가운데 정렬·회색 머리는 덮어씀). 1~3위는 순위 칸 뒤에 메달색 원 */
 .nk-rank-body { flex: 1; min-height: 0; padding: 0 14px; }
 html[data-ui="new"] #nk-page-rank #ranking { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: calc((14px) * var(--nk-fs, 1)); text-align: left !important; }
-html[data-ui="new"] #nk-page-rank #ranking thead { background: none !important; font-weight: 750 !important; }
+html[data-ui="new"] #nk-page-rank #ranking thead { background: none !important; font-weight: 700 !important; }
 html[data-ui="new"] #nk-page-rank #ranking td { height: 44px; padding: 0 10px; border-bottom: 1px solid var(--nk-line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 html[data-ui="new"] #nk-page-rank #ranking thead td { position: sticky; top: 0; z-index: 1; height: 34px; background: var(--nk-surface); font-size: calc((12px) * var(--nk-fs, 1)); color: var(--nk-text-3); }
 html[data-ui="new"] #nk-page-rank #ranking td:nth-child(1) { width: 64px; text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; }
 html[data-ui="new"] #nk-page-rank #ranking td:nth-child(2) { width: 110px; }
-html[data-ui="new"] #nk-page-rank #ranking td:nth-child(3) { font-weight: 650; }
+html[data-ui="new"] #nk-page-rank #ranking td:nth-child(3) { font-weight: 400; }
 html[data-ui="new"] #nk-page-rank #ranking td:nth-child(4) { width: 170px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 html[data-ui="new"] #nk-page-rank #ranking td:nth-child(2) > * { float: none; display: inline-block; vertical-align: middle; padding: 0 !important; }
 html[data-ui="new"] #nk-page-rank #ranking .ranking-image { margin-right: 6px; }
@@ -706,12 +707,12 @@ html[data-ui="new"] .nk-rank-foot .nk-btn:disabled { opacity: .45; cursor: defau
 html[data-nk-style="flat"] .nk-dict-body { padding-top: 10px; }
 .nk-dict-mean { flex: 0 0 40%; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding-right: 16px; border-right: 1px solid var(--nk-line); }
 .nk-dict-find { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding-left: 16px; }
-.nk-dict-label { flex: none; font-size: calc((calc(12px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 750; color: var(--nk-text-3); }
+.nk-dict-label { flex: none; font-size: calc((calc(12px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 700; color: var(--nk-text-3); }
 html[data-ui="new"] #nk-app .nk-dict-mean .nk-search { flex: none; max-width: none; }
 html[data-ui="new"] #nk-app #nk-dict-word { height: calc(40px + var(--nk-up, 0) * 2px); font-size: calc((calc(14.5px + var(--nk-up, 0) * .75px)) * var(--nk-fs, 1)); }
 .nk-dict-out { flex: 1; min-height: 0; }
 .nk-dict-empty { padding: 18px 2px; font-size: calc((13px) * var(--nk-fs, 1)); color: var(--nk-text-3); }
-.nk-dict-head { font-size: calc((calc(28px + var(--nk-up, 0) * 2px)) * var(--nk-fs, 1)); font-weight: 850; letter-spacing: .02em; word-break: break-all; }
+.nk-dict-head { font-size: calc((calc(28px + var(--nk-up, 0) * 2px)) * var(--nk-fs, 1)); font-weight: 800; letter-spacing: .02em; word-break: break-all; }
 .nk-dict-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 10px; }
 .nk-tag.zero { background: color-mix(in oklch, var(--nk-danger) 16%, var(--nk-surface)); color: var(--nk-danger); }
 /* 기존 processWord 결과(.word) — 게임 화면용 색(흰 글씨 등)을 패널에 맞게 */
@@ -720,9 +721,9 @@ html[data-ui="new"] #nk-app #nk-dict-word { height: calc(40px + var(--nk-up, 0) 
 .nk-dict-mean-body .word-m1:has(> .word-m1-head) { padding-left: 30px; }
 .nk-dict-mean-body .word-m2, .nk-dict-mean-body .word-m3 { display: block; }
 html[data-ui="new"] .nk-dict-mean-body .word-m1-head { position: absolute; left: 2px; top: 10px; width: 20px; height: 20px; margin: 0; padding: 0; display: grid; place-items: center; border-radius: 6px; background: var(--nk-accent-soft); color: var(--nk-accent-ink) !important; font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 800; }
-.nk-dict-mean-body .word-m2-head { color: var(--nk-second-ink); font-weight: 750; }
+.nk-dict-mean-body .word-m2-head { color: var(--nk-second-ink); font-weight: 700; }
 .nk-dict-mean-body .word-m3-head { color: var(--nk-text-2); font-weight: 700; }
-.nk-dict-mean-body .word-theme { color: var(--nk-accent-ink); font-weight: 650; margin-right: 3px; }
+.nk-dict-mean-body .word-theme { color: var(--nk-accent-ink); font-weight: 400; margin-right: 3px; }
 .nk-dict-recent { flex: none; display: flex; flex-wrap: wrap; gap: 6px; max-height: 62px; overflow: hidden; }
 .nk-dict-recent .nk-tag { height: 26px; padding: 0 10px; border: 0; font-family: inherit; cursor: pointer; --nkb-bg: var(--nk-second-soft); --nkb-fg: var(--nk-second-ink); }
 @media (hover: hover) { .nk-dict-recent .nk-tag:hover { --nkb-bg: var(--nk-second-line); } }
@@ -736,30 +737,30 @@ html[data-ui="new"] #nk-app .nk-dict-row .nk-select { width: auto; }
 html[data-ui="new"] .nk-dict-go { flex: none; width: calc(46px + var(--nk-up, 0) * 2px); height: calc(42px + var(--nk-up, 0) * 2px); padding: 0; justify-content: center; }
 .nk-dict-row .nk-chip:disabled { opacity: .45; cursor: default; }
 /* 언어 표시 (넣은 글자로 정해짐 — 누르는 칸이 아님) */
-.nk-dict-lang { display: inline-flex; align-items: center; height: calc(32px + var(--nk-up, 0) * 2px); padding: 0 12px; border-radius: var(--nk-r-sm); background: var(--nk-second-soft); color: var(--nk-second-ink); font-size: calc((calc(12.5px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 750; cursor: help; }
+.nk-dict-lang { display: inline-flex; align-items: center; height: calc(32px + var(--nk-up, 0) * 2px); padding: 0 12px; border-radius: var(--nk-r-sm); background: var(--nk-second-soft); color: var(--nk-second-ink); font-size: calc((calc(12.5px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 700; cursor: help; }
 .nk-dict-sum { flex: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 24px; font-size: calc((13px) * var(--nk-fs, 1)); color: var(--nk-text-2); }
 .nk-dict-sum b { font-size: calc((calc(14.5px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); color: var(--nk-text); }
 .nk-dict-total { margin-left: auto; font-size: calc((12px) * var(--nk-fs, 1)); color: var(--nk-text-3); }
 .nk-dict-res { flex: 1; min-height: 0; }
 .nk-dict-table { width: 100%; border-collapse: collapse; font-size: calc((calc(14px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); }
 .nk-dict-table td { height: calc(40px + var(--nk-up, 0) * 2px); padding: 0 10px; border-bottom: 1px solid var(--nk-line); white-space: nowrap; }
-.nk-dict-table thead td { position: sticky; top: 0; z-index: 1; height: 32px; background: var(--nk-surface); font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 750; color: var(--nk-text-3); }
+.nk-dict-table thead td { position: sticky; top: 0; z-index: 1; height: 32px; background: var(--nk-surface); font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 700; color: var(--nk-text-3); }
 .nk-dict-table td.n { width: 44px; text-align: center; font-weight: 800; color: var(--nk-text-3); font-variant-numeric: tabular-nums; }
-.nk-dict-table td.w { width: 100%; font-weight: 750; letter-spacing: .02em; white-space: normal; word-break: break-all; line-height: 1.35; }
-.nk-dict-table td.m { text-align: center; font-weight: 750; color: var(--nk-accent-ink); }
+.nk-dict-table td.w { width: 100%; font-weight: 700; letter-spacing: .02em; white-space: normal; word-break: break-all; line-height: 1.35; }
+.nk-dict-table td.m { text-align: center; font-weight: 700; color: var(--nk-accent-ink); }
 .nk-dict-table:not(.is-mis) td.m { display: none; }
 .nk-dict-table td.e { text-align: center; }
-.nk-dict-table td.r { text-align: right; font-variant-numeric: tabular-nums; color: var(--nk-text-2); font-weight: 650; }
+.nk-dict-table td.r { text-align: right; font-variant-numeric: tabular-nums; color: var(--nk-text-2); font-weight: 400; }
 .nk-dict-table td.r.zero { color: var(--nk-danger); font-weight: 800; }
 .nk-dict-table tbody tr[data-w] { cursor: pointer; }
 @media (hover: hover) { .nk-dict-table tbody tr[data-w]:hover td { background: var(--nk-surface-2); } }
 .nk-dict-table tbody tr.sel td { background: var(--nk-accent-soft); }
-.nk-dict-table td.nk-dict-none { height: 80px; text-align: center; font-weight: 600; color: var(--nk-text-3); }
+.nk-dict-table td.nk-dict-none { height: 80px; text-align: center; font-weight: 400; color: var(--nk-text-3); }
 .nk-dict-end { display: inline-grid; place-items: center; min-width: 26px; height: 24px; padding: 0 6px; border-radius: 6px; background: var(--nk-second-soft); color: var(--nk-second-ink); font-weight: 800; font-size: calc((13px) * var(--nk-fs, 1)); }
 .nk-dict-end.zero { background: color-mix(in oklch, var(--nk-danger) 16%, var(--nk-surface)); color: var(--nk-danger); }
 .nk-dict-hl { color: var(--nk-accent-ink); background: color-mix(in oklch, var(--nk-accent) 18%, transparent); border-radius: 3px; padding: 0 1px; }
-.nk-dict-hw { margin-left: 6px; font-style: normal; font-weight: 600; font-size: .85em; color: var(--nk-text-3); }
-.nk-dict-badge { display: inline-flex; align-items: center; height: 20px; margin-left: 6px; padding: 0 7px; border-radius: 99px; font-style: normal; font-size: calc((11px) * var(--nk-fs, 1)); font-weight: 750; letter-spacing: 0; vertical-align: 2px; white-space: nowrap; }
+.nk-dict-hw { margin-left: 6px; font-style: normal; font-weight: 400; font-size: .85em; color: var(--nk-text-3); }
+.nk-dict-badge { display: inline-flex; align-items: center; height: 20px; margin-left: 6px; padding: 0 7px; border-radius: 99px; font-style: normal; font-size: calc((11px) * var(--nk-fs, 1)); font-weight: 700; letter-spacing: 0; vertical-align: 2px; white-space: nowrap; }
 .nk-dict-badge.inj { background: color-mix(in oklch, #f59e0b 22%, var(--nk-surface)); color: color-mix(in oklch, #8a5300 70%, var(--nk-text)); }
 .nk-dict-badge.sp { background: color-mix(in oklch, #8b5cf6 18%, var(--nk-surface)); color: color-mix(in oklch, #5b33b6 70%, var(--nk-text)); }
 html[data-ui="new"] .nk-rank-foot #lb-page { float: none; width: auto !important; min-width: 80px; margin: 0; padding: 0; font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 700; color: var(--nk-text-2); text-align: center; }
@@ -775,7 +776,7 @@ html[data-ui="new"] #nk-chat .ChatBox .product-body { flex: 1; min-height: 0; di
 html[data-ui="new"] #nk-chat #Chat { grid-column: 1 / -1; width: auto; box-sizing: border-box; overflow-x: hidden; height: auto !important; min-height: 0; padding: 0 4px; font-size: calc((13px) * var(--nk-fs, 1)); scrollbar-width: thin; scrollbar-color: var(--nk-surface-3) transparent; }
 /* 한 줄 높이 21px: 기존 UI(18px)보다 메시지 사이를 조금 띄움 (사용자 요청, 약 17%) */
 html[data-ui="new"] #nk-chat .chat-item { float: none; display: flex; align-items: baseline; gap: 8px; width: auto; margin: 0; padding: 2.5px 4px; line-height: calc(16px * var(--nk-fs, 1)); border-radius: 6px; }
-html[data-ui="new"] #nk-chat .chat-head { float: none; flex: none; width: auto; max-width: 38%; margin: 0; padding: 0; text-align: left; font-weight: 750; color: var(--nk-accent-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-ui="new"] #nk-chat .chat-head { float: none; flex: none; width: auto; max-width: 38%; margin: 0; padding: 0; text-align: left; font-weight: 700; color: var(--nk-accent-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (hover: hover) { html[data-ui="new"] #nk-chat .chat-head:hover { background: none !important; text-decoration: underline; } }
 html[data-ui="new"] #nk-chat .chat-body { float: none; flex: 1; min-width: 0; width: auto; word-break: break-all; }
 html[data-ui="new"] #nk-chat .chat-stamp { float: none; flex: none; width: auto; padding: 0; font-size: calc((10.5px) * var(--nk-fs, 1)); line-height: calc(14px * var(--nk-fs, 1)); color: var(--nk-text-3); font-variant-numeric: tabular-nums; }
@@ -799,7 +800,7 @@ html[data-ui="new"] #nk-center-body > .RoomBox > .product-title { display: none;
 .nk-roomhead { flex: none; display: flex; flex-direction: column; gap: 10px; padding: 14px 16px 12px; }
 html[data-nk-style="flat"] .nk-roomhead { border-bottom: 1px solid var(--nk-line); background: color-mix(in oklch, var(--nk-second-soft) 45%, var(--nk-surface)); }
 
-.nk-meta { display: inline-flex; align-items: center; gap: 5px; font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 650; color: var(--nk-text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nk-meta { display: inline-flex; align-items: center; gap: 5px; font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nk-meta .nk-i { width: 15px; height: 15px; color: var(--nk-text-3); }
 /* 기존 .room-head-* 규칙(고정 폭·오른쪽 정렬)을 풀어 줌 — 클래스는 animModified의 깜빡임용으로만 씀 */
 .nk-roomhead :is(.room-head-number, .room-head-title, .room-head-mode, .room-head-limit, .room-head-round, .room-head-time) { width: auto; margin: 0; text-align: left; flex: none; }
@@ -914,7 +915,7 @@ html[data-ui="new"] #nk-center-body .room-users .room-user-stat div { margin: 0;
 html[data-ui="new"] #nk-center-body .room-users .room-user-ready {
 	width: auto; height: 23px; padding: 0 8px; box-sizing: border-box; display: inline-flex; align-items: center;
 	border-radius: 999px; border: 1px solid var(--nk-line); background: color-mix(in oklch, var(--nk-surface) 92%, transparent);
-	color: var(--nk-text-2); font-size: calc((11.5px) * var(--nk-fs, 1)); font-weight: 750; text-align: left; white-space: nowrap;
+	color: var(--nk-text-2); font-size: calc((11.5px) * var(--nk-fs, 1)); font-weight: 700; text-align: left; white-space: nowrap;
 }
 html[data-ui="new"] #nk-center-body .room-users .room-user-readied { background: var(--nk-fill); color: var(--nk-on-accent); border-color: transparent; }
 html[data-ui="new"] #nk-center-body .room-users .room-user-master { color: var(--nk-accent-ink); border-color: var(--nk-line-accent); }
@@ -936,11 +937,11 @@ html[data-ui="new"] #nk-center-body .room-users .room-user:not([data-team="0"]):
 /* 이름 줄 */
 html[data-ui="new"] #nk-center-body .room-users .room-user-title {
 	display: flex; align-items: center; justify-content: center; gap: 5px;
-	width: 100%; max-width: 100%; padding: 0; box-sizing: border-box; font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 750;
+	width: 100%; max-width: 100%; padding: 0; box-sizing: border-box; font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 700;
 }
 html[data-ui="new"] #nk-center-body .room-users .room-user-level { flex: none; width: 15px; height: 15px; margin: 0; }
 html[data-ui="new"] #nk-center-body .room-users .room-user-name {
-	display: block; min-width: 0; max-width: none; padding: 0; font-size: inherit; font-weight: 750;
+	display: block; min-width: 0; max-width: none; padding: 0; font-size: inherit; font-weight: 700;
 	white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* 인원이 많을 때(13명~): 배지·이름을 작게 */
@@ -955,7 +956,7 @@ html[data-ui="new"] #nk-center-body .room-users:is(.size-5col, .size-6col, .size
 /* 빈자리 — 방장이면 초대 */
 .nk-seat {
 	display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 150px;
-	border: 1px dashed var(--nk-line); border-radius: calc(var(--nk-r) - 4px); color: var(--nk-text-3); font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 650;
+	border: 1px dashed var(--nk-line); border-radius: calc(var(--nk-r) - 4px); color: var(--nk-text-3); font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 400;
 }
 .nk-seat .nk-i { width: 22px; height: 22px; }
 .nk-seat label { cursor: inherit; }
@@ -966,7 +967,7 @@ html[data-ui="new"] #nk-center-body .room-users:is(.size-5col, .size-6col, .size
 @media (hover: hover) { .nk-seat.can-invite:hover { color: var(--nk-accent-ink); border-color: var(--nk-accent); background: var(--nk-accent-soft); } }
 
 /* 동작 줄의 준비 인원 */
-.nk-ready-count { display: flex; align-items: baseline; gap: 4px; margin-right: 4px; font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 650; color: var(--nk-text-2); font-variant-numeric: tabular-nums; }
+.nk-ready-count { display: flex; align-items: baseline; gap: 4px; margin-right: 4px; font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-2); font-variant-numeric: tabular-nums; }
 .nk-ready-count:empty { display: none; }
 .nk-ready-count b { color: var(--nk-accent-ink); font-size: calc((15px) * var(--nk-fs, 1)); }
 
@@ -992,7 +993,7 @@ html[data-ui="new"] #nk-app .GameBox .game-user { box-shadow: 0 6px 14px -8px rg
 /* 리플레이 (nk.js setReplay): 게임 중과 같은 배치 + 상단 바 오른쪽에 진행 시간과 ← ❚❚ → */
 .nk-replay { display: none; }
 html[data-nk-replay] .nk-replay { display: flex; align-items: center; gap: 8px; min-width: 0; }
-html[data-ui="new"] .nk-replay .game-replay-title { float: none; min-width: 0; max-width: calc(240px + var(--nk-up, 0) * 30px); font-size: calc((calc(12px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 650; color: var(--nk-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+html[data-ui="new"] .nk-replay .game-replay-title { float: none; min-width: 0; max-width: calc(240px + var(--nk-up, 0) * 30px); font-size: calc((calc(12px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 html[data-ui="new"] .nk-replay .game-replay-controller { float: none !important; display: flex; flex-direction: row-reverse; gap: 4px; width: auto; }
 html[data-ui="new"] .nk-replay .game-replay-controller button { float: none; width: calc(34px + var(--nk-up, 0) * 2px); height: calc(34px + var(--nk-up, 0) * 2px); margin: 0; padding: 0; justify-content: center; font-size: calc((13px) * var(--nk-fs, 1)); }
 html[data-nk-place="gaming"] #nk-app { max-width: none; }
@@ -1010,7 +1011,7 @@ html[data-nk-place="gaming"] .nk-gamehead { display: flex; align-items: center; 
 html[data-ui="new"][data-nk-device="phone"][data-nk-place="gaming"] .nk-gamehead { justify-content: flex-start; overflow: hidden; }
 .nk-gamehead .nk-room-no { height: calc(26px + var(--nk-up, 0) * 3px); min-width: calc(34px + var(--nk-up, 0) * 4px); font-size: calc((calc(13px + var(--nk-up, 0) * 1.5px)) * var(--nk-fs, 1)); border-radius: 7px; }
 .nk-gamehead-title { flex: 0 1 auto; min-width: 40px; max-width: calc(280px + var(--nk-up, 0) * 70px); font-size: calc((calc(14px + var(--nk-up, 0) * 2.5px)) * var(--nk-fs, 1)); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nk-gamehead-sub { flex: 0 10 auto; min-width: 0; font-size: calc((calc(12.5px + var(--nk-up, 0) * 1.25px)) * var(--nk-fs, 1)); font-weight: 650; color: var(--nk-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.nk-gamehead-sub { flex: 0 10 auto; min-width: 0; font-size: calc((calc(12.5px + var(--nk-up, 0) * 1.25px)) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 .nk-gamehead-sub[data-nk-tip] { cursor: help; }
 /* 나가기·아이템·전략 단추 줄은 nk.js가 게임 중에만 상단 바로 옮김 */
 html[data-nk-place="gaming"] .nk-header #nk-actionbar { flex: none; min-width: 0; min-height: 0; }
@@ -1161,7 +1162,7 @@ html[data-ui="new"] .nk-dlg { width: min(680px, calc(100vw / var(--nk-scale, 1) 
 .nk-dlg-panes { min-height: 0; overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: var(--nk-surface-3) transparent; }
 .nk-set-pane { animation: nk-set-in .16s ease; }
 @keyframes nk-set-in { from { opacity: 0; transform: translateX(6px); } }
-.nk-set-section { margin: 16px 0 2px; font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 750; color: var(--nk-text-3); }
+.nk-set-section { margin: 16px 0 2px; font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 700; color: var(--nk-text-3); }
 .nk-set-pane > .nk-set-section:first-child { margin-top: 2px; }
 .nk-set-row { display: flex; align-items: center; gap: 16px; min-height: 52px; padding: 9px 4px; border-bottom: 1px solid var(--nk-line); }
 label.nk-set-row { cursor: pointer; }
@@ -1169,8 +1170,8 @@ label.nk-set-row { cursor: pointer; }
 .nk-set-label { font-size: calc((13.5px) * var(--nk-fs, 1)); font-weight: 700; color: var(--nk-text); }
 .nk-set-desc { margin-top: 2px; font-size: calc((12px) * var(--nk-fs, 1)); line-height: 1.45; color: var(--nk-text-2); }
 .nk-set-ctl { flex: none; display: flex; align-items: center; gap: 6px; }
-.nk-set-val { min-width: 40px; font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 650; color: var(--nk-text-2); text-align: right; font-variant-numeric: tabular-nums; }
-.nk-set-check { display: flex; align-items: center; gap: 6px; margin-left: 6px; font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 650; color: var(--nk-text-2); cursor: pointer; }
+.nk-set-val { min-width: 40px; font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-2); text-align: right; font-variant-numeric: tabular-nums; }
+.nk-set-check { display: flex; align-items: center; gap: 6px; margin-left: 6px; font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-2); cursor: pointer; }
 /* 옮겨 온 입력 요소 */
 html[data-ui="new"] #nk-settings .nk-set-ctl :is(select, input, i, div) { float: none !important; margin: 0 !important; }
 html[data-ui="new"] #nk-settings .nk-set-ctl select,
@@ -1182,7 +1183,7 @@ html[data-ui="new"] body.dark-mode #nk-settings .nk-set-ctl select {
 html[data-ui="new"] #nk-settings .nk-set-ctl select:focus { border-color: var(--nk-accent); }
 html[data-ui="new"] #nk-settings .nk-set-ctl input[type="range"] { width: 150px !important; accent-color: var(--nk-accent); cursor: pointer; }
 html[data-ui="new"] #nk-settings .nk-set-ctl input[type="range"]:disabled { opacity: .4; cursor: default; }
-html[data-ui="new"] #nk-settings #rhythm-sync-val { width: auto !important; min-width: 56px; padding: 0 !important; font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 650; color: var(--nk-text-2); text-align: right; font-variant-numeric: tabular-nums; }
+html[data-ui="new"] #nk-settings #rhythm-sync-val { width: auto !important; min-width: 56px; padding: 0 !important; font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-2); text-align: right; font-variant-numeric: tabular-nums; }
 html[data-ui="new"] #nk-settings #theme-setting-edit { padding: 6px; border-radius: 8px; color: var(--nk-text-2); }
 @media (hover: hover) { html[data-ui="new"] #nk-settings #theme-setting-edit:hover { background: var(--nk-surface-2); color: var(--nk-text); } }
 /* 켜기/끄기 = 체크박스를 스위치 모양으로 */
@@ -1284,7 +1285,7 @@ html[data-ui="new"] #nk-profile #cf-tray div { float: none; border-radius: 6px; 
 html[data-ui="new"] #nk-profile #cf-dict,
 html[data-ui="new"] body.dark-mode #nk-profile #cf-dict { height: 150px; margin: 0; padding: 6px 8px; border-radius: var(--nk-r-sm); background-color: var(--nk-surface-2) !important; color: var(--nk-text-2); }
 html[data-ui="new"] #nk-profile .nk-pf-cost { grid-area: cost; align-self: center; }
-html[data-ui="new"] #nk-profile #cf-cost { padding: 7px 12px; border-radius: var(--nk-r-sm); background-color: var(--nk-second-soft); color: var(--nk-second-ink); font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 650; text-align: left; }
+html[data-ui="new"] #nk-profile #cf-cost { padding: 7px 12px; border-radius: var(--nk-r-sm); background-color: var(--nk-second-soft); color: var(--nk-second-ink); font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 400; text-align: left; }
 html[data-ui="new"] #nk-profile .nk-pf-pane[data-tab="cf"] .nk-pf-foot { justify-content: flex-end; align-self: center; }
 html[data-ui="new"] #nk-profile #cf-compose.cf-composable { border-color: transparent; background-color: var(--nk-fill) !important; color: var(--nk-on-accent) !important; }
 
@@ -1533,7 +1534,7 @@ html[data-ui="new"][data-nk-device="phone"][data-nk-view="lobby"] .nk-chatbar {
 	font-family: inherit; font-size: calc((14px) * var(--nk-fs, 1)); text-align: left; cursor: pointer;
 }
 .nk-chatbar > .nk-i { color: var(--nk-accent); }
-.nk-chatbar-who { flex: none; max-width: 35%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 750; color: var(--nk-accent-ink); }
+.nk-chatbar-who { flex: none; max-width: 35%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 700; color: var(--nk-accent-ink); }
 .nk-chatbar-text { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--nk-text-2); }
 .nk-chatbar-n { flex: none; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; display: grid; place-items: center; background: var(--nk-danger); color: #fff; font-size: calc((11.5px) * var(--nk-fs, 1)); font-weight: 800; }
 
@@ -1792,7 +1793,7 @@ html[data-ui="new"] body.dark-mode .nk-fdlg :is(.tail-button, .nk-fd-foot) butto
 html[data-ui="new"] .nk-fd-foot #quick-ok,
 html[data-ui="new"] body.dark-mode .nk-fd-foot #quick-ok {
 	float: none !important; width: auto !important; min-width: 96px; height: var(--nk-tail-h) !important; padding: 0 18px; border: 1px solid transparent; border-radius: 8px;
-	background-color: var(--nk-fill) !important; color: var(--nk-on-accent) !important; box-shadow: none !important; font-family: var(--nk-font); font-weight: 750; cursor: pointer;
+	background-color: var(--nk-fill) !important; color: var(--nk-on-accent) !important; box-shadow: none !important; font-family: var(--nk-font); font-weight: 700; cursor: pointer;
 }
 html[data-ui="new"] .nk-fd-foot #quick-ok.searching,
 html[data-ui="new"] body.dark-mode .nk-fd-foot #quick-ok.searching { background-color: var(--nk-surface) !important; color: var(--nk-text) !important; border-color: var(--nk-line); }
@@ -1811,7 +1812,7 @@ html[data-ui="new"] .nk-fdlg :is(input, select):disabled { opacity: .55; }
 .nk-fd-sec { font-size: calc((11.5px) * var(--nk-fs, 1)); font-weight: 800; color: var(--nk-text-3); letter-spacing: .02em; }
 .nk-fd-row { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 10px; }
 html[data-ui="new"] .nk-fdlg .nk-fd-k { float: none; width: auto; height: auto; margin: 0; padding: 0; text-align: left; font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 700; color: var(--nk-text-2); }
-html[data-ui="new"] .nk-fdlg .nk-fd-help { float: none; width: auto !important; height: auto; margin: -4px 2px 0 !important; font-size: calc((11.5px) * var(--nk-fs, 1)) !important; font-weight: 500; line-height: 1.45; color: var(--nk-text-3); }
+html[data-ui="new"] .nk-fdlg .nk-fd-help { float: none; width: auto !important; height: auto; margin: -4px 2px 0 !important; font-size: calc((11.5px) * var(--nk-fs, 1)) !important; font-weight: 400; line-height: 1.45; color: var(--nk-text-3); }
 .nk-fd-inline { display: flex; align-items: center; gap: 8px; min-width: 0; }
 html[data-ui="new"] .nk-fd-inline > select { width: 120px !important; }
 /* 스테퍼 [− 값 +] */
@@ -1821,7 +1822,7 @@ html[data-ui="new"] .nk-step-btn { flex: none; width: 32px; height: 100%; margin
 @media (hover: hover) { html[data-ui="new"] .nk-step-btn:hover { --nkb-bg: var(--nk-surface-3); --nkb-fg: var(--nk-text); } }
 html[data-ui="new"] .nk-fdlg .nk-step input,
 html[data-ui="new"] body.dark-mode .nk-fdlg .nk-step input {
-	width: 52px !important; height: 100% !important; padding: 0 2px; border: 0 !important; border-radius: 0; text-align: center; font-weight: 750; font-size: calc((13.5px) * var(--nk-fs, 1));
+	width: 52px !important; height: 100% !important; padding: 0 2px; border: 0 !important; border-radius: 0; text-align: center; font-weight: 700; font-size: calc((13.5px) * var(--nk-fs, 1));
 	-moz-appearance: textfield; appearance: textfield;
 }
 .nk-step input::-webkit-inner-spin-button, .nk-step input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -1911,8 +1912,8 @@ html[data-ui="new"] .nk-qk-mode {
 	border: 1px solid var(--nk-line); border-radius: var(--nk-r-sm); --nkb-bg: var(--nk-surface); --nkb-fg: var(--nk-text);
 }
 @media (hover: hover) { html[data-ui="new"] .nk-qk-mode:hover { border-color: var(--nk-line-accent); } }
-.nk-qk-mode b { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 750; }
-.nk-qk-mode small { font-size: calc((11px) * var(--nk-fs, 1)); font-weight: 550; color: var(--nk-text-3); }
+.nk-qk-mode b { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 700; }
+.nk-qk-mode small { font-size: calc((11px) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-3); }
 .nk-qk-n { position: absolute; top: 9px; right: 9px; min-width: 20px; height: 19px; padding: 0 6px; box-sizing: border-box; display: grid; place-items: center; border-radius: 999px; background: var(--nk-accent); color: var(--nk-on-accent); font-style: normal; font-size: calc((11px) * var(--nk-fs, 1)); font-weight: 800; }
 .nk-qk-mode.is-none { opacity: .55; }
 .nk-qk-mode.is-none .nk-qk-n { background: var(--nk-surface-3); color: var(--nk-text-3); }
@@ -1924,7 +1925,7 @@ html[data-ui="new"] .nk-qk-fold { align-self: flex-start; display: flex; align-i
 .nk-qk-fold.open .nk-i { transform: none; }
 .nk-qk-conds { flex: none; display: flex; flex-direction: column; gap: 7px; max-height: 45%; overflow-y: auto; }
 .nk-qk-sum { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: calc((12px) * var(--nk-fs, 1)); color: var(--nk-text-3); }
-html[data-ui="new"] #quick-queue { float: none; width: auto; height: auto !important; margin: 0; font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 650; color: var(--nk-accent-ink); }
+html[data-ui="new"] #quick-queue { float: none; width: auto; height: auto !important; margin: 0; font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-accent-ink); }
 .nk-qk.is-busy .nk-qk-main { opacity: .55; pointer-events: none; }
 
 /* ---------- 봇·연습 (C: 왼쪽 미리보기 카드 | 오른쪽 설정) ---------- */
@@ -1946,9 +1947,9 @@ html[data-ui="new"] .dialog.nk-bot { width: 640px !important; }
 html[data-ui="new"] .nk-bot-form #ai-preferred-char { width: 64px !important; text-align: center; }
 .nk-bot-range { display: flex; flex-direction: column; gap: 3px; }
 html[data-ui="new"] .nk-bot-range #ai-personality { width: 100% !important; margin: 0; padding: 0; accent-color: var(--nk-accent); cursor: pointer; }
-.nk-bot-ends { display: flex; justify-content: space-between; font-size: calc((11px) * var(--nk-fs, 1)); font-weight: 600; color: var(--nk-text-3); }
+.nk-bot-ends { display: flex; justify-content: space-between; font-size: calc((11px) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-3); }
 .nk-bot-sw { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; padding-top: 12px; border-top: 1px solid var(--nk-line); }
-.nk-bot-swrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 650; cursor: pointer; }
+.nk-bot-swrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 400; cursor: pointer; }
 /* 켜기/끄기 스위치 (설정 창 스위치와 같은 모양) */
 html[data-ui="new"] .nk-bot-sw input.nk-switch {
 	-webkit-appearance: none; appearance: none; position: relative; flex: none; display: block; float: none;
@@ -1989,7 +1990,7 @@ html[data-ui="new"] .nk-sdlg .graph { width: 100% !important; height: 12px !impo
 html[data-ui="new"] .nk-sdlg .graph-bar { max-width: 100%; height: 100% !important; margin: 0; border-radius: 6px; background: var(--nk-danger) !important; }
 /* 얻은 물건 그림: 기존 float 때문에 가운데 카드에서 단추 줄이 그림 옆으로 좁아졌음 → float 없이 가운데 */
 html[data-ui="new"] .nk-sdlg #obtain-image { float: none; margin: 10px auto 6px !important; }
-html[data-ui="new"] #ObtainDiag.nk-sdlg .dialog-bar > h4 { float: none; margin: 0; font-size: calc((15.5px) * var(--nk-fs, 1)); font-weight: 600; text-align: center; }
+html[data-ui="new"] #ObtainDiag.nk-sdlg .dialog-bar > h4 { float: none; margin: 0; font-size: calc((15.5px) * var(--nk-fs, 1)); font-weight: 400; text-align: center; }
 html[data-ui="new"] .nk-sdlg #nickSetup-error:empty { display: none; }
 html[data-ui="new"] .nk-sdlg .tail-button {
 	position: static !important; display: flex; justify-content: center; gap: 8px; float: none; width: auto !important; height: auto; margin: 22px 0 0; padding: 0;
@@ -2004,7 +2005,7 @@ html[data-ui="new"] body.dark-mode .nk-sdlg-warn .tail-button #kick-vote-yes { b
    어디를 눌러도 켜고 끄고, 체크박스는 그림(::before)으로만. 언어별 목록·한국어 전용 퀴즈 주제를 고르는 show/hide는 기존 코드 그대로 */
 html[data-ui="new"] .dialog.nk-pk,
 html[data-ui="new"] body.dark-mode .dialog.nk-pk { width: min(560px, calc(100vw / var(--nk-scale, 1) - 16px)) !important; }
-html[data-ui="new"] .nk-pk h4 { flex: none; margin: 0; padding: 12px 16px 0; font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 500; line-height: 1.45; color: var(--nk-text-3); }
+html[data-ui="new"] .nk-pk h4 { flex: none; margin: 0; padding: 12px 16px 0; font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 400; line-height: 1.45; color: var(--nk-text-3); }
 html[data-ui="new"] .nk-pk .dialog-bar { float: none; width: auto; margin: 0; }
 html[data-ui="new"] .nk-pk > .dialog-body > .dialog-bar:not(.tail-button):not([id]) { flex: none; display: flex; gap: 6px; padding: 8px 16px; }
 html[data-ui="new"] .nk-pk > .dialog-body > .dialog-bar:not(.tail-button):not([id]) button { float: none; width: auto; height: 30px; margin: 0; padding: 0 12px; font-size: calc((12.5px) * var(--nk-fs, 1)); }
@@ -2038,7 +2039,7 @@ html[data-ui="new"] .nk-pk #injpick-list > .dialog-opt { grid-template-columns: 
 html[data-ui="new"] .nk-pk #injpick-list .dialog-opt > :is(.ijp-gen, .ijp-inj) { padding: 0 4px; }
 html[data-ui="new"] .nk-pk #injpick-list .dialog-opt > .ijp-gen { grid-column: span 3; }
 html[data-ui="new"] .nk-pk #injpick-list .dialog-opt > .ijp-inj { grid-column: span 4; }
-html[data-ui="new"] .nk-pk #injpick-list .dialog-opt > .ijp-sec { grid-column: 1 / -1; padding: 10px 10px 3px !important; font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 750 !important; color: var(--nk-text-3); }
+html[data-ui="new"] .nk-pk #injpick-list .dialog-opt > .ijp-sec { grid-column: 1 / -1; padding: 10px 10px 3px !important; font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 700 !important; color: var(--nk-text-3); }
 html[data-ui="new"] .nk-pk #injpick-list .dialog-opt > .ijp-sec:first-child { padding-top: 2px !important; }
 /* 주제 검색칸은 설명 아래 한 줄(아래 [모두 설정·해제] 줄과 붙임), 맞는 주제가 없으면 목록 자리에 안내 */
 html[data-ui="new"] .nk-pk > .dialog-body > .pick-search-bar { padding-bottom: 0; }
@@ -2183,9 +2184,9 @@ html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .rounds label.round
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox :is(.items, .chain):not([style*="display: none"]) { display: flex !important; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox :is(.items, .chain) {
 	display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px 8px; border-radius: 16px;
-	background: var(--nk-surface-2); background-image: none; font-size: calc((calc(64px + var(--nk-up, 0) * 2px)) * var(--nk-fs, 1)); font-weight: 850; line-height: 1; font-variant-numeric: tabular-nums; text-align: center; overflow: hidden;
+	background: var(--nk-surface-2); background-image: none; font-size: calc((calc(64px + var(--nk-up, 0) * 2px)) * var(--nk-fs, 1)); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; text-align: center; overflow: hidden;
 }
-html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox :is(.items, .chain)::before { content: attr(data-k); font-size: calc((calc(17px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 750; letter-spacing: .04em; color: var(--nk-text-3); }
+html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox :is(.items, .chain)::before { content: attr(data-k); font-size: calc((calc(17px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 700; letter-spacing: .04em; color: var(--nk-text-3); }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .items { grid-area: it; color: var(--nk-second-ink); }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .chain { grid-area: ch; color: var(--nk-accent-ink); }
 /* 힌트(자음퀴즈 등)는 기록 자리 */
@@ -2202,13 +2203,13 @@ html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"]:is([da
 	background: var(--nk-surface-2); overflow: hidden; contain: size; /* 줄 높이는 단어 창 쪽이 정함 — 힌트가 길어도 판이 늘지 않음 */
 }
 html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"]:is([data-nk-rule="Quiz"], [data-nk-rule="Jaqwi"]) #nk-app .GameBox .hints:not([style*="display: none"]) { display: flex !important; }
-html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"]:is([data-nk-rule="Quiz"], [data-nk-rule="Jaqwi"]) #nk-app .GameBox .hints::before { content: attr(data-k); font-size: calc((calc(17px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 750; letter-spacing: .04em; color: var(--nk-text-3); text-align: center; }
+html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"]:is([data-nk-rule="Quiz"], [data-nk-rule="Jaqwi"]) #nk-app .GameBox .hints::before { content: attr(data-k); font-size: calc((calc(17px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 700; letter-spacing: .04em; color: var(--nk-text-3); text-align: center; }
 html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"]:is([data-nk-rule="Quiz"], [data-nk-rule="Jaqwi"]) #nk-app .GameBox .hint-item {
-	padding: 4px; border-radius: 10px; background: var(--nk-surface); color: var(--nk-second-ink); font-size: calc((calc(18px + var(--nk-up, 0) * 1px)) * var(--nk-fs, 1)); font-weight: 850; line-height: 1.2; text-align: center; word-break: break-all;
+	padding: 4px; border-radius: 10px; background: var(--nk-surface); color: var(--nk-second-ink); font-size: calc((calc(18px + var(--nk-up, 0) * 1px)) * var(--nk-fs, 1)); font-weight: 800; line-height: 1.2; text-align: center; word-break: break-all;
 }
 html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"]:is([data-nk-rule="Quiz"], [data-nk-rule="Jaqwi"]) #nk-app .GameBox .hint-item.nk-long {
 	flex: 0 1 auto; min-height: 0; padding: 8px 10px; overflow-y: auto; scrollbar-width: thin; color: var(--nk-text);
-	font-size: calc((calc(14px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 600; line-height: 1.45; text-align: left; word-break: keep-all;
+	font-size: calc((calc(14px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 400; line-height: 1.45; text-align: left; word-break: keep-all;
 }
 html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"]:is([data-nk-rule="Quiz"], [data-nk-rule="Jaqwi"]) #nk-app .GameBox .hint-item.nk-long > label { display: block; }
 /* 힌트 칸을 미션 칸보다 넓게 (사용자 요청) — 뜻풀이 + 글자 힌트 2개가 들어가게 양옆 칸을 250px로(판은 가운데 그대로). 칸이 모자라면 뜻풀이만 스크롤 */
@@ -2255,7 +2256,7 @@ html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .jjoDisplayBar .gra
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .jjoDisplayBar .graph::after {
 	content: attr(data-t); position: absolute; left: 0; right: auto; top: 50%; transform: translateY(-50%); padding: 0 9px; box-sizing: border-box;
 	width: calc(var(--nk-gp, 0) * 100%); min-width: max-content; max-width: 100%;
-	overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: right; font-size: calc((calc(14px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 850; font-variant-numeric: tabular-nums; line-height: 1.3;
+	overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: right; font-size: calc((calc(14px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.3;
 	background: linear-gradient(to right, var(--nk-gf) calc(var(--nk-gp, 0) * var(--nk-gw, 0px)), var(--nk-text) 0); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .jjoDisplayBar .graph { --nk-gf: #1d1d1d; }
@@ -2287,7 +2288,7 @@ html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .history-class {
 	display: inline-grid; place-items: center; height: 18px; margin-left: 5px; padding: 0 5px; border-radius: 5px; vertical-align: 2px;
 	background: var(--nk-surface-3); color: var(--nk-text-2); font-size: calc((10.5px) * var(--nk-fs, 1)); font-weight: 800;
 }
-html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .history-mean { float: none; display: block; margin-top: 2px; padding: 0; font-size: calc((calc(12.5px + var(--nk-up, 0) * .25px)) * var(--nk-fs, 1)); font-weight: 500; color: var(--nk-text-3); }
+html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .history-mean { float: none; display: block; margin-top: 2px; padding: 0; font-size: calc((calc(12.5px + var(--nk-up, 0) * .25px)) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-3); }
 
 /* 플레이어 카드: 판 아래, 기본 UI 카드 구성을 따름(사용자 요청) — 캐릭터가 카드 폭을 채우고 [레벨·닉네임] 왼쪽 정렬, 맨 아래 큰 다섯 자리 점수
    (앞자리 0은 흐리게, nk-z = body.js drawScore). 차례인 카드는 올라오고 바탕이 바뀜. 점수는 카드가 좁아지면 카드 폭(31cqw)에 맞춰 줄어듦 */
@@ -2305,7 +2306,7 @@ html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .game-user-title { 
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .game-user-level { float: none; flex: none; width: 17px; height: 17px; margin: 0; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .game-user-name { float: none; flex: 0 1 auto; width: auto; min-width: 0; height: auto; margin: 0; padding: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: calc((calc(16px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 700; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .game-user-name.game-user-my-name { color: var(--nk-accent-ink); }
-html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .game-user-score { float: none; display: flex; justify-content: center; gap: 0; width: auto; max-width: none; align-self: auto; margin: 0; padding: 0; border-radius: 0; background: none; font-size: calc((min(38px, 31cqw)) * var(--nk-fs, 1)); font-weight: 750; line-height: 1; }
+html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .game-user-score { float: none; display: flex; justify-content: center; gap: 0; width: auto; max-width: none; align-self: auto; margin: 0; padding: 0; border-radius: 0; background: none; font-size: min(calc(38px * var(--nk-fs, 1)), 31cqw); font-weight: 700; line-height: 1; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .game-user-score-char {
 	float: none; display: block; width: .62em; text-align: center; color: var(--nk-text); font-variant-numeric: tabular-nums;
 }
@@ -2318,7 +2319,7 @@ html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .game-user > .delta
 /* 많은 인원: 9명부터 카드를 줄이고(small-mode), 15명부터 두 줄(moremi-dense) */
 html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body.small-mode { gap: 8px; }
 html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body.small-mode .game-user-name { font-size: calc((14px) * var(--nk-fs, 1)); }
-html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body.small-mode .game-user-score { font-size: calc((min(32px, 31cqw)) * var(--nk-fs, 1)); }
+html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body.small-mode .game-user-score { font-size: min(calc(32px * var(--nk-fs, 1)), 31cqw); }
 /* 12명부터: 더 줄이지 않고 좌우 스크롤(차례인 카드는 nk.js가 가운데로) — 15명부터 쓰던 두 줄(moremi-dense)도 쓰지 않음 (사용자 결정) */
 html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body:has(> .game-user:nth-child(12)) { flex-wrap: nowrap; justify-content: safe center; overflow-x: auto; overflow-y: hidden; padding: 12px 0 8px; scrollbar-width: thin; scrollbar-color: var(--nk-surface-3) transparent; }
 html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body:has(> .game-user:nth-child(12)) .game-user { flex: 0 0 120px; width: 120px; min-width: 0; max-width: none; height: auto; margin: 0; justify-content: flex-start; }
@@ -2359,9 +2360,9 @@ html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-ap
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body { margin-top: 8px; }
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body:not(.small-mode) .game-user { flex-basis: 124px; }
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body:not(.small-mode) .game-user-image { width: 112px; }
-	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-user-score { font-size: calc((min(34px, 31cqw)) * var(--nk-fs, 1)); }
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-user-score { font-size: min(calc(34px * var(--nk-fs, 1)), 31cqw); }
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body.small-mode .game-user-image { width: 96px; }
-	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body.small-mode .game-user-score { font-size: calc((min(28px, 31cqw)) * var(--nk-fs, 1)); }
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body.small-mode .game-user-score { font-size: min(calc(28px * var(--nk-fs, 1)), 31cqw); }
 }
 @media (max-height: 800px) {
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body { grid-template-rows: auto 14px auto auto auto 14px auto; --nk-hsh: 40px; }
@@ -2381,7 +2382,7 @@ html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-ap
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body:not(.small-mode) .game-user-image { grid-row: 1 / 3; width: 48px; height: 48px; }
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body:not(.small-mode) .game-user-title { justify-content: flex-start; }
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body:not(.small-mode) .game-user-score { justify-content: flex-start; }
-	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-user-score { font-size: calc((min(24px, 31cqw)) * var(--nk-fs, 1)); }
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-user-score { font-size: min(calc(24px * var(--nk-fs, 1)), 31cqw); }
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body.small-mode .game-user-image { display: none; }
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-user.game-user-current { transform: translateY(-4px); }
 }
@@ -2432,12 +2433,12 @@ html[data-ui="new"][data-nk-device="phone"][data-nk-place="gaming"] #nk-app .Gam
 html[data-ui="new"][data-nk-device="phone"][data-nk-place="gaming"] #nk-app .GameBox .history-holder { min-height: 28px; }
 /* 한 줄에 딱 다섯 칸, 글자는 칸 가운데 — 칸보다 긴 단어는 nk.js fitHistory가 가운데를 …로 줄임 (사용자 결정) */
 html[data-ui="new"][data-nk-device="phone"][data-nk-place="gaming"] #nk-app .GameBox .history { gap: 4px; }
-html[data-ui="new"][data-nk-device="phone"][data-nk-place="gaming"] #nk-app .GameBox .history-item { flex: none; width: calc((100% - 16px) / 5) !important; height: 28px; padding: 0 6px; border-radius: 99px; font-size: calc((13.5px) * var(--nk-fs, 1)); font-weight: 750; line-height: 28px; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+html[data-ui="new"][data-nk-device="phone"][data-nk-place="gaming"] #nk-app .GameBox .history-item { flex: none; width: calc((100% - 16px) / 5) !important; height: 28px; padding: 0 6px; border-radius: 99px; font-size: calc((13.5px) * var(--nk-fs, 1)); font-weight: 700; line-height: 28px; white-space: nowrap; overflow: hidden; text-overflow: clip; }
 html[data-ui="new"][data-nk-device="phone"][data-nk-place="gaming"] #nk-app .GameBox .history-item:first-child { animation-name: nk-hist-in-m; }
 @keyframes nk-hist-in-m { from { margin-left: calc((100% - 16px) / -5 - 4px); } }
 html[data-ui="new"][data-nk-device="phone"][data-nk-place="gaming"] #nk-app .GameBox .history-item :is(.history-class, .history-mean) { display: none; }
 /* 기록 단어를 누르면(데스크톱은 올리면) 뜨는 뜻풀이(.expl): 칸의 줄 높이(휴대폰 28px)·가운데 정렬을 물려받아 줄 사이가 크게 벌어졌음 (사용자 지적) */
-html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .history-item > .expl { line-height: 1.45; text-align: left; font-weight: 500; }
+html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .history-item > .expl { line-height: 1.45; text-align: left; font-weight: 400; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .history-item > .expl h5 { margin: 0; line-height: inherit; }
 /* 플레이어: 캐릭터 없이 한 사람 한 줄 [레벨·닉네임 … 점수], 9명부터 두 열 (사용자 결정) */
 html[data-ui="new"][data-nk-device="phone"][data-nk-place="gaming"] #nk-app .GameBox .game-body {
@@ -2509,7 +2510,7 @@ html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .cwcmd::before {
 }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .cwcmd.nk-up::before { top: auto; bottom: -7px; box-shadow: 2px 2px 0 0 var(--nk-accent); }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .cwcmd .cw-q-head { order: 1; float: none; width: auto; margin: 0; color: var(--nk-accent-ink); font-size: calc((13.5px) * var(--nk-fs, 1)); font-weight: 800; text-align: left; text-shadow: none; }
-html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .cwcmd .cw-q-body { order: 2; float: none; margin: 0; padding: 0; border-radius: 0; background: none !important; color: var(--nk-text); font-size: calc((15px) * var(--nk-fs, 1)); font-weight: 600; line-height: 1.45; }
+html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .cwcmd .cw-q-body { order: 2; float: none; margin: 0; padding: 0; border-radius: 0; background: none !important; color: var(--nk-text); font-size: calc((15px) * var(--nk-fs, 1)); font-weight: 400; line-height: 1.45; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .cwcmd .cw-q-body:empty { display: none; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .cwcmd #cw-q-input {
 	order: 3; float: none; width: 100% !important; height: 44px !important; margin: 0; padding: 0 14px; box-sizing: border-box; border: 0; border-radius: 10px;
@@ -2611,14 +2612,14 @@ html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-cw-no {
 	float: none; display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 7px; background: var(--nk-fill); color: var(--nk-on-accent); font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 800;
 }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-cw-dir { float: none; flex: none; color: var(--nk-accent-ink); font-weight: 800; }
-html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-cw-mean { padding: 12px 14px; border-radius: 12px; background: var(--nk-surface); color: var(--nk-text); font-size: calc((16px) * var(--nk-fs, 1)); font-weight: 600; line-height: 1.55; white-space: normal; word-break: keep-all; overflow-wrap: anywhere; }
+html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-cw-mean { padding: 12px 14px; border-radius: 12px; background: var(--nk-surface); color: var(--nk-text); font-size: calc((16px) * var(--nk-fs, 1)); font-weight: 400; line-height: 1.55; white-space: normal; word-break: keep-all; overflow-wrap: anywhere; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-cw-mean label { display: inline; float: none; }
-html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-cw-pick { margin: 4px 2px; color: var(--nk-text-3); font-size: calc((14px) * var(--nk-fs, 1)); font-weight: 600; line-height: 1.5; white-space: normal; word-break: keep-all; }
+html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-cw-pick { margin: 4px 2px; color: var(--nk-text-3); font-size: calc((14px) * var(--nk-fs, 1)); font-weight: 400; line-height: 1.5; white-space: normal; word-break: keep-all; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-sd-stat {
 	float: none; display: flex; align-items: center; justify-content: space-between; height: 52px; margin-bottom: 6px; padding: 0 14px; border-radius: 12px; background: var(--nk-surface); font-size: calc((14px) * var(--nk-fs, 1)); font-weight: 700;
 }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-sd-stat > div { float: none; }
-html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-sd-stat > div + div { font-size: calc((24px) * var(--nk-fs, 1)); font-weight: 850; font-variant-numeric: tabular-nums; }
+html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-sd-stat > div + div { font-size: calc((24px) * var(--nk-fs, 1)); font-weight: 800; font-variant-numeric: tabular-nums; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-sd-1 > div + div { color: var(--nk-accent-ink); }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-sd-2 > div + div { color: var(--nk-danger); }
 
@@ -2633,7 +2634,7 @@ html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .jjoriping.cw .sock
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .jjoriping.cw .sock-char.sock-picked { background: var(--nk-fill) padding-box; color: var(--nk-on-accent); font-size: inherit; }
 /* 슉슉: 글자가 자리를 옮겨 다니는 게임이라 칸 바탕 없이 글자만 (사용자 결정) */
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .jjoriping.cw .shuk-board { max-width: none; }
-html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .jjoriping.cw .shuk-char { background: none; color: var(--nk-text); font-weight: 850; }
+html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .jjoriping.cw .shuk-char { background: none; color: var(--nk-text); font-weight: 800; }
 
 /* 찾은 단어(솎솎·슉슉): 길이별 묶음 + 단어 칩 (nk.js renderFound) */
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox :is(.bb, .nk-found-pop) div { float: none; }
@@ -2641,7 +2642,7 @@ html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-found-group + .
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-found-len { margin: 0 2px 6px; color: var(--nk-text-3); font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 800; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-found-words { display: flex; flex-wrap: wrap; gap: 4px; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-found-word {
-	height: 28px; padding: 0 9px; border-radius: 8px; background: var(--nk-surface); color: var(--nk-text); font-size: calc((14px) * var(--nk-fs, 1)); font-weight: 750; line-height: 28px; white-space: nowrap;
+	height: 28px; padding: 0 9px; border-radius: 8px; background: var(--nk-surface); color: var(--nk-text); font-size: calc((14px) * var(--nk-fs, 1)); font-weight: 700; line-height: 28px; white-space: nowrap;
 }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-found-group:first-of-type .nk-found-word { background: var(--nk-accent-soft); color: var(--nk-accent-ink); }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox :is(.nk-found-pop, .nk-found-btn, .nk-send-btn) { display: none; }
@@ -2702,7 +2703,7 @@ html[data-ui="new"][data-nk-place="gaming"][data-nk-rule="Picture"] #nk-app .Gam
 html[data-ui="new"][data-nk-place="gaming"][data-nk-rule="Picture"] #nk-app .GameBox .nk-pq-head {
 	display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 0 2px; color: var(--nk-text-2); font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 700; white-space: nowrap;
 }
-html[data-ui="new"][data-nk-place="gaming"][data-nk-rule="Picture"] #nk-app .GameBox .nk-pq-head b { color: var(--nk-accent-ink); font-size: calc((15px) * var(--nk-fs, 1)); font-weight: 850; }
+html[data-ui="new"][data-nk-place="gaming"][data-nk-rule="Picture"] #nk-app .GameBox .nk-pq-head b { color: var(--nk-accent-ink); font-size: calc((15px) * var(--nk-fs, 1)); font-weight: 800; }
 html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"][data-nk-rule="Picture"] #nk-app .GameBox .nk-pq-head { display: none; }
 html[data-ui="new"][data-nk-place="gaming"][data-nk-rule="Picture"] #nk-app .GameBox .nk-pq-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
 html[data-ui="new"][data-nk-place="gaming"][data-nk-rule="Picture"] #nk-app .GameBox .nk-pq-pal { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -2736,7 +2737,7 @@ html[data-ui="new"][data-nk-place="gaming"][data-nk-rule="Picture"] #nk-app .Gam
 /* 라운드 끝 정답 (기존 인라인 노랑 글자·검은 상자를 덮음) */
 html[data-ui="new"][data-nk-place="gaming"][data-nk-rule="Picture"] #nk-app .GameBox .pq-answer {
 	padding: 12px 22px !important; border-radius: 14px !important; background: var(--nk-surface) !important; box-shadow: 0 0 0 2px var(--nk-accent), 0 10px 28px rgb(0 0 0 / .18);
-	color: var(--nk-text) !important; font-size: calc((20px) * var(--nk-fs, 1)) !important; font-weight: 850 !important; text-shadow: none !important; white-space: nowrap;
+	color: var(--nk-text) !important; font-size: calc((20px) * var(--nk-fs, 1)) !important; font-weight: 800 !important; text-shadow: none !important; white-space: nowrap;
 }
 /* 데스크톱 왼쪽 칸: 이번 그림 정보 */
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .nk-pq-stat > div + div { min-width: 0; overflow: hidden; font-size: calc((16px) * var(--nk-fs, 1)); text-overflow: ellipsis; white-space: nowrap; }
@@ -2796,7 +2797,7 @@ html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox > .product-body > :
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox > .product-body > :is(.ItemBar, #raingame-strategy) :is(.ItemName, .StratName) { display: inline !important; overflow: hidden; text-overflow: ellipsis; }
 /* 단추 세 단계(사용자 요청 — 가독성): 쓰려고 고름 = 강조색으로 채움, 쓸 수 있음 = 강조색 테두리 + 옅은 강조 바탕, 0개 = 기존 흐림(인라인). 개수는 채운 배지 */
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox > .product-body > .ItemBar .ItemCount {
-	display: inline !important; min-width: 20px; padding: 2px 6px; box-sizing: border-box; border-radius: 10px; background: var(--nk-surface-3); color: var(--nk-text-2); font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 850; line-height: 1.2; text-align: center;
+	display: inline !important; min-width: 20px; padding: 2px 6px; box-sizing: border-box; border-radius: 10px; background: var(--nk-surface-3); color: var(--nk-text-2); font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 800; line-height: 1.2; text-align: center;
 }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox > .product-body > :is(.ItemBar, #raingame-strategy) .ItemButton.item-available { border: 1.5px solid var(--nk-accent) !important; background: color-mix(in oklch, var(--nk-accent) 16%, var(--nk-surface)) !important; color: var(--nk-accent-ink) !important; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox > .product-body > .ItemBar .ItemButton.item-available .ItemCount { background: var(--nk-fill); color: var(--nk-on-accent); }
@@ -2839,7 +2840,7 @@ html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .cwcmd.nk-incell {
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .cwcmd.nk-incell::before, html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .cwcmd.nk-incell :is(.cw-q-head, .cw-q-body) { display: none; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .cwcmd.nk-incell #cw-q-input {
 	height: 100% !important; padding: 0; border-radius: 7px; background: none; box-shadow: none; caret-color: var(--nk-accent); color: var(--nk-text);
-	font: 850 calc(var(--nk-ch) * .7) var(--nk-font) !important; text-align: center;
+	font: 800 calc(var(--nk-ch) * .7) var(--nk-font) !important; text-align: center;
 }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .cwcmd.nk-incell #cw-q-input::placeholder { color: transparent; }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox > .product-body:has(.cw-cell.sd-sel.sd-wrong) .cwcmd.nk-incell { background: color-mix(in oklch, var(--nk-danger) 22%, var(--nk-surface)); box-shadow: 0 0 0 2.5px var(--nk-danger), 0 4px 14px rgb(0 0 0 / .18); }
@@ -2874,7 +2875,7 @@ html[data-ui="new"][data-nk-device="phone"][data-nk-sheet="game"] #nk-game-sheet
 #nk-game-sheet .nk-gs-top { display: flex; align-items: flex-start; gap: 8px; }
 #nk-game-sheet .nk-room-no { height: 26px; min-width: 34px; font-size: calc((13px) * var(--nk-fs, 1)); border-radius: 7px; }
 #nk-game-sheet .nk-gs-title { min-width: 0; font-size: calc((16px) * var(--nk-fs, 1)); font-weight: 800; line-height: 26px; overflow-wrap: anywhere; }
-#nk-game-sheet .nk-gs-sub { font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 650; color: var(--nk-text-2); font-variant-numeric: tabular-nums; }
+#nk-game-sheet .nk-gs-sub { font-size: calc((13px) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-2); font-variant-numeric: tabular-nums; }
 #nk-game-sheet .nk-gs-k { margin-top: 8px; font-size: calc((12.5px) * var(--nk-fs, 1)); font-weight: 700; color: var(--nk-text-3); }
 #nk-game-sheet .nk-gs-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 #nk-game-sheet .nk-tag { height: 26px; padding: 0 10px; font-size: calc((12.5px) * var(--nk-fs, 1)); }
@@ -2892,7 +2893,7 @@ html[data-ui="new"][data-nk-device="phone"][data-nk-sheet="game"] #nk-game-sheet
 #nk-head-back { display: none; }
 
 /* 방 정보 글자 (칩 대신) */
-html[data-ui="new"] #nk-app #nk-roomhead { display: block; padding: 0 2px; border: 0; background: none; color: var(--nk-text-2); font-size: calc((calc(14px + var(--nk-up, 0) * .75px)) * var(--nk-fs, 1)); font-weight: 600; line-height: 1.5; }
+html[data-ui="new"] #nk-app #nk-roomhead { display: block; padding: 0 2px; border: 0; background: none; color: var(--nk-text-2); font-size: calc((calc(14px + var(--nk-up, 0) * .75px)) * var(--nk-fs, 1)); font-weight: 400; line-height: 1.5; }
 html[data-ui="new"] #nk-app #nk-roomhead :is(.nk-rh-rules, .nk-rh-meta, .nk-rh-meta > div) { display: inline; width: auto; margin: 0; float: none; text-align: left; white-space: normal; overflow: visible; font: inherit; color: inherit; }
 html[data-ui="new"] #nk-app #nk-roomhead .nk-rh-rules b { color: var(--nk-text); font-weight: 800; }
 html[data-ui="new"] #nk-app #nk-roomhead .nk-rh-meta::before { content: " · "; }
@@ -3061,10 +3062,10 @@ html[data-nk-style="flat"] .nk-room { background: var(--nk-surface); }
 .nk-room-title { flex: 1; min-width: 0; font-size: calc((calc(16px + var(--nk-up, 0) * 1px)) * var(--nk-fs, 1)); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nk-room-cap { flex: none; font-size: calc((calc(15px + var(--nk-up, 0) * 1px)) * var(--nk-fs, 1)); font-weight: 800; font-variant-numeric: tabular-nums; }
 .nk-room[data-full] .nk-room-cap { color: var(--nk-danger); }
-.nk-room-rules { min-width: 0; font-size: calc((calc(14px + var(--nk-up, 0) * .75px)) * var(--nk-fs, 1)); font-weight: 600; color: var(--nk-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nk-room-rules { min-width: 0; font-size: calc((calc(14px + var(--nk-up, 0) * .75px)) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nk-room-rules b { color: var(--nk-text); font-weight: 700; }
 @media (hover: hover) { .nk-room-rules[data-nk-tip] { cursor: help; } }
-.nk-room-foot { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: calc((calc(13px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 600; color: var(--nk-text-3); font-variant-numeric: tabular-nums; }
+.nk-room-foot { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: calc((calc(13px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); font-weight: 400; color: var(--nk-text-3); font-variant-numeric: tabular-nums; }
 .nk-room-meta { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nk-status { flex: none; font-weight: 700; white-space: nowrap; }
 .nk-status label { cursor: inherit; }
@@ -3137,7 +3138,7 @@ html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-ap
 html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) > .game-input #game-input { font-size: calc((22px) * var(--nk-fs, 1)); }
 html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"][data-nk-rule="Rtype"] #nk-app .GameBox > .product-body:has(> .game-input[style*="display: none"])::after {
 	content: attr(data-nk-chat); grid-area: in; align-self: end; display: flex; align-items: center; height: 54px; padding: 0 16px; box-sizing: border-box;
-	border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--nk-line); color: var(--nk-text-3); font-size: calc((18px) * var(--nk-fs, 1)); font-weight: 600;
+	border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--nk-line); color: var(--nk-text-3); font-size: calc((18px) * var(--nk-fs, 1)); font-weight: 400;
 }
 /* 남 차례에도 입력창을 흐리게 보여 줌 — 언제든 눌러서 입력(남 차례에 보낸 말은 서버가 채팅으로 처리, 휴대폰과 같음, 사용자 요청).
    포커스는 nk.js가 위 칸으로 돌림. 리듬 타이퍼는 아래 채팅칸을 입력창으로 써서 위의 흐린 "채팅" 칸(::after)만 둠 */
@@ -3183,7 +3184,7 @@ html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-ap
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body:not(.cw) { margin-top: 4px; padding-top: 8px; }
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body:not(.small-mode):not(.cw) .game-user { display: flex; flex: 0 1 112px; max-width: none; padding: 4px 6px 8px; }
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body:not(.small-mode):not(.cw) .game-user-image { grid-row: auto; width: 66px; height: auto; }
-	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body:not(.small-mode):not(.cw) .game-user-score { justify-content: center; font-size: calc((min(30px, 31cqw)) * var(--nk-fs, 1)); }
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body:not(.small-mode):not(.cw) .game-user-score { justify-content: center; font-size: min(calc(30px * var(--nk-fs, 1)), 31cqw); }
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body:not(.small-mode):not(.cw) .game-user-name { font-size: calc((15px) * var(--nk-fs, 1)); }
 	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body:not(.small-mode):not(.cw) .game-user.game-user-current { transform: translateY(-8px); }
 	/* 아이템전: 기록 대신 아이템 단추 (휴대폰과 같음) — 넓은 화면은 둘 다 들어가므로 그대로 */
@@ -3266,7 +3267,7 @@ html[data-ui="new"][data-nk-place="gaming"][data-nk-rule="Picture"] #nk-app .Gam
 .nk-okg-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; font-size: calc((13px) * var(--nk-fs, 1)); }
 .nk-okg-k { font-weight: 800; color: var(--nk-text); }
 .nk-okg-n { font-weight: 800; color: var(--nk-accent-ink); font-variant-numeric: tabular-nums; }
-.nk-okg-t { margin-left: auto; color: var(--nk-text-3); font-weight: 600; font-variant-numeric: tabular-nums; }
+.nk-okg-t { margin-left: auto; color: var(--nk-text-3); font-weight: 400; font-variant-numeric: tabular-nums; }
 .nk-okg .nk-mini-bar { width: auto; }
 /* 관전 중: 관전 단추를 옅은 강조 바탕 + 강조 테두리로 (방 화면의 투명 단추 규칙보다 우선) */
 html[data-ui="new"][data-nk-place="room"] #nk-actions .nk-btn.toggled[data-nk-action] { --nkb-bg: var(--nk-accent-soft); --nkb-fg: var(--nk-accent-ink); border: 1.5px solid var(--nk-accent); }
@@ -3395,7 +3396,7 @@ html[data-ui="new"] #ResultDiag :is(.result-me-score, .result-me-money) {
 html[data-ui="new"] #ResultDiag .result-me-bonus { color: var(--nk-accent-ink); font-weight: 800; text-shadow: none; }
 html[data-ui="new"] #ResultDiag .result-me-level { display: flex; align-items: baseline; gap: 6px; width: auto; margin: 0; }
 html[data-ui="new"] #ResultDiag .result-me-level-head { width: auto; color: var(--nk-text-3); font-size: 13px; font-weight: 700; text-align: left; }
-html[data-ui="new"] #ResultDiag .result-me-level-body { width: auto; color: var(--nk-text); font-size: 24px; font-weight: 850; line-height: 1; text-align: left; }
+html[data-ui="new"] #ResultDiag .result-me-level-body { width: auto; color: var(--nk-text); font-size: 24px; font-weight: 800; line-height: 1; text-align: left; }
 html[data-ui="new"] #ResultDiag .result-me-score-text { grid-area: 2 / 2; width: auto; margin: 0; color: var(--nk-text-2); font-size: 13px; font-weight: 700; text-align: right; text-shadow: none; font-variant-numeric: tabular-nums; }
 html[data-ui="new"] #ResultDiag .result-me-gauge { grid-column: 1 / -1; width: auto; height: 24px; margin: 0; border: 0; border-radius: 12px; background: var(--nk-surface-3); box-shadow: none; overflow: hidden; }
 html[data-ui="new"] #ResultDiag .result-me-gauge .graph-bar { float: left; height: 100%; padding: 0; background-image: none; box-shadow: none; }
@@ -3406,3 +3407,106 @@ html[data-ui="new"] #ResultDiag > .dialog-body > .dialog-bar.tail-button { margi
 /* 휴대폰: 창 안쪽 여백(14px)만 — 본문 좌우 여백·고정 높이는 뺌 (기존 휴대폰 CSS가 숨기던 점수 칸도 위에서 보임) */
 html[data-ui="new"][data-nk-device="phone"] #ResultDiag > .dialog-body { height: auto; padding: 4px 0 0; }
 html[data-ui="new"][data-nk-device="phone"] #ResultDiag .result-board-item { gap: 8px; padding: 0 10px; }
+
+/* ---------- 32) 가독성 정리 A·B·C (2026-11-04, 사용자 선택 — 시안 nk_mockups/readability) ----------
+   A: 데스크톱 게임 화면도 글자 120%(29) — 단 창 높이 700px 이상만(1366×768 화면의 창은 카드가 채팅에 가려져 그대로 1).
+      네모 판 모드의 판·플레이어 목록은 칸에 맞춘 고정 배치라 그대로 1.
+      15px 미만으로 남던 글자(인원 수·공지 표시·접속자 자리 번호)는 15px, 말풍선은 13 → 16px. 채팅은 아래 --nk-cfs(기본 UI 확대 기준)
+      (방은 폭 123 → 160px·가운데 맞춤, 게임은 카드 폭 — body.js chatBalloon)
+   B: 굵기는 400(본문·부가 정보) / 700(이름·강조) / 800(제목) — 각 규칙에서 바꿈. 단추·탭·칩은 그대로
+   C: 가장 연한 글자(--nk-text-3, 1)의 의미 토큰)를 대비 4.5:1 이상으로. 게임 중인 방은 흐리게 하지 않고 바탕을 메인 색(색깔 2) 30% + 바탕 70%로,
+      그 위 글자는 한 단계 진하게(--nk-text-2) */
+@media (min-height: 700px) {
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] body { --nk-fs: 1.2; }
+	/* 미션·체인 칸은 원래 큰 글자(64px)라 그대로 — 키우면 "0 / 5"처럼 두 줄인 모드(계산 릴레이)에서 판이 높아짐 */
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox :is(.items, .chain) { --nk-fs: 1; }
+}
+html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .product-body:has(> .game-body.cw) { --nk-fs: 1; }
+/* 채팅(데스크톱): 기본 UI를 창에 맞게 확대한 크기를 따름 (사용자 요청) — 기본 UI 100%의 글자 12px · 시각 11px · 메시지 간격 18px · 게임 중 4줄을
+   창 높이 686px당 1배(1920×960 창 = 140% = 16.8px), 폭 1010px당 1배 중 작은 쪽으로 키움. 1366×768 화면의 창은 100%(12px), 2배(24px)까지 */
+html[data-ui="new"]:not([data-nk-device="phone"]) { --nk-cfs: clamp(12px, min(1.75vh, 1.188vw), 24px); --nk-clh: round(var(--nk-cfs) * 1.25, 1px); --nk-cpad: round(var(--nk-cfs) * .125, 1px); }
+/* 위: 줄 높이·여백은 정수 px — 소수면 브라우저가 줄마다 반올림해 게임 중 4줄 칸(아래)과 어긋남 */
+html[data-ui="new"]:not([data-nk-device="phone"]) #nk-chat #Chat { font-size: var(--nk-cfs); }
+html[data-ui="new"]:not([data-nk-device="phone"]) #nk-chat .chat-item { line-height: var(--nk-clh); padding-top: var(--nk-cpad); padding-bottom: var(--nk-cpad); }
+/* 시각·닉네임 앞 아이콘은 위에 붙임 — 본문과 다른 크기를 기준선에 맞추면 줄이 0.5~1px 높아져 게임 중 4줄이 딱 맞지 않음 */
+html[data-ui="new"]:not([data-nk-device="phone"]) #nk-chat .chat-head > i { vertical-align: top; }
+html[data-ui="new"]:not([data-nk-device="phone"]) #nk-chat .chat-stamp { align-self: flex-start; font-size: calc(var(--nk-cfs) * .917); line-height: inherit; }
+html[data-ui="new"]:not([data-nk-device="phone"]) #nk-chat #Talk { font-size: calc(var(--nk-cfs) * 1.1); }
+html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-chat #Chat { font-size: var(--nk-cfs); }
+html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-chat .chat-item { line-height: var(--nk-clh); padding-top: var(--nk-cpad); padding-bottom: var(--nk-cpad); }
+html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-chat .ChatBox .product-body { grid-template-rows: calc((var(--nk-clh) + var(--nk-cpad) * 2) * 4) auto; }
+html[data-ui="new"]:not([data-nk-device="phone"]) :is(.nk-ptab em, .nk-notice-label, .users-item .nk-place) { font-size: 15px; }
+html[data-ui="new"]:not([data-nk-device="phone"]) .chat-balloon:not(.small-balloon) { width: 160px; }
+html[data-ui="new"]:not([data-nk-device="phone"]) .chat-balloon:not(.small-balloon) h4 { width: 146px; max-height: 120px; font-size: 16px; line-height: 1.35; }
+html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] .chat-balloon:not(.small-balloon) h4 { width: auto; }
+html[data-ui="new"] .nk-room[data-state="gaming"] { opacity: 1; background: color-mix(in oklch, var(--nk-second) 30%, var(--nk-surface)); }
+html[data-ui="new"] .nk-room[data-state="gaming"] :is(.nk-room-foot, .nk-room-info) { color: var(--nk-text-2); }
+
+/* ---------- 33) 게임 화면 공간 (2026-11-04, 사용자 선택 — 시안 nk_mockups/gamespace) — 데스크톱 단어 창 모드만, 휴대폰·네모 판 모드는 그대로 ----------
+   ① 입력창 줄을 없애고 내 차례에만 기록 줄 위에 겹쳐 띄움(기본 UI처럼 — 기록 줄은 늘 보임). 남 차례에는 입력창이 없고 채팅은 아래 채팅칸(포커스는 nk.js focusTopInput).
+      기록 자리를 힌트가 쓰는 모드(퀴즈 등)와 리듬 타이퍼는 입력창 줄을 그대로 둠 — 입력창이 힌트를 가리지 않게
+   ② 카드 위 간격·라운드 줄 아래 간격·상단 바 높이·라운드 글자 칸을 줄임
+   ③ 아이템전 아이템 단추는 체인 오른쪽에 세로로 (기록을 숨기지 않음) — 기존 자리 규칙은 선택자에 #raingame-strategy가 있어 !important로 덮음
+   ④ 플레이어 카드는 기본 UI 140% 확대 수준(165px · 캐릭터 140px)으로 — 9명부터 쓰는 작은 카드(small-mode)는 그대로 */
+@media (min-height: 941px) {
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) { grid-template-rows: auto 8px auto 66px auto auto 6px auto; }
+	html[data-ui="new"]:not([data-nk-device="phone"]):not([data-nk-rule="Rtype"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)):not(:has(.hints:not([style*="display: none"]))) { grid-template-rows: auto 8px auto 0 auto auto 6px auto; }
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) .game-body:not(.small-mode) .game-user { flex: 0 1 166px; }
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) .game-body:not(.small-mode) .game-user-image { width: 148px; }
+}
+@media (min-height: 801px) and (max-height: 940px) {
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) { grid-template-rows: auto 8px auto 54px auto auto 6px auto; }
+	html[data-ui="new"]:not([data-nk-device="phone"]):not([data-nk-rule="Rtype"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)):not(:has(.hints:not([style*="display: none"]))) { grid-template-rows: auto 8px auto 0 auto auto 6px auto; }
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) .game-body:not(.small-mode) .game-user { flex: 0 1 148px; }
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) .game-body:not(.small-mode) .game-user-image { width: 124px; }
+}
+/* 높이 700~800(1600·1440×900 화면의 창): 글자 120%라 세로형 작은 카드(112px)에서는 닉네임이 잘려 한 단계 키움. 700 미만(1366×768)은 그대로 */
+@media (min-height: 700px) and (max-height: 800px) {
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) .game-body:not(.small-mode) .game-user { flex: 0 1 136px; }
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) .game-body:not(.small-mode) .game-user-image { width: 84px; }
+}
+@media (max-height: 800px) {
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) { grid-template-rows: auto 6px auto 46px auto auto 4px auto; }
+	html[data-ui="new"]:not([data-nk-device="phone"]):not([data-nk-rule="Rtype"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)):not(:has(.hints:not([style*="display: none"]))) { grid-template-rows: auto 6px auto 0 auto auto 4px auto; }
+}
+html[data-ui="new"]:not([data-nk-device="phone"]):not([data-nk-rule="Rtype"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)):not(:has(.hints:not([style*="display: none"]))) > .game-input { grid-area: hs; align-self: stretch; height: auto; min-height: 40px; margin-top: 14px; z-index: 5; }
+html[data-ui="new"]:not([data-nk-device="phone"]):not([data-nk-rule="Rtype"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)):not(:has(.hints:not([style*="display: none"]))) > .game-input[style*="display: none"] { display: none !important; }
+@media (max-height: 940px) { html[data-ui="new"]:not([data-nk-device="phone"]):not([data-nk-rule="Rtype"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)):not(:has(.hints:not([style*="display: none"]))) > .game-input { margin-top: 10px; } }
+@media (max-height: 800px) { html[data-ui="new"]:not([data-nk-device="phone"]):not([data-nk-rule="Rtype"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)):not(:has(.hints:not([style*="display: none"]))) > .game-input { margin-top: 8px; } }
+html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) .game-body { margin-top: 0; padding-top: 10px; }
+@media (min-height: 801px) {
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] .nk-header { height: calc(46px + var(--nk-up, 0) * 3px); }
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] .nk-header .nk-account { padding-top: 2px; padding-bottom: 2px; }
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) .rounds { margin-bottom: 4px; }
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) .rounds label { min-width: calc(28px + var(--nk-up, 0) * 1px); height: calc(28px + var(--nk-up, 0) * 1px); border-radius: 8px; font-size: calc((calc(14px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); }
+	html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) .rounds label.rounds-current { font-size: calc((calc(14px + var(--nk-up, 0) * .5px)) * var(--nk-fs, 1)); }
+}
+/* 한 틀 안에 다섯 개를 구분선으로 (사용자 요청 — 단추마다 테두리 없음). 판 칸 배치에서 빼서(absolute, 기준은 그 칸) 틀 높이가 기록 줄을 늘리지 않게 */
+html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) > .ItemBar { position: absolute; top: 0; left: 0; grid-area: 3 / 5 / 6 / 6 !important; flex-direction: column; justify-content: flex-start !important; gap: 0 !important; width: max-content;
+	border: 1px solid var(--nk-line); border-radius: 12px; background: var(--nk-surface); overflow: hidden; }
+html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) > :is(.ItemBar, #raingame-strategy) .ItemButton { flex: none !important; justify-content: flex-start !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; }
+html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) > :is(.ItemBar, #raingame-strategy) .ItemButton + .ItemButton { border-top: 1px solid var(--nk-line) !important; }
+/* 쓸 수 있음 = 옅은 강조 바탕, 쓰려고 고름 = 강조색으로 채움 (테두리 대신 바탕만) */
+html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) > :is(.ItemBar, #raingame-strategy) .ItemButton.item-available { background: color-mix(in oklch, var(--nk-accent) 16%, var(--nk-surface)) !important; }
+html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) > :is(.ItemBar, #raingame-strategy) .ItemButton.item-queued { background: var(--nk-fill) !important; }
+html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)):has(> .ItemBar:not([style*="display: none"])) .history-holder { display: block; }
+/* 좁은 화면: 아이템 이름은 빼고 번호·아이콘·개수만 (이름은 기존 툴팁) — 기존 이름 규칙(22) 선택자의 #raingame-strategy만큼 우선순위를 맞춤 */
+@container nkapp (max-width: 1499px) { html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox > .product-body:not(:has(> .game-body.cw)) > :is(.ItemBar, #raingame-strategy) .ItemName { display: none !important; } }
+
+/* ---------- 34) 창 머리줄·휴대폰 설정 탭 (2026-11-05, 사용자 요청) ----------
+   데스크톱: 머리줄 어디를 눌러도 창을 끌 수 있음(ready.js) → 머리줄 전체에 이동 커서.
+   휴대폰: 왼쪽 탭 줄(150px)이 내용 칸을 반 가까이 차지해서, 설정 탭을 위쪽 가로 줄로 */
+html[data-ui="new"]:not([data-nk-device="phone"]) .dialog-head { cursor: move; }
+html[data-ui="new"][data-nk-device="phone"] #nk-settings .nk-dlg-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 12px; }
+html[data-ui="new"][data-nk-device="phone"] #nk-settings .nk-dlg-tabs { flex-direction: row; gap: 4px; padding: 0 0 8px; border-right: 0; border-bottom: 1px solid var(--nk-line); overflow-x: auto; scrollbar-width: none; }
+html[data-ui="new"][data-nk-device="phone"] #nk-settings .nk-set-tab { flex: 1 0 auto; width: auto; justify-content: center; gap: 6px; padding: 0 10px; }
+/* 휴대폰: 슬라이더 줄은 이름(설명) 밑에 슬라이더를 둠 — 한 줄에 같이 두면 이름이 두세 줄로 꺾이고 슬라이더도 짧아짐 (사용자 요청) */
+html[data-ui="new"][data-nk-device="phone"] #nk-settings .nk-set-row:has(.nk-set-ctl input[type="range"]) { flex-wrap: wrap; row-gap: 8px; }
+html[data-ui="new"][data-nk-device="phone"] #nk-settings .nk-set-row:has(.nk-set-ctl input[type="range"]) > :is(.nk-set-text, .nk-set-ctl) { flex: 1 1 100%; }
+html[data-ui="new"][data-nk-device="phone"] #nk-settings .nk-set-ctl input[type="range"] { flex: 1; min-width: 0; width: auto !important; }
+/* 휴대폰 공지 띠: 넘치면 흐르는 글자 (사용자 선택). nk.js runNotice가 넘친 폭(--nk-run-x)·한 바퀴 시간(--nk-run-t)을 정함.
+   처음 20%·끝 15%는 멈춰 있음. 누르면 전체 공지 시트는 그대로. 움직임 줄이기 설정이면 감싸지 않아 원래 말줄임 */
+html[data-ui="new"][data-nk-device="phone"] .nk-notice-text > .nk-notice-run { display: inline-block !important; }
+html[data-ui="new"][data-nk-device="phone"] .nk-notice-text.is-run { text-overflow: clip; }
+html[data-ui="new"][data-nk-device="phone"] .nk-notice-text.is-run > .nk-notice-run { animation: nk-notice-run var(--nk-run-t, 10s) linear infinite; }
+@keyframes nk-notice-run { 0%, 20% { transform: translateX(0); } 85%, 100% { transform: translateX(var(--nk-run-x, 0)); } }

@@ -280,7 +280,7 @@ exports.submit = function (client, text, data) {
 	score = my.getScore(n, isClap ? clapCount : 0, t);
 
 	my.logChainWord(n, client);
-	my.game.roundTime -= t;
+	my.game.roundTime = Math.max(0, my.game.roundTime - t);
 	my.game.n = n + 1;
 
 	client.game.score += score;

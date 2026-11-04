@@ -1458,10 +1458,12 @@ var NK = (function () {
 			&& !$stage.box.game.find(".game-body").hasClass("cw") && $stage.game.hereText.is(":visible");
 	}
 	// fromTalk: 게임 화면에 들어올 때는 방에서 쓰던 채팅칸의 포커스도 위 칸으로 옮김
+	// 위 칸은 내 차례에만 보임(nk.css 33) — 내 차례가 끝나 위 칸이 숨으면 쓰던 포커스를 아래 채팅칸으로 넘김
 	function focusTopInput(fromTalk) {
 		var a = document.activeElement;
 
 		if ((!a || a === document.body || (fromTalk === true && a === $stage.talk[0])) && topInputOn()) $stage.game.hereText.focus();
+		else if (a === $stage.game.hereText[0] && !my.phone && !topInputOn()) $stage.talk.focus();
 	}
 	// H안 게임 화면 준비: 미션·체인 이름표, 시간 막대 글자(막대 끝 고정 · nk.css가 data-t를 보여 줌), 단어 창 글자 맞춤
 	function initGameH() {
@@ -1926,7 +1928,8 @@ var NK = (function () {
 		{ tab: 'screen', section: 'visual', labelKey: 'showRuleCategory', descKey: 'nkDescShowRuleCategory', controls: ['#show-rule-category'], kind: 'toggle', hidden: true },
 		{ tab: 'screen', section: 'visual', labelKey: 'nkRuleOpen', descKey: 'nkDescRuleOpen', controls: ['#nk-rule-open'], kind: 'toggle' },
 		{ tab: 'screen', section: 'visual', labelKey: 'noShake', descKey: 'nkDescNoShake', controls: ['#no-shake'], kind: 'toggle' },
-		{ tab: 'screen', section: 'visual', labelKey: 'playerScroll', descKey: 'nkDescPlayerScroll', controls: ['#player-scroll'], kind: 'toggle' }
+		{ tab: 'screen', section: 'visual', labelKey: 'playerScroll', descKey: 'nkDescPlayerScroll', controls: ['#player-scroll'], kind: 'toggle' },
+		{ tab: 'screen', section: 'visual', labelKey: 'kanaReading', descKey: 'nkDescKanaReading', controls: ['#kana-reading'], kind: 'toggle' }
 	].forEach(function (s, i) { s.order = i; my.registerSetting(s); });
 
 	/* ------------------------------------------------------------------
@@ -2162,6 +2165,70 @@ var NK = (function () {
 	   대화상자 닫기 효과: 기존 코드는 .hide()로 바로 숨기고 곧바로 :visible을 확인하기도 하므로
 	   실제 창은 그대로 바로 숨기고, 겉모습만 복제해 같은 자리에서 사라지게 함 (nk.css .nk-dlg-ghost)
 	   ------------------------------------------------------------------ */
+	// 키보드로 창 다루기 (keydown.nkesc). 맨 앞 창 = 보이는 창 중 z-index가 가장 높은 것(띄우거나 끈 창은 .dialog-front), 같으면 문서에서 뒤쪽
+	function frontDialog() {
+		var best = null, bz = -Infinity;
+
+		$(".dialog:visible").not(".nk-dlg-ghost").each(function () {
+			var z = parseInt($(this).css('z-index'), 10) || 0;
+
+			if (z >= bz) {
+				bz = z;
+				best = this;
+			}
+		});
+		return best && $(best);
+	}
+	// Esc: 닫기(×) → 없으면 [아니요](확인·입력 창) → 입력칸 없는 알림 창은 [확인]. 닉네임 정하기처럼 입력이 있는 창은 그대로 둠
+	function dlgEsc() {
+		var $d = frontDialog(), $b;
+
+		if (!$d) return false;
+		$b = $d.children(".dialog-head").find(".closeBtn:visible");
+		if (!$b.length) $b = $d.find("button[id$='-no']:visible");
+		if (!$b.length && !$d.find("input:visible, textarea:visible").length) $b = $d.find(".tail-button button[id$='-ok']:visible");
+		if (!$b.length) return false;
+		$b.first().trigger('click');
+		return true;
+	}
+	// Enter: 맨 앞 창의 확인 단추(-ok, 신고, 신 UI 창의 주 단추). 찬반 투표는 넣지 않음.
+	// 창 밖 입력칸(채팅·게임 입력)에서 친 Enter는 그대로 — 갑자기 뜬 창을 치던 중에 누르지 않게. 창 안의 여러 줄 칸·목록·단추·링크도 원래 동작
+	function dlgEnter(e) {
+		var oe = e.originalEvent || {}, a = document.activeElement, $d, $ok, inside;
+
+		if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey || oe.isComposing || e.isDefaultPrevented()) return;
+		if (!($d = frontDialog())) return;
+		inside = a && $.contains($d[0], a);
+		if (inside && $(a).is("textarea, select, button, a, [contenteditable='true']")) return;
+		if (!inside && a && ($(a).is("textarea, select, [contenteditable='true']") || ($(a).is("input") && !/^(button|submit|reset|checkbox|radio|range|color|file)$/.test(a.type)))) return;
+		$ok = $d.find("button[id$='-ok'], #report-submit, .nk-btn.primary").filter(":visible").not(":disabled").first();
+		if (!$ok.length) return;
+		// 창 밖 단추에 포커스가 있으면(창을 연 단추 등) Enter가 그 단추를 다시 누르지 않게 막음
+		e.preventDefault();
+		$ok.trigger('click');
+	}
+	// 데스크톱 공지 띠: 넘치면 글자를 줄임 (최소 10px, 그래도 넘치면 말줄임). 띠(높이 고정)를 지켜봐서 글자 크기를 바꿔도 다시 불리지 않음
+	function fitNotice() {
+		var el = document.getElementById("nk-notice-text"), fs;
+
+		el.style.fontSize = "";
+		if (!el.clientWidth || el.scrollWidth <= el.clientWidth) return;
+		fs = parseFloat(getComputedStyle(el).fontSize);
+		fs = Math.max(10, Math.floor(fs * el.clientWidth / el.scrollWidth * 4) / 4);
+		el.style.fontSize = fs + "px";
+		while (fs > 10 && el.scrollWidth > el.clientWidth) el.style.fontSize = (fs -= .25) + "px";
+	}
+	// 휴대폰 공지 띠: 넘치는 만큼(--nk-run-x)을 초당 40px로 흘림. 처음·끝에서 잠깐 멈춤(nk.css 34 — 움직이는 구간이 전체의 65%)
+	function runNotice() {
+		var el = document.getElementById("nk-notice-text"), run = el.firstElementChild, d;
+
+		if (!run || !run.classList.contains("nk-notice-run")) return;
+		d = el.clientWidth ? run.offsetWidth - el.clientWidth : 0;
+		el.classList.toggle("is-run", d > 0);
+		if (d <= 0) return;
+		el.style.setProperty('--nk-run-x', -d + "px");
+		el.style.setProperty('--nk-run-t', Math.max(6, d / 40 / .65).toFixed(1) + "s");
+	}
 	function watchDialogs() {
 		var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
 		var mo;
@@ -2800,7 +2867,8 @@ var NK = (function () {
 			open = !open;
 			draw();
 		});
-		$d.on('change click', function () { setTimeout(draw, 0); });
+		// 보일 때만 — 기존 Esc(모든 창의 닫기를 누름)가 한 번도 안 연 이 창도 눌러서, lang이 없는 채 그려 오류가 났음
+		$d.on('change click', function () { setTimeout(my.quickRefresh, 0); });
 		onShow($d, function () {
 			lang = langOf($("#quick-mode").val());
 			open = false;
@@ -3014,16 +3082,37 @@ var NK = (function () {
 		$("#nk-friend-add").on('click', function () { $("#comm-friend-add").trigger('click'); });
 
 		// 공지
-		if (gn.length > 1) $("#nk-notice-text").html(my._gn = gn);
-		else $("#nk-notice").addClass("is-empty");
+		if (gn.length > 1) {
+			my._gn = gn;
+			// 휴대폰: 넘치면 흐르게(runNotice) — 움직일 안쪽 칸으로 감쌈. 움직임 줄이기 설정이면 원래대로 말줄임
+			if (my.phone && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) $("#nk-notice-text").empty().append($("<div>").addClass("nk-notice-run").html(gn));
+			else $("#nk-notice-text").html(gn);
+		} else $("#nk-notice").addClass("is-empty");
 		$("#nk-notice-close").on('click', function () { $("#nk-notice").addClass("is-empty"); });
+		// 공지가 칸을 넘으면 데스크톱은 글자를 줄여 다 들어오게, 휴대폰은 흐르는 글자로 (사용자 요청).
+		// 띠 크기가 바뀔 때마다(창 크기·로비↔방 자리 이동·휴대폰 화면 전환으로 다시 보일 때) 다시 맞춤
+		if (window.ResizeObserver) {
+			new ResizeObserver(my.phone ? runNotice : fitNotice).observe(document.getElementById("nk-notice"));
+			// 웹 글꼴이 늦게 들어오면 띠 크기는 그대로인데 글자 폭만 바뀜
+			if (document.fonts) document.fonts.ready.then(my.phone ? runNotice : fitNotice);
+		}
 
 		$("#nk-account").on('click', function (e) { openAccount(e.currentTarget); });
 		$(window).on('resize', function () { layoutNav(); closePop(); });
+		// Esc = 메뉴 → (휴대폰) 시트 → 맨 앞 창 순서로 하나만 닫음, Enter = 맨 앞 창의 확인 단추 (사용자 요청).
+		// 처리하면 기존 Esc(window — 모든 창의 닫기를 한꺼번에 누름, ready.js)까지는 안 내려보냄
 		$(document).on('keydown.nkesc', function (e) {
+			if (e.which === 13) return dlgEnter(e);
 			if (e.which !== 27) return;
-			closePop();
-			if (my.phone) closeSheet();
+			if (my._pop) {
+				closePop();
+				return false;
+			}
+			if (my.phone && my._sheet) {
+				closeSheet();
+				return false;
+			}
+			if (dlgEsc()) return false;
 		});
 		// 마우스를 올리는 툴팁은 터치에서 눌러도 뜬 채 남으므로 휴대폰·태블릿에서는 쓰지 않음
 		if (!my.touch) $(document).on('mouseenter', "[data-nk-tip]", tipShow).on('mousemove', "[data-nk-tip]", tipMove).on('mouseleave', "[data-nk-tip]", tipHide);

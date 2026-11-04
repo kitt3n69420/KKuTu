@@ -73,7 +73,34 @@ var BAD = new RegExp(["느으*[^가-힣]*금마?", "(?<!(밀레|심포|도미))�
 		"꺼[^가-힣]*(져|저|지)", "쳐[^가-힣]*맞", "[씨시][^가-힣]*부[^가-힣]*(리|려|랄|럴)", "능[^가-힣]*지[^가-힣]*(딸|달)", "개[^가-힣]*돼[^가-힣]*지", "[또도][^가-힣]*라[^가-힣]*이", "[돌똘][^가-힣]*아[^가-힣]*이", "[씹십][^가-힣]*(덕|뜨[^가-힣]*억)",
 		"퐁퐁[^가-힣]*남", "방[^가-힣]*구[^가-힣]*석[^가-힣]*(여[^가-힣]*포|인[^가-힣]*생)", "어[^가-힣]*그[^가-힣]*로[^가-힣]", "긁[^가-힣]*힌", "[엠앰][^가-힣]*생", "보[^가-힣]*추", "종[^가-힣]*간[^가-힣]*나",
 		"1[789]금[^가-힣]*영[^가-힣]*상", "[ㅓㅗ]ㅜㅑ", "르[^가-힣]*가[^가-힣]*[즘슴]", "정[^가-힣]*신[^가-힣]*(병|이[^가-힣]*상|개[^가-힣]*쑊)", "(한[^가-힣]*국|나[^가-힣]*라)[^가-힣]*망", "[한H][^가-힣]*남[^대역동]",
-		"[한H][^가-힣]*[녀여]", "[그니너저샹썅][^가-힣]*년", "닥[^가-힣]*[치쳐처]", "(대|머|아)[^가-힣]*((갈[^가-힣]*[통빡])|가[^가-힣]*리)", "\\bwls\\b", "찐[^가-힣]*(따|평)", "쿨[^가-힣]*찐"
+		"[한H][^가-힣]*[녀여]", "[그니너저샹썅][^가-힣]*년", "닥[^가-힣]*[치쳐처]", "(대|머|아)[^가-힣]*((갈[^가-힣]*[통빡])|가[^가-힣]*리)", "\\bwls\\b", "찐[^가-힣]*(따|평)", "쿨[^가-힣]*찐",
+		
+		"킁[^가-힣]*킁",
+		"(死|氏|し)[^ぁ-んァ-ヶ一-龠]*(ね|ネ)(?![ぁ-んァ-ヶ一-龠])|タヒ[^ぁ-んァ-ヶ一-龠]*(ね|ネ)",
+		"(殺|ころ|コロ)[^ぁ-んァ-ヶ一-龠]*す[^ぁ-んァ-ヶ一-龠]*(ぞ|ぜ)|ぶ[っち]殺|ブ[ッチ]殺|くたばれ|クタバレ",
+		"(くそ|クソ|糞)",
+		"(馬[^ぁ-んァ-ヶ一-龠]*鹿|莫[^ぁ-んァ-ヶ一-龠]*迦|ばか|バカ)(?!り)",
+		"(あほ|アホ|阿[^ぁ-んァ-ヶ一-龠]*呆)",
+		"ボケ(?!ット|ッ)|ぼけなす",
+		"(ちくしょう|ちくしょー|チクショウ|チクショー|畜生)",
+		"(てめえ|てめぇ|テメエ|テメェ|テメー|貴様|きさま|キサマ)",
+		"野郎|やろう(?![ぁ-ん])|ヤロウ|ヤロー",
+		"(きもい|キモい|キモイ|キモッ|キモ(?![ノちチ]))|気持ち[^ぁ-んァ-ヶ一-龠]*悪い",
+		"(うざい|ウザい|ウザイ|うぜえ|うぜぇ|ウゼェ|ウゼー|ウザッ)",
+		"(ブス|ぶす|デブ|ハゲ)",
+		"(クズ|屑)",
+		"(失せろ|うせろ|消えろ|黙れ|だまれ)",
+		"(変態|へんたい|ヘンタイ)",
+		"(淫乱|インラン|痴女|売女|あばずれ|アバズレ|ビッチ|ヤリマン|やりまん|ヤリチン|やりちん)",
+		"(ち|チ)[^ぁ-んァ-ヶ一-龠]*(ん|ン)[^ぁ-んァ-ヶ一-龠]*(こ|コ|ぽ|ポ)",
+		"(ま|マ)[^ぁ-んァ-ヶ一-龠]*(ん|ン)[^ぁ-んァ-ヶ一-龠]*(こ|コ)(?![ぁ-んァ-ヶ])",
+		"(ちんちん|チンチン|まんまん|マンマン|うんこ|ウンコ)",
+		"(セックス|せっくす|オナニー|おなにー|中出し|フェラ(?!ー)|パイズリ|ザーメン|強姦|レイプ)",
+		"(ファック|ふぁっく|ファッキン|ファッカー)",
+		"(ガイジ|池沼|きちがい|キチガイ|気違い|基地外|めくら|メクラ|つんぼ|ツンボ|かたわ|カタワ|びっこ|ビッコ)",
+		"(ホモ(?!サピ|ジニ)|オカマ|おかま)",
+		"(チョン(?!マゲ|ッ)|ジャップ|支那|シナ人|鮮人|土人|黒ん坊|黒んぼ|クロンボ|ニガー|チャンコロ)",
+		"\\b([kK][uU][sS][oO]|[kK][iI][cC][hH][iI][gG][aA][iI]|[cC][hH][iI][kK][uU][sS][hH](?:[oO]|[oO][uU])|[cC][hH][iI][nN](?:[kK][oO]|[pP][oO])|[oO]?[mM][aA][nN][kK][oO]|[uU][nN][kK][oO]|[tT][eE][mM][eE][eE]|[kK][iI][sS][aA][mM][aA]|[bB][aA][kK][aA][yY][aA][rR][oO][uU]?|[yY][aA][rR][oO][uU])\\b"
     ].join('|'), "g");
 
 var ws, rws;
@@ -586,6 +613,18 @@ $(document).ready(function () {
 	}).on('mouseup', function (e) {
 		stopDrag();
 	});
+	// 신 UI 데스크톱: 머리줄 어디를 눌러도 끌 수 있게 (설정 창 등은 제목 칸이 글자 폭뿐이라 글자 위에서만 끌렸음 — 사용자 요청)
+	// 제목은 위에서 처리하고, 닫기 등 머리줄 안의 단추는 제외
+	$(".dialog-head").on('mousedown', function (e) {
+		var $pd = $(e.currentTarget).parents(".dialog");
+
+		if (!NK.active || NK.phone || $(e.target).closest(".dialog-title, .closeBtn, button, input, select, a").length) return;
+		$(".dialog-front").removeClass("dialog-front");
+		$pd.addClass("dialog-front");
+		startDrag($pd, e.pageX, e.pageY);
+	}).on('mouseup', function (e) {
+		if (NK.active) stopDrag();
+	});
 	// addInterval(checkInput, 1);
 	$stage.chatBtn.on('click', function (e) {
 		// 리듬 타이퍼(데스크톱): 채팅창이 게임 입력창으로 쓰이는 동안은 전송 버튼으로도 보내지 않음
@@ -1060,6 +1099,9 @@ $(document).ready(function () {
 
 		// 플레이어 스크롤 설정 (기본 꺼짐)
 		$("#player-scroll").prop('checked', ($data.opts && $data.opts.ps === true));
+
+		// 가나 발음 보기 설정 (기본 켜짐)
+		$("#kana-reading").prop('checked', (!$data.opts || $data.opts.kr !== false));
 
 		// 이스터에그 끄기 설정 (기본 꺼짐)
 		$("#no-easter-egg").prop('checked', savedSettings.noEasterEgg === true);
@@ -2153,6 +2195,7 @@ $(document).ready(function () {
 			nf: $("#no-filter").is(":checked"),
 			ns: $("#no-shake").is(":checked"),
 			ps: $("#player-scroll").is(":checked"),
+			kr: $("#kana-reading").is(":checked"),
 			sp: newSoundPack,
 			lp: newLevelPack
 		};
@@ -12222,6 +12265,7 @@ function applyOptions(opt) {
 	$("#no-filter").prop('checked', ($data.opts.nf !== undefined) ? $data.opts.nf : true);
 	$("#no-shake").prop('checked', ($data.opts.ns === true));
 	$("#player-scroll").prop('checked', ($data.opts.ps === true));
+	$("#kana-reading").prop('checked', ($data.opts.kr !== false));
 
 	// 사운드팩 설정 (localStorage에 값이 있으면 localStorage, 없으면 cookie)
 	var soundPack = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts.sp || "");
@@ -15345,6 +15389,7 @@ function processWord(word, _mean, _theme, _wcs) {
 function getCharText(char, subChar, wordLength) {
 	// subChar가 파이프로 구분된 경우 콤마로 표시
 	var displaySubChar = subChar ? subChar.split('|').join(', ') : null;
+	var kanaReading = getKanaReadingText(char);
 
 	if ($data.room && $data.room.opts && $data.room.opts.drg) {
 		char = char.split('').map(function (c) {
@@ -15358,11 +15403,55 @@ function getCharText(char, subChar, wordLength) {
 		}
 	}
 
-	var res = char + (displaySubChar ? ("(" + displaySubChar + ")") : "");
+	var res = char + (displaySubChar ? ("(" + displaySubChar + ")") : "") + kanaReading;
 
 	if (wordLength) res += "<label class='jjo-display-word-length'>(" + wordLength + ")</label>";
 
 	return res;
+}
+// 가나 발음 보기($data.opts.kr): 클래식 일본어 모드(JSH/JAP/JKT)의 이을 가나 뒤에 발음을 쿵쿵따 글자수 표시와 같은 모양으로 붙임.
+// 한국어/냥냥 화면은 한글 발음(あ(아)), 그 밖의 언어(영어/일본어 등)는 헵번식 로마자(あ(a))
+var KANA_HANGUL = {
+	'あ': '아', 'い': '이', 'う': '우', 'え': '에', 'お': '오',
+	'か': '카', 'き': '키', 'く': '쿠', 'け': '케', 'こ': '코',
+	'が': '가', 'ぎ': '기', 'ぐ': '구', 'げ': '게', 'ご': '고',
+	'さ': '사', 'し': '시', 'す': '스', 'せ': '세', 'そ': '소',
+	'ざ': '자', 'じ': '지', 'ず': '즈', 'ぜ': '제', 'ぞ': '조',
+	'た': '타', 'ち': '치', 'つ': '츠', 'て': '테', 'と': '토',
+	'だ': '다', 'ぢ': '지', 'づ': '즈', 'で': '데', 'ど': '도',
+	'な': '나', 'に': '니', 'ぬ': '누', 'ね': '네', 'の': '노',
+	'は': '하', 'ひ': '히', 'ふ': '후', 'へ': '헤', 'ほ': '호',
+	'ば': '바', 'び': '비', 'ぶ': '부', 'べ': '베', 'ぼ': '보',
+	'ぱ': '파', 'ぴ': '피', 'ぷ': '푸', 'ぺ': '페', 'ぽ': '포',
+	'ま': '마', 'み': '미', 'む': '무', 'め': '메', 'も': '모',
+	'や': '야', 'ゆ': '유', 'よ': '요',
+	'ら': '라', 'り': '리', 'る': '루', 'れ': '레', 'ろ': '로',
+	'わ': '와', 'ゐ': '이', 'ゑ': '에', 'を': '오', 'ん': '응', 'ゔ': '부'
+};
+var KANA_ROMAJI = {
+	'あ': 'a', 'い': 'i', 'う': 'u', 'え': 'e', 'お': 'o',
+	'か': 'ka', 'き': 'ki', 'く': 'ku', 'け': 'ke', 'こ': 'ko',
+	'が': 'ga', 'ぎ': 'gi', 'ぐ': 'gu', 'げ': 'ge', 'ご': 'go',
+	'さ': 'sa', 'し': 'shi', 'す': 'su', 'せ': 'se', 'そ': 'so',
+	'ざ': 'za', 'じ': 'ji', 'ず': 'zu', 'ぜ': 'ze', 'ぞ': 'zo',
+	'た': 'ta', 'ち': 'chi', 'つ': 'tsu', 'て': 'te', 'と': 'to',
+	'だ': 'da', 'ぢ': 'ji', 'づ': 'zu', 'で': 'de', 'ど': 'do',
+	'な': 'na', 'に': 'ni', 'ぬ': 'nu', 'ね': 'ne', 'の': 'no',
+	'は': 'ha', 'ひ': 'hi', 'ふ': 'fu', 'へ': 'he', 'ほ': 'ho',
+	'ば': 'ba', 'び': 'bi', 'ぶ': 'bu', 'べ': 'be', 'ぼ': 'bo',
+	'ぱ': 'pa', 'ぴ': 'pi', 'ぷ': 'pu', 'ぺ': 'pe', 'ぽ': 'po',
+	'ま': 'ma', 'み': 'mi', 'む': 'mu', 'め': 'me', 'も': 'mo',
+	'や': 'ya', 'ゆ': 'yu', 'よ': 'yo',
+	'ら': 'ra', 'り': 'ri', 'る': 'ru', 'れ': 're', 'ろ': 'ro',
+	'わ': 'wa', 'ゐ': 'i', 'ゑ': 'e', 'を': 'o', 'ん': 'n', 'ゔ': 'vu'
+};
+function getKanaReadingText(char) {
+	if (($data.opts && $data.opts.kr === false) || !$data.room) return "";
+	var rule = RULE[MODE[$data.room.mode]];
+	if (!rule || rule.rule !== "Classic" || rule.lang !== "ja") return "";
+	var lang = localStorage.getItem('kkutu_lang') || 'ko_KR';
+	var reading = (lang === 'ko_KR' || lang === 'nya') ? KANA_HANGUL[char] : KANA_ROMAJI[char];
+	return reading ? "<label class='jjo-display-word-length'>(" + reading + ")</label>" : "";
 }
 function getRequiredScore(lv) {
 	return Math.round(
@@ -15531,11 +15620,15 @@ function chatBalloon(text, id, flag) {
 	var nkUp = NK.active && !(flag & 2);
 	var img = (flag == 2 || nkUp) ? "chat-balloon-bot" : "chat-balloon-tip";
 	var $obj = $("<div>").addClass("chat-balloon");
-	var targetWidth = 0;
+	var targetWidth = 0, nkFit = false;
 	if ((flag & 2) && $data.room && $data.room.game && $data.room.game.seq && $data.room.game.seq.length > 8 && !isPlayerScroll()) {
 		$obj.addClass("small-balloon");
 		var $target = $("#game-user-" + id);
 		if ($target.length) targetWidth = $target.width();
+	} else if ((flag & 2) && NK.active && !NK.phone) {
+		// 신 UI 데스크톱 게임 화면: 말풍선 폭 = 카드 폭 (말풍선 글자가 커서 기존 폭은 줄이 많고, 좁은 카드에서는 옆 말풍선과 겹침)
+		targetWidth = $("#game-user-" + id).outerWidth() || 0;
+		nkFit = true;
 	}
 	$obj.attr('id', "cb-" + id)
 		.append($("<div>").addClass("jt-image " + img))
@@ -15545,6 +15638,8 @@ function chatBalloon(text, id, flag) {
 	if (!offset) return;
 	if ((flag & 2) && isPlayerScroll()) offset = clampPlayerScrollOffset(offset, $("#game-user-" + id));
 	$stage.balloons.append($obj);
+	// 높이(ot)를 재기 전에 폭부터 맞춤 — 폭이 줄면 줄 수가 늘어남
+	if (nkFit && targetWidth) $obj.width(targetWidth);
 	if (flag == 1) ot = 0, ol = 220;
 	else if (flag == 2) ot = 35 - $obj.height(), ol = -2;
 	else if (flag == 3) ot = 5, ol = 210;
@@ -15554,7 +15649,8 @@ function chatBalloon(text, id, flag) {
 		if ($img.length) {
 			offset = $img.offset();
 			ot = 8 - $obj.height();
-			ol = $img.outerWidth() / 2 - 61;
+			// 말풍선 폭은 CSS가 정함 (데스크톱 신 UI 160px, 그 밖 123px)
+			ol = ($img.outerWidth() - $obj.outerWidth()) / 2;
 		}
 	}
 
@@ -17349,10 +17445,12 @@ var NK = (function () {
 			&& !$stage.box.game.find(".game-body").hasClass("cw") && $stage.game.hereText.is(":visible");
 	}
 	// fromTalk: 게임 화면에 들어올 때는 방에서 쓰던 채팅칸의 포커스도 위 칸으로 옮김
+	// 위 칸은 내 차례에만 보임(nk.css 33) — 내 차례가 끝나 위 칸이 숨으면 쓰던 포커스를 아래 채팅칸으로 넘김
 	function focusTopInput(fromTalk) {
 		var a = document.activeElement;
 
 		if ((!a || a === document.body || (fromTalk === true && a === $stage.talk[0])) && topInputOn()) $stage.game.hereText.focus();
+		else if (a === $stage.game.hereText[0] && !my.phone && !topInputOn()) $stage.talk.focus();
 	}
 	// H안 게임 화면 준비: 미션·체인 이름표, 시간 막대 글자(막대 끝 고정 · nk.css가 data-t를 보여 줌), 단어 창 글자 맞춤
 	function initGameH() {
@@ -17817,7 +17915,8 @@ var NK = (function () {
 		{ tab: 'screen', section: 'visual', labelKey: 'showRuleCategory', descKey: 'nkDescShowRuleCategory', controls: ['#show-rule-category'], kind: 'toggle', hidden: true },
 		{ tab: 'screen', section: 'visual', labelKey: 'nkRuleOpen', descKey: 'nkDescRuleOpen', controls: ['#nk-rule-open'], kind: 'toggle' },
 		{ tab: 'screen', section: 'visual', labelKey: 'noShake', descKey: 'nkDescNoShake', controls: ['#no-shake'], kind: 'toggle' },
-		{ tab: 'screen', section: 'visual', labelKey: 'playerScroll', descKey: 'nkDescPlayerScroll', controls: ['#player-scroll'], kind: 'toggle' }
+		{ tab: 'screen', section: 'visual', labelKey: 'playerScroll', descKey: 'nkDescPlayerScroll', controls: ['#player-scroll'], kind: 'toggle' },
+		{ tab: 'screen', section: 'visual', labelKey: 'kanaReading', descKey: 'nkDescKanaReading', controls: ['#kana-reading'], kind: 'toggle' }
 	].forEach(function (s, i) { s.order = i; my.registerSetting(s); });
 
 	/* ------------------------------------------------------------------
@@ -18053,6 +18152,70 @@ var NK = (function () {
 	   대화상자 닫기 효과: 기존 코드는 .hide()로 바로 숨기고 곧바로 :visible을 확인하기도 하므로
 	   실제 창은 그대로 바로 숨기고, 겉모습만 복제해 같은 자리에서 사라지게 함 (nk.css .nk-dlg-ghost)
 	   ------------------------------------------------------------------ */
+	// 키보드로 창 다루기 (keydown.nkesc). 맨 앞 창 = 보이는 창 중 z-index가 가장 높은 것(띄우거나 끈 창은 .dialog-front), 같으면 문서에서 뒤쪽
+	function frontDialog() {
+		var best = null, bz = -Infinity;
+
+		$(".dialog:visible").not(".nk-dlg-ghost").each(function () {
+			var z = parseInt($(this).css('z-index'), 10) || 0;
+
+			if (z >= bz) {
+				bz = z;
+				best = this;
+			}
+		});
+		return best && $(best);
+	}
+	// Esc: 닫기(×) → 없으면 [아니요](확인·입력 창) → 입력칸 없는 알림 창은 [확인]. 닉네임 정하기처럼 입력이 있는 창은 그대로 둠
+	function dlgEsc() {
+		var $d = frontDialog(), $b;
+
+		if (!$d) return false;
+		$b = $d.children(".dialog-head").find(".closeBtn:visible");
+		if (!$b.length) $b = $d.find("button[id$='-no']:visible");
+		if (!$b.length && !$d.find("input:visible, textarea:visible").length) $b = $d.find(".tail-button button[id$='-ok']:visible");
+		if (!$b.length) return false;
+		$b.first().trigger('click');
+		return true;
+	}
+	// Enter: 맨 앞 창의 확인 단추(-ok, 신고, 신 UI 창의 주 단추). 찬반 투표는 넣지 않음.
+	// 창 밖 입력칸(채팅·게임 입력)에서 친 Enter는 그대로 — 갑자기 뜬 창을 치던 중에 누르지 않게. 창 안의 여러 줄 칸·목록·단추·링크도 원래 동작
+	function dlgEnter(e) {
+		var oe = e.originalEvent || {}, a = document.activeElement, $d, $ok, inside;
+
+		if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey || oe.isComposing || e.isDefaultPrevented()) return;
+		if (!($d = frontDialog())) return;
+		inside = a && $.contains($d[0], a);
+		if (inside && $(a).is("textarea, select, button, a, [contenteditable='true']")) return;
+		if (!inside && a && ($(a).is("textarea, select, [contenteditable='true']") || ($(a).is("input") && !/^(button|submit|reset|checkbox|radio|range|color|file)$/.test(a.type)))) return;
+		$ok = $d.find("button[id$='-ok'], #report-submit, .nk-btn.primary").filter(":visible").not(":disabled").first();
+		if (!$ok.length) return;
+		// 창 밖 단추에 포커스가 있으면(창을 연 단추 등) Enter가 그 단추를 다시 누르지 않게 막음
+		e.preventDefault();
+		$ok.trigger('click');
+	}
+	// 데스크톱 공지 띠: 넘치면 글자를 줄임 (최소 10px, 그래도 넘치면 말줄임). 띠(높이 고정)를 지켜봐서 글자 크기를 바꿔도 다시 불리지 않음
+	function fitNotice() {
+		var el = document.getElementById("nk-notice-text"), fs;
+
+		el.style.fontSize = "";
+		if (!el.clientWidth || el.scrollWidth <= el.clientWidth) return;
+		fs = parseFloat(getComputedStyle(el).fontSize);
+		fs = Math.max(10, Math.floor(fs * el.clientWidth / el.scrollWidth * 4) / 4);
+		el.style.fontSize = fs + "px";
+		while (fs > 10 && el.scrollWidth > el.clientWidth) el.style.fontSize = (fs -= .25) + "px";
+	}
+	// 휴대폰 공지 띠: 넘치는 만큼(--nk-run-x)을 초당 40px로 흘림. 처음·끝에서 잠깐 멈춤(nk.css 34 — 움직이는 구간이 전체의 65%)
+	function runNotice() {
+		var el = document.getElementById("nk-notice-text"), run = el.firstElementChild, d;
+
+		if (!run || !run.classList.contains("nk-notice-run")) return;
+		d = el.clientWidth ? run.offsetWidth - el.clientWidth : 0;
+		el.classList.toggle("is-run", d > 0);
+		if (d <= 0) return;
+		el.style.setProperty('--nk-run-x', -d + "px");
+		el.style.setProperty('--nk-run-t', Math.max(6, d / 40 / .65).toFixed(1) + "s");
+	}
 	function watchDialogs() {
 		var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
 		var mo;
@@ -18691,7 +18854,8 @@ var NK = (function () {
 			open = !open;
 			draw();
 		});
-		$d.on('change click', function () { setTimeout(draw, 0); });
+		// 보일 때만 — 기존 Esc(모든 창의 닫기를 누름)가 한 번도 안 연 이 창도 눌러서, lang이 없는 채 그려 오류가 났음
+		$d.on('change click', function () { setTimeout(my.quickRefresh, 0); });
 		onShow($d, function () {
 			lang = langOf($("#quick-mode").val());
 			open = false;
@@ -18905,16 +19069,37 @@ var NK = (function () {
 		$("#nk-friend-add").on('click', function () { $("#comm-friend-add").trigger('click'); });
 
 		// 공지
-		if (gn.length > 1) $("#nk-notice-text").html(my._gn = gn);
-		else $("#nk-notice").addClass("is-empty");
+		if (gn.length > 1) {
+			my._gn = gn;
+			// 휴대폰: 넘치면 흐르게(runNotice) — 움직일 안쪽 칸으로 감쌈. 움직임 줄이기 설정이면 원래대로 말줄임
+			if (my.phone && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) $("#nk-notice-text").empty().append($("<div>").addClass("nk-notice-run").html(gn));
+			else $("#nk-notice-text").html(gn);
+		} else $("#nk-notice").addClass("is-empty");
 		$("#nk-notice-close").on('click', function () { $("#nk-notice").addClass("is-empty"); });
+		// 공지가 칸을 넘으면 데스크톱은 글자를 줄여 다 들어오게, 휴대폰은 흐르는 글자로 (사용자 요청).
+		// 띠 크기가 바뀔 때마다(창 크기·로비↔방 자리 이동·휴대폰 화면 전환으로 다시 보일 때) 다시 맞춤
+		if (window.ResizeObserver) {
+			new ResizeObserver(my.phone ? runNotice : fitNotice).observe(document.getElementById("nk-notice"));
+			// 웹 글꼴이 늦게 들어오면 띠 크기는 그대로인데 글자 폭만 바뀜
+			if (document.fonts) document.fonts.ready.then(my.phone ? runNotice : fitNotice);
+		}
 
 		$("#nk-account").on('click', function (e) { openAccount(e.currentTarget); });
 		$(window).on('resize', function () { layoutNav(); closePop(); });
+		// Esc = 메뉴 → (휴대폰) 시트 → 맨 앞 창 순서로 하나만 닫음, Enter = 맨 앞 창의 확인 단추 (사용자 요청).
+		// 처리하면 기존 Esc(window — 모든 창의 닫기를 한꺼번에 누름, ready.js)까지는 안 내려보냄
 		$(document).on('keydown.nkesc', function (e) {
+			if (e.which === 13) return dlgEnter(e);
 			if (e.which !== 27) return;
-			closePop();
-			if (my.phone) closeSheet();
+			if (my._pop) {
+				closePop();
+				return false;
+			}
+			if (my.phone && my._sheet) {
+				closeSheet();
+				return false;
+			}
+			if (dlgEsc()) return false;
 		});
 		// 마우스를 올리는 툴팁은 터치에서 눌러도 뜬 채 남으므로 휴대폰·태블릿에서는 쓰지 않음
 		if (!my.touch) $(document).on('mouseenter', "[data-nk-tip]", tipShow).on('mousemove', "[data-nk-tip]", tipMove).on('mouseleave', "[data-nk-tip]", tipHide);

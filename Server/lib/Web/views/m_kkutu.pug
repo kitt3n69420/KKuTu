@@ -176,7 +176,7 @@ block Middle
 			button.raingame-strategy-btn(data-strategy='2', data-tooltip=L('raingameStrategy2Desc'), data-lang-attr-data-tooltip='raingameStrategy2Desc')
 				i.fa.fa-reply.StratIcon
 				span.StratName(data-lang-key='raingameStrategy2')= L('raingameStrategy2')
-	+Dialog('SettingDiag', 300, 605, 'settingsText')
+	+Dialog('SettingDiag', 300, 630, 'settingsText')
 		div.dialog-bar
 			div.dialog-opt(style="width: 100%;")
 				label(for='mute-bgm', style='float: left; width: 100px; text-align: center; padding-top: 5px;', data-lang-key='bgm')= L('bgm')
@@ -211,6 +211,8 @@ block Middle
 			+SettingOption('no-filter', 'noFilter', "width: 110px;")
 			h4(style="clear: both;")
 			+SettingOption('player-scroll', 'playerScroll', "width: 150px;")
+			h4(style="clear: both;")
+			+SettingOption('kana-reading', 'kanaReading', "width: 150px;")
 		div.dialog-bar
 			h4(data-lang-key='etc')= L('etc')
 			//- +SettingOption('sort-user', L('sortUser'), "width: 200px;")

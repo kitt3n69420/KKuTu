@@ -475,6 +475,18 @@ $(document).ready(function () {
 	}).on('mouseup', function (e) {
 		stopDrag();
 	});
+	// 신 UI 데스크톱: 머리줄 어디를 눌러도 끌 수 있게 (설정 창 등은 제목 칸이 글자 폭뿐이라 글자 위에서만 끌렸음 — 사용자 요청)
+	// 제목은 위에서 처리하고, 닫기 등 머리줄 안의 단추는 제외
+	$(".dialog-head").on('mousedown', function (e) {
+		var $pd = $(e.currentTarget).parents(".dialog");
+
+		if (!NK.active || NK.phone || $(e.target).closest(".dialog-title, .closeBtn, button, input, select, a").length) return;
+		$(".dialog-front").removeClass("dialog-front");
+		$pd.addClass("dialog-front");
+		startDrag($pd, e.pageX, e.pageY);
+	}).on('mouseup', function (e) {
+		if (NK.active) stopDrag();
+	});
 	// addInterval(checkInput, 1);
 	$stage.chatBtn.on('click', function (e) {
 		// 리듬 타이퍼(데스크톱): 채팅창이 게임 입력창으로 쓰이는 동안은 전송 버튼으로도 보내지 않음
@@ -949,6 +961,9 @@ $(document).ready(function () {
 
 		// 플레이어 스크롤 설정 (기본 꺼짐)
 		$("#player-scroll").prop('checked', ($data.opts && $data.opts.ps === true));
+
+		// 가나 발음 보기 설정 (기본 켜짐)
+		$("#kana-reading").prop('checked', (!$data.opts || $data.opts.kr !== false));
 
 		// 이스터에그 끄기 설정 (기본 꺼짐)
 		$("#no-easter-egg").prop('checked', savedSettings.noEasterEgg === true);
@@ -2042,6 +2057,7 @@ $(document).ready(function () {
 			nf: $("#no-filter").is(":checked"),
 			ns: $("#no-shake").is(":checked"),
 			ps: $("#player-scroll").is(":checked"),
+			kr: $("#kana-reading").is(":checked"),
 			sp: newSoundPack,
 			lp: newLevelPack
 		};

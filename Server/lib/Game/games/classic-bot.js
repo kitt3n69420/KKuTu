@@ -321,7 +321,7 @@ exports.readyRobot = function (robot) {
 		function pickWord(w) {
 			if (my.game.late) return;
 			text = w._id;
-			delay += 500 * ROBOT_THINK_COEF[level] * Math.random() / Math.log(1.1 + w.hit);
+			delay += 500 * ROBOT_THINK_COEF[level] * Math.random() / Math.log(1.1 + Math.max(0, w.hit || 0));
 			robot._done.add(text);
 			if (level >= 5) delay = Math.max(delay, 100); // 레벨 5: 최소 0.1초 텀
 			my.game.robotTimer = setTimeout(my.turnRobot, delay, robot, text);
@@ -1607,7 +1607,7 @@ exports.readyRobot = function (robot) {
 			if (candidate) {
 				w = candidate;
 				text = w._id;
-				delay += 500 * ROBOT_THINK_COEF[level] * Math.random() / Math.log(1.1 + w.hit);
+				delay += 500 * ROBOT_THINK_COEF[level] * Math.random() / Math.log(1.1 + Math.max(0, w.hit || 0));
 				after();
 			} else denied();
 		} else denied();
