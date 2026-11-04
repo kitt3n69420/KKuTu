@@ -2998,4 +2998,77 @@ TypeError: Cannot read properties of undefined (reading '18')
     at Room.my.submit (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:2908:13)
     at Timeout._onTimeout (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\calcbattle.js:405:6)
     at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7):2083 [2026. 11. 4. 오후 1:12:53] MASTER_ERROR: TypeError: Cannot read properties of undefined (reading '33')
+TypeError: Cannot read properties of undefined (reading '33')
+    at takeProblem (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\calcbattle.js:64:23)
+    at exports.submit (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\calcbattle.js:291:21)
+    at Room.my.route.my.routeSync (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:2973:13)
+    at Room.my.submit (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:2927:13)
+    at Timeout._onTimeout (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\calcbattle.js:405:6)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7)
+:2083 [2026. 11. 4. 오후 1:12:53] ERROR: TypeError: Cannot read properties of undefined (reading '33')
+TypeError: Cannot read properties of undefined (reading '33')
+    at takeProblem (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\calcbattle.js:64:23)
+    at exports.submit (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\calcbattle.js:291:21)
+    at Room.my.route.my.routeSync (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:2973:13)
+    at Room.my.submit (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:2927:13)
+    at Timeout._onTimeout (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\calcbattle.js:405:6)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7):2083 [2026. 11. 4. 오후 1:13:01] MASTER_ERROR: TypeError: Cannot read properties of undefined (reading 'findOne')
+TypeError: Cannot read properties of undefined (reading 'findOne')
+    at WebSocketServer.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\Game\slave.js:219:6)
+    at WebSocketServer.emit (node:events:508:28)
+    at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\WebSocketServer.js:87:16
+    at WebSocketServer.completeUpgrade (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\WebSocketServer.js:288:5)
+    at WebSocketServer.handleUpgrade (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\WebSocketServer.js:227:10)
+    at Server.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\WebSocketServer.js:86:14)
+    at Server.emit (node:events:508:28)
+    at onParserExecuteCommon (node:_http_server:977:14)
+    at onParserExecute (node:_http_server:881:3)
+:2083 [2026. 11. 4. 오후 1:13:02] ERROR: TypeError: Cannot read properties of undefined (reading 'findOne')
+TypeError: Cannot read properties of undefined (reading 'findOne')
+    at WebSocketServer.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\Game\slave.js:219:6)
+    at WebSocketServer.emit (node:events:508:28)
+    at C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\WebSocketServer.js:87:16
+    at WebSocketServer.completeUpgrade (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\WebSocketServer.js:288:5)
+    at WebSocketServer.handleUpgrade (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\WebSocketServer.js:227:10)
+    at Server.<anonymous> (C:\myKKuTu\KKuTu-master\Server\lib\node_modules\ws\lib\WebSocketServer.js:86:14)
+    at Server.emit (node:events:508:28)
+    at onParserExecuteCommon (node:_http_server:977:14)
+    at onParserExecute (node:_http_server:881:3):2083 [2026. 11. 4. 오후 11:26:38] MASTER_ERROR: TypeError: Converting circular structure to JSON
+    --> starting at object with constructor 'exports.Robot'
+    |     property '_timer' -> object with constructor 'Timeout'
+    |     property '_timerArgs' -> object with constructor 'Array'
+    --- index 0 closes the circle
+TypeError: Converting circular structure to JSON
+    --> starting at object with constructor 'exports.Robot'
+    |     property '_timer' -> object with constructor 'Timeout'
+    |     property '_timerArgs' -> object with constructor 'Array'
+    --- index 0 closes the circle
+    at JSON.stringify (<anonymous>)
+    at my.publish (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:915:19)
+    at Room.my.byMaster (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:2315:38)
+    at exports.roundReady (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\crossword.js:235:6)
+    at Room.my.route.my.routeSync (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:2973:13)
+    at Room.my.roundReady [as _onTimeout] (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:1720:13)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7)
+:2083 [2026. 11. 4. 오후 11:26:38] ERROR: TypeError: Converting circular structure to JSON
+    --> starting at object with constructor 'exports.Robot'
+    |     property '_timer' -> object with constructor 'Timeout'
+    |     property '_timerArgs' -> object with constructor 'Array'
+    --- index 0 closes the circle
+TypeError: Converting circular structure to JSON
+    --> starting at object with constructor 'exports.Robot'
+    |     property '_timer' -> object with constructor 'Timeout'
+    |     property '_timerArgs' -> object with constructor 'Array'
+    --- index 0 closes the circle
+    at JSON.stringify (<anonymous>)
+    at my.publish (C:\myKKuTu\KKuTu-master\Server\lib\Game\kkutu.js:915:19)
+    at Room.my.byMaster (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:2315:38)
+    at exports.roundReady (C:\myKKuTu\KKuTu-master\Server\lib\Game\games\crossword.js:235:6)
+    at Room.my.route.my.routeSync (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:2973:13)
+    at Room.my.roundReady [as _onTimeout] (C:\myKKuTu\KKuTu-master\Server\lib\Game\room.js:1720:13)
+    at listOnTimeout (node:internal/timers:605:17)
     at process.processTimers (node:internal/timers:541:7)
