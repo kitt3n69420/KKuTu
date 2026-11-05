@@ -428,17 +428,51 @@ function connectToRoom(chan, rid) {
 	rws.onmessage = _onMessage;
 	rws.onclose = function (e) {
 		rws = undefined;
-		clearInterval($data._tTime);
-		clearBoard();
-		if ($data.place != 0) {
-			$data.place = 0;
-			$data.room = null;
+		// 정상 퇴장은 방 정보(processRoom)가 상태를 먼저 지우므로, 여기서는 남은 상태가 있을 때만(워커 재시작 등으로 끊김) 로비로 되돌림
+		if (resetRoomState()) {
 			updateUI();
 			playBGM('lobby');
+		} else {
+			clearInterval($data._tTime);
+			clearBoard();
 		}
 	};
 	rws.onerror = function (e) {
 	};
+}
+// 방 소켓이 갑자기 끊기거나 마스터에 다시 접속했을 때, 남은 방·게임·연습·결과 상태를 정상 퇴장(processRoom)과 같은 범위로 로비 상태로 되돌림.
+// 연습 중이었으면 돌아갈 방(연습 전 방)도 버림. 되돌릴 상태가 없으면 아무것도 하지 않고 false
+function resetRoomState() {
+	var me = $data.users && $data.users[$data.id];
+
+	if (!$data.place && !$data.practicing && !$data._gaming && !$data.resulting && !$data._players) return false;
+	if ($data._gaming || $data.practicing) stopAllSounds();
+	clearInterval($data._tTime);
+	clearBoard();
+	if (me && me.game) {
+		me.game.ready = false;
+		me.game.team = 0;
+		me.game.form = "J";
+	}
+	$stage.menu.spectate.removeClass("toggled");
+	$stage.menu.ready.removeClass("toggled");
+	$data.practicing = false;
+	$data._gaming = false;
+	$data._spectate = false;
+	$data.resulting = false;
+	$data.room = null;
+	$data.robots = {};
+	clearTimeout($data._jamsu);
+	delete $data._jamsu;
+	$data._players = null;
+	$data._master = null;
+	$data.place = 0;
+	if ($data.users) delete $data.users[0];
+	delete $data._room;
+	delete $data._place;
+	delete $data.__master;
+	delete $data.__players;
+	return true;
 }
 function checkAge() {
 	showConfirm(L['checkAgeAsk'], function (res) {
@@ -550,6 +584,8 @@ function onMessage(data) {
 				rws.close();
 				rws = undefined;
 			}
+			// 위에서 onclose 없이 닫았으므로 끊긴 방의 게임·연습·결과 상태도 여기서 로비 상태로 되돌림
+			resetRoomState();
 			$data.friends = data.friends;
 			$data._friends = {};
 			$data._playTime = data.playTime;

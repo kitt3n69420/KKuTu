@@ -3706,14 +3706,8 @@ $(document).ready(function () {
 			// 연결이 끊기면 재접속 성공 여부와 무관하게 즉시 로비 화면으로 전환한다.
 			// (재접속 시 서버가 다시 'welcome'을 보내며 로비 상태로 초기화하므로,
 			//  화면도 미리 로비로 돌려놓아 끊긴 방/게임 화면에 그대로 머무르지 않게 한다)
-			if ($data.place) {
-				clearInterval($data._tTime);
-				clearBoard();
-				$data.place = 0;
-				$data.room = null;
-				// practicing이 true면 updateUI()가 강제로 게임 화면을 유지시키므로 함께 해제한다
-				$data.practicing = false;
-				$data.resulting = false;
+			// 방 소켓이 먼저 끊겨 place가 이미 0이어도 연습·게임 상태가 남아 있을 수 있으므로 resetRoomState가 판단한다
+			if (resetRoomState()) {
 				updateUI();
 				playBGM('lobby');
 			}
