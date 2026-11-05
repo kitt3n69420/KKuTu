@@ -4,5 +4,6 @@
 	"game-num-cpu": 1,
 	"game-num-inst": 1,
 	"web-cpu-core": 0,
-	"game-cpu-core": 1
+	"game-cpu-core": 1,
+	"monitor": true
 }

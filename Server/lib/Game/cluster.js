@@ -66,6 +66,8 @@ if (Cluster.isMaster) {
 	});
 	process.env['KKUTU_PORT'] = (Const.MASTER_PORTS && Const.MASTER_PORTS[SID]) || (Const.MAIN_PORTS[SID] + 30);
 	require("./master.js").init(SID.toString(), channels);
+	require("../sub/monitor").start('master:' + SID);
 } else {
 	require("./slave.js");
+	require("../sub/monitor").start('slave:' + process.env['KKUTU_PORT']);
 }

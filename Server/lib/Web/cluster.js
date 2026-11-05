@@ -33,4 +33,5 @@ if (Cluster.isMaster) {
   });
 } else {
   require("./main.js");
+  require("../sub/monitor").start('web:' + process.env['WS_KEY']);
 }

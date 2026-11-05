@@ -12,6 +12,19 @@ var LAG_WARN_MS = 300;      // 이 이상이면 경고
 var LAG_CRIT_MS = 1000;     // 이 이상이면 심각
 var HEAP_WARN_MB = 400;     // 힙 사용량 경고 임계치 (MB)
 
+// 전역 on/off: settings.json 의 "monitor" (기본 false), 환경변수 KKT_MONITOR=1/0 이 우선
+function isEnabled() {
+    var env = process.env['KKT_MONITOR'];
+    if (env === '1' || env === 'true') return true;
+    if (env === '0' || env === 'false') return false;
+    try {
+        var st = JSON.parse(File.readFileSync(Path.join(__dirname, '../../../settings.json'), 'utf8'));
+        return st['monitor'] === true;
+    } catch (e) {
+        return false;
+    }
+}
+
 var _role = 'unknown';
 var _lastTick = 0;
 var _maxLag = 0;
@@ -64,6 +77,7 @@ function logStats(getExtra) {
 // role: 로그에 표시할 프로세스 이름 (예: 'master:0', 'slave:8080')
 // getExtra: 호출 시점에 추가 정보 문자열을 반환하는 함수 (옵션)
 exports.start = function(role, getExtra) {
+    if (!isEnabled()) return;
     _role = role || 'unknown';
     _lastTick = Date.now();
 
