@@ -58,7 +58,7 @@ $lib.Classic.turnStart = function (data) {
 		if (data.id == $data.id) {
 			$data._relay = true;
 			// 입력창 클리어 제거 - 사용자가 입력 중인 내용 유지
-			mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
+			if (!$data._chaosHideTurn) mobile ? $stage.game.hereText.focus() : $stage.talk.focus(); // 카오스 플러스 차례 숨기기: 포커스로 차례를 알리지 않음
 		}
 	}
 	$stage.game.items.html($data.mission = data.mission);

@@ -144,7 +144,7 @@ exports.turnStart = function (force) {
 
 	if (!my.game.chain) return;
 	my.game.roundTime = Math.min(my.game.roundTime, Math.max(10000, 150000 - my.game.chain.length * 400)); //여기가 핵심이다. 이 수치를 보정해야 함.
-	speed = my.getTurnSpeed(my.opts.speed ? my.game.roundTime / 2 : my.game.roundTime);
+	speed = my.getTurnSpeed(my.getSpeedBaseTime());
 	clearTimeout(my.game.turnTimer);
 	clearTimeout(my.game.robotTimer);
 	my.game.late = false;
@@ -189,6 +189,8 @@ exports.turnEnd = function () {
 
 	if (target) if (target.game) {
 		score = Const.getPenalty(my.game.chain, target.game.score);
+		// 카오스 플러스 단두대: 패널티 적용 후에도 점수가 양수면 0으로
+		if (my.game.chaosGuillotine && (target.game.score + score) > 0) score = -target.game.score;
 		if (score !== 0) target.game.score += score;
 	}
 
@@ -258,7 +260,7 @@ exports.submit = function (client, text, data) {
 
 	if (!ok) {
 		client.publish('turnError', { code: 404, value: text }, true);
-		if (my.opts.one) {
+		if (my.opts.one || my.game.chaosOne) {
 			my.turnEnd();
 		} else if (client.robot && client.data && client.data.lastDelay) {
 			var retryDelay = Math.max(50, client.data.lastDelay * 0.5);
@@ -283,6 +285,7 @@ exports.submit = function (client, text, data) {
 	my.game.roundTime = Math.max(0, my.game.roundTime - t);
 	my.game.n = n + 1;
 
+	score = my.applyChaosMult(score, client); // 카오스 플러스 인플레이션·꼴찌 2배
 	client.game.score += score;
 
 	client.publish('turnEnd', {

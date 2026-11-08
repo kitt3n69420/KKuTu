@@ -62,7 +62,7 @@ $lib.Numberclap.turnStart = function (data) {
 		}
 		if (data.id == $data.id) {
 			$data._relay = true;
-			mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
+			if (!$data._chaosHideTurn) mobile ? $stage.game.hereText.focus() : $stage.talk.focus(); // 카오스 플러스 차례 숨기기: 포커스로 차례를 알리지 않음
 		}
 	}
 

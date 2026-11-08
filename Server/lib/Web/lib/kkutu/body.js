@@ -750,10 +750,12 @@ function onMessage(data) {
 			$('.survival-ko-score').removeClass('survival-ko-score');
 			initItemUI();
 			$data.mission = null;
+			chaosResetVisual();
 			route("roundReady", data);
 			break;
 		case 'turnStart':
 			route("turnStart", data);
+			if ($data._chaosHideTurn) chaosHideCurrentTurn();
 			break;
 		case 'turnError':
 			turnError(data.code, data.value);
@@ -766,6 +768,8 @@ function onMessage(data) {
 			data.bonus = Number(data.bonus);
 			if ($data.room) {
 				$data._tid = data.target || $data.room.game.seq[$data.room.game.turn];
+				// 카오스 플러스 차례 숨기기: 규칙의 turnEnd가 .game-user-current로 카드를 찾으므로 되돌려 둠 (같은 작업 안에서 지워져 화면에는 안 보임)
+				chaosRestoreCurrentTurn();
 				if ($data._tid) {
 					if ($data._tid.robot) $data._tid = $data._tid.id;
 					turnEnd($data._tid, data);
@@ -811,6 +815,7 @@ function onMessage(data) {
 		case 'roundEnd':
 			// 리듬 게임/리듬 타이퍼: 인원 이탈 등으로 서버가 turnEnd 없이 바로 roundEnd하면
 			// 키 입력 가로채기/채팅창 점유와 곡 재생이 다음 게임까지 남으므로 여기서 마저 정리 (정상 종료면 이미 끝나 있어 아무것도 안 함)
+			chaosResetVisual();
 			var xrgCut = !!($lib.Rhythm && $lib.Rhythm.finish());
 			if ($lib.Rtype && $lib.Rtype.finish()) xrgCut = true;
 			if (xrgCut) stopBGM();
@@ -1069,7 +1074,23 @@ function onMessage(data) {
 					}
 				}
 			}
-			notice(L[data.code + 'Body'], L[data.code]);
+			// 카오스 플러스 시각 효과 토글 (서바이벌의 점수 가리기는 ...Dmg 코드)
+			var _cv = /^chaos(HideScore|HideTurn)(On|Off)/.exec(data.code);
+			if (_cv) {
+				if (_cv[1] === 'HideScore') setChaosHideScore(_cv[2] === 'On');
+				else $data._chaosHideTurn = (_cv[2] === 'On');
+			}
+			// 카오스 플러스 힐/딜: 서버가 보낸 생존자 HP로 갱신
+			if (data.hp) {
+				for (var _hid in data.hp) {
+					var _hu = $data.users[_hid] || $data.robots[_hid];
+					if (_hu && _hu.game) _hu.game.score = data.hp[_hid];
+					updateScore(_hid, data.hp[_hid]);
+				}
+			}
+			var _chaosBody = L[data.code + 'Body'];
+			if (data.arg !== undefined && _chaosBody) _chaosBody = _chaosBody.replace('{0}', data.arg);
+			notice(_chaosBody, L[data.code]);
 			break;
 		case 'lateJoinAsk':
 			// 게임 중 참여 방 입장: [참여] → 관전으로 들어간 뒤 참여 / [관전] → 관전만 / 닫기 → 입장하지 않음
@@ -1103,6 +1124,8 @@ function onMessage(data) {
 				});
 				$data.room.game.seq = data.seq;
 				if (data.id == $data.id) $data._spectate = false;
+				// 되살린 점수를 저장해 둔다: 앞서 온 'user'(setForm)는 점수 복원 전 값(0)이라, 카드를 다시 그리거나 getScore를 쓰면 0으로 돌아갔음
+				if ($data.users[data.id] && $data.users[data.id].game) $data.users[data.id].game.score = data.score || 0;
 				updateRoom(true);
 				for (var ljKey in $ljOld) {
 					var $ljNew = $("#" + ljKey);
@@ -2544,6 +2567,13 @@ function animateScore(o) {
 function drawScore($obj, score) {
 	var i, d, m, sc, lead, neg;
 
+	// 카오스 플러스 점수 가리기: 모든 점수(서바이벌은 체력)를 ?????로
+	if ($data._chaosHideScore) {
+		$obj.empty().removeClass("nk-neg");
+		for (i = 0; i < 5; i++) $obj.append($("<div>").addClass("game-user-score-char").html("?"));
+		return;
+	}
+
 	if (Math.round(score * 0.001) > 9999) {
 		// 10000k부터는 지수 표기, 다섯 칸에 맞게 소수 자리를 줄임: 1.23e7 → 1.2e10 → 1e100
 		// 칸에는 "123e7"처럼 점 없이, 점은 첫째·둘째 칸 사이에 칸 없이 얹음
@@ -3005,10 +3035,49 @@ function addScore(id, score, totalScore) {
 	}
 }
 function drawObtainedScore($uc, $sc) {
+	// 카오스 플러스 점수 가리기: 얻은 점수·데미지는 +? / -?로 (숫자로 시작하는 표시만)
+	if ($data._chaosHideScore) {
+		var _t = $sc.text();
+		if (/^\s*[+-]?\d/.test(_t)) $sc.text((/^\s*-/.test(_t) ? "-" : "+") + "?");
+	}
 	$uc.append($sc);
 	addTimeout(function () { $sc.remove(); }, 2000);
 
 	return $uc;
+}
+
+// ========== 카오스 플러스 시각 효과 (점수 가리기 / 차례 숨기기) ==========
+// 점수 가리기를 켜고 끌 때 모든 카드의 점수를 다시 그림 (KO 카드는 그대로)
+function setChaosHideScore(on) {
+	var seq = $data.room && $data.room.game && $data.room.game.seq;
+
+	$data._chaosHideScore = on;
+	if (!seq) return;
+	seq.forEach(function (t) {
+		var id = (t && t.id) ? t.id : t;
+		var u = $data.users[id] || $data.robots[id];
+		var o = $data["_s" + id];
+
+		if ($("#game-user-" + id).hasClass("game-user-ko")) return;
+		if (o) drawScore(o.$obj, Math.round(o.now));
+		else if (u && u.game && typeof u.game.score === 'number') drawScore($("#game-user-" + id + " .game-user-score"), u.game.score);
+	});
+}
+// 차례 숨기기: 규칙의 turnStart가 붙인 차례 강조를 표시 없는 chaos-cur로 바꾸고, 입력창을 남의 차례 모양으로
+// (데스크톱은 입력창 숨김 — 채팅칸으로 그대로 제출, 신 UI는 남의 차례와 같은 흐린 칸. 휴대폰은 늘 반투명)
+function chaosHideCurrentTurn() {
+	$(".game-user-current").removeClass("game-user-current").addClass("chaos-cur").css('border-color', '');
+	if ($data._replay) return;
+	mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
+}
+function chaosRestoreCurrentTurn() {
+	$(".chaos-cur").removeClass("chaos-cur").addClass("game-user-current");
+}
+// 라운드가 바뀌거나 게임이 끝나면 서버 상태와 함께 초기화
+function chaosResetVisual() {
+	$(".chaos-cur").removeClass("chaos-cur");
+	$data._chaosHideTurn = false;
+	if ($data._chaosHideScore) setChaosHideScore(false);
 }
 
 // ========== 서바이벌 모드 공통 클라이언트 함수 ==========

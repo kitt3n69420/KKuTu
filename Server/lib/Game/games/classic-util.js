@@ -124,12 +124,14 @@ function getPlayerId(player) {
 }
 
 // 매너 계열 규칙 활성화 여부 (manner, gentle, shield, etiquette)
+// _chaosHyperManner: 카오스 플러스 하이퍼 매너 (room.setChaosHyperManner가 방 설정에 드러나지 않게 붙이는 표시)
 function isMannerLike(opts) {
-	return opts.manner || opts.gentle || opts.shield || opts.etiquette;
+	return opts.manner || opts.gentle || opts.shield || opts.etiquette || opts._chaosHyperManner;
 }
 
-// 매너 최소 남은 단어 수 (gentle=5, 나머지=1)
+// 매너 최소 남은 단어 수 (하이퍼 매너=CHAOS_HYPER_MANNER_MIN, gentle=5, 나머지=1)
 function getMannerMinRemaining(opts) {
+	if (opts._chaosHyperManner) return Const.CHAOS_HYPER_MANNER_MIN;
 	if (opts.gentle) return 5;
 	return 1;
 }
@@ -153,6 +155,7 @@ function getMannerState(opts) {
 
 // 매너 계열 캐시 키 접미사
 function getMannerCacheKey(opts) {
+	if (opts._chaosHyperManner) return "H";
 	if (opts.gentle) return "G";
 	if (opts.shield) return "S";
 	if (opts.etiquette) return "E";
@@ -1386,13 +1389,27 @@ function isDodoli(text) {
 	var type = Const.GAME_TYPE[my.mode];
 	var isRev = (type === 'KAP' || type === 'KAK' || type === 'EAP' || type === 'EAK' || type === 'JAP');
 
+	// 잇기 전환(linkOverride)이 걸린 차례는 바뀐 잇기 방식으로 판정
+	var linkIndex, exitChar, saved;
+	if (my.game.linkOverride) {
+		saved = { middle: my.opts.middle, first: my.opts.first, second: my.opts.second };
+		my.opts.middle = my.game.linkOverride === 'middle';
+		my.opts.first = false;
+		my.opts.second = false;
+	}
+	linkIndex = getLinkIndex.call(my, text);
+	exitChar = getChar.call(my, text);
+	if (saved) {
+		my.opts.middle = saved.middle;
+		my.opts.first = saved.first;
+		my.opts.second = saved.second;
+	}
+
 	// 인덱스 비교: 이을 글자 인덱스 == 이어지는 글자 인덱스면 항상 같은 글자 → skip
 	var entryIndex = isRev ? text.length - 1 : 0;
-	var linkIndex = getLinkIndex.call(my, text);
 	if (entryIndex === linkIndex) return false;
 
 	// 이어지는 글자
-	var exitChar = getChar.call(my, text);
 	if (exitChar.length > 1) return false; // 다글자 링킹(EKT/KKU trigram) skip
 
 	// 이을 글자
@@ -1602,8 +1619,8 @@ function getRandomChar(text) {
 
 			var remaining = count - used;
 
-			// 매너 한도: 최소 1단어
-			var minRemaining = 1;
+			// 매너 한도: 매너 계열은 규칙별 최소치(젠틀 5, 하이퍼 매너 CHAOS_HYPER_MANNER_MIN), 첫 턴은 1
+			var minRemaining = isMannerLike(my.opts) ? getMannerMinRemaining(my.opts) : 1;
 			if (remaining >= minRemaining) {
 				// 성공한 글자의 남은 단어 수를 저장 (finishTurn에서 재사용)
 				my.game.nextCharWordCount = remaining;

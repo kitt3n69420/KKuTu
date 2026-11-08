@@ -60,7 +60,7 @@ exports.roundReady = function () {
 	if (my.game.round <= my.round) {
 		if (my.opts.length3) my.game.theme = getTheme3(my.game.done);
 		else my.game.theme = getTheme(2, my.game.done);
-		if (my.opts.mission) my.game.mission = getMission(my.game.theme, my.opts);
+		if (my.opts.mission) my.game.mission = my.applyChaosVowel(getMission(my.game.theme, my.opts));
 		my.game.done.add(my.game.theme);
 		my.byMaster('roundReady', {
 			round: my.game.round,
@@ -79,7 +79,7 @@ exports.turnStart = function (force) {
 
 	if (!my.game.chain) return;
 	my.game.roundTime = Math.min(my.game.roundTime, Math.max(10000, 150000 - (my.game.chain.length - my.game.roundChainBase) * 1500));
-	speed = my.getTurnSpeed(my.opts.speed ? my.game.roundTime / 2 : my.game.roundTime);
+	speed = my.getTurnSpeed(my.getSpeedBaseTime());
 	clearTimeout(my.game.turnTimer);
 	clearTimeout(my.game.robotTimer);
 	my.game.late = false;
@@ -187,7 +187,7 @@ exports.turnEnd = function () {
 		} else {
 			score = Const.getPenalty(my.game.chain, target.game.score);
 			// 나락(nar): 패널티 적용 후에도 점수가 양수면 0으로 만듦
-			if (my.opts.narak && (target.game.score + score) > 0) {
+			if ((my.opts.narak || my.game.chaosGuillotine) && (target.game.score + score) > 0) {
 				score = -target.game.score;
 			}
 		}
@@ -329,6 +329,7 @@ exports.submit = function (client, text, data) {
 					// ========== 서바이벌 모드: 득점 = 다음 사람 데미지 ==========
 					if (my.opts.survival) {
 						client.game.survivalSubmitted = true;
+						score = my.applyChaosMult(score, client); // 카오스 플러스 인플레이션·꼴찌 2배: 서바이벌은 데미지에 적용
 						var damage = score;
 						var survivalDamageInfo = Const.applySurvivalDamage(my, DIC, damage, my.game.turn);
 						var status = Const.checkSurvivalStatus(my, DIC);
@@ -356,9 +357,9 @@ exports.submit = function (client, text, data) {
 							}, 2000);
 						} else {
 							if (my.game.mission === true) {
-								my.game.mission = getMission(my.game.theme, my.opts);
+								my.game.mission = my.applyChaosVowel(getMission(my.game.theme, my.opts));
 							} else if (my.opts.rndmission) {
-								my.game.mission = getMission(my.game.theme, my.opts);
+								my.game.mission = my.applyChaosVowel(getMission(my.game.theme, my.opts));
 							}
 							clearTimeout(my.game.turnTimer);
 							clearTimeout(my.game.robotTimer);
@@ -379,6 +380,7 @@ exports.submit = function (client, text, data) {
 					}
 					// ========== 서바이벌 모드 끝 ==========
 
+					score = my.applyChaosMult(score, client); // 카오스 플러스 인플레이션·꼴찌 2배
 					client.game.score += score;
 					client.publish('turnEnd', {
 						ok: true,
@@ -391,10 +393,10 @@ exports.submit = function (client, text, data) {
 						totalScore: client.game.score
 					}, true);
 					if (my.game.mission === true) {
-						my.game.mission = getMission(my.game.theme, my.opts);
+						my.game.mission = my.applyChaosVowel(getMission(my.game.theme, my.opts));
 					} else if (my.opts.rndmission) {
 						// 랜덤미션: 달성하지 않아도 매 턴마다 미션 변경
-						my.game.mission = getMission(my.game.theme, my.opts);
+						my.game.mission = my.applyChaosVowel(getMission(my.game.theme, my.opts));
 					}
 					// 아이템전 / 카오스: 아이템 지급 판정
 					if (my.opts.item || my.opts.chaos) {
@@ -409,7 +411,7 @@ exports.submit = function (client, text, data) {
 				function denied(code) {
 					my.game.loading = false;
 					client.publish('turnError', { code: code || 404, value: text }, true);
-					if (my.opts.one) my.turnEnd();
+					if (my.opts.one || my.game.chaosOne) my.turnEnd();
 				}
 				if ($doc) {
 					if (!my.opts.injeong && ($doc.flag & Const.KOR_FLAG.INJEONG)) denied();
@@ -434,7 +436,7 @@ exports.submit = function (client, text, data) {
 				code: isRecentDuplicate ? 411 : 409,
 				value: text
 			}, true);
-			if (my.opts.one) my.turnEnd();
+			if (my.opts.one || my.game.chaosOne) my.turnEnd();
 		}
 	} else {
 		client.chat(text);
@@ -470,7 +472,7 @@ exports.getScore = function (text, delay, ignoreMission) {
 
 				if (matchCount > 0) {
 					var missionBonus = score * 0.30 * matchCount;
-					if (my.opts.bbungtwigi) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
+					if (my.opts.bbungtwigi || my.game.chaosBbg) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
 					score += missionBonus;
 					my.game.mission = true;
 				}
@@ -479,7 +481,7 @@ exports.getScore = function (text, delay, ignoreMission) {
 			// 기본 미션 규칙
 			if (arr = text.match(new RegExp(my.game.mission, "g"))) {
 				var missionBonus = score * 0.30 * arr.length;
-				if (my.opts.bbungtwigi) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
+				if (my.opts.bbungtwigi || my.game.chaosBbg) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
 				score += missionBonus;
 				my.game.mission = true;
 			}

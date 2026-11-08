@@ -1550,7 +1550,12 @@ $(document).ready(function () {
 		if ($(this).is(':checked')) {
 			window.RULE_CHECKBOXES['change'].prop('checked', false);
 			window.RULE_CHECKBOXES['survival'].prop('checked', false);
+			// 카오스: 중도 참여자는 진행 중인 카오스 상태(배율·단두대 등)를 알 수 없음. change를 일으켜 카오스 플러스도 함께 정리
+			if (window.RULE_CHECKBOXES['chaos'].first().is(':checked')) window.RULE_CHECKBOXES['chaos'].first().prop('checked', false).trigger('change');
 		}
+	});
+	window.RULE_CHECKBOXES['chaos'].on('change', function () {
+		if ($(this).is(':checked')) window.RULE_CHECKBOXES['latejoin'].prop('checked', false);
 	});
 	['change', 'survival'].forEach(function (opt) {
 		window.RULE_CHECKBOXES[opt].on('change', function () {
@@ -1654,6 +1659,8 @@ $(document).ready(function () {
 		pickRadio(['ret', 'obo']);
 		// 소수: 랜덤 턴이 켜졌을 때만, 랜덤 숫자와는 상호배제
 		pickUnlessBlocked('prm', turnPick !== 'randomturn');
+		// 카오스 플러스: 카오스가 켜졌을 때만
+		pickUnlessBlocked('chp', turnPick !== 'chaos');
 		pickUnlessBlocked('rnm', target['prime']);
 
 		// 미션: 켜져 있을 때만 이지미션/랜덤미션/미션플러스 선택 가능
@@ -3493,6 +3500,15 @@ $(document).ready(function () {
 	['item', 'chaos', 'randomturn'].forEach(function (opt) {
 		window.RULE_CHECKBOXES[opt].on('change', updatePrimeAvailability);
 	});
+	// 카오스 플러스는 카오스가 켜져 있을 때만 선택 가능 (아이템전/랜덤 턴이 카오스를 끄는 경우도 포함)
+	function updateChaosPlusAvailability() {
+		var chaosOn = window.RULE_CHECKBOXES['chaos'].first().is(':checked');
+		if (!chaosOn) window.RULE_CHECKBOXES['chaosplus'].prop('checked', false);
+		window.RULE_CHECKBOXES['chaosplus'].prop('disabled', !chaosOn);
+	}
+	['item', 'chaos', 'randomturn'].forEach(function (opt) {
+		window.RULE_CHECKBOXES[opt].on('change', updateChaosPlusAvailability);
+	});
 	function updateLinkExclusionAvailability() {
 		var randomOn = $("#room-random").is(':checked') || $("#view-all-random").is(':checked') || $("#view-all-flat-random").is(':checked');
 		var secondSpeedSel = "#room-second, #room-speedtoss, #room-flat-second, #room-flat-speedtoss, " +
@@ -3518,6 +3534,7 @@ $(document).ready(function () {
 	function syncRoomDialogDisabledStates() {
 		updateMissionSubAvailability();
 		updatePrimeAvailability();
+		updateChaosPlusAvailability();
 		updateLinkExclusionAvailability();
 		updateBbungtwigiAvailability();
 	}

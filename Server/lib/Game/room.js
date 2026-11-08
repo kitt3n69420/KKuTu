@@ -1528,6 +1528,10 @@ function Room(room, channel) {
 		if ((my.opts.item || my.opts.chaos) && my.opts.randomturn) {
 			my.opts.randomturn = false;
 		}
+		// 카오스 플러스는 카오스가 켜져 있을 때만 허용
+		if (my.opts.chaosplus && !my.opts.chaos) {
+			my.opts.chaosplus = false;
+		}
 		// 소수 규칙: 차례가 고정이면 소수가 누구에게 걸릴지 미리 정해져 불공평하므로 랜덤 턴과만 허용, 랜덤 숫자와는 상호 배제
 		if (my.opts.prime && !my.opts.randomturn) {
 			my.opts.prime = false;
@@ -1637,6 +1641,18 @@ function Room(room, channel) {
 			my.game.reversed = false;
 			my.game.linkOverride = null;
 		}
+
+		// 카오스 플러스: 방 전체 이벤트 상태는 라운드마다 초기화
+		my.game.chaosInfStack = 0;
+		my.game.chaosBooster = false;
+		my.game.chaosGuillotine = false;
+		my.game.chaosMissionVowel = null;
+		my.game.chaosOne = false;
+		my.game.chaosHideScore = false;
+		my.game.chaosHideTurn = false;
+		my.game.chaosUnderdog = false;
+		my.game.chaosBbg = false;
+		my.setChaosHyperManner(false);
 
 		// 카오스: 2라운드부터 아이템 리셋 + 순서 재배치
 		if (my.opts.chaos && my.game.seq && my.game.round >= 1) {
@@ -2100,6 +2116,11 @@ function Room(room, channel) {
 			// 참고: 클로드가 양말대전이라 한건 사실 솎솎(sock)이다
 			if (['KSK', 'ESK', 'KSS', 'ESS', 'JSS'].indexOf(Const.GAME_TYPE[my.mode]) !== -1) rw.score = softTransition(rw.score);
 			if (my.opts.stop) rw.score = Math.round(rw.score * 0.4);
+			// 카오스 플러스: 인플레이션으로 부푼 점수 보정 (최종 보상 경험치·핑 0.6배)
+			if (my.opts.chaosplus) {
+				rw.score = Math.round(rw.score * Const.CHAOS_PLUS_REWARD_MUL);
+				rw.money = Math.round(rw.money * Const.CHAOS_PLUS_REWARD_MUL);
+			}
 			if (my.opts.big) {
 				rw.score = Math.round(rw.score / 2);
 				rw.money = Math.round(rw.money / 2);
@@ -2479,6 +2500,11 @@ function Room(room, channel) {
 	};
 	my.checkItemGrant = function (playerId, bonusPoints, success) {
 		if (!success) return;
+		// 카오스(아이템전 아님): 아이템은 지급하지 않고 카오스 판정만
+		if (!my.opts.item) {
+			if (my.opts.chaos) my.checkChaos();
+			return;
+		}
 
 		my.game.itemGlobalTurnCount = (my.game.itemGlobalTurnCount || 0) + 1;
 		if (my.game.itemGlobalTurnCount % Const.ITEM_GRANT_INTERVAL === 0) {
@@ -2516,6 +2542,9 @@ function Room(room, channel) {
 			return true;
 		});
 
+		// 카오스 플러스: 기존 카오스 이벤트까지 한 번의 추첨으로 최대 하나만 발동
+		if (my.opts.chaosplus) return my.rollChaosPlusEvent(candidates);
+
 		// 10% 확률 reverse
 		if (candidates.length > 0 && Math.random() < Const.CHAOS_REVERSE_CHANCE) {
 			var pick = candidates[Math.floor(Math.random() * candidates.length)];
@@ -2539,6 +2568,200 @@ function Room(room, channel) {
 			}
 			my.game.pendingItems[pickId2] = { itemType: 'linkChange', chaos: true };
 		}
+	};
+	// 카오스 플러스: 조건이 맞는 이벤트만 후보로 두고, 한 번의 추첨으로 최대 하나만 발동 (확률표는 Const.CHAOS_PLUS_CHANCE)
+	// candidates: 대기 아이템이 없는 플레이어 (반전·잇기 전환·랜덤 턴은 이 중 한 명에게 몰래 걸림)
+	my.rollChaosPlusEvent = function (candidates) {
+		var g = my.game;
+		var P = Const.CHAOS_PLUS_CHANCE;
+		var stack = g.chaosInfStack || 0;
+		var notice = function (code, arg) { my.byMaster('chaos-notice', { code: code, arg: arg }, true); };
+		var multText = function () { return (1 + Const.CHAOS_INFLATION_STEP * (g.chaosInfStack || 0)).toFixed(1); };
+		var missionCode = (typeof g.mission === 'string' && g.mission.length === 1) ? g.mission.charCodeAt(0) - 0xAC00 : -1;
+		var events = [];
+		var queueItem = function (itemType) {
+			var pick = candidates[Math.floor(Math.random() * candidates.length)];
+			var pickId = pick && pick.id ? pick.id : pick;
+			if (g.items[pickId]) g.items[pickId][itemType] = (g.items[pickId][itemType] || 0) + 1;
+			g.pendingItems[pickId] = { itemType: itemType, chaos: true };
+		};
+		var timeCut = function (pct) {
+			return function () {
+				g.roundTime = Math.max(1000, Math.round(g.roundTime * (100 - pct) / 100));
+				notice('chaosTimeCut', pct);
+			};
+		};
+
+		// 반전 / 랜덤 턴 / 잇기 전환(Classic): 기존 카오스 아이템 방식 (뽑힌 사람에게 도달하거나 그 사람 차례가 끝날 때 발동)
+		if (candidates.length > 0) {
+			events.push({ id: 'reverse', chance: P.reverse, fire: function () { queueItem('reverse'); } });
+			events.push({ id: 'random', chance: P.random, fire: function () { queueItem('random'); } });
+			if (my.rule.rule === 'Classic') events.push({ id: 'linkChange', chance: P.linkChange, fire: function () { queueItem('linkChange'); } });
+		}
+		// 시간 단축: 남은 라운드 시간의 5/10/20% (최소 1초는 남김, 서바이벌은 라운드 시간을 쓰지 않음)
+		if (!my.opts.survival && g.roundTime > 1000) {
+			events.push({ id: 'timeCut5', chance: P.timeCut5, fire: timeCut(5) });
+			events.push({ id: 'timeCut10', chance: P.timeCut10, fire: timeCut(10) });
+			events.push({ id: 'timeCut20', chance: P.timeCut20, fire: timeCut(20) });
+		}
+		// 힐 / 딜 (서바이벌 전용): 생존자 전원 HP ±10% (현재 HP 기준, 딜로는 KO되지 않고 최소 1 남음)
+		var survivalHP = function (mul, code) {
+			var hp = {};
+			g.seq.forEach(function (s) {
+				var p = DIC[(s && s.id) ? s.id : s] || s;
+				if (!p || !p.game || !p.game.alive) return;
+				p.game.score = Math.max(1, Math.round(p.game.score * mul));
+				hp[p.id] = p.game.score;
+			});
+			my.byMaster('chaos-notice', { code: code, arg: 10, hp: hp }, true);
+		};
+		if (my.opts.survival) {
+			events.push({ id: 'heal', chance: P.heal, fire: function () { survivalHP(1.1, 'chaosHeal'); } });
+			events.push({ id: 'deal', chance: P.deal, fire: function () { survivalHP(0.9, 'chaosDeal'); } });
+		}
+		// 시간 연장: 남은 라운드 시간 +10% (서바이벌 제외)
+		if (!my.opts.survival) events.push({ id: 'timeExtend', chance: P.timeExtend, fire: function () {
+			g.roundTime = Math.round(g.roundTime * 1.1);
+			notice('chaosTimeExtend', 10);
+		} });
+		// 미션 변경: 한국어 완성형 미션 글자의 모음을 ㅏ·ㅓ·ㅗ·ㅜ·ㅣ 중 현재와 다른 것으로 새로 뽑음 (자음 유지)
+		if (my.rule.lang === 'ko' && missionCode >= 0 && missionCode < 11172) events.push({ id: 'mission', chance: P.mission, fire: function () {
+			var ini = Math.floor(missionCode / 588);
+			var cur = Math.floor((missionCode % 588) / 28);
+			var pool = [0, 4, 8, 13, 20].filter(function (v) { return v !== cur; }); // ㅏ ㅓ ㅗ ㅜ ㅣ
+			g.chaosMissionVowel = pool[Math.floor(Math.random() * pool.length)];
+			g.mission = String.fromCharCode(0xAC00 + ini * 588 + g.chaosMissionVowel * 28);
+			notice('chaosMission', g.mission);
+		} });
+		// 부스터: 켜짐/해제 토글 (차례 시간 계산은 getSpeedBaseTime)
+		events.push({ id: 'booster', chance: P.booster, fire: function () {
+			g.chaosBooster = !g.chaosBooster;
+			notice(g.chaosBooster ? 'chaosBoosterOn' : 'chaosBoosterOff');
+		} });
+		// 인플레이션 / 디플레이션: 획득 점수(서바이벌은 데미지) 배율 ±0.2 (1.0 ~ 1.8, 디플레이션은 1.2 이상일 때만)
+		var infSuffix = my.opts.survival ? 'Dmg' : '';
+		if (stack < Const.CHAOS_INFLATION_MAX_STACK) events.push({ id: 'inflation', chance: P.inflation, fire: function () {
+			g.chaosInfStack = stack + 1;
+			notice('chaosInflation' + infSuffix, multText());
+		} });
+		if (stack >= 1) events.push({ id: 'deflation', chance: P.deflation, fire: function () {
+			g.chaosInfStack = stack - 1;
+			notice('chaosDeflation' + infSuffix, multText());
+		} });
+		// 단두대(레어): 이번 라운드 동안 나락 판정 적용 (나락·무적·서바이벌에서는 의미가 없거나 충돌)
+		if (!g.chaosGuillotine && !my.opts.narak && !my.opts.invincible && !my.opts.survival) events.push({ id: 'guillotine', chance: P.guillotine, fire: function () {
+			g.chaosGuillotine = true;
+			notice('chaosGuillotine');
+		} });
+		// 낙장불입(레어): 이번 라운드 동안 낙장불입 규칙(one) 적용 — 틀린 단어를 입력하면 바로 탈락
+		if (!g.chaosOne && !my.opts.one) events.push({ id: 'noTakeBack', chance: P.noTakeBack, fire: function () {
+			g.chaosOne = true;
+			notice('chaosOne');
+		} });
+		// 시각 효과 토글(점수 가리기 / 차례 숨기기): 각자 한 칸을 차지. 켜져 있으면 칸 전체가 해제,
+		// 꺼져 있으면 칸의 절반이 발동이고 나머지 절반은 아무 일도 없음 (이 턴의 추첨은 그대로 끝남)
+		// force: 확정 턴에는 꺼져 있어도 "아무 일도 없음" 없이 바로 켬
+		var visualToggle = function (key, code) {
+			return function (force) {
+				if (g[key]) {
+					g[key] = false;
+					notice(code + 'Off' + (key === 'chaosHideScore' ? infSuffix : ''));
+				} else if (force || Math.random() < 0.5) {
+					g[key] = true;
+					notice(code + 'On' + (key === 'chaosHideScore' ? infSuffix : ''));
+				} else return false; // 아무 일도 없음: 발동으로 치지 않음
+			};
+		};
+		// sure: 확정 턴에 쓰는 비중 (꺼진 토글은 실제로 켜지는 절반만)
+		events.push({ id: 'hideScore', chance: P.hideScore, sure: g.chaosHideScore ? P.hideScore : P.hideScore / 2, fire: visualToggle('chaosHideScore', 'chaosHideScore') });
+		events.push({ id: 'hideTurn', chance: P.hideTurn, sure: g.chaosHideTurn ? P.hideTurn : P.hideTurn / 2, fire: visualToggle('chaosHideTurn', 'chaosHideTurn') });
+		// 레볼루션(레어, 리턴 없는 방): 사용한 단어 기록 초기화. 점수·패널티가 체인 길이를 쓰므로 길이는 유지하고
+		// 직전 단어(스피드토스 등이 참조)를 뺀 나머지를 빈 문자열로 지운다
+		if (!my.opts.return && my.rule.rule !== 'Numberclap' && g.chain && g.chain.slice(0, -1).some(function (w) { return w; })) events.push({ id: 'revolution', chance: P.revolution, fire: function () {
+			for (var i = 0; i < g.chain.length - 1; i++) g.chain[i] = '';
+			notice('chaosRevolution');
+		} });
+		// 꼴찌 2배(레어, 라운드당 1번): 라운드 끝까지, 점수를 내는 순간 꼴찌인 사람은 얻는 점수(서바이벌은 데미지) 2배
+		if (!g.chaosUnderdog) events.push({ id: 'underdog', chance: P.underdog, fire: function () {
+			g.chaosUnderdog = true;
+			notice('chaosUnderdog' + infSuffix);
+		} });
+		// 뻥튀기(레어, 라운드당 1번): 라운드 끝까지 뻥튀기 규칙(bbg) 적용 — 보너스 2배
+		// 보너스를 만드는 규칙이 하나도 안 켜져 있으면 효과가 없으므로 후보에서 뺌 (369 등 보너스가 없는 모드도 여기서 빠짐)
+		var hasBonusRule = my.opts.mission || my.opts.speedtoss || my.opts.straight || my.opts.fullhouse || my.opts.flush || my.opts.jackpot || my.opts.defensebonus;
+		if (!g.chaosBbg && !my.opts.bbungtwigi && hasBonusRule) events.push({ id: 'bonusUp', chance: P.bonusUp, fire: function () {
+			g.chaosBbg = true;
+			notice('chaosBbg');
+		} });
+		// 하이퍼 매너(레어 토글): 켜지면 이을 단어가 CHAOS_HYPER_MANNER_MIN개 이상 남는 단어로만 이을 수 있음, 꺼지면 원래 매너 규칙.
+		// 매너 판정이 있는 Classic만 (자모·일본어 모드는 매너 판정 자체가 없고, 언노운은 이을 단어 수를 세지 않음)
+		if (my.rule.rule === 'Classic' && !my.opts.unknown && ['KJM', 'JSH', 'JAP', 'JKT'].indexOf(Const.GAME_TYPE[my.mode]) === -1) events.push({ id: 'hyperManner', chance: P.hyperManner, fire: function () {
+			my.setChaosHyperManner(!g.chaosHyperManner);
+			notice(g.chaosHyperManner ? 'chaosHyperMannerOn' : 'chaosHyperMannerOff', Const.CHAOS_HYPER_MANNER_MIN);
+		} });
+
+		// 직전에 발동한 효과는 이번 추첨에서 뺌 (시간 단축 5/10/20%는 한 효과로 봄, 확률은 다른 이벤트로 옮기지 않음)
+		var effectOf = function (id) { return /^timeCut\d/.test(id) ? 'timeCut' : id; };
+		events = events.filter(function (ev) { return effectOf(ev.id) !== g.chaosLastEvent; });
+
+		// 확정 턴: 직전 N번 연속으로 아무 일도 없었으면 이번엔 조건이 맞는 이벤트 중 하나를 확률 비율대로 반드시 발동
+		var sure = (g.chaosDry || 0) >= Const.CHAOS_PLUS_PITY_TURNS;
+		var weight = function (ev) { return sure && ev.sure !== undefined ? ev.sure : ev.chance; };
+		var total = 0;
+		if (sure) events.forEach(function (ev) { total += weight(ev); });
+
+		var r = Math.random() * (sure ? total : 1), acc = 0, fired = false;
+		for (var e = 0; e < events.length; e++) {
+			acc += weight(events[e]);
+			if (r < acc) {
+				if (events[e].fire(sure) !== false) {
+					g.chaosLastEvent = effectOf(events[e].id);
+					fired = true;
+				}
+				break;
+			}
+		}
+		g.chaosDry = fired ? 0 : (g.chaosDry || 0) + 1;
+	};
+	// 카오스 플러스 미션 변경: 다음 미션 변경 전까지 새로 뽑는 미션 글자도 그 모음으로 바꿈 (한국어 완성형만, 자음 유지)
+	my.applyChaosVowel = function (mission) {
+		var v = my.game.chaosMissionVowel;
+		if (typeof v !== 'number' || typeof mission !== 'string' || mission.length !== 1) return mission;
+		var code = mission.charCodeAt(0) - 0xAC00;
+		if (code < 0 || code >= 11172) return mission;
+		return String.fromCharCode(0xAC00 + Math.floor(code / 588) * 588 + v * 28);
+	};
+	// 카오스 플러스 인플레이션·꼴찌 2배: 획득 점수(양수, 서바이벌은 데미지)에만 배율 적용
+	my.applyChaosMult = function (score, client) {
+		var stack = my.game.chaosInfStack || 0;
+		var mul = 1 + Const.CHAOS_INFLATION_STEP * stack;
+		if (my.game.chaosUnderdog && client && my.isChaosUnderdog(client)) mul *= 2;
+		if (mul === 1 || !(score > 0)) return score;
+		return Math.round(score * mul);
+	};
+	// 꼴찌 2배: 점수를 내는 순간 그 사람이 꼴찌(공동 포함)인지. 서바이벌은 살아 있는 사람 중 HP가 가장 낮은지
+	my.isChaosUnderdog = function (client) {
+		var min = Infinity;
+		var mine = client.game && client.game.score;
+		if (typeof mine !== 'number') return false;
+		my.game.seq.forEach(function (s) {
+			var p = DIC[(s && s.id) ? s.id : s] || s;
+			if (!p || !p.game || typeof p.game.score !== 'number') return;
+			if (my.opts.survival && !p.game.alive) return;
+			if (p.game.score < min) min = p.game.score;
+		});
+		return mine <= min;
+	};
+	// 하이퍼 매너: classic-util의 매너 판정 함수들이 opts만 받으므로 opts에 표시를 붙임.
+	// 열거되지 않는 속성이라 방 정보(JSON)로 나가지 않고, 방 설정을 다시 저장해도 남지 않게 라운드마다 끔
+	my.setChaosHyperManner = function (on) {
+		my.game.chaosHyperManner = on;
+		Object.defineProperty(my.opts, '_chaosHyperManner', { value: on, writable: true, configurable: true, enumerable: false });
+	};
+	// 차례 시간 계산 기준 시간: 스피드 규칙은 라운드 시간의 1/2, 카오스 플러스 부스터는 여기서 다시 1/2
+	my.getSpeedBaseTime = function () {
+		var rt = my.opts.speed ? my.game.roundTime / 2 : my.game.roundTime;
+		return my.game.chaosBooster ? rt / 2 : rt;
 	};
 	my._defaultNextTurn = function (fromIndex) {
 		var n = my.game.seq.length;
@@ -2681,7 +2904,10 @@ function Room(room, channel) {
 		// 1. 현재 플레이어의 afterTurn 아이템 처리 (skip, random)
 		if (curPending) {
 			if (curPending.itemType === 'random') {
-				if (!peek) my.consumeItem(sid(currentId), 'random');
+				if (!peek) {
+					my.consumeItem(sid(currentId), 'random', curPending.chaos);
+					if (curPending.chaos) my.byMaster('chaos-notice', { code: 'chaosRandom' }, true);
+				}
 				var candidates = seq.filter(function (id) {
 					if (my.opts.survival) { var p = DIC[sid(id)] || id; return p && p.game && p.game.alive; }
 					return true;
@@ -2827,7 +3053,8 @@ function Room(room, channel) {
 		}
 
 		// 아이템 효과 발동 조건 (opts.item이 없어도 실제 효과가 있으면 적용)
-		var _itemTurnActive = my.opts.item || my.game.reversed ||
+		// 카오스: 서바이벌 데미지가 calculateNextTurn으로 커밋한 타겟을 그대로 써야 하므로 항상 이 경로
+		var _itemTurnActive = my.opts.item || my.opts.chaos || my.game.reversed ||
 			(my.game.pendingItems && Object.keys(my.game.pendingItems).length > 0);
 		if (_itemTurnActive) {
 			if (my.game.hasOwnProperty('_survivalCachedTarget')) {

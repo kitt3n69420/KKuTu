@@ -310,7 +310,9 @@ exports.applySurvivalDamage = function (my, DIC, damage, currentTurn) {
 
 	var nextTurn;
 	var found = false;
-	var _itemActive = my.opts.item || my.game.reversed ||
+	// 카오스: 데미지 뒤의 카오스 추첨이 반전·랜덤 턴을 걸어도 데미지 대상과 실제 다음 차례가 어긋나지 않게
+	// 여기서 다음 차례를 커밋하고 turnNext가 그대로 쓴다 (이번에 새로 걸린 효과는 다음 도달 때 발동)
+	var _itemActive = my.opts.item || my.opts.chaos || my.game.reversed ||
 		(my.game.pendingItems && Object.keys(my.game.pendingItems).length > 0);
 
 	if (_itemActive) {

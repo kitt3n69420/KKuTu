@@ -432,7 +432,7 @@ exports.roundReady = function () {
 			my.game.isHanbang = false;
 		}
 
-		if (my.opts.mission) my.game.mission = getMission(my.rule.lang, my.opts, Const.GAME_TYPE[my.mode]);
+		if (my.opts.mission) my.game.mission = my.applyChaosVowel(getMission(my.rule.lang, my.opts, Const.GAME_TYPE[my.mode]));
 		if (my.opts.sami) {
 			my.game.wordLength = 2;
 			my.game.samiCount = 0;
@@ -488,7 +488,7 @@ exports.turnStart = function (force) {
 		my.game.hanbangAngerNext = false;
 	}
 	my.game.roundTime = Math.min(my.game.roundTime, Math.max(10000, 150000 - my.game.roundChainCount * 1500));
-	speed = my.getTurnSpeed(my.opts.speed ? my.game.roundTime / 2 : my.game.roundTime);
+	speed = my.getTurnSpeed(my.getSpeedBaseTime());
 	clearTimeout(my.game.turnTimer);
 	clearTimeout(my.game.robotTimer);
 	my.game.late = false;
@@ -720,7 +720,7 @@ exports.turnEnd = function () {
 			} else {
 				score = Const.getPenalty(my.game.chain, target.game.score);
 				// 나락(nar): 패널티 적용 후에도 점수가 양수면 0으로 만듦
-				if (my.opts.narak && (target.game.score + score) > 0) {
+				if ((my.opts.narak || my.game.chaosGuillotine) && (target.game.score + score) > 0) {
 					score = -target.game.score;
 				}
 			}
@@ -851,7 +851,7 @@ exports.submit = function (client, text) {
 	// Surrogate character check: reject inputs containing surrogates (e.g., emojis)
 	if (/[\uD800-\uDFFF]/.test(text)) {
 		client.publish('turnError', { code: 404, value: text }, true);
-		if (my.opts.one) my.turnEnd();
+		if (my.opts.one || my.game.chaosOne) my.turnEnd();
 		return;
 	}
 
@@ -899,7 +899,7 @@ exports.submit = function (client, text) {
 				}
 			}
 
-			if (my.opts.one) my.turnEnd();
+			if (my.opts.one || my.game.chaosOne) my.turnEnd();
 			return;
 		}
 	}
@@ -987,7 +987,7 @@ exports.submit = function (client, text) {
 					var matchingSumiChar = checkspeedToss(my.game.chain[my.game.chain.length - 1], text);
 					if (matchingSumiChar) {
 						var bonusScore = Math.round(baseScoreWithoutMission * 0.20);
-						if (my.opts.bbungtwigi) bonusScore *= 2; // 뻥튀기: 스피드토스 보너스 2배
+						if (my.opts.bbungtwigi || my.game.chaosBbg) bonusScore *= 2; // 뻥튀기: 스피드토스 보너스 2배
 						speedTossBonus = bonusScore;
 						my.game.sumiChar = matchingSumiChar; // Store for turnStart highlighting
 					} else {
@@ -1021,7 +1021,7 @@ exports.submit = function (client, text) {
 						if (client.game.straightStreak >= 2) {
 							var straightPct = Math.min(15 + (client.game.straightStreak - 2) * 5, 50);
 							straightBonus = Math.round(baseScoreWithoutMission * (straightPct / 100));
-							if (my.opts.bbungtwigi) straightBonus *= 2; // 뻥튀기: 스트레이트 보너스 2배
+							if (my.opts.bbungtwigi || my.game.chaosBbg) straightBonus *= 2; // 뻥튀기: 스트레이트 보너스 2배
 						}
 					}
 				}
@@ -1041,8 +1041,8 @@ exports.submit = function (client, text) {
 				my.game.roundChainCount++;
 				my.game.roundTime = Math.max(0, my.game.roundTime - t);
 
-				// Random Linking Logic
-				if (my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second) {
+				// Random Linking Logic (잇기 전환이 걸린 차례는 끝말잇기로 — 아래 linkOverride 처리)
+				if (my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second && !my.game.linkOverride) {
 					// 매너 체크는 preApproved에서 완료되었으므로 저장된 결과 사용
 					var randomResult = my.game._pendingRandomResult;
 					delete my.game._pendingRandomResult;
@@ -1284,6 +1284,7 @@ exports.submit = function (client, text) {
 							}
 							if (f.streak >= 3) {
 								flushBonus = Math.round(baseScoreWithoutMission * 0.20);
+								if (my.opts.bbungtwigi || my.game.chaosBbg) flushBonus *= 2; // 뻥튀기: 플러시 보너스 2배
 								if (my.game.seq) my.game.nextFlushDefense = true;
 							}
 						}
@@ -1304,6 +1305,7 @@ exports.submit = function (client, text) {
 							}
 							if (jp.streak >= 3) {
 								jackpotBonus = Math.round(baseScoreWithoutMission * 0.80);
+								if (my.opts.bbungtwigi || my.game.chaosBbg) jackpotBonus *= 2; // 뻥튀기: 잭팟 보너스 2배
 							}
 						}
 
@@ -1332,6 +1334,7 @@ exports.submit = function (client, text) {
 							} else {
 								my.game.flushDefenseState[client.id] = 0;
 							}
+							if (my.opts.bbungtwigi || my.game.chaosBbg) defenseBonus *= 2; // 뻥튀기: 디펜스 보너스(공격·플러시 방어 합산) 2배
 						}
 						// ====================================================
 
@@ -1349,7 +1352,7 @@ exports.submit = function (client, text) {
 						// ========== 서바이벌 모드: 득점 = 다음 사람 데미지 ==========
 						if (my.opts.survival) {
 							client.game.survivalSubmitted = true;
-							var damage = score + flushBonus + jackpotBonus + defenseBonus;
+							var damage = my.applyChaosMult(score + flushBonus + jackpotBonus + defenseBonus, client); // 카오스 플러스 인플레이션·꼴찌 2배: 서바이벌은 데미지에 적용
 							var survivalDamageInfo = Const.applySurvivalDamage(my, DIC, damage, my.game.turn);
 
 							// 한방 단어 감지 저장
@@ -1404,9 +1407,9 @@ exports.submit = function (client, text) {
 
 							// 미션 처리
 							if (my.game.mission === true) {
-								my.game.mission = getMission(my.rule.lang, my.opts, gameType);
+								my.game.mission = my.applyChaosVowel(getMission(my.rule.lang, my.opts, gameType));
 							} else if (my.opts.rndmission) {
-								my.game.mission = getMission(my.rule.lang, my.opts, gameType);
+								my.game.mission = my.applyChaosVowel(getMission(my.rule.lang, my.opts, gameType));
 							}
 
 							// 아이템전 / 카오스: 아이템 지급 판정 (서바이벌)
@@ -1454,7 +1457,7 @@ exports.submit = function (client, text) {
 
 							if (matchCount === prevChars.length) {
 								fullHouseBonus = Math.round(baseScoreWithoutMission * 0.60);
-								if (my.opts.bbungtwigi) fullHouseBonus *= 2; // 뻥튀기: 보너스 2배
+								if (my.opts.bbungtwigi || my.game.chaosBbg) fullHouseBonus *= 2; // 뻥튀기: 보너스 2배
 								fullHouseChars = matchedIndices;
 							}
 						}
@@ -1484,6 +1487,7 @@ exports.submit = function (client, text) {
 						if (typeof client.game.score !== 'number' || isNaN(client.game.score)) {
 							client.game.score = 0;
 						}
+						score = my.applyChaosMult(score, client); // 카오스 플러스 인플레이션·꼴찌 2배
 						client.game.score += score;
 						client.publish('turnEnd', {
 							ok: true,
@@ -1510,10 +1514,10 @@ exports.submit = function (client, text) {
 						}, true);
 
 						if (my.game.mission === true) {
-							my.game.mission = getMission(my.rule.lang, my.opts, gameType);
+							my.game.mission = my.applyChaosVowel(getMission(my.rule.lang, my.opts, gameType));
 						} else if (my.opts.rndmission) {
 							// 랜덤미션: 달성하지 않아도 매 턴마다 미션 변경
-							my.game.mission = getMission(my.rule.lang, my.opts, gameType);
+							my.game.mission = my.applyChaosVowel(getMission(my.rule.lang, my.opts, gameType));
 						}
 						// 아이템전 / 카오스: 아이템 지급 판정 (일반)
 						if (my.opts.item || my.opts.chaos) {
@@ -1530,8 +1534,8 @@ exports.submit = function (client, text) {
 					}
 				}
 			}
-			// 랜덤 모드: getRandomChar로 매너 체크
-			var isRandomMode = my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second;
+			// 랜덤 모드: getRandomChar로 매너 체크 (잇기 전환이 걸린 차례는 끝말잇기라 일반 매너 체크)
+			var isRandomMode = my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second && !my.game.linkOverride;
 			if (my.opts.unknown && isRandomMode) {
 				// unknown 단어는 DB 조회 없이 글자 중 무작위 선택
 				var langCharRegex = my.rule.lang === 'ko' ? /[가-힣ㄱ-ㅣ0-9]/ : my.rule.lang === 'ja' ? /[ぁ-ん0-9]/ : /[a-zA-Z0-9]/;
@@ -1834,7 +1838,7 @@ exports.submit = function (client, text) {
 				code: code || 404,
 				value: text
 			}, true);
-			if (my.opts.one) my.turnEnd();
+			if (my.opts.one || my.game.chaosOne) my.turnEnd();
 			else if (client.robot && text.indexOf("T.T") == -1 && !Const.ROBOT_DEFEAT_MESSAGES.includes(text) && !Const.ROBOT_ANGRY_MESSAGES.includes(text) && text.indexOf("..") == -1 && text.indexOf("??") == -1 && !(text.length === 3 && text[0] === text[1] && text[1] === text[2])) {
 				setTimeout(function () {
 					my.readyRobot(client);
@@ -1846,7 +1850,7 @@ exports.submit = function (client, text) {
 			else {
 				var valid = true;
 				if (text.endsWith('/')) valid = false; // '/'로 끝나는 단어 차단
-				var isRandomMode = my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second;
+				var isRandomMode = my.opts.random && !my.opts.middle && !my.opts.first && !my.opts.second && !my.game.linkOverride;
 				if (isMannerLike(my.opts) && !isRandomMode) {
 					if (my.rule.lang == "ko") {
 						if (!preChar.match(/[가-힣ㄱ-ㅎㅏ-ㅣ0-9]/)) valid = false;
@@ -2036,7 +2040,7 @@ exports.getScore = function (text, delay, ignoreMission) {
 			}
 			if (mCount > 0) {
 				var missionBonus = score * 0.30 * mCount;
-				if (my.opts.bbungtwigi) missionBonus *= 2;
+				if (my.opts.bbungtwigi || my.game.chaosBbg) missionBonus *= 2;
 				score += missionBonus;
 				my.game.mission = true;
 			}
@@ -2063,7 +2067,7 @@ exports.getScore = function (text, delay, ignoreMission) {
 
 				if (matchCount > 0) {
 					var missionBonus = score * 0.30 * matchCount;
-					if (my.opts.bbungtwigi) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
+					if (my.opts.bbungtwigi || my.game.chaosBbg) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
 					score += missionBonus;
 					my.game.mission = true;
 				}
@@ -2072,7 +2076,7 @@ exports.getScore = function (text, delay, ignoreMission) {
 			// 기본 미션 규칙
 			if (arr = text.match(new RegExp(my.game.mission, "g"))) {
 				var missionBonus = score * 0.30 * arr.length;
-				if (my.opts.bbungtwigi) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
+				if (my.opts.bbungtwigi || my.game.chaosBbg) missionBonus *= 2; // 뻥튀기: 미션 보너스 2배
 				score += missionBonus;
 				my.game.mission = true;
 			}
