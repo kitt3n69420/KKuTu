@@ -17,3 +17,4 @@ Server/lib/sub/global.json
 Server/nul
 Server/lib/Web/public/media/common/Rmxn*
 Server/discord-fallback.log
+Server/monitor.log
