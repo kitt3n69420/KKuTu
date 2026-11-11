@@ -410,24 +410,46 @@ function route(func, a0, a1, a2, a3, a4) {
 	if (!r) return null;
 	$lib[r.rule][func].call(this, a0, a1, a2, a3, a4);
 }
+// Worker 중계 주소: wss://<RELAY_HOST>/<원래 포트>/<원래 경로>
+// 중계가 꺼져 있거나(global.json WORKER_RELAY) 이 페이지에서 중계 접속이 한 번 실패했으면 null → 기존 주소 사용
+function relayURL(url) {
+	if (!$data.RELAY_HOST || $data._relayFailed) return null;
+	var m = /^wss?:\/\/[^\/:]+:(\d+)\/(.*)$/.exec(url);
+	if (!m) return null;
+	return "wss://" + $data.RELAY_HOST + "/" + m[1] + "/" + m[2];
+}
 function connectToRoom(chan, rid) {
 	var url = $data.URL.replace(/:(\d+)/, function (v, p1) {
 		return ":" + ($data.ROOM_PORT ? Number($data.ROOM_PORT) + Number(chan) - 1 : Number(p1) + Number(chan));
 	}) + "&" + chan + "&" + rid;
 
 	if (rws) return;
-	rws = new _WebSocket(url + "&locale=" + (localStorage.getItem('kkutu_lang') || 'ko_KR'));
+	var target = url + "&locale=" + (localStorage.getItem('kkutu_lang') || 'ko_KR');
+	var relay = relayURL(target);
+	var opened = false;
+	var cancelled = false;
+	var sock = rws = new _WebSocket(relay || target);
+	// 중계가 응답 없이 멈춰 있으면 5초 뒤 끊어서 기존 주소로 넘어가게 한다
+	if (relay) _setTimeout(function () { if (!opened && sock.readyState === _WebSocket.CONNECTING) sock.close(); }, 5000);
 
 	loading(L['connectToRoom'] + "\n<center><button id='ctr-close'>" + L['ctrCancel'] + "</button></center>");
 	$("#ctr-close").on('click', function () {
+		cancelled = true;
 		loading();
 		if (rws) rws.close();
 	});
 	rws.onopen = function (e) {
+		opened = true;
 	};
 	rws.onmessage = _onMessage;
 	rws.onclose = function (e) {
 		rws = undefined;
+		// Worker 중계로 연결조차 못 했으면 중계를 끄고 같은 방에 기존 주소로 다시 접속 (방 예약은 서버에 닿지 않았으므로 그대로 남아 있음)
+		if (relay && !opened && !cancelled) {
+			$data._relayFailed = true;
+			connectToRoom(chan, rid);
+			return;
+		}
 		// 정상 퇴장은 방 정보(processRoom)가 상태를 먼저 지우므로, 여기서는 남은 상태가 있을 때만(워커 재시작 등으로 끊김) 로비로 되돌림
 		if (resetRoomState()) {
 			updateUI();

@@ -231,9 +231,7 @@ Server.on("connection", function (socket, info) {
       $c.admin = GLOBAL.ADMIN.indexOf($c.id) != -1;
 
       /* Enhanced User Block System [S] */
-      $c.remoteAddress = GLOBAL.USER_BLOCK_OPTIONS.USE_X_FORWARDED_FOR
-        ? info.headers["cf-connecting-ip"] || info.headers["x-forwarded-for"] || info.connection.remoteAddress
-        : info.connection.remoteAddress;
+      $c.remoteAddress = require("../sub/client-ip").remoteAddress(info);
       /* Enhanced User Block System [E] */
 
       // 기존 접속자 처리: _replaced 플래그로 레이스 컨디션 방지

@@ -386,6 +386,8 @@ Server.get("/", function (req, res) {
     _id: id,
     PORT: (Const.MASTER_PORTS && Const.MASTER_PORTS[server]) || Const.MAIN_PORTS[server] + 30,
     ROOM_PORT: Const.ROOM_PORTS[server],
+    // global.json의 WORKER_RELAY가 켜져 있으면 클라이언트가 이 주소(Worker)로 먼저 접속하고, 실패하면 기존 주소로 돌아간다
+    RELAY_HOST: (GLOBAL.WORKER_RELAY && GLOBAL.WORKER_RELAY.ENABLED && GLOBAL.WORKER_RELAY.HOST) || "",
     HOST: req.hostname,
     PROTOCOL: Const.IS_SECURED || Const.WAF ? "wss" : "ws",
     TEST: req.query.test,

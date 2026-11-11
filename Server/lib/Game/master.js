@@ -1075,9 +1075,7 @@ exports.init = function (_SID, CHAN) {
           $c = new KKuTu.Client(socket, $body ? $body.profile : null, key);
           $c.admin = GLOBAL.ADMIN.indexOf($c.id) != -1;
           /* Enhanced User Block System [S] */
-          $c.remoteAddress = GLOBAL.USER_BLOCK_OPTIONS.USE_X_FORWARDED_FOR
-            ? info.headers["cf-connecting-ip"] || info.headers["x-forwarded-for"] || info.connection.remoteAddress
-            : info.connection.remoteAddress;
+          $c.remoteAddress = require("../sub/client-ip").remoteAddress(info);
           /* Enhanced User Block System [E] */
 
           // 기존 접속자 처리: DIC에서 즉시 제거하고 disconn 발행 후 소켓 닫기

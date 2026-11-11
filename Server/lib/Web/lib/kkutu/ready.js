@@ -51,6 +51,7 @@ $(document).ready(function () {
 	$data.PUBLIC = $("#PUBLIC").html() == "true";
 	$data.URL = $("#URL").html();
 	$data.ROOM_PORT = $("#ROOM_PORT").html();
+	$data.RELAY_HOST = $("#RELAY_HOST").html() || "";
 	$data.version = $("#version").html();
 	$data.NICKNAME_LIMIT = JSON.parse($("body #NICKNAME_LIMIT").text() || "{}");
 	if ($data.NICKNAME_LIMIT.REGEX) $data.NICKNAME_LIMIT.REGEX = new RegExp($data.NICKNAME_LIMIT.REGEX[0], $data.NICKNAME_LIMIT.REGEX[1]);
@@ -3680,8 +3681,13 @@ $(document).ready(function () {
 	});
 	function connect() {
 		var heartbeatInterval;
-		ws = new _WebSocket($data.URL);
+		var relay = relayURL($data.URL);
+		var opened = false;
+		var sock = ws = new _WebSocket(relay || $data.URL);
+		// 중계가 응답 없이 멈춰 있으면 5초 뒤 끊어서 기존 주소로 넘어가게 한다
+		if (relay) _setTimeout(function () { if (!opened && sock.readyState === _WebSocket.CONNECTING) sock.close(); }, 5000);
 		ws.onopen = function (e) {
+			opened = true;
 			if (heartbeatInterval) clearInterval(heartbeatInterval);
 			heartbeatInterval = _setInterval(function () {
 				// master 소켓(ws)에 항상 heartbeat 전송 — Cloudflare idle timeout 방지
@@ -3716,6 +3722,13 @@ $(document).ready(function () {
 		};
 		ws.onclose = function (e) {
 			if (heartbeatInterval) clearInterval(heartbeatInterval);
+
+			// Worker 중계로 연결조차 못 했으면 이 페이지에서는 중계를 끄고 기존 주소로 바로 다시 접속
+			if (relay && !opened) {
+				$data._relayFailed = true;
+				connect();
+				return;
+			}
 
 			if (rws) rws.close();
 			stopAllSounds();
