@@ -1041,6 +1041,146 @@ exports.run = function (Server, page) {
     MainDB.shared_collecting.findOne(["id", "moondust"]).on(function ($r) { _dust = $r; claimPhase1(); });
     MainDB.users.findOne(["_id", uid]).limit(["box", true], ["kkutu", true], ["equip", true]).on(function ($r) { _user = $r; claimPhase1(); });
   });
+
+  // ===== 1주년 이벤트: 1 파티, 2 별빛(2-1 별가루 모으기, 2-2 별에게 소원 빌기) =====
+  var ANNIV = Const.ANNIV;
+  function annivHave(box, itemId) {
+    var bd = box && box[itemId];
+    return (typeof bd === 'number') ? bd : (bd && bd.value ? bd.value : 0);
+  }
+  // 진행 중인 1주년 이벤트(없으면 null)와 유저 box·별명을 함께 읽는다.
+  // DB 쿼리가 실패하면 on()의 콜백이 불리지 않으므로 onFail에서 바로 오류를 돌려준다.
+  function annivLoad(req, res, cb) {
+    if (!req.session.profile) return res.json({ error: 400 });
+    var uid = req.session.profile.id;
+    var _ev = null, _user = null, _left = 2, _failed = false;
+    function fail() { if (_failed) return; _failed = true; res.json({ error: 500 }); }
+    function done() {
+      if (_failed || --_left > 0) return;
+      if (!_user) return res.json({ error: 400 });
+      if (!_user.box) _user.box = {};
+      cb(uid, _ev, _user);
+    }
+    MainDB.event.findOne(["_id", ANNIV.EVENT_ID]).on(function ($r) { _ev = ($r && Const.isEventActive($r)) ? $r : null; done(); }, null, fail);
+    MainDB.users.findOne(["_id", uid]).limit(["box", true], ["nickname", true]).on(function ($r) { _user = $r; done(); }, null, fail);
+  }
+  Server.get("/event/anniv/status", function (req, res) {
+    annivLoad(req, res, function (uid, ev, user) {
+      if (!ev) return res.json({ active: false });
+      var _claims = null, _wish = null, _party = null, _left = 3, _failed = false;
+      function fail() { if (_failed) return; _failed = true; res.json({ error: 500 }); }
+      function claimedOf(eventid) {
+        return (_claims || []).filter(function (c) { return c.eventid === eventid; }).map(function (c) { return c.tier; });
+      }
+      function done() {
+        if (_failed || --_left > 0) return;
+        var stars = {};
+        Object.keys(ANNIV.ITEM).forEach(function (c) { stars[c] = annivHave(user.box, ANNIV.ITEM[c]); });
+        res.json({
+          active: true, start: Number(ev.start), end: Number(ev.end),
+          stars: stars, cycle: ANNIV.CYCLE, modes: ANNIV.MODES, tiers: ANNIV.TIERS, rewards: ANNIV.REWARDS, claimed: claimedOf(ANNIV.EVENT_ID),
+          party: { best: _party ? _party.best : 0, tiers: ANNIV.PARTY_TIERS, rewards: ANNIV.PARTY_REWARDS, claimed: claimedOf(ANNIV.PARTY_CLAIM_ID) },
+          wish: _wish ? _wish.text : null
+        });
+      }
+      MainDB.event_claim.find(["uid", uid]).on(function ($r) { _claims = $r; done(); }, null, fail);
+      MainDB.event_wish.findOne(["uid", uid], ["eventid", ANNIV.EVENT_ID], ["day", Const.kstDayIndex()]).on(function ($r) { _wish = $r; done(); }, null, fail);
+      MainDB.event_party.findOne(["uid", uid], ["eventid", ANNIV.EVENT_ID]).on(function ($r) { _party = $r; done(); }, null, fail);
+    });
+  });
+  // 마일스톤 보상 받기 (별가루는 줄지 않음)
+  // track=star(기본): 다섯 별가루가 모두 그 단계 개수 이상 / track=party: 파티 최고 기록이 그 단계 인원 이상
+  Server.post("/event/anniv/claim", function (req, res) {
+    var party = req.body.track === "party";
+    var tier = parseInt(req.body.tier, 10);
+    var need = (party ? ANNIV.PARTY_TIERS : ANNIV.TIERS)[tier - 1];
+    var reward = (party ? ANNIV.PARTY_REWARDS : ANNIV.REWARDS)[tier - 1];
+    if (!need || !reward) return res.json({ error: 400 });
+
+    annivLoad(req, res, function (uid, ev, user) {
+      if (!ev) return res.json({ error: 473 });
+      if (!party) {
+        for (var c in ANNIV.ITEM) {
+          if (annivHave(user.box, ANNIV.ITEM[c]) < need) return res.json({ error: 464 });
+        }
+        return annivGrant(res, uid, user, ANNIV.EVENT_ID, tier, reward);
+      }
+      MainDB.event_party.findOne(["uid", uid], ["eventid", ANNIV.EVENT_ID]).on(function ($p) {
+        if (!$p || $p.best < need) return res.json({ error: 464 });
+        annivGrant(res, uid, user, ANNIV.PARTY_CLAIM_ID, tier, reward);
+      }, null, function () { res.json({ error: 500 }); });
+    });
+  });
+  // 받은 기록을 먼저 넣고 실제로 들어갔을 때만 지급한다 (연타·동시 요청으로 두 번 받는 것 방지)
+  function annivGrant(res, uid, user, claimId, tier, reward) {
+    MainDB.event_claim.direct("INSERT INTO event_claim (uid, eventid, tier, claimed_at) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+      [uid, claimId, tier, Date.now()], function (err, $r) {
+        if (err) { JLog.error("[ANNIV_CLAIM] " + err); return res.json({ error: 500 }); }
+        if (!$r || !$r.rowCount) return res.json({ error: 466 });
+        obtain(user, reward, 1);
+        MainDB.users.update(["_id", uid]).set(["box", user.box]).on(function () {
+          res.json({ result: 200, box: user.box, obtained: reward });
+          JLog.log("[ANNIV_CLAIM] " + claimId + " tier " + tier + " (" + reward + ") by " + uid);
+        });
+      });
+  }
+  // 별가루 바꾸기: 순환 순서에서 to 양옆의 두 별가루를 n개씩 내고 to를 n개 받는다
+  Server.post("/event/anniv/convert", function (req, res) {
+    var to = String(req.body.to || "");
+    var n = /^\d{1,4}$/.test(String(req.body.n)) ? Number(req.body.n) : 0;
+    var from = Const.annivConvertSources(ANNIV, to);
+    if (!from || n < 1 || n > ANNIV.CONVERT_MAX) return res.json({ error: 400 });
+
+    annivLoad(req, res, function (uid, ev, user) {
+      if (!ev) return res.json({ error: 473 });
+      var a = ANNIV.ITEM[from[0]], b = ANNIV.ITEM[from[1]];
+      if (annivHave(user.box, a) < n || annivHave(user.box, b) < n) return res.json({ error: 474 });
+      consume(user, a, n, true);
+      consume(user, b, n, true);
+      obtain(user, ANNIV.ITEM[to], n);
+      MainDB.users.update(["_id", uid]).set(["box", user.box]).on(function () {
+        res.json({ result: 200, box: user.box });
+        JLog.log("[ANNIV_CONVERT] " + from.join("+") + " -> " + to + " x" + n + " by " + uid);
+      });
+    });
+  });
+  // 별에게 소원 빌기: 하루(KST)에 하나, 기명, 최대 200자. 자정 전까지는 다시 보내면 그날 소원이 고쳐진다.
+  // 자정이 지나면 그날 소원은 확정되어 디스코드 '소원을 말해봐' 채널에서 관리자 승인을 기다리고, 승인되면 소원 벽에 익명으로 올라간다.
+  Server.post("/event/anniv/wish", function (req, res) {
+    // 줄바꿈·제어 문자는 공백으로 바꾸고 연속 공백은 하나로 줄인다
+    var text = (typeof req.body.text === 'string' ? req.body.text : "").replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim();
+    var len = Array.from(text).length;
+    if (len < 1 || len > ANNIV.WISH_MAX_LEN) return res.json({ error: 476 });
+
+    annivLoad(req, res, function (uid, ev, user) {
+      if (!ev) return res.json({ error: 473 });
+      var nickname = String(user.nickname || req.session.profile.title || req.session.profile.name || "").slice(0, 64);
+      // 디스코드로 이미 넘어간 소원(discord_msg가 있음)은 고치지 않는다. 날짜가 오늘인 동안에는 일어나지 않지만 안전장치로 둔다.
+      MainDB.event_wish.direct("INSERT INTO event_wish (eventid, uid, day, nickname, text, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $6) "
+        + "ON CONFLICT (eventid, uid, day) DO UPDATE SET nickname = EXCLUDED.nickname, text = EXCLUDED.text, updated_at = EXCLUDED.updated_at "
+        + "WHERE event_wish.discord_msg IS NULL",
+        [ANNIV.EVENT_ID, uid, Const.kstDayIndex(), nickname, text, Date.now()], function (err, $r) {
+          if (err) { JLog.error("[ANNIV_WISH] " + err); return res.json({ error: 500 }); }
+          if (!$r || !$r.rowCount) return res.json({ error: 475 });
+          res.json({ result: 200, wish: text });
+          JLog.log("[ANNIV_WISH] by " + uid);
+        });
+    });
+  });
+  // 소원 벽: 관리자가 승인한 소원만 최신순 20개씩. 작성자 정보는 응답에 넣지 않는다. (before = 이전 목록의 마지막 id)
+  Server.get("/event/anniv/wishes", function (req, res) {
+    if (!req.session.profile) return res.json({ error: 400 });
+    var before = parseInt(req.query.before, 10);
+    var q = [["eventid", ANNIV.EVENT_ID], ["status", "approved"]];
+    if (before > 0) q.push(["id", { $lte: before - 1 }]);
+    MainDB.event_wish.find.apply(MainDB.event_wish, q).sort(["id", -1]).limit(20).on(function ($r) {
+      res.json({
+        wishes: ($r || []).map(function (w) {
+          return { id: w.id, date: new Date(w.day * 86400000).toISOString().slice(0, 10), text: w.text };
+        })
+      });
+    }, null, function () { res.json({ error: 500 }); });
+  });
   Server.get("/dict/:word", function (req, res) {
     var word = req.params.word;
     var lang = req.query.lang;

@@ -1464,6 +1464,10 @@ function processClientRequest($c, msg) {
           stable = false;
         }
         if (msg.password.length > 20) stable = false;
+        if (/^\d{1,3}$/.test(msg.password) || /^(.)\1*$/.test(msg.password) || ["1234", "6974"].indexOf(msg.password) != -1) {
+          msg.code = 468;
+          stable = false;
+        }
         if (msg.limit < 2 || msg.limit > 24) {
           msg.code = 432;
           stable = false;

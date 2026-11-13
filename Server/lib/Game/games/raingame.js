@@ -211,7 +211,8 @@ function tryPushFromQueue(my, player) {
 						var idx = player.game.sendTimers.indexOf(t);
 						if (idx !== -1) player.game.sendTimers.splice(idx, 1);
 					}
-					if (!my.game || my.game.gen !== gen || my.game.late || !player.game || !player.game.alive) return;
+					// 방 쪽에서 게임을 끝내면(봇 퇴장 등) late가 안 켜진 채 seq만 지워지므로 seq도 확인
+					if (!my.game || !my.game.seq || my.game.gen !== gen || my.game.late || !player.game || !player.game.alive) return;
 					c.send('raingameWord', { wordId: wo.id, word: wo.word, timeout: tOut });
 					if (player.id === firstHumanId(my)) sendToSpectators(my, { wordId: wo.id, word: wo.word, timeout: tOut });
 				}, delay);
@@ -314,6 +315,8 @@ function scanWords(my) {
 	var now = Date.now();
 	var elapsed = now - my.game.roundStartTime;
 	var T = my.game.roundTime;
+	// 같은 판정에서 탈락한 사람: 모두에게 데미지를 다 준 뒤 한꺼번에 처리 (동시 탈락, 생존자 0명 가능)
+	var koPlayers = [];
 
 	traverse(my, function(o) {
 		if (my.game.late) return; // R2: 다중 KO 시 중복 처리 방지
@@ -353,8 +356,7 @@ function scanWords(my) {
 				traverse(my, function(s) {
 					if (s.game && s.game.attacksSent && s.id !== o.id) delete s.game.attacksSent[o.id];
 				});
-				distributeKOSpill(my, o);
-				checkGameOver(my);
+				koPlayers.push(o);
 				return;
 			} else {
 				o.game.missCount++;
@@ -366,6 +368,11 @@ function scanWords(my) {
 			}
 		}
 	});
+
+	if (koPlayers.length === 0) return;
+	// 탈락자의 단어는 이번 판정에서 살아남은 사람에게만 분배
+	koPlayers.forEach(function(o) { distributeKOSpill(my, o); });
+	checkGameOver(my);
 }
 
 function autoAttack(my) {

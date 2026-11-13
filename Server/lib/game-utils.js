@@ -442,3 +442,31 @@ exports.filterRobot = function (item) {
 	if (!item) return {};
 	return (item.robot && item.getData) ? item.getData() : item;
 };
+
+// ========== 1주년 이벤트 (별가루) ==========
+
+// 판 하나에서 얻는 별가루 수. cfg = Const.ANNIV
+// p.exp: 아이템 효과·혼자 감산 전 경험치(방 보정 적용 후), p.type: 모드 코드, p.unknown: 언노운 워드 방, p.solo: 사람이 1명
+// 소수점은 확률적 반올림 (3.4개 → 3개, 40% 확률로 1개 더). rand는 테스트용으로 넣을 수 있다.
+exports.annivStarCount = function (cfg, p, rand) {
+	var exp = p.exp > 0 ? p.exp : 0; // NaN·음수 방지
+	var raw = exp * (cfg.MODE_MUL[p.type] || 1) / cfg.EXP_PER_STAR / Math.log10(Math.max(10, exp));
+	if (p.type === 'XBB') raw = Math.min(raw * cfg.XBB_MUL, 1);
+	if (p.unknown) raw = Math.min(raw * cfg.UNKNOWN_MUL, 1);
+	if (p.solo) raw *= cfg.SOLO_MUL;
+	var n = Math.floor(raw);
+	return n + ((rand || Math.random)() < raw - n ? 1 : 0);
+};
+
+// 교환: color 하나를 받으려면 순환 순서에서 color 양옆의 두 별가루를 하나씩 낸다. 잘못된 색이면 null
+exports.annivConvertSources = function (cfg, color) {
+	var i = cfg.CYCLE.indexOf(color);
+	if (i === -1) return null;
+	var len = cfg.CYCLE.length;
+	return [cfg.CYCLE[(i + len - 1) % len], cfg.CYCLE[(i + 1) % len]];
+};
+
+// 서버 타임존과 무관한 KST 날짜 번호 (소원 하루 1번 기준)
+exports.kstDayIndex = function (ts) {
+	return Math.floor(((ts || Date.now()) + 9 * 3600000) / 86400000);
+};

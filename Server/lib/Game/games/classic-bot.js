@@ -888,6 +888,8 @@ exports.readyRobot = function (robot) {
 		} : null;
 
 		getAuto.call(my, my.game.char, my.game.subChar, 2, limitMultiplier, sort).then(function (list) {
+			// DB 조회 중 게임이 끝나면 game.seq 등이 지워지므로 더 진행하지 않는다
+			if (!my.game.seq) return;
 			if (list) {
 				// Filter by length limit and done list
 				// EKT 3-gram 모드: 최소 4글자 이상 필터 추가

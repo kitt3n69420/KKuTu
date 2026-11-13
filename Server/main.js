@@ -57,4 +57,6 @@ function main(){
 		icon: __dirname + "/../logo.ico"
 	});
 	mainWindow.loadURL(__dirname + "/views/index.pug");
+	// 창이 처음 다 뜨면 서버 자동 시작 (로그·상태 표시가 화면에 전달되도록 로드 후 실행)
+	mainWindow.webContents.once('did-finish-load', () => Runner.run("server-on"));
 }

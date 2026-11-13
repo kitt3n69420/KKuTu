@@ -243,6 +243,8 @@ function scanHP(my) {
 	if (my.game.late) return;
 	var elapsed = Date.now() - my.game.roundStartTime;
 	var x = calcOverflowX(elapsed, my.game.roundTime);
+	// 같은 판정에서 데미지를 받은 사람은 모두 처리한 뒤 게임 종료를 검사 (동시 탈락, 생존자 0명 가능)
+	var anyKO = false;
 
 	traverse(my, function(o) {
 		if (my.game.late) return;
@@ -274,9 +276,11 @@ function scanHP(my) {
 				if (!s.game.alive) return;
 				enqueueChar(my, s, koChar);
 			});
-			checkGameOver(my);
+			anyKO = true;
 		}
 	});
+
+	if (anyKO) checkGameOver(my);
 }
 
 function checkGameOver(my) {

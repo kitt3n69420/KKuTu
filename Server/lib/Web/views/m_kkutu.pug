@@ -112,6 +112,8 @@ block Jungle
 	span#OPTIONS= JSON.stringify(locals.OPTIONS)
 	span#GAME_CATEGORIES= JSON.stringify(locals.GAME_CATEGORIES)
 	span#EVENT_ACTIVE_KWC= (locals.activeEventIds && locals.activeEventIds.indexOf('kkn_chuseok') !== -1) ? "true" : "false"
+	span#EVENT_ACTIVE_1ST= (locals.activeEventIds && locals.activeEventIds.indexOf('kkn_1st') !== -1) ? "true" : "false"
+	span#ANNIV_MODE_COLOR= JSON.stringify(locals.ANNIV_MODE_COLOR || {})
 	span#KO_INJEONG= JSON.stringify(locals.KO_INJEONG)
 	span#EN_INJEONG= JSON.stringify(locals.EN_INJEONG)
 	div#Yell
@@ -178,108 +180,121 @@ block Middle
 				i.fa.fa-reply.StratIcon
 				span.StratName(data-lang-key='raingameStrategy2')= L('raingameStrategy2')
 	+Dialog('SettingDiag', 300, 630, 'settingsText')
-		div.dialog-bar
-			div.dialog-opt(style="width: 100%;")
-				label(for='mute-bgm', style='float: left; width: 100px; text-align: center; padding-top: 5px;', data-lang-key='bgm')= L('bgm')
-				input#mute-bgm(type='checkbox', style='float: left; margin-top: 5px; width: auto; vertical-align: middle;')
-				input.bgmVolume(type='range', min='0', max='100', value='50', style='margin-top: 0px; float: right; width: 125px; margin-right: 20px;')
-			div.dialog-opt(style="width: 100%; margin-bottom: 5px;")
-				label(for='mute-bgm', style='display: block; margin-left: 100px;', data-lang-key='mute')= L('mute')
-			div.dialog-opt(style="width: 100%;")
-				label(for='mute-effect', style='float: left; width: 100px; text-align: center; padding-top: 5px;', data-lang-key='effect')= L('effect')
-				input#mute-effect(type='checkbox', style='float: left; margin-top: 5px; width: auto; vertical-align: middle;')
-				input.effectVolume(type='range', min='0', max='100', value='50', style='margin-top: 0px; float: right; width: 125px; margin-right: 20px;')
-			div.dialog-opt(style="width: 100%;")
-				label(for='mute-effect', style='display: block; margin-left: 100px;', data-lang-key='mute')= L('mute')
-		div.dialog-bar
-			h4(data-lang-key='denyReq')= L('denyReq')
-			+SettingOption('deny-invite', 'denyInvite')
-			+SettingOption('deny-whisper', 'whisper')
-			h4
-			+SettingOption('deny-friend', 'friendAdd')
-		div.dialog-bar
-			h4(data-lang-key='ingames')= L('ingames')
-			+SettingOption('auto-ready', 'autoReady')
-			+SettingOption('ai-auto-apply', 'aiAutoApply')
-			+SettingOption('ja-auto-convert', 'jaAutoConvert', "clear: both; margin-left: 80px; width: 190px;")
-
-		div.dialog-bar
-			h4(data-lang-key='visual')= L('visual')
-			+SettingOption('simple-room-view', 'simpleRoomView', "width: 110px;")
-			+SettingOption('show-rule-category', 'showRuleCategory', "width: 110px;")
-			h4(style="clear: both;")
-			+SettingOption('no-shake', 'noShake', "width: 110px;")
-			+SettingOption('no-filter', 'noFilter', "width: 110px;")
-			h4(style="clear: both;")
-			+SettingOption('player-scroll', 'playerScroll', "width: 150px;")
-			h4(style="clear: both;")
-			+SettingOption('kana-reading', 'kanaReading', "width: 150px;")
-		div.dialog-bar
-			h4(data-lang-key='etc')= L('etc')
-			//- +SettingOption('sort-user', L('sortUser'), "width: 200px;")
-			//- h4
-			//- +SettingOption('only-waiting', L('onlyWaiting'), "width: 200px;")
-			//- h4
-			//- +SettingOption('only-unlock', L('onlyUnlock'), "width: 200px;")
-			//- h4
-			+SettingOption('no-easter-egg', 'noEasterEgg', "width: 200px;")
-		div.dialog-bar
-			h4(data-lang-key='language')= L('language')
-			select#language-setting(style="width: 150px;")
-				option(value="ko_KR") 한국어
-				option(value="en_US") English
-				option(value="ja_JP") 日本語
-				option(value="nya") ???
-		div.dialog-bar
-			h4(data-lang-key='theme')= L('theme')
-			select#theme-setting(style="width:70px")
-				option(value="custom", data-lang-key='themeCustom')= L('themeCustom')
-				option(value="grape", data-lang-key='themeGrape')= L('themeGrape')
-				option(value="blue", data-lang-key='themeBlue')= L('themeBlue')
-				option(value="green", data-lang-key='themeGreen')= L('themeGreen')
-				option(value="yellow", data-lang-key='themeYellow')= L('themeYellow')
-				option(value="orange", data-lang-key='themeOrange')= L('themeOrange')
-				option(value="red", data-lang-key='themeRed')= L('themeRed')
-				option(value="gray", data-lang-key='themeGray')= L('themeGray')
-				option(value="slate", data-lang-key='themeSlate')= L('themeSlate')
-				option(value="watermelon", data-lang-key='themeWatermelon')= L('themeWatermelon')
-				option(value="sweetpotato", data-lang-key='themeSweetpotato')= L('themeSweetpotato')
-				option(value="cottoncandy", data-lang-key='themeCottoncandy')= L('themeCottoncandy')
-			i.fa.fa-pencil#theme-setting-edit(style="cursor:pointer; margin:0 6px; vertical-align:middle; display:none;")
-			select#dark-mode-setting(style="width:70px")
-				option(value="light", data-lang-key='darkModeLight')= L('darkModeLight')
-				option(value="dark", data-lang-key='darkModeDark')= L('darkModeDark')
-				option(value="system", data-lang-key='darkModeSystem')= L('darkModeSystem')
-		div.dialog-bar
-			h4(data-lang-key='uiSetting')= L('uiSetting')
-			select#ui-setting(style="width:150px;")
-				option(value="classic", data-lang-key='uiClassic')= L('uiClassic')
-				option(value="new", data-lang-key='uiNew')= L('uiNew')
-			//- 단색/혼합 선택은 숨김: 지금은 단색만 씀, 혼합은 다른 스타일로 바꿔 낼 예정 (2026-11-01 사용자)
-			select#ui-style-setting(style="display:none; width:80px; margin-left: 4px;")
-				option(value="mixed", data-lang-key='uiStyleMixed')= L('uiStyleMixed')
-				option(value="flat", data-lang-key='uiStyleFlat')= L('uiStyleFlat')
-		div.dialog-bar
-			h4(data-lang-key='levelPack')= L('levelPack')
-			select#level-pack(style="width: 150px;")
-				option(value="", data-lang-key='default')= L('default')
-		div.dialog-bar
-			h4(data-lang-key='soundPack')= L('soundPack')
-			select#sound-pack(style="width:70px")
-				option(value="", data-lang-key='default')= L('default')
-			select#beat-setting(style="width:70px")
-				option(value="auto", data-lang-key='beatModeAuto')= L('beatModeAuto')
-				option(value="default", data-lang-key='beatModeDefault')= L('beatModeDefault')
-				option(value="mid", data-lang-key='beatModeMid')= L('beatModeMid')
-		div.dialog-bar
-			h4(data-lang-key='lobbyBgm')= L('lobbyBgm')
-			select#lobby-bgm(style="width: 150px;")
-				option(value="", data-lang-key='default')= L('default')
-		div.dialog-bar
-			h4(data-lang-key='rhythmSync')= L('rhythmSync')
-			input#rhythm-sync(type='range', min='-300', max='300', step='5', value='0', style='margin-top: 0px; float: left; width: 105px;')
-			div#rhythm-sync-val(style='float: left; width: 70px; padding: 3px 0 0 8px; text-align: left;') 0 ms
-			div(style='clear: both; width: 100%; padding: 4px 10px 0 10px; box-sizing: border-box; font-size: 12px;', data-lang-key='rhythmSyncExpl')= L('rhythmSyncExpl')
+		//- 탭: 일반·사운드·그래픽 (ready.js .setting-tab 클릭). 세 칸을 한 자리에 겹쳐 두고 고른 칸만 보이게 해서 창 높이는 가장 긴 칸에 맞춤 (CSS .setting-panes)
+		//- 입력 요소의 id·class는 그대로 — 신 UI(nk.js)는 이 요소들을 자기 설정 창으로 옮겨 씀
+		div.setting-tabs
+			button.setting-tab.active(data-tab='general', data-lang-key='settingTabGeneral')= L('settingTabGeneral')
+			button.setting-tab(data-tab='sound', data-lang-key='settingTabSound')= L('settingTabSound')
+			button.setting-tab(data-tab='graphic', data-lang-key='settingTabGraphic')= L('settingTabGraphic')
+		div.setting-panes
+			div.setting-pane.active(data-tab='general')
+				div.dialog-bar
+					h4(data-lang-key='denyReq')= L('denyReq')
+					+SettingOption('deny-invite', 'denyInvite')
+					+SettingOption('deny-whisper', 'whisper')
+					h4
+					+SettingOption('deny-friend', 'friendAdd')
+				div.dialog-bar
+					h4(data-lang-key='ingames')= L('ingames')
+					+SettingOption('auto-ready', 'autoReady')
+					+SettingOption('ai-auto-apply', 'aiAutoApply')
+					+SettingOption('ja-auto-convert', 'jaAutoConvert', "clear: both; margin-left: 80px; width: 190px;")
+				div.dialog-bar
+					h4(data-lang-key='etc')= L('etc')
+					//- +SettingOption('sort-user', L('sortUser'), "width: 200px;")
+					//- h4
+					//- +SettingOption('only-waiting', L('onlyWaiting'), "width: 200px;")
+					//- h4
+					//- +SettingOption('only-unlock', L('onlyUnlock'), "width: 200px;")
+					//- h4
+					+SettingOption('no-filter', 'noFilter', "width: 200px;")
+					h4(style="clear: both;")
+					+SettingOption('no-easter-egg', 'noEasterEgg', "width: 200px;")
+				div.dialog-bar
+					h4(data-lang-key='language')= L('language')
+					select#language-setting(style="width: 150px;")
+						option(value="ko_KR") 한국어
+						option(value="en_US") English
+						option(value="ja_JP") 日本語
+						option(value="nya") ???
+			div.setting-pane(data-tab='sound')
+				div.dialog-bar
+					div.dialog-opt(style="width: 100%;")
+						label(for='mute-bgm', style='float: left; width: 100px; text-align: center; padding-top: 5px;', data-lang-key='bgm')= L('bgm')
+						input#mute-bgm(type='checkbox', style='float: left; margin-top: 5px; width: auto; vertical-align: middle;')
+						input.bgmVolume(type='range', min='0', max='100', value='50', style='margin-top: 0px; float: right; width: 125px; margin-right: 20px;')
+					div.dialog-opt(style="width: 100%; margin-bottom: 5px;")
+						label(for='mute-bgm', style='display: block; margin-left: 100px;', data-lang-key='mute')= L('mute')
+					div.dialog-opt(style="width: 100%;")
+						label(for='mute-effect', style='float: left; width: 100px; text-align: center; padding-top: 5px;', data-lang-key='effect')= L('effect')
+						input#mute-effect(type='checkbox', style='float: left; margin-top: 5px; width: auto; vertical-align: middle;')
+						input.effectVolume(type='range', min='0', max='100', value='50', style='margin-top: 0px; float: right; width: 125px; margin-right: 20px;')
+					div.dialog-opt(style="width: 100%;")
+						label(for='mute-effect', style='display: block; margin-left: 100px;', data-lang-key='mute')= L('mute')
+				div.dialog-bar
+					h4(data-lang-key='soundPack')= L('soundPack')
+					select#sound-pack(style="width:70px")
+						option(value="", data-lang-key='default')= L('default')
+					select#beat-setting(style="width:70px")
+						option(value="auto", data-lang-key='beatModeAuto')= L('beatModeAuto')
+						option(value="default", data-lang-key='beatModeDefault')= L('beatModeDefault')
+						option(value="mid", data-lang-key='beatModeMid')= L('beatModeMid')
+					div#sound-pack-info(style="display:none")
+				div.dialog-bar
+					h4(data-lang-key='lobbyBgm')= L('lobbyBgm')
+					select#lobby-bgm(style="width: 150px;")
+						option(value="", data-lang-key='default')= L('default')
+				div.dialog-bar
+					h4(data-lang-key='rhythmSync')= L('rhythmSync')
+					input#rhythm-sync(type='range', min='-300', max='300', step='5', value='0', style='margin-top: 0px; float: left; width: 105px;')
+					div#rhythm-sync-val(style='float: left; width: 70px; padding: 3px 0 0 8px; text-align: left;') 0 ms
+					div(style='clear: both; width: 100%; padding: 4px 10px 0 10px; box-sizing: border-box; font-size: 12px;', data-lang-key='rhythmSyncExpl')= L('rhythmSyncExpl')
+			div.setting-pane(data-tab='graphic')
+				div.dialog-bar
+					h4(data-lang-key='visual')= L('visual')
+					+SettingOption('simple-room-view', 'simpleRoomView', "width: 110px;")
+					+SettingOption('show-rule-category', 'showRuleCategory', "width: 110px;")
+					h4(style="clear: both;")
+					+SettingOption('no-shake', 'noShake', "width: 110px;")
+					h4(style="clear: both;")
+					+SettingOption('player-scroll', 'playerScroll', "width: 150px;")
+					h4(style="clear: both;")
+					+SettingOption('kana-reading', 'kanaReading', "width: 150px;")
+					h4(style="clear: both;")
+					+SettingOption('score-e-notation', 'scoreENotation', "width: 150px;")
+				div.dialog-bar
+					h4(data-lang-key='theme')= L('theme')
+					select#theme-setting(style="width:70px")
+						option(value="custom", data-lang-key='themeCustom')= L('themeCustom')
+						option(value="grape", data-lang-key='themeGrape')= L('themeGrape')
+						option(value="blue", data-lang-key='themeBlue')= L('themeBlue')
+						option(value="green", data-lang-key='themeGreen')= L('themeGreen')
+						option(value="yellow", data-lang-key='themeYellow')= L('themeYellow')
+						option(value="orange", data-lang-key='themeOrange')= L('themeOrange')
+						option(value="red", data-lang-key='themeRed')= L('themeRed')
+						option(value="gray", data-lang-key='themeGray')= L('themeGray')
+						option(value="slate", data-lang-key='themeSlate')= L('themeSlate')
+						option(value="watermelon", data-lang-key='themeWatermelon')= L('themeWatermelon')
+						option(value="sweetpotato", data-lang-key='themeSweetpotato')= L('themeSweetpotato')
+						option(value="cottoncandy", data-lang-key='themeCottoncandy')= L('themeCottoncandy')
+					i.fa.fa-pencil#theme-setting-edit(style="cursor:pointer; margin:0 6px; vertical-align:middle; display:none;")
+					select#dark-mode-setting(style="width:70px")
+						option(value="light", data-lang-key='darkModeLight')= L('darkModeLight')
+						option(value="dark", data-lang-key='darkModeDark')= L('darkModeDark')
+						option(value="system", data-lang-key='darkModeSystem')= L('darkModeSystem')
+				div.dialog-bar
+					h4(data-lang-key='uiSetting')= L('uiSetting')
+					select#ui-setting(style="width:150px;")
+						option(value="classic", data-lang-key='uiClassic')= L('uiClassic')
+						option(value="new", data-lang-key='uiNew')= L('uiNew')
+					//- 단색/혼합 선택은 숨김: 지금은 단색만 씀, 혼합은 다른 스타일로 바꿔 낼 예정 (2026-11-01 사용자)
+					select#ui-style-setting(style="display:none; width:80px; margin-left: 4px;")
+						option(value="mixed", data-lang-key='uiStyleMixed')= L('uiStyleMixed')
+						option(value="flat", data-lang-key='uiStyleFlat')= L('uiStyleFlat')
+				div.dialog-bar
+					h4(data-lang-key='levelPack')= L('levelPack')
+					select#level-pack(style="width: 150px;")
+						option(value="", data-lang-key='default')= L('default')
 		div.dialog-bar.tail-button
 			button#setting-ok(data-lang-key='save')= L('save')
 			button#setting-server(data-lang-key='changeServer')= L('changeServer')
@@ -876,9 +891,13 @@ block Middle
 					div.category-filter.craft-type(id="craft-type-" + locals.CATEGORIES[i], value=v.join(','), data-lang-key=('category_' + locals.CATEGORIES[i]))= L('category_' + locals.CATEGORIES[i])
 		div#craft-goods.goods-box(style='height: 220px; overflow-y: auto;')
 	- var chuseokLive = locals.activeEventIds && locals.activeEventIds.indexOf('kkn_chuseok') !== -1;
-	+Dialog('ExchangeDiag', 300, 460, chuseokLive ? 'eventMoonTab' : 'excWorkshop')
-		div#exc-list(style=`height: 420px; overflow-y: auto; ${chuseokLive ? 'display: none;' : ''}`)
+	//- 1주년 기간에는 같은 창이 1주년 창(별가루·소원·파티 탭)이 된다. 내용은 body-render.js drawAnnivPanel이 그린다
+	- var annivLive = locals.activeEventIds && locals.activeEventIds.indexOf('kkn_1st') !== -1;
+	+Dialog('ExchangeDiag', 300, annivLive ? 500 : 460, chuseokLive ? 'eventMoonTab' : (annivLive ? 'annivTitle' : 'excWorkshop'))
+		div#exc-list(style=`height: 420px; overflow-y: auto; ${chuseokLive || annivLive ? 'display: none;' : ''}`)
 		div#event-moon-panel(style=`height: 420px; overflow-y: auto; ${chuseokLive ? '' : 'display: none;'}`)
+		if annivLive
+			div#event-anniv-panel(style='height: 470px;')
 	+Dialog('KickVoteDiag', 300, 160, 'kickVote')
 		div.dialog-bar#kick-vote-text(style='text-align: center;')
 		div.dialog-bar(style='text-align: center;', data-lang-key='kickVoteNotice')= L('kickVoteNotice')

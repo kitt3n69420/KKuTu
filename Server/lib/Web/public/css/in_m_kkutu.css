@@ -261,6 +261,16 @@ body {
 	outline: none;
 }
 
+#sound-pack-info {
+	clear: both;
+	width: 100%;
+	padding-left: 80px;
+	font-size: 11px;
+	color: #aaa;
+	box-sizing: border-box;
+	line-height: 1.8;
+}
+
 .dialog-bar label {
 	font-size: 13px;
 }
@@ -367,6 +377,49 @@ body {
 	background-color: var(--color-primary) !important;
 	border-color: var(--color-primary);
 	color: #FFFFFF !important;
+}
+
+/* 설정 창 탭 (일반·사운드·그래픽, ready.js) — 모양은 랭킹 탭과 같음.
+   세 칸을 한 자리(grid 1/1)에 겹쳐 두고 고른 칸만 보이게 함 → 창 높이는 가장 긴 칸에 맞고 탭을 바꿔도 그대로.
+   그래서 Dialog 믹스인이 넣는 고정 높이는 쓰지 않음 */
+#SettingDiag {
+	height: auto !important;
+}
+
+.setting-tabs {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 6px;
+}
+
+.setting-tab {
+	flex: 1;
+	padding: 4px 0;
+	cursor: pointer;
+	border: 1px solid var(--color-border);
+	border-radius: 4px;
+	background-color: var(--theme-surface, #FFFFFF);
+	color: var(--theme-text, #111111);
+}
+
+/* #SettingDiag를 붙여야 다크 모드의 body.dark-mode button:not(.closeBtn) !important보다 우선함 */
+#SettingDiag .setting-tab.active {
+	background-color: var(--color-primary) !important;
+	border-color: var(--color-primary);
+	color: #FFFFFF !important;
+}
+
+.setting-panes {
+	display: grid;
+}
+
+.setting-pane {
+	grid-area: 1 / 1;
+	visibility: hidden;
+}
+
+.setting-pane.active {
+	visibility: visible;
 }
 
 .ranking-me {

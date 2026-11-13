@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+// 주의: grunt의 uglify-js 2.x로 빌드하므로 ES5 문법만 사용
 (function () {
-	var WIDTH = { 'y': 50, 't': 50, 'g': 100, 'l': 200, 'm': 600 };
 	var $temp = {};
 
 	// ===== 상수 =====
@@ -25,11 +25,28 @@
 		'spec': '특수', 'skin': '스킨', 'badge': '휘장', 'head': '머리',
 		'eye': '눈', 'mouth': '입', 'clothes': '옷', 'hs': '손발', 'back': '배경'
 	};
+	var SHOP_LANGS = [['ko_KR', '한국어'], ['en_US', '영어'], ['ja_JP', '일본어']];
 	var TERM_UNITS = [
 		['초', 1], ['분', 60], ['시간', 3600], ['일', 86400], ['주', 604800], ['개월', 2592000]
 	];
 	var KOR_FLAG = { '외래어': 1, '어인정': 2, '띄어쓰기': 4, '방언': 8, '옛말': 16, '문화어': 32 };
 	var WORD_TYPES = ['', '0', '1', '2', '3', '7', '8', '9', '11', '15', '16', '17', '18', '19', '20', '26', 'INJEONG'];
+	// routes/admin.js의 ALLOWED_USER_FIELDS가 저장하는 칸만 edit: true. 나머지는 서버가 버리므로 보기 전용.
+	var USER_FIELDS = [
+		{ k: '_id', label: 'ID' },
+		{ k: 'nickname', label: '닉네임', edit: true },
+		{ k: 'money', label: '핑', edit: true, type: 'number' },
+		{ k: 'exordial', label: '소개', edit: true },
+		{ k: 'nickChanged', label: '닉네임 바꾼 때', date: true },
+		{ k: 'server', label: '접속 서버' },
+		{ k: 'lastLogin', label: '마지막 접속', date: true },
+		{ k: 'black', label: '차단 사유' },
+		{ k: 'blockedUntil', label: '차단 해제일', date: true },
+		{ k: 'box', label: '보관함 (JSON)', edit: true, json: true },
+		{ k: 'kkutu', label: '게임 기록 (JSON)', json: true },
+		{ k: 'equip', label: '장착 (JSON)', json: true },
+		{ k: 'friends', label: '친구 (JSON)', json: true }
+	];
 	var KO_THEME_MAP = {
 		'30': '경제', '40': '고적', '60': '공업', '80': '교육', '90': '교통',
 		'140': '농업', '150': '문학', '160': '물리', '170': '미술', '190': '동물',
@@ -80,33 +97,48 @@
 
 	// ===== 헬퍼: DOM =====
 	function getEl(id) { return document.getElementById(id); }
+	function emptyRow(cols, text) {
+		return $('<tr>').addClass('empty-row').append($('<td>').attr('colspan', cols).text(text));
+	}
+	function fmtDate(v) {
+		if (!v || v === '0') return '-';
+		var d = new Date(isNaN(v) ? v : Number(v));
+		if (isNaN(d.getTime())) return String(v);
+		function z(n) { return (n < 10 ? '0' : '') + n; }
+		return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
+	}
 
-	// ===== 헬퍼: 기본 입력 =====
-	function putter(id, w, value) {
-		return $('<input>').attr('id', id).css('width', WIDTH[w]).val(value);
+	// ===== 헬퍼: 알림·오류 =====
+	function toast(msg, type) {
+		var $t = $('<div>').addClass('toast toast-' + (type || 'ok')).text(msg)
+			.on('click', function () { $t.remove(); })
+			.appendTo('#admin-toast');
+		setTimeout(function () { $t.fadeOut(300, function () { $t.remove(); }); }, type === 'err' ? 8000 : 4000);
 	}
-	function wrPutter(x1, x2, x3, k, v) {
-		var id = 'word-' + [x1, x2, x3, k].join('-');
-		if (k === 'y') return wordTypePutter(id, v);
-		if (k === 't') return wordThemePutter(id, v);
-		return putter(id, k, v);
+	var RES_ERROR_TEXT = {
+		400: '관리자 권한이 없거나 로그인이 만료되었습니다. 다시 로그인해 주세요.',
+		503: '관리 데이터 접근이 일시 차단되어 있습니다.\n(routes/admin.js의 ADMIN_DATA_ACCESS_BLOCKED)'
+	};
+	var HTTP_ERROR_TEXT = {
+		400: '요청이 거부되었습니다. 관리 암호와 입력값을 확인하세요.',
+		404: '찾을 수 없습니다.'
+	};
+	// checkAdmin()은 HTTP 200으로 { error } 를 돌려주므로 성공 콜백에서 따로 걸러냄
+	function failed(res) {
+		if (!res || typeof res !== 'object' || !res.error) return false;
+		toast(RES_ERROR_TEXT[res.error] || ('오류: ' + JSON.stringify(res)), 'err');
+		return true;
 	}
-	function wordTypePutter(id, selected) {
-		var $sel = $('<select>').attr('id', id).css('width', 90);
-		WORD_TYPES.forEach(function (t) {
-			$('<option>').val(t).text(t || '--').prop('selected', t === selected).appendTo($sel);
-		});
-		return $sel;
-	}
-	function wordThemePutter(id, selected) {
-		var themes = getThemesForLang($('#db-lang').val());
-		var $sel = $('<select>').attr('id', id).css('width', 130);
-		$('<option>').val('').text('--').appendTo($sel);
-		for (var k in themes) {
-			$('<option>').val(k).text(k + ' ' + themes[k]).prop('selected', k === selected).appendTo($sel);
+	function password() {
+		var v = $('#db-password').val();
+		if (!v) {
+			toast('관리 암호를 먼저 입력하세요.', 'err');
+			$('#db-password').focus();
 		}
-		return $sel;
+		return v;
 	}
+	function dbLang() { return $('#db-lang').val(); }
+	function dbLangName() { return $('#db-lang option:selected').text(); }
 
 	// ===== 헬퍼: 테마 =====
 	function getThemesForLang(lang) {
@@ -123,20 +155,76 @@
 		}
 		return r;
 	}
+	function themeNames(codes, lang) {
+		var themes = getThemesForLang(lang);
+		return String(codes || '').split(',').map(function (c) { return themes[c] || c; }).join(', ');
+	}
 	function populateThemeDatalist() {
-		var themes = getThemesForLang($('#db-lang').val());
+		var themes = getThemesForLang(dbLang());
 		var $list = $('#db-theme-list').empty();
 		for (var k in themes) {
 			$('<option>').val(k).text(k + ' - ' + themes[k]).appendTo($list);
 		}
 	}
+	function updateThemeName() {
+		var themes = getThemesForLang(dbLang());
+		$('#db-theme-name').text(themes[$.trim($('#db-theme').val())] || '');
+	}
 
-	// ===== 헬퍼: 플래그 체크박스 =====
+	// ===== 헬퍼: select 생성 (목록에 없는 기존 값도 지워지지 않게 옵션으로 넣음) =====
+	function selectOf(id, pairs, selected) {
+		var $sel = $('<select>').attr('id', id), found = false;
+		pairs.forEach(function (p) {
+			if (p[0] === selected) found = true;
+			$('<option>').val(p[0]).text(p[1]).prop('selected', p[0] === selected).appendTo($sel);
+		});
+		if (!found && selected) $('<option>').val(selected).text(selected + ' (목록 밖)').prop('selected', true).appendTo($sel);
+		return $sel;
+	}
+
+	// ===== 단어 편집: 입력칸 =====
+	function wrPutter(x1, x2, x3, k, v) {
+		var id = 'word-' + [x1, x2, x3, k].join('-');
+		if (k === 'y') {
+			return selectOf(id, WORD_TYPES.map(function (t) { return [t, t || '--']; }), v || '').addClass('w-s');
+		}
+		if (k === 't') {
+			var themes = getThemesForLang($temp.wordLang), pairs = [['', '--']];
+			for (var t in themes) pairs.push([t, t + ' ' + themes[t]]);
+			return selectOf(id, pairs, v || '').addClass('w-g');
+		}
+		return $('<input>').attr('id', id).addClass('w-m').val(v);
+	}
+	function wordRow(x1, x2, x3, type, theme, mean) {
+		return $('<tr>').attr('id', ['wr', x1, x2, x3].join('-'))
+			.append($('<td>').addClass('c-key').html([x1, x2, x3].join('-')))
+			.append($('<td>').append(wrPutter(x1, x2, x3, 'y', type)))
+			.append($('<td>').append(wrPutter(x1, x2, x3, 't', theme)))
+			.append($('<td>').addClass('c-grow').append(wrPutter(x1, x2, x3, 'm', mean)))
+			.append(actionTd(x1, x2, x3));
+	}
+	function askKey(msg, def) {
+		var key = prompt(msg, def);
+		if (!key) return null;
+		key = $.trim(key);
+		if (key === def && getEl('wr-' + key)) return null;
+		if (!/^\d+-\d+-\d+$/.test(key)) {
+			toast('번호는 0-0-0처럼 숫자 세 개를 -로 이어 적어야 합니다.', 'err');
+			return null;
+		}
+		if (getEl('wr-' + key)) {
+			toast(key + ' 번호가 이미 있습니다.', 'err');
+			return null;
+		}
+		return key;
+	}
+
+	// ===== 단어 편집: 플래그 체크박스 =====
 	function buildFlagCheckboxes(flagVal) {
 		var $div = $('#wd-flag').empty();
 		for (var name in KOR_FLAG) {
 			var val = KOR_FLAG[name];
-			$('<label>').css('margin-right', '8px').append(
+			$('<label>').append(
 				$('<input>').attr({ 'type': 'checkbox', 'value': val }).addClass('wd-flag-cb')
 					.prop('checked', (flagVal & val) !== 0)
 			).append(' ' + name).appendTo($div);
@@ -148,7 +236,53 @@
 		return flag;
 	}
 
-	// ===== 헬퍼: 상점 term =====
+	// ===== 단어 편집: 행 액션 =====
+	function actionTd(x1, x2, x3) {
+		var key = ['wa', x1, x2, x3].join('-') + '-';
+		function btn(code, html, title) {
+			return $('<button>').attr({ 'id': key + code, 'title': title }).html(html).on('click', onAction);
+		}
+		return $('<td>').addClass('row-actions')
+			.append(btn('u', '&uarr;', '위로 (Shift: 번호도 바꿈)'))
+			.append(btn('d', '&darr;', '아래로 (Shift: 번호도 바꿈)'))
+			.append(btn('e', '번호', '번호 바꾸기'))
+			.append(btn('x', '삭제', '이 뜻 삭제').addClass('danger'));
+	}
+	function onAction(e) {
+		var key = $(e.currentTarget).attr('id').slice(3).split('-');
+		var code = key.pop();
+		var $target = $('#wr-' + key.join('-'));
+		var temp;
+		switch (code) {
+			case 'u':
+				if (!$target.prev().length) return;
+				if (e.shiftKey) { changeId($target, $target.prev().attr('id').slice(3)); changeId($target.prev(), key.join('-')); }
+				$target.prev().before($target);
+				break;
+			case 'x':
+				$target.remove();
+				break;
+			case 'e':
+				if ((temp = askKey('새 번호 (예: 0-0-1)', key.join('-')))) changeId($target, temp);
+				break;
+			case 'd':
+				if (!$target.next().length) return;
+				if (e.shiftKey) { changeId($target, $target.next().attr('id').slice(3)); changeId($target.next(), key.join('-')); }
+				$target.next().after($target);
+				break;
+		}
+	}
+	function changeId($target, cur) {
+		var prev = $target.attr('id').slice(3);
+		$target.attr('id', 'wr-' + cur).children('td').first().html(cur);
+		$target.find('*').each(function (i, o) {
+			var $o = $(o);
+			if (!$o.attr('id') || $o.attr('id').indexOf(prev) === -1) return;
+			$o.attr('id', $o.attr('id').replace(prev, cur));
+		});
+	}
+
+	// ===== 상점: 입력칸 =====
 	function termToDisplay(seconds) {
 		if (!seconds) return { val: 0, unit: 1 };
 		for (var i = TERM_UNITS.length - 1; i >= 0; i--) {
@@ -159,7 +293,7 @@
 	}
 	function termPutter(sid, termSeconds) {
 		var disp = termToDisplay(termSeconds);
-		var $wrap = $('<span>').addClass('term-wrap');
+		var $wrap = $('<div>').addClass('term-wrap');
 		$('<input>').attr({ 'id': sid + '-term-val', 'type': 'number', 'min': '0' })
 			.val(disp.val).appendTo($wrap);
 		var $sel = $('<select>').attr('id', sid + '-term-unit');
@@ -175,17 +309,11 @@
 		var unit = eu ? (parseInt(eu.value) || 1) : 1;
 		return val > 0 ? val * unit : 0;
 	}
-
-	// ===== 헬퍼: 상점 group =====
 	function groupPutter(id, selected) {
-		var $sel = $('<select>').attr('id', id);
-		for (var k in SHOP_GROUPS) {
-			$('<option>').val(k).text(SHOP_GROUPS[k]).prop('selected', k === selected).appendTo($sel);
-		}
-		return $sel;
+		var pairs = [];
+		for (var k in SHOP_GROUPS) pairs.push([k, SHOP_GROUPS[k]]);
+		return selectOf(id, pairs, selected);
 	}
-
-	// ===== 헬퍼: 상점 options =====
 	function optionsPutter(sid, opts) {
 		opts = opts || {};
 		var $wrap = $('<div>').addClass('opts-editor');
@@ -193,14 +321,14 @@
 			var stored = opts[key];
 			var display = stored !== undefined ? (isRatio ? Math.round(stored * 10000) / 100 : stored) : '';
 			$wrap.append(
-				$('<label>').text(label),
+				$('<label>').attr('for', sid + '-opt-' + key).text(label),
 				$('<input>').attr({ 'id': sid + '-opt-' + key, 'type': 'number', 'step': isRatio ? '0.01' : '1', 'placeholder': '0' }).val(display)
 			);
 		}
-		numRow('경험치배율%', 'gEXP', true);
-		numRow('핑배율%', 'gMNY', true);
-		numRow('분당경험치', 'hEXP', false);
-		numRow('분당핑', 'hMNY', false);
+		numRow('경험치 배율 %', 'gEXP', true);
+		numRow('핑 배율 %', 'gMNY', true);
+		numRow('분당 경험치', 'hEXP', false);
+		numRow('분당 핑', 'hMNY', false);
 		$wrap.append(
 			$('<div>').addClass('opt-gif-row').append(
 				$('<label>').append(
@@ -228,8 +356,6 @@
 		if (gif) opts.gif = true;
 		return opts;
 	}
-
-	// ===== 헬퍼: 상점 행 생성 =====
 	function buildShopRow(nid, item, isNew) {
 		var sid = 'si-' + nid;
 		var opts = isNew ? {} : (item.options || {});
@@ -240,138 +366,298 @@
 		if (isNew) $row.addClass('gu-new');
 
 		$row
-			.append($('<td>').append($('<input>').attr('type', 'checkbox').addClass('shop-sel')))
-			.append($('<td>').append(putter(sid + '-_id', 'g', nid)))
+			.append($('<td>').addClass('c-check').append($('<input>').attr('type', 'checkbox').addClass('shop-sel')))
+			.append($('<td>').append($('<input>').attr('id', sid + '-_id').addClass('w-g').val(nid)))
 			.append($('<td>').append(
-				$('<input>').attr({ 'id': sid + '-cost', 'type': 'number', 'min': '0' })
+				$('<input>').attr({ 'id': sid + '-cost', 'type': 'number', 'min': '0' }).addClass('w-s')
 					.val(isNew ? '' : (item.cost || 0))
 			))
 			.append($('<td>').append(
-				$('<input>').attr({ 'id': sid + '-hit', 'type': 'number', 'min': '0' })
+				$('<input>').attr({ 'id': sid + '-hit', 'type': 'number', 'readonly': true }).addClass('w-s')
 					.val(isNew ? 0 : (item.hit || 0))
 			))
 			.append($('<td>').append(termPutter(sid, termSec)))
 			.append($('<td>').append(groupPutter(sid + '-group', group)))
-			.append($('<td>').append(optionsPutter(sid, opts)))
-			.append($('<td>').append(putter(sid + '-name_ko_KR', 'l', '')))
-			.append($('<td>').append(putter(sid + '-desc_ko_KR', 'l', '')))
-			.append($('<td>').append(putter(sid + '-name_en_US', 'l', '')))
-			.append($('<td>').append(putter(sid + '-desc_en_US', 'l', '')))
-			.append($('<td>').append(putter(sid + '-name_ja_JP', 'l', '')))
-			.append($('<td>').append(putter(sid + '-desc_ja_JP', 'l', '')));
-
+			.append($('<td>').append(optionsPutter(sid, opts)));
+		SHOP_LANGS.forEach(function (l) {
+			$row.append($('<td>').addClass('lang-cell').append(
+				$('<input>').attr({ 'id': sid + '-name_' + l[0], 'placeholder': l[1] + ' 이름' }),
+				$('<textarea>').attr({ 'id': sid + '-desc_' + l[0], 'rows': 2, 'placeholder': l[1] + ' 설명' })
+			));
+		});
 		return $row;
 	}
 
-	// ===== 끄투 DB 다루기: 행 액션 =====
-	function actionTd(x1, x2, x3) {
-		var key = ['wa', x1, x2, x3].join('-') + '-';
-		return $('<td>')
-			.append($('<button>').attr('id', key + 'u').css('float', 'left').html('&uarr;').on('click', onAction))
-			.append($('<button>').attr('id', key + 'x').css('float', 'left').html('X').on('click', onAction))
-			.append($('<button>').attr('id', key + 'e').css('float', 'left').html('?').on('click', onAction))
-			.append($('<button>').attr('id', key + 'd').css('float', 'left').html('&darr;').on('click', onAction));
-	}
-	function onAction(e) {
-		var key = $(e.currentTarget).attr('id').slice(3).split('-');
-		var code = key.pop();
-		var $target = $('#wr-' + key.join('-'));
-		var temp;
-		switch (code) {
-			case 'u':
-				if (e.shiftKey) { changeId($target, $target.prev().attr('id').slice(3)); changeId($target.prev(), key.join('-')); }
-				$target.prev().before($target);
-				break;
-			case 'x':
-				$target.remove();
-				break;
-			case 'e':
-				if ((temp = prompt('새 key'))) changeId($target, temp);
-				break;
-			case 'd':
-				if (e.shiftKey) { changeId($target, $target.next().attr('id').slice(3)); changeId($target.next(), key.join('-')); }
-				$target.next().after($target);
-				break;
-		}
-	}
-	function changeId($target, cur) {
-		var prev = $target.attr('id').slice(3);
-		$target.attr('id', 'wr-' + cur).children('td').first().html(cur);
-		$target.find('*').each(function (i, o) {
-			var $o = $(o);
-			if (!$o.attr('id') || $o.attr('id').indexOf(prev) === -1) return;
-			$o.attr('id', $o.attr('id').replace(prev, cur));
+	// ===== 유저: 카드 =====
+	function buildUserCard(item) {
+		var $card = $('<div>').addClass('user-card').attr('data-id', item._id);
+		$('<div>').addClass('uc-title').text((item.nickname || '(닉네임 없음)') + ' · ' + item._id).appendTo($card);
+		var $grid = $('<div>').addClass('uc-grid').appendTo($card);
+		USER_FIELDS.forEach(function (f) {
+			var v = item[f.k], $in;
+			if (f.json) {
+				$in = $('<textarea>').attr('rows', f.edit ? 4 : 2).val(JSON.stringify(v || {}));
+			} else {
+				$in = $('<input>').attr('type', f.type || 'text');
+				$in.val(f.date ? fmtDate(v) : (v === null || v === undefined ? '' : v));
+				if (f.date && v) $in.attr('title', v);
+			}
+			$in.addClass('uf-' + f.k);
+			if (!f.edit) $in.prop('readonly', true);
+			$('<div>').addClass('uc-field' + (f.json ? ' wide' : ''))
+				.append($('<label>').text(f.label), $in)
+				.appendTo($grid);
 		});
+		return $card;
 	}
 
 	$(document).ready(function () {
-		populateThemeDatalist();
-		$('#db-lang').on('input', populateThemeDatalist);
+		// ===== 공통: 오류·진행 표시 =====
+		$(document).ajaxError(function (e, xhr) {
+			toast((HTTP_ERROR_TEXT[xhr.status] || '서버 오류가 발생했습니다.') + ' (' + (xhr.status || '연결 실패') + ')', 'err');
+		});
+		$(document).ajaxStart(function () { $('#admin-busy').addClass('on'); })
+			.ajaxStop(function () { $('#admin-busy').removeClass('on'); });
 
-		// ===== 끄투 DB에 단어 추가하기 =====
-		$('#db-ok').on('click', function () {
-			var forView = $('#db-theme').val().charAt(0) === '~';
-			if (forView) {
-				$('#db-list').val('');
-				$.get('/gwalli/kkututheme?theme=' + $('#db-theme').val().slice(1) + '&lang=' + $('#db-lang').val(), function (res) {
-					$('#db-list').val(res.list.join('\n'));
-				});
-			} else {
-				$.post('/gwalli/kkutudb', {
-					pw: $('#db-password').val(),
-					lang: $('#db-lang').val(),
-					theme: $('#db-theme').val(),
-					list: $('#db-list').val()
-				}, function (res) { alert(res); });
-			}
+		// ===== 공통: 탭 (주소 #으로 기억) =====
+		function showTab(name) {
+			var $btn = $('.admin-tab').filter(function () { return $(this).attr('data-tab') === name; });
+			if (!$btn.length) $btn = $('.admin-tab').first();
+			$('.admin-tab').removeClass('on');
+			$btn.addClass('on');
+			$('.admin-pane').removeClass('on');
+			$('#pane-' + $btn.attr('data-tab')).addClass('on');
+		}
+		$('.admin-tab').on('click', function () {
+			var name = $(this).attr('data-tab');
+			showTab(name);
+			if (window.history && history.replaceState) history.replaceState(null, '', '#' + name);
 		});
-		$('#db-delete').on('click', function () {
-			var words = $('#db-list').val().split(/[,\r\n]+/).map(function (w) { return w.trim(); }).filter(Boolean);
-			if (!words.length) return alert('삭제할 단어를 입력하세요.');
-			if (!confirm(words.length + '개 단어를 삭제하시겠습니까?')) return;
-			$.post('/gwalli/kkutudb/bulkdelete', {
-				pw: $('#db-password').val(),
-				lang: $('#db-lang').val(),
-				list: JSON.stringify(words)
-			}, function (res) {
-				alert(res);
-			}).fail(function (xhr) {
-				alert('오류가 발생했습니다.\n' + (xhr.responseText || xhr.statusText));
-			});
+		showTab(location.hash.slice(1));
+
+		// ===== 공통: 검색칸에서 Enter (한글 입력 중 중복 실행을 피하려고 keyup 사용) =====
+		$('#admin').on('keyup', 'input[data-enter]', function (e) {
+			if (e.which !== 13 || (e.originalEvent && e.originalEvent.isComposing)) return;
+			$($(this).attr('data-enter')).trigger('click');
 		});
+
+		populateThemeDatalist();
+		$('#db-lang').on('change', function () { populateThemeDatalist(); updateThemeName(); });
 
 		// ===== 어인정 신청 =====
+		function updateInjeongCount() {
+			var all = 0, on = 0;
+			$('#injeong-data tr.ij-row').each(function () {
+				var checked = $(this).find('.ij-check').is(':checked');
+				$(this).toggleClass('ok', checked);
+				all++;
+				if (checked) on++;
+			});
+			$('#injeong-count').text(all ? ('승인 ' + on + ' · 거절 ' + (all - on)) : '');
+		}
 		$('#injeong-go').on('click', function () {
 			$.get('/gwalli/injeong', function (res) {
-				var $table = $('#injeong-data').empty(), $r;
+				if (failed(res)) return;
+				var $table = $('#injeong-data').empty();
+				if (!res.list.length) $table.append(emptyRow(6, '처리할 신청이 없습니다.'));
 				res.list.forEach(function (item) {
-					$table.append($r = $('<tr>').attr('id', ['ir', item._id.replace(/ /g, '-')].join('-')));
-					$r
-						.append($('<td>').append(putter('ij-' + item._id + '-check', 'y').attr('type', 'checkbox')))
-						.append($('<td>').append($('<a>').attr({ 'target': '_blank', 'href': 'https://namu.moe/w/' + encodeURI(item._id) }).html('이동')))
-						.append($('<td>').append(putter('ij-' + item._id + '-_id', 'l', item._id)))
-						.append($('<td>').append(putter('ij-' + item._id + '-theme', 'g', item.theme)))
-						.append($('<td>').append(putter('ij-' + item._id + '-writer', 'g', item.writer)))
-						.append($('<td>').append(putter('ij-' + item._id + '-createdAt', 'g', item.createdAt)));
+					$('<tr>').addClass('ij-row').attr('data-origin', item._id)
+						.append($('<td>').addClass('c-check').append($('<input>').attr('type', 'checkbox').addClass('ij-check')))
+						.append($('<td>').append($('<input>').addClass('ij-word w-l').val(item._id)))
+						.append($('<td>').append(
+							$('<input>').addClass('ij-theme w-g').val(item.theme),
+							$('<div>').addClass('cell-hint').text(themeNames(item.theme, 'ko'))
+						))
+						.append($('<td>').text(item.writer || '-'))
+						.append($('<td>').addClass('c-nowrap').text(fmtDate(item.createdAt)))
+						.append($('<td>').append($('<a>').attr({ 'target': '_blank', 'rel': 'noopener noreferrer', 'href': 'https://namu.moe/w/' + encodeURI(item._id) }).text('나무위키')))
+						.appendTo($table);
+				});
+				updateInjeongCount();
+			});
+		});
+		$('#injeong-data')
+			.on('click', 'tr.ij-row', function (e) {
+				if ($(e.target).is('input, a')) return;
+				var $c = $(this).find('.ij-check');
+				$c.prop('checked', !$c.prop('checked'));
+				updateInjeongCount();
+			})
+			.on('change', '.ij-check', updateInjeongCount)
+			.on('input', '.ij-theme', function () {
+				$(this).next('.cell-hint').text(themeNames($(this).val(), 'ko'));
+			});
+		$('#injeong-everything').on('click', function () { $('#injeong-data .ij-check').prop('checked', true); updateInjeongCount(); });
+		$('#injeong-nothing').on('click', function () { $('#injeong-data .ij-check').prop('checked', false); updateInjeongCount(); });
+		$('#injeong-apply').on('click', function () {
+			var list = [];
+			$('#injeong-data tr.ij-row').each(function (i, o) {
+				var $o = $(o);
+				list.push({ _origin: $o.attr('data-origin'), _id: $o.find('.ij-word').val(), theme: $o.find('.ij-theme').val(), ok: $o.find('.ij-check').is(':checked') });
+			});
+			if (!list.length) return toast('먼저 목록을 불러오세요.', 'err');
+			var pw = password();
+			if (!pw) return;
+			var ok = list.filter(function (v) { return v.ok; }).length;
+			if (!confirm('승인 ' + ok + '개, 거절 ' + (list.length - ok) + '개를 적용할까요?\n체크하지 않은 항목은 모두 거절됩니다.')) return;
+			$.post('/gwalli/injeong', { list: JSON.stringify({ list: list }), pw: pw }, function (res) {
+				if (failed(res)) return;
+				toast('적용했습니다. 승인한 단어는 몇 초에 걸쳐 차례로 추가됩니다.');
+				$('#injeong-data').empty().append(emptyRow(6, '적용했습니다. 다시 불러오면 남은 신청을 볼 수 있습니다.'));
+				updateInjeongCount();
+			});
+		});
+
+		// ===== 단어 편집 =====
+		$('#db-go').on('click', function () {
+			var word = $.trim($('#db-word').val()), lang = dbLang();
+			if (!word) return toast('단어를 입력하세요.', 'err');
+			$.get('/gwalli/kkutudb/' + encodeURIComponent(word) + '?lang=' + lang, function (res) {
+				if (failed(res)) return;
+				// 저장할 때 검색칸이나 언어를 바꿔도 불러온 단어에 저장되도록 고정
+				$temp.word = word;
+				$temp.wordLang = lang;
+				$('#wd-id').empty().append(
+					$('<div>').addClass('wd-word').text(word),
+					$('<label>').addClass('badge').text(dbLangName()),
+					res ? null : $('<label>').addClass('badge badge-new').text('DB에 없는 단어 · 뜻을 추가해 새로 등록')
+				);
+				var $table = $('#wd-data').empty();
+				$('#word-data').addClass('on');
+				buildFlagCheckboxes(res ? (res.flag || 0) : 0);
+				if (!res) return;
+
+				var types = res.type ? res.type.split(',') : [];
+				var themes = res.theme ? res.theme.split(',') : [];
+				var means = res.mean ? res.mean.split(/＂[0-9]+＂/).slice(1).map(function (m1) {
+					return (m1.indexOf('［') === -1) ? [[m1]] : m1.split(/［[0-9]+］/).slice(1).map(function (m2) {
+						return m2.split(/（[0-9]+）/).slice(1);
+					});
+				}) : [[[]]];
+
+				means.forEach(function (m1, x1) {
+					m1.forEach(function (m2, x2) {
+						var type = types.shift(), theme;
+						m2.forEach(function (m3, x3) {
+							theme = themes.shift();
+							$table.append(wordRow(x1, x2, x3, type, theme, m3));
+						});
+					});
 				});
 			});
 		});
-		$('#injeong-everything').on('click', function () { $('#injeong-data input[type="checkbox"]').prop('checked', true); });
-		$('#injeong-nothing').on('click', function () { $('#injeong-data input[type="checkbox"]').prop('checked', false); });
-		$('#injeong-apply').on('click', function () {
-			var list = [];
-			$('#injeong-data tr:visible').each(function (i, o) {
-				var $data = $(o).find('td>input');
-				list.push({ _origin: o.id.slice(3).replace(/-/g, ' '), _id: $data.get(1).value, theme: $data.get(2).value, ok: $($data.get(0)).is(':checked') });
+		$('#word-add').on('click', function () {
+			var next = 0;
+			$('#wd-data tr').each(function () {
+				next = Math.max(next, parseInt($(this).attr('id').split('-')[1]) + 1);
 			});
-			$.post('/gwalli/injeong', { list: JSON.stringify({ list: list }), pw: $('#db-password').val() }, function (res) { alert(res); });
+			var key = askKey('새 뜻의 번호 (뜻묶음-하위-세부)', next + '-0-0');
+			if (!key) return;
+			key = key.split('-');
+			$('#wd-data').append(wordRow(key[0], key[1], key[2], '', '', ''));
+			$('#word-' + key.join('-') + '-m').focus();
+		});
+		$('#db-apply').on('click', function () {
+			if (!$temp.word) return toast('먼저 단어를 불러오세요.', 'err');
+			var pw = password();
+			if (!pw) return;
+			if (!$('#wd-data tr').length && !confirm('뜻이 하나도 없습니다. 저장하면 \'' + $temp.word + '\' 단어가 DB에서 삭제됩니다. 계속할까요?')) return;
+			var obj = { _id: $temp.word, flag: readFlagFromCheckboxes(), type: [], theme: [], mean: [] };
+			var pvt = false;
+			$('#wd-data tr').each(function (i, o) {
+				var $o = $(o);
+				var key = $o.children('td').first().html().split('-');
+				var tk = key[0] + '-' + key[1];
+				var data = {
+					type: $('#word-' + [key[0], key[1], key[2], 'y'].join('-')).val(),
+					theme: $('#word-' + [key[0], key[1], key[2], 't'].join('-')).val(),
+					mean: $('#word-' + [key[0], key[1], key[2], 'm'].join('-')).val()
+				};
+				if (pvt !== tk) { obj.type.push(data.type); pvt = tk; }
+				obj.theme.push(data.theme);
+				if (!obj.mean[key[0]]) obj.mean[key[0]] = [];
+				if (!obj.mean[key[0]][key[1]]) obj.mean[key[0]][key[1]] = [];
+				obj.mean[key[0]][key[1]][key[2]] = data.mean;
+			});
+			obj.type = obj.type.join(',');
+			obj.theme = obj.theme.join(',');
+			obj.mean = obj.mean.map(function (m1, x1) {
+				if ($temp.wordLang === 'ko') return '＂' + (x1 + 1) + '＂' + m1.map(function (m2, x2) {
+					return '［' + (x2 + 1) + '］' + m2.map(function (m3, x3) {
+						return '（' + (x3 + 1) + '）' + m3;
+					}).join('');
+				}).join('');
+				else return '＂' + (x1 + 1) + '＂' + m1;
+			}).join('');
+			$.post('/gwalli/kkutudb/' + encodeURIComponent($temp.word), {
+				pw: pw, lang: $temp.wordLang, data: JSON.stringify(obj)
+			}, function (res) {
+				if (failed(res)) return;
+				toast('\'' + $temp.word + '\' 저장했습니다.');
+			});
 		});
 
-		// ===== 상점 DB 다루기 =====
+		// ===== 단어 일괄 처리 =====
+		function readWordList() {
+			return $('#db-list').val().split(/[,\r\n]+/).map(function (w) { return $.trim(w); }).filter(Boolean);
+		}
+		$('#db-list').on('input', function () { $('#db-list-count').text(readWordList().length + '개'); });
+		$('#db-theme').on('input', updateThemeName);
+		$('#db-load').on('click', function () {
+			var theme = $.trim($('#db-theme').val()).replace(/^~/, '');
+			if (!theme) return toast('불러올 주제 ID를 입력하세요.', 'err');
+			$.get('/gwalli/kkututheme?theme=' + encodeURIComponent(theme) + '&lang=' + dbLang(), function (res) {
+				if (failed(res)) return;
+				$('#db-list').val(res.list.join('\n')).trigger('input');
+				toast(res.list.length + '개 단어를 불러왔습니다.');
+			});
+		});
+		$('#db-ok').on('click', function () {
+			var theme = $.trim($('#db-theme').val()), words = readWordList();
+			if (!theme || theme.charAt(0) === '~') return toast('추가할 주제 ID를 입력하세요.', 'err');
+			if (!words.length) return toast('추가할 단어를 입력하세요.', 'err');
+			var pw = password();
+			if (!pw) return;
+			if (!confirm(dbLangName() + ' DB에 ' + words.length + '개 단어를 주제 ' + theme + '(으)로 추가할까요?')) return;
+			$.post('/gwalli/kkutudb', {
+				pw: pw,
+				lang: dbLang(),
+				theme: theme,
+				list: $('#db-list').val()
+			}, function (res) {
+				if (failed(res)) return;
+				toast(words.length + '개 단어 추가를 요청했습니다.');
+			});
+		});
+		$('#db-delete').on('click', function () {
+			var words = readWordList();
+			if (!words.length) return toast('삭제할 단어를 입력하세요.', 'err');
+			var pw = password();
+			if (!pw) return;
+			if (!confirm(dbLangName() + ' DB에서 ' + words.length + '개 단어를 삭제할까요?\n되돌릴 수 없습니다.')) return;
+			$.post('/gwalli/kkutudb/bulkdelete', {
+				pw: pw,
+				lang: dbLang(),
+				list: JSON.stringify(words)
+			}, function (res) {
+				if (failed(res)) return;
+				toast(res);
+			});
+		});
+
+		// ===== 상점 =====
+		function setShopHide(hiding) {
+			$('#shop-hide').toggleClass('on', hiding).text(hiding ? '전체 보기' : '새 품목만 보기');
+			$('#shop-data tr:not(.gu-new)').toggle(!hiding);
+		}
 		$('#shop-go').on('click', function () {
-			$.get('/gwalli/shop/' + $('#shop-word').val(), function (res) {
-				if (!res || !res.goods) return alert('조회 실패: ' + JSON.stringify(res));
+			var key = $.trim($('#shop-word').val()) || '~ALL';
+			$.get('/gwalli/shop/' + encodeURIComponent(key), function (res) {
+				if (failed(res)) return;
+				if (!res || !res.goods) return toast('조회 실패: ' + JSON.stringify(res), 'err');
 				var $table = $('#shop-data').empty();
+				setShopHide(false);
+				if (!res.goods.length) $table.append(emptyRow(10, '품목이 없습니다.'));
 				res.goods.forEach(function (item) {
 					$table.append(buildShopRow(item._id, item, false));
 				});
@@ -384,11 +670,16 @@
 				});
 			});
 		});
-		$('#shop-hide').on('click', function () { $('#shop-data tr:not(.gu-new)').toggle(); });
+		$('#shop-hide').on('click', function () { setShopHide(!$(this).hasClass('on')); });
 		$('#shop-add').on('click', function () {
-			var nid = prompt('식별자');
+			var nid = prompt('새 품목 ID');
 			if (!nid) return;
-			$('#shop-data').append(buildShopRow(nid, {}, true));
+			nid = $.trim(nid);
+			if (getEl('gu-' + nid)) return toast(nid + ' 품목이 이미 목록에 있습니다.', 'err');
+			$('#shop-data .empty-row').remove();
+			var $row = buildShopRow(nid, {}, true).appendTo('#shop-data');
+			$row[0].scrollIntoView({ block: 'nearest' });
+			getEl('si-' + nid + '-cost').focus();
 		});
 		$('#shop-apply').on('click', function () {
 			var list = [];
@@ -419,10 +710,12 @@
 					}
 				});
 			});
-			$.post('/gwalli/shop', { list: JSON.stringify({ list: list }), pw: $('#db-password').val() }, function (res) {
-				alert('적용되었습니다 (' + res + ')');
-			}).fail(function (xhr) {
-				alert('오류가 발생했습니다.\n상태: ' + xhr.status + '\n내용: ' + (xhr.responseText || xhr.statusText));
+			if (!list.length) return toast('저장할 품목이 없습니다.', 'err');
+			var pw = password();
+			if (!pw) return;
+			$.post('/gwalli/shop', { list: JSON.stringify({ list: list }), pw: pw }, function (res) {
+				if (failed(res)) return;
+				toast(list.length + '개 품목을 저장했습니다.');
 			});
 		});
 		$('#shop-delete-selected').on('click', function () {
@@ -431,169 +724,102 @@
 				if ($(o).find('.shop-sel').is(':checked')) ids.push($(o).attr('data-id'));
 			});
 			ids = ids.filter(Boolean);
-			if (!ids.length) return alert('선택된 항목이 없습니다.');
-			if (!confirm(ids.length + '개 아이템을 삭제하시겠습니까?')) return;
-			$.post('/gwalli/shop/delete', { list: JSON.stringify(ids), pw: $('#db-password').val() }, function (res) {
-				ids.forEach(function (id) {
-					$('#shop-data tr[data-id="' + id.replace(/"/g, '\\"') + '"]').remove();
-				});
-				alert(res);
-			}).fail(function (xhr) {
-				alert('오류가 발생했습니다.\n' + (xhr.responseText || xhr.statusText));
+			if (!ids.length) return toast('삭제할 품목을 체크하세요.', 'err');
+			var pw = password();
+			if (!pw) return;
+			if (!confirm(ids.length + '개 품목을 삭제할까요?\n' + ids.join(', '))) return;
+			$.post('/gwalli/shop/delete', { list: JSON.stringify(ids), pw: pw }, function (res) {
+				if (failed(res)) return;
+				ids.forEach(function (id) { $(getEl('gu-' + id)).remove(); });
+				toast(res);
 			});
 		});
 
-		// ===== 유저 DB 다루기 =====
+		// ===== 유저 =====
 		$('#user-go').on('click', function () {
-			$.get('/gwalli/users?id=' + $('#user-id').val() + '&name=' + $('#user-nick').val(), function (res) {
-				var $table = $('#user-data').empty(), $r;
+			var id = $.trim($('#user-id').val()), nick = $.trim($('#user-nick').val());
+			if (!id && !nick) return toast('유저 ID나 닉네임을 입력하세요.', 'err');
+			$.get('/gwalli/users?id=' + encodeURIComponent(id) + '&name=' + encodeURIComponent(nick), function (res) {
+				if (failed(res)) return;
+				var $box = $('#user-data').empty();
 				res.list.forEach(function (item) {
-					$table.append($r = $('<tr>').attr('id', ['ur', item._id].join('-')));
-					$r
-						.append($('<td>').append(putter('ud-' + item._id + '-_id', 'g', item._id)))
-						.append($('<td>').append(putter('ud-' + item._id + '-money', 'g', item.money)))
-						.append($('<td>').append(putter('ud-' + item._id + '-kkutu', 'l', JSON.stringify(item.kkutu || {}))))
-						.append($('<td>').append(putter('ud-' + item._id + '-box', 'l', JSON.stringify(item.box || {}))))
-						.append($('<td>').append(putter('ud-' + item._id + '-equip', 'l', JSON.stringify(item.equip || {}))))
-						.append($('<td>').append(putter('ud-' + item._id + '-exordial', 'g', item.exordial)))
-						.append($('<td>').append(putter('ud-' + item._id + '-nickname', 'g', item.nickname)))
-						.append($('<td>').append(putter('ud-' + item._id + '-nickChanged', 'g', item.nickChanged)))
-						.append($('<td>').append(putter('ud-' + item._id + '-server', 't', item.server)))
-						.append($('<td>').append(putter('ud-' + item._id + '-lastLogin', 't', item.lastLogin)))
-						.append($('<td>').append(putter('ud-' + item._id + '-black', 'g', item.black)))
-						/* Enhanced User Block System [S] */
-						.append($('<td>').append(putter('ud-' + item._id + '-blockedUntil', 'g', item.blockedUntil)))
-						/* Enhanced User Block System [E] */
-						.append($('<td>').append(putter('ud-' + item._id + '-friends', 'g', JSON.stringify(item.friends || {}))));
+					if (item) $box.append(buildUserCard(item));
 				});
+				if (!$box.children().length) $box.append($('<div>').addClass('empty-box').text('유저가 없습니다.'));
 			});
 		});
 		$('#user-apply').on('click', function () {
-			var list = [];
-			$('#user-data tr:visible').each(function (i, o) {
-				var $data = $(o).find('td>input');
+			var list = [], badJson = null;
+			$('#user-data .user-card').each(function (i, o) {
+				var $o = $(o), box = $o.find('.uf-box').val();
+				try { JSON.parse(box); } catch (e) { badJson = $o.attr('data-id'); return false; }
 				list.push({
-					_id: $data.get(0).value, money: $data.get(1).value,
-					kkutu: $data.get(2).value, box: $data.get(3).value, equip: $data.get(4).value,
-					exordial: $data.get(5).value, nickname: $data.get(6).value, nickChanged: $data.get(7).value,
-					server: $data.get(8).value, lastLogin: $data.get(9).value, black: $data.get(10).value,
-					/* Enhanced User Block System [S] */
-					blockedUntil: $data.get(11).value,
-					friends: $data.get(12).value
-					/* Enhanced User Block System [E] */
+					_id: $o.attr('data-id'),
+					money: $o.find('.uf-money').val(),
+					nickname: $o.find('.uf-nickname').val(),
+					exordial: $o.find('.uf-exordial').val(),
+					box: box
 				});
 			});
-			$.post('/gwalli/users', { list: JSON.stringify({ list: list }), pw: $('#db-password').val() }, function (res) { alert(res); });
+			if (badJson) return toast(badJson + '의 보관함 JSON 형식이 올바르지 않습니다.', 'err');
+			if (!list.length) return toast('먼저 유저를 조회하세요.', 'err');
+			var pw = password();
+			if (!pw) return;
+			$.post('/gwalli/users', { list: JSON.stringify({ list: list }), pw: pw }, function (res) {
+				if (failed(res)) return;
+				toast(list.length + '명의 정보를 저장했습니다.');
+			});
 		});
 
-		// ===== 유저 감시하기 =====
-		$('#gamsi-go').on('click', function () {
+		// ===== 유저 감시 =====
+		function stopGamsi() {
+			if (!$temp._gamsi) return;
 			clearInterval($temp._gamsi);
+			$temp._gamsi = null;
+			$('#gamsi-state').text('중지됨');
+		}
+		function checkGamsi(id) {
+			var $row = $('#gamsi-data tr').filter(function () { return $(this).attr('data-id') === id; });
+			// 없는 유저(404)를 10초마다 전역 오류 알림으로 띄우지 않도록 global: false
+			$.ajax({ url: '/gwalli/gamsi?id=' + encodeURIComponent(id), global: false }).done(function (res) {
+				if (res && res.error) { stopGamsi(); return failed(res); }
+				var hasServer = res.server || res.server === 0;
+				$row.children().eq(1).text(res.title || '-');
+				$row.children().eq(2).empty().append(hasServer
+					? $('<a>').attr({ 'target': '_blank', 'href': '/?server=' + res.server }).text(res.server + '번 서버')
+					: '접속 안 함');
+			}).fail(function (xhr) {
+				$row.children().eq(1).text(xhr.status === 404 ? '(없는 유저)' : '(확인 실패 ' + xhr.status + ')');
+			});
+		}
+		$('#gamsi-go').on('click', function () {
+			var list = $('#gamsi-id').val().split(/[,\s]+/).filter(Boolean), i = 0;
+			if (!list.length) return toast('감시할 유저 ID를 입력하세요.', 'err');
+			stopGamsi();
 			var $data = $('#gamsi-data').empty();
-			var list = $('#gamsi-id').val().split(/,\s*/), i, len = list.length;
-			for (i in list) {
-				$data.append($('<tr>').attr('id', 'gamsi-' + list[i]).html('<td>(' + list[i] + ') 감시 시작</td>'));
-				onGamsi();
-			}
-			i = 0;
-			$temp._gamsi = setInterval(onGamsi, 10000);
-			function onGamsi() {
-				var cid = list[i], $obj = $('#gamsi-' + cid);
-				$.get('/gwalli/gamsi?id=' + cid, function (res) {
-					if (!res) return $obj.html('(없는 사용자)' + cid);
-					$obj.html([res._id, res.title || '-', "<a target='_blank' href='/?server=" + res.server + "'>" + res.server + '</a>'].map(function (v) { return '<td>' + v + '</td>'; }));
-				});
-				i = (i + 1) % len;
-			}
-		});
-
-		// ===== 끄투 DB 다루기 =====
-		$('#db-go').on('click', function () {
-			$.get('/gwalli/kkutudb/' + $('#db-word').val() + '?lang=' + $('#db-lang').val(), function (res) {
-				if (!res) return;
-				var $table = $('#wd-data').empty();
-				var types = res.type ? res.type.split(',') : [];
-				var themes = res.theme ? res.theme.split(',') : [];
-				var means = res.mean ? res.mean.split(/＂[0-9]+＂/).slice(1).map(function (m1) {
-					return (m1.indexOf('［') === -1) ? [[m1]] : m1.split(/［[0-9]+］/).slice(1).map(function (m2) {
-						return m2.split(/（[0-9]+）/).slice(1);
-					});
-				}) : [[[]]];
-
-				buildFlagCheckboxes(res.flag || 0);
-
-				means.forEach(function (m1, x1) {
-					m1.forEach(function (m2, x2) {
-						var type = types.shift(), theme;
-						m2.forEach(function (m3, x3) {
-							theme = themes.shift();
-							$table.append($('<tr>').attr('id', ['wr', x1, x2, x3].join('-'))
-								.append($('<td>').html([x1, x2, x3].join('-')))
-								.append($('<td>').append(wrPutter(x1, x2, x3, 'y', type)))
-								.append($('<td>').append(wrPutter(x1, x2, x3, 't', theme)))
-								.append($('<td>').append(wrPutter(x1, x2, x3, 'm', m3)))
-								.append(actionTd(x1, x2, x3))
-							);
-						});
-					});
-				});
+			list.forEach(function (id) {
+				$('<tr>').attr('data-id', id).append($('<td>').text(id), $('<td>').text('확인 중…'), $('<td>').text('-')).appendTo($data);
+				checkGamsi(id);
 			});
+			$temp._gamsi = setInterval(function () {
+				checkGamsi(list[i]);
+				i = (i + 1) % list.length;
+			}, 10000);
+			$('#gamsi-state').text('감시 중 · ' + list.length + '명');
 		});
-		$('#word-add').on('click', function () {
-			var key = prompt('key (-로 구분)');
-			if (!key) return;
-			key = key.split('-');
-			$('#wd-data').append($('<tr>').attr('id', ['wr', key[0], key[1], key[2]].join('-'))
-				.append($('<td>').html([key[0], key[1], key[2]].join('-')))
-				.append($('<td>').append(wrPutter(key[0], key[1], key[2], 'y', '')))
-				.append($('<td>').append(wrPutter(key[0], key[1], key[2], 't', '')))
-				.append($('<td>').append(wrPutter(key[0], key[1], key[2], 'm', '')))
-				.append(actionTd(key[0], key[1], key[2]))
-			);
-		});
-		$('#db-apply').on('click', function () {
-			var obj = { _id: $('#db-word').val(), flag: readFlagFromCheckboxes(), type: [], theme: [], mean: [] };
-			var pvt = false;
-			$('#wd-data tr').each(function (i, o) {
-				var $o = $(o);
-				var key = $o.children('td').first().html().split('-');
-				var tk = key[0] + '-' + key[1];
-				var data = {
-					type: $('#word-' + [key[0], key[1], key[2], 'y'].join('-')).val(),
-					theme: $('#word-' + [key[0], key[1], key[2], 't'].join('-')).val(),
-					mean: $('#word-' + [key[0], key[1], key[2], 'm'].join('-')).val()
-				};
-				if (pvt !== tk) { obj.type.push(data.type); pvt = tk; }
-				obj.theme.push(data.theme);
-				if (!obj.mean[key[0]]) obj.mean[key[0]] = [];
-				if (!obj.mean[key[0]][key[1]]) obj.mean[key[0]][key[1]] = [];
-				obj.mean[key[0]][key[1]][key[2]] = data.mean;
-			});
-			obj.type = obj.type.join(',');
-			obj.theme = obj.theme.join(',');
-			obj.mean = obj.mean.map(function (m1, x1) {
-				if ($('#db-lang').val() === 'ko') return '＂' + (x1 + 1) + '＂' + m1.map(function (m2, x2) {
-					return '［' + (x2 + 1) + '］' + m2.map(function (m3, x3) {
-						return '（' + (x3 + 1) + '）' + m3;
-					}).join('');
-				}).join('');
-				else return '＂' + (x1 + 1) + '＂' + m1;
-			}).join('');
-			$.post('/gwalli/kkutudb/' + $('#db-word').val(), {
-				pw: $('#db-password').val(), lang: $('#db-lang').val(), data: JSON.stringify(obj)
-			}, function (res) { alert(res); });
-		});
+		$('#gamsi-stop').on('click', stopGamsi);
 
-		// ===== 끄투에서의 인기 단어 =====
+		// ===== 인기 단어 =====
 		$('#kpw-query').on('click', function () {
 			var FIELD = ['한국어 종합', '한국어 최근', '한국어 3글자', '한국어 어인정', '영어 종합'];
 			$.get('/gwalli/kkutuhot', function (res) {
+				if (failed(res)) return;
 				var $table = $('#kpw-table').empty();
 				res.data.splice(1, 0, getDeltaRank(res.prev, res.data[0]));
 				FIELD.forEach(function (item, index) {
 					$table.append($('<div>').append($('<h3>').html(item)).append(getTable(res.prev, res.data[index])));
 				});
-				$('#kpw-html').html($table.html());
+				$('#kpw-html').val($table.html());
 			});
 			function getDeltaRank(prev, data) {
 				return data.slice(0).sort(function (a, b) { return b.hit - (prev[b._id] || 0) - a.hit + (prev[a._id] || 0); });
@@ -607,7 +833,7 @@
 					item.delta = pd ? ('(+' + pd + ')') : '-';
 					$R.append($('<tr>')
 						.append($("<td style='width:20px;text-align:center;background:#EEE'>").html(rank + 1))
-						.append($("<td style='width:200px'>").html(item._id))
+						.append($("<td style='width:200px'>").text(item._id))
 						.append($("<td style='width:40px'>").html(item.hit))
 						.append($("<td style='width:40px'>").html(item.delta))
 					);
@@ -617,7 +843,14 @@
 			}
 		});
 		$('#kpw-flush').on('click', function () {
-			$.post('/gwalli/kkutuhot', { pw: $('#db-password').val() }, function (res) { alert(res); });
+			var pw = password();
+			if (!pw) return;
+			if (!confirm('지금 사용 횟수를 새 기준으로 저장할까요?\n이후 조회의 (+숫자)는 지금부터 늘어난 양으로 바뀝니다.')) return;
+			$.post('/gwalli/kkutuhot', { pw: pw }, function (res) {
+				if (failed(res)) return;
+				if (res) return toast('저장 실패: ' + JSON.stringify(res), 'err');
+				toast('지금 순위를 기준으로 저장했습니다.');
+			});
 		});
 	});
 })();

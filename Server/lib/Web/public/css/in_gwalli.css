@@ -8,94 +8,483 @@
  * (at your option) any later version.
  */
 
-/* ===== 공통 ===== */
-#Middle fieldset {
-    margin-bottom: 12px;
-    padding: 8px;
-    border: 1px solid #aaa;
-}
-#Middle fieldset legend {
-    font-weight: bold;
-    padding: 0 4px;
+/* ===== 페이지 폭 =====
+   global.js가 #Middle에 inline margin-left를 넣어 1010px 고정폭으로 가운데 맞추므로,
+   표가 넓은 관리 페이지에서만 !important로 덮어써 화면 폭을 쓴다.
+   (float를 풀면 위쪽 margin이 body와 겹쳐 고정 메뉴까지 밀려 내려가므로 padding으로 띄움) */
+#Middle {
+    float: none;
+    width: auto;
+    max-width: 1600px;
+    margin: 0 auto 40px !important;
+    padding: 50px 16px 0;
+    box-sizing: border-box;
 }
 
-/* ===== 상점 DB 다루기 ===== */
-#shop-data-wrap {
-    overflow-x: auto;
-    max-width: 100%;
+/* ===== 기본 틀 ===== */
+#admin {
+    --a-surface: var(--theme-surface, #FFFFFF);
+    --a-text: var(--theme-text, #222222);
+    --a-muted: #888888;
+    --a-line: var(--color-border, #BBDEFB);
+    --a-accent: var(--color-primary, #1976D2);
+    --a-soft: var(--color-bg-light, #E3F2FD);
+    --a-danger: #D32F2F;
+    --a-hover: rgba(128, 128, 128, 0.08);
+    --a-readonly: rgba(128, 128, 128, 0.12);
+    color: var(--a-text);
+    background: var(--a-surface);
+    border-radius: 12px;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.3);
+    font-size: 13px;
+    line-height: 1.4;
 }
-#shop-data td {
-    vertical-align: top;
-    padding: 2px 3px;
+#admin *,
+#admin *::before,
+#admin *::after {
+    box-sizing: border-box;
+}
+
+/* 전역 style.css가 input/select/button을 display: block으로 만들어 한 줄씩 쌓이는 것을 되돌림 */
+#admin button {
+    display: inline-block;
+    padding: 6px 12px;
+    border: 1px solid var(--a-line);
+    border-radius: 8px;
+    background: var(--a-surface);
+    color: var(--a-text);
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+    vertical-align: middle;
+}
+#admin button:hover {
+    background: var(--a-soft);
+}
+#admin button.primary {
+    border-color: var(--a-accent);
+    background: var(--a-accent);
+    color: var(--a-surface); /* 다크 모드에서는 강조색이 밝아지므로 글자를 어둡게 */
+    font-weight: bold;
+}
+#admin button.primary:hover {
+    filter: brightness(1.1);
+}
+#admin button.danger {
+    border-color: var(--a-danger);
+    color: var(--a-danger);
+}
+#admin button.danger:hover {
+    background: var(--a-danger);
+    color: #FFFFFF;
+}
+#admin input:not([type="checkbox"]),
+#admin select,
+#admin textarea {
+    display: inline-block;
+    padding: 6px 8px;
+    border: 1px solid var(--a-line);
+    border-radius: 8px;
+    background: var(--a-surface);
+    color: var(--a-text);
+    font-size: 13px;
+    vertical-align: middle;
+}
+#admin input:not([type="checkbox"]):focus,
+#admin select:focus,
+#admin textarea:focus {
+    border-color: var(--a-accent);
+    box-shadow: 0 0 0 2px var(--a-soft);
+}
+#admin input[readonly],
+#admin textarea[readonly] {
+    border-style: dashed;
+    background: var(--a-readonly);
+    color: var(--a-muted);
+}
+#admin input[type="checkbox"] {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+    vertical-align: middle;
+    accent-color: var(--a-accent);
+    cursor: pointer;
+}
+#admin textarea {
+    resize: vertical;
+}
+#admin a {
+    color: var(--a-accent);
+    text-decoration: underline;
+}
+
+/* 입력칸 너비 */
+#admin .w-s { width: 80px; }
+#admin .w-g { width: 130px; }
+#admin .w-l { width: 200px; }
+#admin .w-m { width: 100%; min-width: 320px; }
+
+/* ===== 머리줄 (암호·언어·탭, 스크롤해도 위에 붙음) ===== */
+#admin-top {
+    position: sticky;
+    top: 30px; /* 고정된 #Top 메뉴(30px) 아래 */
+    z-index: 20;
+    border-radius: 12px 12px 0 0;
+    background: var(--a-surface);
+}
+#admin-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 14px;
+    padding: 14px 18px 10px;
+}
+#admin-head h1 {
+    margin: 0 auto 4px 0;
+    font-size: 20px;
+}
+#admin .ah-field label,
+#admin .uc-field label {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--a-muted);
+    font-size: 11px;
+}
+#admin-busy {
+    margin-bottom: 9px;
+    color: var(--a-accent);
+    font-size: 12px;
+    visibility: hidden;
+}
+#admin-busy.on {
+    visibility: visible;
+}
+#admin-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0 10px;
+    border-bottom: 1px solid var(--a-line);
+}
+#admin .admin-tab {
+    margin-bottom: -1px;
+    padding: 10px 14px;
+    border: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    background: none;
+    color: var(--a-muted);
+    font-size: 14px;
+}
+#admin .admin-tab:hover {
+    background: var(--a-hover);
+    color: var(--a-text);
+}
+#admin .admin-tab.on {
+    border-bottom-color: var(--a-accent);
+    color: var(--a-accent);
+    font-weight: bold;
+}
+
+/* ===== 탭 내용 ===== */
+.admin-pane {
+    display: none;
+    padding: 14px 18px 18px;
+}
+.admin-pane.on {
+    display: block;
+}
+.pane-desc {
+    margin-bottom: 12px;
+    color: var(--a-muted);
+    line-height: 1.6;
+}
+.pane-desc b {
+    color: var(--a-text);
+}
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 10px 0;
+}
+.tb-grow {
+    flex: 1;
+}
+.tb-sep {
+    width: 1px;
+    height: 22px;
+    margin: 0 4px;
+    background: var(--a-line);
+}
+.tb-count,
+.tb-hint,
+.cell-hint {
+    color: var(--a-muted);
+    font-size: 12px;
+}
+.cell-hint {
+    margin-top: 2px;
+}
+.empty-box {
+    padding: 28px;
+    border: 1px dashed var(--a-line);
+    border-radius: 10px;
+    color: var(--a-muted);
+    text-align: center;
+}
+
+/* ===== 표 ===== */
+.table-wrap {
+    max-height: 65vh;
+    overflow: auto;
+    border: 1px solid var(--a-line);
+    border-radius: 8px;
+}
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.admin-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 8px;
+    border-bottom: 1px solid var(--a-line);
+    background: var(--a-soft);
+    text-align: left;
     white-space: nowrap;
 }
-#shop-data thead td {
-    background: #e8e8e8;
-    font-weight: bold;
+.admin-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+    vertical-align: top;
+}
+.admin-table tbody tr:hover {
+    background: var(--a-hover);
+}
+.admin-table tr.empty-row td {
+    padding: 28px;
+    color: var(--a-muted);
     text-align: center;
-    border-bottom: 1px solid #aaa;
+}
+.admin-table tr.empty-row:hover {
+    background: none;
+}
+.admin-table .c-check {
+    width: 44px;
+    text-align: center;
+    vertical-align: middle;
+}
+.admin-table .c-nowrap,
+.admin-table .c-key {
+    white-space: nowrap;
+}
+.admin-table .c-key {
+    color: var(--a-muted);
+    font-family: monospace;
+    vertical-align: middle;
+}
+.admin-table .c-grow {
+    width: 100%;
 }
 
-/* options 편집기 */
+/* ===== 어인정 신청 ===== */
+#injeong-data tr.ij-row {
+    cursor: pointer;
+}
+#injeong-data tr.ij-row.ok {
+    background: rgba(46, 125, 50, 0.12);
+}
+
+/* ===== 단어 편집 ===== */
+#word-data {
+    display: none;
+}
+#word-data.on {
+    display: block;
+}
+#wd-id {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 8px;
+}
+#wd-id .wd-word {
+    font-size: 22px;
+    font-weight: bold;
+}
+#admin .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--a-soft);
+    font-size: 12px;
+}
+#admin .badge-new {
+    background: rgba(245, 124, 0, 0.18);
+    color: #E65100;
+}
+#wd-flag {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-bottom: 10px;
+}
+#wd-flag label {
+    cursor: pointer;
+}
+#admin .row-actions {
+    white-space: nowrap;
+}
+#admin .row-actions button {
+    margin-right: 2px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+/* ===== 단어 일괄 처리 ===== */
+#db-list {
+    display: block;
+    width: 100%;
+    font-family: monospace;
+}
+
+/* ===== 상점 ===== */
+#shop-data .lang-cell input,
+#shop-data .lang-cell textarea {
+    display: block;
+    width: 190px;
+}
+#shop-data .lang-cell textarea {
+    margin-top: 4px;
+    font-size: 12px;
+}
+#shop-data tr.gu-new {
+    background: rgba(245, 124, 0, 0.1);
+}
+#admin #shop-hide.on {
+    border-color: var(--a-accent);
+    color: var(--a-accent);
+}
+.term-wrap {
+    white-space: nowrap;
+}
+#admin .term-wrap input {
+    width: 64px;
+}
+#admin .term-wrap select {
+    margin-left: 2px;
+}
 .opts-editor {
     display: grid;
     grid-template-columns: auto auto;
-    gap: 1px 6px;
-    font-size: 11px;
     align-items: center;
-}
-.opts-editor .opt-row {
-    display: contents;
+    gap: 3px 6px;
+    font-size: 11px;
 }
 .opts-editor label {
     white-space: nowrap;
 }
-.opts-editor input[type="number"] {
-    width: 52px;
+#admin .opts-editor input[type="number"] {
+    width: 64px;
+    padding: 3px 6px;
+    font-size: 12px;
 }
 .opts-editor .opt-gif-row {
     grid-column: 1 / span 2;
-    margin-top: 2px;
 }
 
-/* term 입력 */
-.term-wrap input[type="number"] {
-    width: 52px;
+/* ===== 유저 ===== */
+.user-card {
+    margin-bottom: 12px;
+    padding: 14px;
+    border: 1px solid var(--a-line);
+    border-radius: 10px;
 }
-.term-wrap select {
-    width: 52px;
+.uc-title {
+    margin-bottom: 10px;
+    font-size: 15px;
+    font-weight: bold;
+}
+.uc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px 14px;
+}
+.uc-field.wide {
+    grid-column: 1 / -1;
+}
+#admin .uc-field input,
+#admin .uc-field textarea {
+    width: 100%;
+}
+#admin .uc-field textarea {
+    font-family: monospace;
+    font-size: 12px;
 }
 
-/* 상점 select (group) */
-#shop-data select {
-    max-width: 70px;
+/* ===== 인기 단어 ===== */
+#kpw-table {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+    margin-bottom: 12px;
 }
-
-/* 상점 체크박스 열 */
-#shop-data .shop-sel {
-    margin: 0 auto;
-    display: block;
+#kpw-table h3 {
+    margin: 0 0 6px;
+    font-size: 14px;
 }
-
-/* ===== 끄투 DB 다루기: 플래그 체크박스 ===== */
-#wd-flag {
-    margin: 4px 0;
+#kpw-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
 }
-#wd-flag label {
-    margin-right: 10px;
+#kpw-table td {
+    padding: 3px 6px;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+}
+#kpw-table td:first-child {
+    color: #333333; /* 복사용 HTML의 인라인 배경(#EEE) 위에서 읽히도록 */
+}
+#kpw-html-box summary {
+    color: var(--a-muted);
     cursor: pointer;
 }
-
-/* ===== 끄투 DB에 단어 추가하기 ===== */
-#db-theme {
-    width: 200px;
-    margin-right: 4px;
-}
-#db-theme-list option {
-    font-size: 13px;
-}
-#db-list {
+#kpw-html {
     display: block;
-    margin: 4px 0;
+    width: 100%;
+    margin-top: 6px;
     font-family: monospace;
+    font-size: 12px;
+}
+
+/* ===== 알림 ===== */
+#admin-toast {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 10050;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+#admin-toast .toast {
+    max-width: 420px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #2E7D32;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    color: #FFFFFF;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-line;
+    cursor: pointer;
+}
+#admin-toast .toast-err {
+    background: #C62828;
 }

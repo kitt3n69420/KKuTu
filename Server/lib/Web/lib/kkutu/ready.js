@@ -279,6 +279,10 @@ $(document).ready(function () {
 		packs.forEach(function (pack) {
 			$sel.append($("<option>").val(pack.name).text(pack.name));
 		});
+		$sel.on('change', function () {
+			var tip = PACK_TOOLTIP[$(this).val()];
+			$('#sound-pack-info').toggle(!!tip).text(tip || '');
+		});
 
 		var cookieVal = $.cookie('kks');
 		try {
@@ -330,7 +334,6 @@ $(document).ready(function () {
 			// 사운드 리스트 초기화 후 로드
 			var currentPackName = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts && $data.opts.sp);
 			var currentPack = packs.find(function (p) { return p.name === currentPackName; });
-			var packFiles = currentPack ? currentPack.files : [];
 
 			$data._soundList = [
 				{ key: "k", value: "/media/kkutu/k.mp3" },
@@ -362,9 +365,8 @@ $(document).ready(function () {
 			if (currentPack) {
 				$data._soundList.forEach(function (s) {
 					var filename = s.value.split('/').pop();
-					if (packFiles.indexOf(filename) != -1) {
-						s.value = "/media/kkutu/" + currentPack.name + "/" + filename;
-					}
+					var packPath = resolvePackSoundPath(packs, currentPack, filename);
+					if (packPath) s.value = packPath;
 				});
 			}
 
@@ -389,6 +391,8 @@ $(document).ready(function () {
 	OPTIONS = JSON.parse($("#OPTIONS").html());
 	GAME_CATEGORIES = JSON.parse($("#GAME_CATEGORIES").html());
 	EVENT_ACTIVE_KWC = $("#EVENT_ACTIVE_KWC").html() == "true";
+	EVENT_ACTIVE_1ST = $("#EVENT_ACTIVE_1ST").html() == "true";
+	ANNIV_MODE_COLOR = JSON.parse($("#ANNIV_MODE_COLOR").html() || "{}");
 	KO_INJEONG = JSON.parse($("#KO_INJEONG").html() || "[]");
 	EN_INJEONG = JSON.parse($("#EN_INJEONG").html() || "[]");
 	JA_INJEONG = JSON.parse($("#JA_INJEONG").html() || "[]");
@@ -941,6 +945,8 @@ $(document).ready(function () {
 
 		// 사운드팩 선택 설정
 		$("#sound-pack").val(savedSettings.soundPack || "");
+		var _spTip = PACK_TOOLTIP[$("#sound-pack").val()];
+		$('#sound-pack-info').toggle(!!_spTip).text(_spTip || '');
 
 		// 레벨 아이콘 팩 선택 설정
 		$("#level-pack").val(savedSettings.levelPack || "");
@@ -965,6 +971,9 @@ $(document).ready(function () {
 
 		// 가나 발음 보기 설정 (기본 켜짐)
 		$("#kana-reading").prop('checked', (!$data.opts || $data.opts.kr !== false));
+
+		// 점수 e 표기 설정 (기본 꺼짐 = k·m·b·t·q)
+		$("#score-e-notation").prop('checked', ($data.opts && $data.opts.se === true));
 
 		// 이스터에그 끄기 설정 (기본 꺼짐)
 		$("#no-easter-egg").prop('checked', savedSettings.noEasterEgg === true);
@@ -1012,6 +1021,14 @@ $(document).ready(function () {
 		// 신 UI는 같은 입력 요소를 탭별로 옮겨 둔 새 설정 창을 띄움 (값·저장은 위·아래 기존 코드 그대로)
 		if (NK.active) NK.openSettings();
 		else showDialog($stage.dialog.setting);
+	});
+	// 기본 UI 설정 창 탭 (일반·사운드·그래픽): 같은 data-tab의 칸만 보임. 다시 열면 마지막에 본 탭 그대로
+	$stage.dialog.setting.find(".setting-tab").on('click', function (e) {
+		var tab = $(e.currentTarget).attr('data-tab');
+
+		$stage.dialog.setting.find(".setting-tab, .setting-pane").each(function () {
+			$(this).toggleClass('active', $(this).attr('data-tab') === tab);
+		});
 	});
 	$stage.menu.community.on('click', function (e) {
 		if ($data.guest) return fail(451);
@@ -1239,6 +1256,12 @@ $(document).ready(function () {
 		var v = $("#room-mode").val();
 		var rule = RULE[MODE[v]];
 		$("#game-mode-expl").html(L['modex' + v]);
+		// 1주년 이벤트 기간: 이 모드에서 모으는 별가루 이름을 별표와 함께 설명 밑에 같은 크기로, 그 별가루 색으로
+		if (EVENT_ACTIVE_1ST && ANNIV_MODE_COLOR[MODE[v]]) {
+			var dustC = ANNIV_MODE_COLOR[MODE[v]], dustId = "stardust_" + dustC.toLowerCase();
+			$("#game-mode-expl").append($("<div>").addClass("anniv-mode-dust anniv-dust-" + dustC)
+				.text("★ " + ((L[dustId] && L[dustId][0]) || L['annivColor_' + dustC])));
+		}
 
 		updateGameOptions(rule.opts, 'room');
 		updateGameOptions(rule.opts, 'room-flat');
@@ -2066,6 +2089,7 @@ $(document).ready(function () {
 			ns: $("#no-shake").is(":checked"),
 			ps: $("#player-scroll").is(":checked"),
 			kr: $("#kana-reading").is(":checked"),
+			se: $("#score-e-notation").is(":checked"),
 			sp: newSoundPack,
 			lp: newLevelPack
 		};
@@ -2151,9 +2175,8 @@ $(document).ready(function () {
 				$.get("/soundpacks", function (packs) {
 					var pack = packs.find(function (p) { return p.name === packName; });
 					url = "/media/kkutu/LobbyBGM.mp3"; // Default fallback
-					if (pack && pack.files.indexOf("LobbyBGM.mp3") != -1) {
-						url = "/media/kkutu/" + packName + "/LobbyBGM.mp3";
-					}
+					var packLobby = pack && resolvePackSoundPath(packs, pack, "LobbyBGM.mp3");
+					if (packLobby) url = packLobby;
 					reloadBGM(url);
 				});
 			}
@@ -2835,6 +2858,8 @@ $(document).ready(function () {
 		if (showDialog($stage.dialog.exchangeWorkshop)) {
 			// 추석 이벤트 기간에는 이 다이얼로그가 교환소 대신 달가루 패널을 보여준다 (아이템 교환소가 없는 이벤트라서)
 			if (EVENT_ACTIVE_KWC) drawMoonPanel();
+			// 1주년 기간에는 별가루·소원·파티 탭이 있는 1주년 창
+			else if (EVENT_ACTIVE_1ST) drawAnnivPanel();
 			else drawExchangeWorkshop();
 		}
 	});

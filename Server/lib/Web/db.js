@@ -104,6 +104,9 @@ Pub.ready = function (isPub) {
 			DB.event = new mainAgent.Table("event");
 			DB.itemexc = new mainAgent.Table("itemexc");
 			DB.shared_collecting = new mainAgent.Table("shared_collecting");
+			DB.event_claim = new mainAgent.Table("event_claim"); // 이벤트 마일스톤 받은 기록 (uid, eventid, tier)
+			DB.event_wish = new mainAgent.Table("event_wish"); // 1주년 별에게 비는 소원 (하루 1개, 자정 전까지 수정, 디스코드 승인)
+			DB.event_party = new mainAgent.Table("event_party"); // 1주년 파티: 함께 플레이한 최대 인원 기록 (uid, eventid, best)
 			DB.kkutu.quiz = new mainAgent.Table("quiz");
 
 			DB.session = new mainAgent.Table("session");

@@ -21,7 +21,7 @@ var JLog = require('../sub/jjlog');
 var Const = require('../const');
 // 중도 입장 스냅샷에 roundReady/turnStart 재생을 쓰지 않는 규칙 (전용 처리가 있거나 정답이 노출됨)
 var SPEC_REPLAY_SKIP = ["Crossword", "Landgrab", "Flip", "Center", "Sudoku", "Wordcollect", "Picture", "Rhythm", "Rtype"];
-var DB, DIC, ROOM, CHAN, Rule, checkSwearWords, censorSwearWords, narrate, publish, Robot, getEventMults, DiscordRelay;
+var DB, DIC, ROOM, CHAN, Rule, checkSwearWords, censorSwearWords, narrate, publish, Robot, getEventMults, isEventLive, DiscordRelay;
 
 Room.setContext = function(ctx) {
     DB = ctx.DB;
@@ -35,6 +35,7 @@ Room.setContext = function(ctx) {
     publish = ctx.publish;
     Robot = ctx.Robot;
     getEventMults = ctx.getEventMults;
+    isEventLive = ctx.isEventLive;
     DiscordRelay = ctx.DiscordRelay;
 };
 
@@ -1749,6 +1750,9 @@ function Room(room, channel) {
 		// 레인게임/워드스택: 방이 삭제되며 my.game이 교체되면 핸들을 잃어 영영 못 지우므로 여기서 정리한다
 		clearInterval(my.game.scanTimer);
 		clearTimeout(my.game.autoAtkTimer);
+		// 방 쪽에서 게임을 끝내면(퇴장 등) 이 타이머가 살아남아 다음 게임을 시간 종료시켜 버림
+		clearTimeout(my.game._turnEndTimer);
+		clearTimeout(my.game._tsTimer);
 		if (my._botIdleTimers) {
 			for (var _bti = 0; _bti < my._botIdleTimers.length; _bti++) clearTimeout(my._botIdleTimers[_bti]);
 			my._botIdleTimers = [];
@@ -1953,19 +1957,23 @@ function Room(room, channel) {
 				dim: (actualTeam && Array.isArray(teams[actualTeam]) && teams[actualTeam].length === 2) ? teams[actualTeam][0] : 1,
 				robot: o.robot,
 				team: actualTeam,
-				alive: o.game.alive,
-				koOrder: o.game.survivalKOOrder || 0
+				alive: o.game.alive
 			});
 		}
 
+		// 서바이벌(서바이벌 규칙 + 비·단어쌓기 같은 항상 서바이벌 모드): 생존자가 항상 사망자보다 위
+		var isSurvivalRank = !!(my.opts.survival || my.rule.survival);
+		// 순위 동점 판정용: 생존자와 사망자는 점수가 같아도 같은 등수로 묶지 않음
+		var survivalGroupKey = function (r) {
+			return isSurvivalRank ? (r.alive !== false ? "A_" : "D_") : "";
+		};
+
 		res.sort(function (a, b) {
-			// 서바이벌 모드: KO 순서 기준 (먼저 KO = 낮은 순위, 생존자 우선)
-			if (my.opts.survival) {
-				var aAlive = a.koOrder === 0;
-				var bAlive = b.koOrder === 0;
-				if (aAlive !== bAlive) return bAlive ? 1 : -1;
-				if (!aAlive && !bAlive) return b.koOrder - a.koOrder; // 늦게 KO = 높은 순위
-				// 둘 다 생존: 데미지(또는 남은 HP) 내림차순 tiebreak
+			// 서바이벌: 생존자 → 사망자 순, 같은 그룹 안에서는 점수(데미지·남은 HP·공격 점수) 내림차순
+			if (isSurvivalRank) {
+				var aAlive = a.alive !== false;
+				var bAlive = b.alive !== false;
+				if (aAlive !== bAlive) return aAlive ? -1 : 1;
 				return (b.score || 0) - (a.score || 0);
 			}
 
@@ -1988,7 +1996,7 @@ function Room(room, channel) {
 
 		for (i in res) {
 
-			var key = res[i].teamScore + "_" + res[i].score;
+			var key = survivalGroupKey(res[i]) + res[i].teamScore + "_" + res[i].score;
 			if (pv == key) {
 				res[i].rank = res[Number(i) - 1].rank;
 			} else {
@@ -2025,6 +2033,7 @@ function Room(room, channel) {
 				coopPoolMoney += coopActive[i].rw.money;
 				coopTurnDenom += coopActive[i].turns;
 			}
+			var coopPoolScorePreSolo = coopPoolScore; // 1주년 별가루 기준값용 (혼자 감산 전)
 			if (coopActive.length === 1) {
 				coopPoolScore *= 0.05;
 				coopPoolMoney *= 0.5;
@@ -2034,6 +2043,7 @@ function Room(room, channel) {
 				var coopShare = coopTurnDenom > 0 ? coopActive[i].turns / coopTurnDenom : 0;
 				coopActive[i].rw.score = Math.round(coopPoolScore * coopShare * coopSuccessMult);
 				coopActive[i].rw.money = Math.round(coopPoolMoney * coopShare * coopSuccessMult);
+				coopActive[i].rw.annivBase = coopPoolScorePreSolo * coopShare * coopSuccessMult;
 				coopActive[i].rw.together = coopActive.length >= 2;
 			}
 		}
@@ -2060,16 +2070,26 @@ function Room(room, channel) {
 			}
 		}
 
+		// 1주년 이벤트 1(파티): 게임이 끝날 때 방에 남아 있는 사람(봇 제외, 손님 포함)만 센다.
+		// 서바이벌에서 나간 사람은 KO로 seq에 남아 humanCount에 들어가므로 따로 센다.
+		// (경험치는 서바이벌 퇴장자를 KO된 상대로 보고 humanCount 그대로 계산 — 기존 동작)
+		var annivCount = 0;
+		for (i in my.game.seq) {
+			o = my.game.seq[i];
+			if (typeof o === 'string' && DIC[o] && my.players.indexOf(o) !== -1) annivCount++;
+		}
+
 		var humanRes = res.filter(function (r) { return !r.robot; });
 		var h_pv = -1;
 		for (i in humanRes) {
 			// Fix: i가 0일 때 humanRes[-1] 접근 방지
-			if (Number(i) > 0 && h_pv == humanRes[i].score) {
+			var h_key = survivalGroupKey(humanRes[i]) + humanRes[i].score;
+			if (Number(i) > 0 && h_pv == h_key) {
 				humanRes[i].humanRank = humanRes[Number(i) - 1].humanRank;
 			} else {
 				humanRes[i].humanRank = Number(i);
 			}
-			h_pv = humanRes[i].score;
+			h_pv = h_key;
 			userRankMap[humanRes[i].id] = humanRes[i].humanRank;
 		}
 
@@ -2124,6 +2144,12 @@ function Room(room, channel) {
 			if (my.opts.big) {
 				rw.score = Math.round(rw.score / 2);
 				rw.money = Math.round(rw.money / 2);
+			}
+			// 1주년 이벤트: 2-1 이 모드 색의 별가루 지급(아이템 효과·혼자 감산 전 경험치 기준), 1 파티 최고 인원 기록.
+			// 손님과, 게임 중에 나간 사람(서바이벌 KO로 seq에 남은 경우)은 받지 않는다.
+			if (!o.guest && my.players.indexOf(o.id) !== -1 && isEventLive && isEventLive(Const.ANNIV.EVENT_ID)) {
+				giveAnnivStars(my, o, noReward ? 0 : rw.annivBase, rw.together);
+				recordAnnivParty(o, annivCount);
 			}
 			var _em = getEventMults();
 			if (rw.together) {
@@ -3121,12 +3147,13 @@ function Room(room, channel) {
 	};
 	my.submit = function (client, text, data) {
 		// 욕설 필터: 규칙 활성화 시 다른 조건보다 먼저 검사
-		if (my.opts.noswear && text && checkSwearWords(text).length > 0) {
+		// 끝말잇기 등은 이 뒤에 공백을 지우고 단어를 판정하므로 공백을 무시하고 검사한다 ("시 발" 우회 차단)
+		if (my.opts.noswear && text && checkSwearWords(text, true).length > 0) {
 			if (client.robot) {
 				// 봇: 후보 리스트에서 욕설을 일괄 제거 후 첫 번째 깨끗한 후보 제출
 				if (client.data && client.data.candidates) {
 					client.data.candidates = client.data.candidates.filter(function (w) {
-						return w && checkSwearWords(w._id).length === 0;
+						return w && checkSwearWords(w._id, true).length === 0;
 					});
 					client.data.candidateIndex = 0;
 					if (client.data.candidates.length > 0) {
@@ -3151,7 +3178,7 @@ function Room(room, channel) {
 				}
 				return; // 턴 타이머가 턴 종료 처리
 			}
-			client.chat(censorSwearWords(text));
+			client.chat(censorSwearWords(text, true));
 			return;
 		}
 		return my.route("submit", client, text, data);
@@ -3397,6 +3424,9 @@ function getRewards(mode, score, bonus, rank, all, ss, opts) {
 		* (0.77 + 0.05 * (all - rank) * (all - rank)) // 순위
 		* 1.5 / (1 + 1.25 * sr * sr) // 점차비(양학했을 수록 ↓)
 		;
+	// 1주년 별가루 기준 경험치: 혼자 감산 전 값. 바보 모드는 경험치가 0이라 같은 식에 기본 배율(1.25)을 넣어 따로 계산한다.
+	var annivBase = Const.GAME_TYPE[mode] !== 'XBB' ? rw.score
+		: score * 1.25 * (opts && opts.bbungtwigi ? 0.8 : 1) * (0.77 + 0.05 * (all - rank) * (all - rank)) * 1.5 / (1 + 1.25 * sr * sr);
 	rw.money = 1 + rw.score * 0.15; //0.01에서 대폭 상승한 것이다.
 	if (all < 2) {
 		rw.score = rw.score * 0.05;
@@ -3405,6 +3435,7 @@ function getRewards(mode, score, bonus, rank, all, ss, opts) {
 		rw.together = true;
 	}
 	rw.score += bonus;
+	rw.annivBase = annivBase + bonus;
 	rw.score = rw.score || 0;
 	rw.money = rw.money || 0;
 	if (rw.score < 0) rw.score = 0;
@@ -3412,6 +3443,46 @@ function getRewards(mode, score, bonus, rank, all, ss, opts) {
 
 	// applyEquipOptions에서 반올림한다.
 	return rw;
+}
+// 1주년 이벤트: 판이 끝날 때 이 모드 색의 별가루를 준다. exp는 아이템 효과·혼자 감산 전 경험치.
+// 획득 팝업 대신 그 사람에게만 채팅 알림을 보낸다. box는 바로 뒤의 flush(true)에서 저장된다.
+function giveAnnivStars(room, o, exp, together) {
+	var type = Const.GAME_TYPE[room.mode];
+	var color = Const.ANNIV.MODE_COLOR[type];
+	if (!color) return;
+	// 경험치에 거는 방 보정과 같은 규칙 (슉슉·솎솎 완만화, 스톱, 카오스 플러스, 큰 방)
+	if (['KSK', 'ESK', 'KSS', 'ESS', 'JSS'].indexOf(type) !== -1) exp = softTransition(exp);
+	if (room.opts.stop) exp *= 0.4;
+	if (room.opts.chaosplus) exp *= Const.CHAOS_PLUS_REWARD_MUL;
+	if (room.opts.big) exp /= 2;
+	// 혼자 비율은 경험치 계산(getRewards·코옵의 together)과 같은 판정을 따른다
+	var solo = !together;
+	var n = Const.annivStarCount(Const.ANNIV, { exp: exp, type: type, unknown: !!room.opts.unknown, solo: solo });
+
+	JLog.log(`[ANNIV] ${o.id} ${type} exp=${Math.round(exp) || 0}${solo ? " solo" : ""}${room.opts.unknown ? " unknown" : ""} -> ${color}${n}`);
+	if (n <= 0) return;
+	var item = Const.ANNIV.ITEM[color];
+	o.box[item] = (o.box[item] || 0) + n;
+	o.send('chat', { notice: true, code: 'annivStarGet_' + color, v1: n });
+}
+// 1주년 이벤트 1(파티): 게임이 끝날 때 함께한 인원(봇 제외, 손님 포함)으로 개인 최고 기록을 갱신한다.
+// 첫 단계(3명) 미만은 기록하지 않고, 이번 접속 중 이미 그 이상을 기록했으면 DB에 다시 쓰지 않는다.
+function recordAnnivParty(o, count) {
+	var prev = o._annivPartyBest || 0;
+	if (count < Const.ANNIV.PARTY_TIERS[0] || count <= prev) return;
+	o._annivPartyBest = count;
+	// 기존 기록보다 클 때만 바뀌므로, 바뀐 행이 있으면(rowCount 1) 새 기록이다
+	DB.event_party.direct("INSERT INTO event_party (uid, eventid, best, updated_at) VALUES ($1, $2, $3, $4) "
+		+ "ON CONFLICT (uid, eventid) DO UPDATE SET best = EXCLUDED.best, updated_at = EXCLUDED.updated_at WHERE event_party.best < EXCLUDED.best",
+		[o.id, Const.ANNIV.EVENT_ID, count, Date.now()], function (err, $r) {
+			if (err) {
+				o._annivPartyBest = prev;
+				return JLog.error("[ANNIV_PARTY] " + o.id + " " + err);
+			}
+			if (!$r || !$r.rowCount) return;
+			JLog.log(`[ANNIV_PARTY] ${o.id} best=${count}`);
+			o.send('chat', { notice: true, code: 'annivPartyBest', v1: count });
+		});
 }
 function filterRobot(item) {
 	if (!item) return {};

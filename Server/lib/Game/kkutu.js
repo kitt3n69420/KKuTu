@@ -132,13 +132,17 @@ var swearAutomaton = null;
 	JLog.info("[NOSWEAR] Loaded " + lines.length + " words, Aho-Corasick automaton built");
 })();
 
-// 텍스트에서 욕설 매칭 구간 반환: [{start, end}]
-function checkSwearWords(text) {
+// 텍스트에서 욕설 매칭 구간 반환: [{start, end}] (원문 기준 인덱스)
+// ignoreSpace: 공백을 건너뛰고 매칭한다. 끝말잇기는 검사 뒤에 공백을 지우고 단어를 판정하므로 "시 발" 같은 우회를 막을 때 쓴다
+function checkSwearWords(text, ignoreSpace) {
 	if (!swearAutomaton) return [];
 	var matches = [];
 	var cur = 0;
+	var pos = []; // 매칭에 쓴 글자들의 원문 위치
 	for (var i = 0; i < text.length; i++) {
 		var c = text[i];
+		if (ignoreSpace && /\s/.test(c)) continue;
+		pos.push(i);
 		while (cur !== 0 && swearAutomaton[cur].children[c] === undefined) {
 			cur = swearAutomaton[cur].fail;
 		}
@@ -147,15 +151,15 @@ function checkSwearWords(text) {
 		}
 		var outputs = swearAutomaton[cur].output;
 		for (var k = 0; k < outputs.length; k++) {
-			matches.push({ start: i - outputs[k] + 1, end: i + 1 });
+			matches.push({ start: pos[pos.length - outputs[k]], end: i + 1 });
 		}
 	}
 	return matches;
 }
 
 // 매칭된 구간을 '*'로 치환
-function censorSwearWords(text) {
-	var matches = checkSwearWords(text);
+function censorSwearWords(text, ignoreSpace) {
+	var matches = checkSwearWords(text, ignoreSpace);
 	if (matches.length === 0) return text;
 	var arr = text.split('');
 	for (var m = 0; m < matches.length; m++) {
@@ -279,7 +283,7 @@ exports.init = function (_DB, _DIC, _ROOM, _GUEST_PERMISSION, _CHAN, _DiscordRel
 		// 마스터에서는 게임이 돌지 않으므로 init(중심찾기/땅따먹기의 사전 인덱스 빌드 등)을 건너뛴다
 		if (Cluster.isWorker) Rule[k].init(DB, DIC, checkSwearWords);
 	}
-	Room.setContext({ DB: DB, DIC: DIC, ROOM: ROOM, CHAN: CHAN, Rule: Rule, checkSwearWords: checkSwearWords, censorSwearWords: censorSwearWords, narrate: exports.narrate, publish: exports.publish, Robot: exports.Robot, getEventMults: function() { return _eventMults; }, DiscordRelay: DiscordRelay });
+	Room.setContext({ DB: DB, DIC: DIC, ROOM: ROOM, CHAN: CHAN, Rule: Rule, checkSwearWords: checkSwearWords, censorSwearWords: censorSwearWords, narrate: exports.narrate, publish: exports.publish, Robot: exports.Robot, getEventMults: function() { return _eventMults; }, isEventLive: isEventLive, DiscordRelay: DiscordRelay });
 
 	// === 글로벌 heartbeat 타이머 (per-client setInterval 대체) ===
 	// 모든 클라이언트를 20초마다 한 번에 순회하여 heartbeat 전송 + 타임아웃 감지

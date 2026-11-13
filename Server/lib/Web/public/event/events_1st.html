@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>끄투엔 1주년 이벤트 - 끄투엔</title>
+	<style>
+		@font-face {
+			font-family: 'NBGothic';
+			src: url('../media/NanumBarunGothicLight.woff') format('woff');
+		}
+
+		/* 탭마다 테마가 다르다: 이벤트 1(파티)과 신상품은 생일 파티, 이벤트 2(별빛: 별가루·소원)는 우주(밤하늘) */
+		:root {
+			--star-r: #FF5C7A;
+			--star-y: #FFC93C;
+			--star-g: #3CCB7F;
+			--star-b: #4DA3FF;
+			--star-p: #B07CFF;
+			--paper: #FFF8EC;
+			--ink: #2b2210;
+			--ink-soft: #6d5b4c;
+		}
+		body.theme-space {
+			--page-bg: #0B1030;
+			--heading: #FFFFFF;
+			--accent: #FFE9A8;
+			--text: #E7EAFB;
+			--text-soft: #C9D0F0;
+			--divider: rgba(255, 233, 168, 0.35);
+			--panel: rgba(255, 255, 255, 0.06);
+			--tab-bar: rgba(11, 16, 48, 0.88);
+			--tab-text: #C9D0F0;
+			--tab-on-bg: #FFE9A8;
+			--tab-on-text: #3a2c00;
+			--bullet: "★";
+			--card-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+		}
+		body.theme-party {
+			--page-bg: #FFF4E4;
+			--heading: #3D2230;
+			--accent: #D93A72;
+			--text: #4A3540;
+			--text-soft: #6E5560;
+			--divider: rgba(217, 58, 114, 0.3);
+			--panel: rgba(255, 255, 255, 0.75);
+			--tab-bar: rgba(255, 244, 228, 0.92);
+			--tab-text: #6E5560;
+			--tab-on-bg: #D93A72;
+			--tab-on-text: #FFFFFF;
+			--bullet: "●";
+			--card-shadow: 0 3px 10px rgba(217, 58, 114, 0.15);
+		}
+
+		* { box-sizing: border-box; }
+
+		body {
+			margin: 0;
+			padding: 0;
+			font-family: NBGothic, 돋움, sans-serif;
+			background-color: var(--page-bg);
+			color: var(--text);
+			min-width: 320px;
+			overflow-x: hidden;
+		}
+
+		img { max-width: 100%; }
+
+		h1, h2, h3 { margin: 0; }
+
+		/* ===== 배경 (탭마다 하나만 보임) ===== */
+		.bg {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			z-index: 0;
+			pointer-events: none;
+			display: none;
+		}
+		body.theme-space .bg-space,
+		body.theme-party .bg-party { display: block; }
+		.bg-space {
+			background-image:
+				radial-gradient(1.5px 1.5px at 8% 22%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 20% 55%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 33% 15%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 47% 68%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 60% 30%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 90% 20%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 96% 50%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 12% 80%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 75% 10%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 83% 65%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 5% 90%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 28% 92%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 45% 88%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1.5px 1.5px at 65% 95%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 40% 40%, #FFFFFF 100%, transparent 100%),
+				radial-gradient(1px 1px at 55% 12%, #FFFFFF 100%, transparent 100%),
+				linear-gradient(180deg, #0B1030 0%, #18204D 55%, #2A2963 100%);
+		}
+		/* 생일 파티: 크림·분홍 바탕에 색종이 */
+		.bg-party {
+			background-image:
+				radial-gradient(5px 5px at 7% 18%, #FF8FB1 98%, transparent 100%),
+				radial-gradient(4px 4px at 18% 62%, #FFD15C 98%, transparent 100%),
+				radial-gradient(6px 6px at 29% 9%, #7FD8C3 98%, transparent 100%),
+				radial-gradient(4px 4px at 38% 84%, #9CC8FF 98%, transparent 100%),
+				radial-gradient(5px 5px at 52% 35%, #C9A8FF 98%, transparent 100%),
+				radial-gradient(4px 4px at 63% 72%, #FF8FB1 98%, transparent 100%),
+				radial-gradient(6px 6px at 74% 14%, #FFD15C 98%, transparent 100%),
+				radial-gradient(4px 4px at 86% 48%, #7FD8C3 98%, transparent 100%),
+				radial-gradient(5px 5px at 93% 88%, #C9A8FF 98%, transparent 100%),
+				radial-gradient(4px 4px at 3% 94%, #9CC8FF 98%, transparent 100%),
+				radial-gradient(5px 5px at 47% 96%, #FFD15C 98%, transparent 100%),
+				radial-gradient(4px 4px at 96% 6%, #FF8FB1 98%, transparent 100%),
+				linear-gradient(180deg, #FFF4E4 0%, #FFEAF0 60%, #FFE2EC 100%);
+		}
+
+		/* ===== 탭 ===== */
+		.tabs {
+			position: sticky;
+			top: 0;
+			z-index: 5;
+			display: flex;
+			justify-content: center;
+			gap: 8px;
+			padding: 10px 12px;
+			background: var(--tab-bar);
+			backdrop-filter: blur(4px);
+		}
+		.tab {
+			flex: 0 1 180px;
+			padding: 9px 12px;
+			border-radius: 999px;
+			border: 1px solid var(--divider);
+			color: var(--tab-text);
+			text-align: center;
+			text-decoration: none;
+			font-weight: bold;
+			white-space: nowrap;
+		}
+		.tab.on { background: var(--tab-on-bg); color: var(--tab-on-text); border-color: transparent; }
+		.tab small { display: block; font-size: 0.72em; font-weight: normal; opacity: 0.8; }
+
+		/* 양옆 화살표: 넓은 화면은 가운데 높이, 좁은 화면은 글을 가리지 않게 아래쪽에 작게 */
+		.side-arrow {
+			position: fixed;
+			top: 50%;
+			z-index: 6;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 48px;
+			height: 48px;
+			margin-top: -24px;
+			border-radius: 50%;
+			border: 1px solid var(--divider);
+			background: var(--tab-bar);
+			color: var(--accent);
+			font-size: 34px;
+			line-height: 1;
+			text-decoration: none;
+			box-shadow: var(--card-shadow);
+		}
+		.side-arrow[hidden] { display: none; }
+		.side-arrow:hover { background: var(--tab-on-bg); color: var(--tab-on-text); }
+		.side-prev { left: 12px; }
+		.side-next { right: 12px; }
+
+		.page[hidden] { display: none; }
+
+		/* ===== 히어로 ===== */
+		.hero {
+			position: relative;
+			z-index: 1;
+			padding: 24px 16px 10px;
+			text-align: center;
+		}
+		.hero-star { display: block; width: 170px; height: 170px; margin: 0 auto 8px; filter: drop-shadow(0 0 18px rgba(255, 233, 168, 0.45)); }
+		.hero h1 { font-size: 2.1em; color: var(--accent); letter-spacing: 1px; }
+		.hero h3 { margin-top: 6px; font-size: 1.1em; font-weight: normal; color: var(--text); }
+		.event-sub { margin: 16px 0 0; font-size: 1.05em; color: var(--text-soft); }
+		.event-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 16px 0 18px; }
+		.event-badge {
+			padding: 7px 16px;
+			border-radius: 999px;
+			background: var(--accent);
+			color: var(--page-bg);
+			font-weight: bold;
+			box-shadow: var(--card-shadow);
+		}
+		body.theme-party .event-badge { color: #FFFFFF; }
+		.hero-summary { max-width: 640px; margin: 0 auto; line-height: 1.7; color: var(--text); }
+
+		/* 파티 히어로: 가랜드 + 고깔모자 쓴 모레미 */
+		.bunting { display: flex; justify-content: space-between; max-width: 720px; margin: -6px auto 14px; border-top: 2px solid rgba(217, 58, 114, 0.35); }
+		.bunting i { display: block; width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 20px solid #FF8FB1; }
+		.bunting i:nth-child(5n+2) { border-top-color: #FFD15C; }
+		.bunting i:nth-child(5n+3) { border-top-color: #7FD8C3; }
+		.bunting i:nth-child(5n+4) { border-top-color: #9CC8FF; }
+		.bunting i:nth-child(5n+5) { border-top-color: #C9A8FF; }
+		.party-moremi {
+			position: relative;
+			width: 150px;
+			height: 150px;
+			margin: 0 auto 6px;
+			border-radius: 50%;
+			background: radial-gradient(circle at 50% 45%, #FFFFFF 0%, #FFE6EE 70%, #FFD3E1 100%);
+			box-shadow: 0 6px 18px rgba(217, 58, 114, 0.2);
+			overflow: hidden;
+		}
+		.party-moremi img { position: absolute; top: 8%; left: 8%; width: 84%; height: 84%; }
+
+		/* ===== 공통 섹션 ===== */
+		.section {
+			position: relative;
+			z-index: 1;
+			padding: 24px 16px 0;
+			border-top: 1px dashed var(--divider);
+		}
+		.section-inner { max-width: 920px; margin: 0 auto; padding-bottom: 50px; }
+		.section h2 { text-align: center; font-size: 1.6em; margin-bottom: 8px; color: var(--heading); }
+		.section-tag { display: block; margin-bottom: 4px; font-size: 0.55em; color: var(--accent); letter-spacing: 2px; }
+		.section-note { text-align: center; margin-bottom: 26px; color: var(--accent); font-size: 0.95em; }
+		.section h3 { font-size: 1.15em; margin: 26px 0 10px; color: var(--accent); }
+		.section p { margin: 0 0 10px; line-height: 1.7; color: var(--text); }
+
+		.rule-list { list-style: none; margin: 0; padding: 0; }
+		.rule-list li {
+			position: relative;
+			padding: 6px 0 6px 22px;
+			line-height: 1.7;
+			color: var(--text-soft);
+		}
+		.rule-list li::before { content: var(--bullet); position: absolute; left: 0; top: 6px; color: var(--accent); font-size: 13px; }
+		.rule-list strong { color: var(--accent); }
+
+		/* 색깔별 게임 모드 */
+		.color-table { display: grid; gap: 10px; }
+		.color-row {
+			display: flex;
+			gap: 12px;
+			align-items: flex-start;
+			padding: 12px 14px;
+			border-radius: 10px;
+			background: var(--panel);
+			border-left: 5px solid var(--c);
+		}
+		.color-name { flex: 0 0 96px; font-weight: bold; color: var(--c); }
+		.color-modes { flex: 1; min-width: 0; font-size: 0.9em; line-height: 1.6; color: var(--text-soft); }
+
+		/* 바꾸기 순환 */
+		.cycle {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			justify-content: center;
+			gap: 6px;
+			margin: 6px 0 14px;
+			font-weight: bold;
+		}
+		.cycle .chip { padding: 4px 12px; border-radius: 999px; border: 2px solid var(--c); color: var(--c); background: rgba(0, 0, 0, 0.2); }
+		.cycle .arrow { color: var(--text-soft); }
+		.example {
+			max-width: 520px;
+			margin: 0 auto 6px;
+			padding: 10px 14px;
+			border-radius: 10px;
+			background: var(--panel);
+			text-align: center;
+			line-height: 1.7;
+			color: var(--text);
+		}
+
+		/* 단계 보상 카드 */
+		.reward-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+		.reward-card {
+			position: relative;
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			min-width: 0;
+			padding: 12px;
+			border-radius: 10px;
+			background: var(--paper);
+			color: var(--ink);
+			box-shadow: var(--card-shadow);
+		}
+		body.theme-party .reward-card { background: #FFFFFF; }
+		.card-icon {
+			position: relative;
+			flex: 0 0 64px;
+			width: 64px;
+			height: 64px;
+			border-radius: 10px;
+			background: #FFFFFF;
+			overflow: hidden;
+		}
+		body.theme-party .card-icon { background: #FFF1F5; }
+		.card-icon img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+		.card-icon.name-icon { display: flex; align-items: center; justify-content: center; font-size: 1.15em; font-weight: bold; }
+		.card-info { flex: 1; min-width: 0; }
+		.card-step { font-size: 0.8em; font-weight: bold; color: var(--ink-soft); }
+		.card-name { font-weight: bold; }
+		.card-desc { margin-top: 3px; font-size: 0.8em; line-height: 1.4; color: var(--ink-soft); }
+		.card-price {
+			display: inline-block;
+			margin-top: 6px;
+			padding: 2px 10px;
+			border-radius: 999px;
+			background: #FFE3EC;
+			color: #A3214F;
+			font-size: 0.85em;
+			font-weight: bold;
+		}
+
+		/* 이름 아이템 글자색 (게임 안 in_game_kkutu_shop.css와 같은 색) */
+		@keyframes gradient-shift {
+			0% { background-position: 0% 50%; }
+			100% { background-position: -200% 50%; }
+		}
+		.x-rainbow_nick, .x-shine_nick {
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
+			background-size: 200% 100%;
+			animation: gradient-shift 3s linear infinite;
+		}
+		.x-rainbow_nick { background-image: linear-gradient(90deg, #ff4479, #fecb12, #39b83d, #339fe2, #ad58e6, #ff4479); }
+		.x-shine_nick { background-image: linear-gradient(70deg, #707070, #707070, #707070, #8daf9e, #8EE6F2, #8FB6FF, #B9A2FF, #F2A0E6, #FFB3C1, #FFD9A0, #E8F59A, #9FF0C8, #89bec5, #707070, #707070, #707070); }
+
+		.closing {
+			position: relative;
+			z-index: 1;
+			text-align: center;
+			padding: 40px 16px 60px;
+			font-size: 1.15em;
+			font-weight: bold;
+			color: var(--accent);
+			border-top: 1px dashed var(--divider);
+		}
+
+		/* ===== 좁은 화면 (모바일 최소 360px) ===== */
+		@media (max-width: 760px) {
+			.reward-board { grid-template-columns: 1fr 1fr; }
+		}
+		@media (max-width: 520px) {
+			.hero h1 { font-size: 1.6em; }
+			.hero-star { width: 140px; height: 140px; }
+			.party-moremi { width: 124px; height: 124px; }
+			.bunting i { border-left-width: 9px; border-right-width: 9px; border-top-width: 15px; }
+			.section h2 { font-size: 1.35em; }
+			.reward-board { grid-template-columns: 1fr; }
+			.color-row { flex-direction: column; gap: 4px; }
+			.color-name { flex-basis: auto; }
+			.tab { flex-basis: 50%; padding: 7px 6px; font-size: 0.92em; }
+			.side-arrow { top: auto; bottom: 16px; margin-top: 0; width: 40px; height: 40px; font-size: 28px; }
+			.side-prev { left: 8px; }
+			.side-next { right: 8px; }
+		}
+	</style>
+</head>
+
+<body class="theme-party">
+	<div class="bg bg-space"></div>
+	<div class="bg bg-party"></div>
+
+	<nav class="tabs">
+		<a class="tab on" href="#party" data-tab="party"><small>이벤트 1</small>끄투엔 생일 파티</a>
+		<a class="tab" href="#star" data-tab="star"><small>이벤트 2</small>별님에게 물어봐</a>
+	</nav>
+	<!-- 화면 양옆 화살표로도 탭을 넘긴다 (갈 수 있는 쪽만 보임) -->
+	<a class="side-arrow side-prev" href="#party" aria-label="이전 탭" hidden>&#8249;</a>
+	<a class="side-arrow side-next" href="#star" aria-label="다음 탭" hidden>&#8250;</a>
+
+	<!-- ================= 이벤트 1 파티 + 신상품 (생일 파티 테마, 첫 탭) ================= -->
+	<main class="page" data-page="party">
+		<div class="hero">
+			<div class="bunting" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+			<div class="party-moremi" aria-hidden="true">
+				<img src="/img/kkutu/moremi/body.png" alt="">
+				<img src="/img/kkutu/moremi/eye/def.png" alt="">
+				<img src="/img/kkutu/moremi/mouth/party_horn.png" alt="">
+				<img src="/img/kkutu/moremi/head/conical_hat.png" alt="">
+			</div>
+			<h1>끄투엔 1주년 파티</h1>
+			<h3>생일 파티는 다 같이 모여야 제맛이죠!</h3>
+			<p class="event-sub">이벤트 기간: 2026.11.14 12:00 ~ 2026.12.15</p>
+			<div class="hero-summary">
+				끄투엔 1주년을 맞아 <strong>이벤트 2개</strong>를 준비했어요.
+				모든 이벤트는 로비의 <strong>이벤트</strong> 단추로 여는 1주년 창에서 확인할 수 있어요.
+			</div>
+			<div class="event-badges">
+				<div class="event-badge">1 끄투엔 생일 파티</div>
+			</div>
+		</div>
+
+		<section class="section">
+			<div class="section-inner">
+				<h2><span class="section-tag">EVENT 1</span>끄투엔 생일파티</h2>
+				<div class="section-note">더 많이 모일수록 더 큰 파티!</div>
+
+				<p>게임이 끝날 때 방에 함께 있던 인원이 내 파티 기록이 돼요. 가장 많이 모였던 기록만 남고, 기록이 늘어날수록 이벤트 창의 파티 식탁에 모레미가 하나씩 늘어나요.</p>
+				<ul class="rule-list">
+					<li>인원에 <strong>봇은 빠지고, 손님은 들어가요.</strong> 방 최대 인원인 24명까지 기록돼요.</li>
+					<li>게임이 끝나기 전에 나간 사람은 인원에 들어가지 않아요. 나간 사람도 그 판은 기록되지 않아요.</li>
+					<li>기록과 보상은 <strong>로그인한 플레이어만</strong> 받을 수 있어요. 손님 계정은 기록되지 않아요.</li>
+				</ul>
+
+				<h3>단계 보상</h3>
+				<div class="reward-board">
+					<div class="reward-card">
+						<div class="card-icon"><img src="/img/kkutu/moremi/body.png" alt=""><img src="/img/kkutu/moremi/eye/def.png" alt=""><img src="/img/kkutu/moremi/mouth/party_horn.png" alt=""></div>
+						<div class="card-info"><div class="card-step">3명</div><div class="card-name">파티 호른</div></div>
+					</div>
+					<div class="reward-card">
+						<div class="card-icon"><img src="/img/kkutu/moremi/body.png" alt=""><img src="/img/kkutu/moremi/eye/def.png" alt=""><img src="/img/kkutu/moremi/mouth/def.png" alt=""><img src="/img/kkutu/moremi/head/conical_hat.png" alt=""></div>
+						<div class="card-info"><div class="card-step">4명</div><div class="card-name">고깔모자</div></div>
+					</div>
+					<div class="reward-card">
+						<div class="card-icon"><img src="/img/kkutu/moremi/body.png" alt=""><img src="/img/kkutu/moremi/eye/def.png" alt=""><img src="/img/kkutu/moremi/mouth/def.png" alt=""><img src="/img/kkutu/moremi/badge/b2_1staniv.png" alt=""></div>
+						<div class="card-info"><div class="card-step">5명</div><div class="card-name">1주년의 휘장</div></div>
+					</div>
+					<div class="reward-card">
+						<div class="card-icon name-icon"><label class="x-shine_nick">끄투엔</label></div>
+						<div class="card-info"><div class="card-step">6명</div><div class="card-name">반짝이는 이름</div></div>
+					</div>
+					<div class="reward-card">
+						<div class="card-icon"><img src="/img/kkutu/moremi/body.png" alt=""><img src="/img/kkutu/moremi/eye/def.png" alt=""><img src="/img/kkutu/moremi/mouth/def.png" alt=""><img src="/img/kkutu/moremi/front/kkt_garland.png" alt=""></div>
+						<div class="card-info"><div class="card-step">8명</div><div class="card-name">끄투 가랜드</div></div>
+					</div>
+					<div class="reward-card">
+						<div class="card-icon"><img src="/img/kkutu/moremi/body.png" alt=""><img src="/img/kkutu/moremi/eye/def.png" alt=""><img src="/img/kkutu/moremi/mouth/def.png" alt=""><img src="/img/kkutu/moremi/clothes/cake_cloth.png" alt=""></div>
+						<div class="card-info"><div class="card-step">10명</div><div class="card-name">케이크 옷</div></div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="section">
+			<div class="section-inner">
+				<h2>신상품</h2>
+				<div class="section-note">1주년을 맞아 상점에 새로 들어왔어요. 언제든 핑으로 살 수 있어요!</div>
+				<div class="reward-board">
+					<div class="reward-card">
+						<div class="card-icon"><img src="/img/kkutu/moremi/body.png" alt=""><img src="/img/kkutu/moremi/eye/def.png" alt=""><img src="/img/kkutu/moremi/mouth/def.png" alt=""><img src="/img/kkutu/moremi/hand/rabbit_balloon.png" alt=""></div>
+						<div class="card-info"><div class="card-name">토끼 풍선</div><div class="card-desc">두둥실 떠오르는 분홍 토끼 풍선이에요.</div><div class="card-price">500핑</div></div>
+					</div>
+					<div class="reward-card">
+						<div class="card-icon"><img src="/img/kkutu/moremi/body.png" alt=""><img src="/img/kkutu/moremi/eye/def.png" alt=""><img src="/img/kkutu/moremi/mouth/def.png" alt=""><img src="/img/kkutu/moremi/hand/round_balloon.png" alt=""></div>
+						<div class="card-info"><div class="card-name">동그란 풍선</div><div class="card-desc">어디서나 잘 보이는 노란 풍선이에요.</div><div class="card-price">500핑</div></div>
+					</div>
+					<div class="reward-card">
+						<div class="card-icon"><img src="/img/kkutu/moremi/body.png" alt=""><img src="/img/kkutu/moremi/eye/def.png" alt=""><img src="/img/kkutu/moremi/mouth/def.png" alt=""><img src="/img/kkutu/moremi/hand/cat_balloon.png" alt=""></div>
+						<div class="card-info"><div class="card-name">고양이 풍선</div><div class="card-desc">파란 고양이 풍선이에요.</div><div class="card-price">500핑</div></div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</main>
+
+	<!-- ================= 이벤트 2 별빛: 별가루 · 소원 (우주 테마) ================= -->
+	<main class="page" data-page="star" hidden>
+		<div class="hero">
+			<!-- 다섯 팔 = 다섯 별가루 (게임 안 이벤트 창의 별과 같은 모양·순서: 위에서부터 시계 방향으로 꿈·희망·열정·행복·용기) -->
+			<svg class="hero-star" viewBox="-100 -100 200 200" aria-hidden="true">
+				<path fill="#FFC93C" d="M 0.0,0.0 L -23.8,-32.8 L -5.2,-77.4 Q 0.0,-90.0 5.2,-77.4 L 23.8,-32.8 Z" />
+				<path fill="#4DA3FF" d="M 0.0,0.0 L 23.8,-32.8 L 72.0,-28.9 Q 85.6,-27.8 75.2,-18.9 L 38.5,12.5 Z" />
+				<path fill="#FF5C7A" d="M 0.0,0.0 L 38.5,12.5 L 49.7,59.5 Q 52.9,72.8 41.3,65.7 L 0.0,40.5 Z" />
+				<path fill="#3CCB7F" d="M 0.0,0.0 L 0.0,40.5 L -41.3,65.7 Q -52.9,72.8 -49.7,59.5 L -38.5,12.5 Z" />
+				<path fill="#B07CFF" d="M 0.0,0.0 L -38.5,12.5 L -75.2,-18.9 Q -85.6,-27.8 -72.0,-28.9 L -23.8,-32.8 Z" />
+			</svg>
+			<h1>별님에게 물어봐</h1>
+			<h3>끄투엔의 첫 번째 생일을 별빛으로 채워 주세요!</h3>
+			<p class="event-sub">이벤트 기간: 2026.11.14 12:00 ~ 2026.12.15</p>
+			<div class="hero-summary">
+				게임을 하면서 다섯 가지 별가루를 모으고, 하루에 한 번 별에게 소원을 빌어 보세요.
+			</div>
+			<div class="event-badges">
+				<div class="event-badge">2-1 별가루 모으기</div>
+				<div class="event-badge">2-2 별에게 소원 빌기</div>
+			</div>
+		</div>
+
+		<section class="section">
+			<div class="section-inner">
+				<h2><span class="section-tag">EVENT 2-1</span>별가루 모으기</h2>
+				<div class="section-note">게임 모드마다 나오는 별가루 색이 달라요</div>
+
+				<p>게임이 끝나면 일정량의 별가루를 받아요. 경험치를 많이 벌수록, 별가루도 더 많이 나와요.
+					어떤 색이 나올지는 게임 모드가 정해요.
+					이벤트 기간에는 방을 만들 때 모드 설명 밑에서도 그 모드의 별가루를 볼 수 있어요.</p>
+
+				<div class="color-table">
+					<div class="color-row" style="--c: var(--star-y);">
+						<div class="color-name">꿈의 별가루</div>
+						<div class="color-modes">한국어 끝말잇기, 일본어 끝말잇기, 영어 쿵쿵따, 일본어 쿵쿵따, 영어 끄투, 한국어 앞말잇기, 영어 앞말잇기, 일본어 앞말잇기, 한국어 앞쿵따, 영어 앞쿵따, 한국어 잇기 대결, 영어 잇기 대결, 네글자 이어말하기</div>
+					</div>
+					<div class="color-row" style="--c: var(--star-b);">
+						<div class="color-name">희망의 별가루</div>
+						<div class="color-modes">한국어 스피드퀴즈, 영어 스피드퀴즈, 자음퀴즈, 한국어 그림퀴즈, 영어 그림퀴즈, 스크램블, 영어 스펠링 퀴즈, 한국어 십자말풀이, 영어 십자말풀이, 계산 십자말풀이, 훈민정음, 영어 끝말잇기</div>
+					</div>
+					<div class="color-row" style="--c: var(--star-r);">
+						<div class="color-name">열정의 별가루</div>
+						<div class="color-modes">한국어 단어 대결, 영어 단어 대결, 일본어 단어 대결, 한국어 타자 대결, 영어 타자 대결, 일본어 타자 대결, 한국어 주제 타자 대결, 영어 주제 타자 대결, 계산 대결, 계산 릴레이, 한국어 쿵쿵따, 한국어 끄투</div>
+					</div>
+					<div class="color-row" style="--c: var(--star-g);">
+						<div class="color-name">행복의 별가루</div>
+						<div class="color-modes">한국어 아무거나, 일본어 아무거나, 한국어 주제 아무거나, 영어 주제 아무거나, 한국어 솎솎, 영어 솎솎, 일본어 솎솎, 한국어 슉슉, 영어 슉슉, 한국어 워드스택, 영어 워드스택, 중심 찾기</div>
+					</div>
+					<div class="color-row" style="--c: var(--star-p);">
+						<div class="color-name">용기의 별가루</div>
+						<div class="color-modes">바보 모드, 한국어 자모 끝말잇기, 영어 아무거나, 369 게임, 리듬 타이퍼, 4패널 치기, 한국어 단어비, 영어 단어비, 한국어 판 뒤집기, 영어 판 뒤집기, 초성 땅따먹기, 넘버 플레이스</div>
+					</div>
+				</div>
+
+				<h3>이런 경우에는 적게 나오거나 안 나와요</h3>
+				<ul class="rule-list">
+					<li>언노운 워드 방과 바보 모드는 한 판에 <strong>1개</strong>만 얻을 수 있어요.</li>
+					<li>혼자 하는 방(봇과 하는 방, 연습 포함)에서는 별가루가 <strong>아주 조금</strong>만 나와요. 그러니 친구들과 함께 해 보세요!</li>
+					<li>게임이 끝나기 전에 방을 나가면 그 판의 별가루는 <strong>받지 못해요.</strong></li>
+				</ul>
+
+				<h3>별가루 바꾸기</h3>
+				<p>부족한 별가루는 다른 별가루로 바꿀 수 있어요. 별가루는 아래 순서로 둥글게 이어져 있어요.</p>
+				<div class="cycle">
+					<div class="chip" style="--c: var(--star-y);">꿈</div><div class="arrow">→</div>
+					<div class="chip" style="--c: var(--star-b);">희망</div><div class="arrow">→</div>
+					<div class="chip" style="--c: var(--star-r);">열정</div><div class="arrow">→</div>
+					<div class="chip" style="--c: var(--star-g);">행복</div><div class="arrow">→</div>
+					<div class="chip" style="--c: var(--star-p);">용기</div><div class="arrow">→</div>
+					<div class="chip" style="--c: var(--star-y);">꿈</div>
+				</div>
+				<p>받고 싶은 별가루의 <strong>양옆에 있는 두 별가루를 하나씩</strong> 내면 그 별가루 하나를 받아요.</p>
+				<div class="example">예) 꿈의 별가루 1개 + 열정의 별가루 1개 → 희망의 별가루 1개</div>
+
+				<h3>단계 보상</h3>
+				<p>다섯 별가루가 <strong>모두</strong> 기준 개수를 넘으면 그 단계의 보상을 받을 수 있어요. 보상을 받아도 별가루는 줄지 않아요.</p>
+				<div class="reward-board">
+					<div class="reward-card">
+						<div class="card-icon"><img src="/img/kkutu/moremi/body.png" alt=""><img src="/img/kkutu/moremi/eye/def.png" alt=""><img src="/img/kkutu/moremi/mouth/def.png" alt=""><img src="/img/kkutu/moremi/hand/star_wand.png" alt=""></div>
+						<div class="card-info"><div class="card-step">1단계 · 각 5개</div><div class="card-name">별 요술봉</div></div>
+					</div>
+					<div class="reward-card">
+						<div class="card-icon"><img src="/img/kkutu/moremi/body.png" alt=""><img src="/img/kkutu/moremi/eye/def.png" alt=""><img src="/img/kkutu/moremi/mouth/def.png" alt=""><img src="/img/kkutu/moremi/head/star_hat.png" alt=""></div>
+						<div class="card-info"><div class="card-step">2단계 · 각 10개</div><div class="card-name">머리 위 별</div></div>
+					</div>
+					<div class="reward-card">
+						<div class="card-icon"><img src="/img/kkutu/moremi/body.png" alt=""><img src="/img/kkutu/moremi/eye/star_sunglasses.png" alt=""><img src="/img/kkutu/moremi/mouth/def.png" alt=""></div>
+						<div class="card-info"><div class="card-step">3단계 · 각 25개</div><div class="card-name">별 선글라스</div></div>
+					</div>
+					<div class="reward-card">
+						<div class="card-icon"><img src="/img/kkutu/moremi/body.png" alt=""><img src="/img/kkutu/moremi/eye/def.png" alt=""><img src="/img/kkutu/moremi/mouth/def.png" alt=""><img src="/img/kkutu/moremi/clothes/galaxy_cloth.png" alt=""></div>
+						<div class="card-info"><div class="card-step">4단계 · 각 50개</div><div class="card-name">은하수 옷</div></div>
+					</div>
+					<div class="reward-card">
+						<div class="card-icon"><img src="/img/kkutu/moremi/back/shooting_stars.gif" alt=""><img src="/img/kkutu/moremi/body.png" alt=""><img src="/img/kkutu/moremi/eye/def.png" alt=""><img src="/img/kkutu/moremi/mouth/def.png" alt=""></div>
+						<div class="card-info"><div class="card-step">5단계 · 각 75개</div><div class="card-name">별똥별</div></div>
+					</div>
+					<div class="reward-card">
+						<div class="card-icon name-icon"><label class="x-rainbow_nick">끄투엔</label></div>
+						<div class="card-info"><div class="card-step">6단계 · 각 100개</div><div class="card-name">무지개 이름</div></div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="section">
+			<div class="section-inner">
+				<h2><span class="section-tag">EVENT 2-2</span>별에게 소원 빌기</h2>
+				<div class="section-note">하루에 하나, 밤하늘에 소원을 띄워 보세요</div>
+
+				<ul class="rule-list">
+					<li>소원은 <strong>하루에 하나</strong>, 최대 <strong>200자</strong>까지 쓸 수 있어요.</li>
+					<li>그날 자정 전까지 마음껏 소원을 수정할 수 있고, 자정이 지나면 그날 소원이 확정돼요.</li>
+					<li>확정된 소원은 <strong>익명으로</strong> 이벤트 창의 밤하늘에 별 하나로 떠올라요. 운영자는 누가 쓴 소원인지 볼 수 있어요. 별을 누르면 그 소원을 볼 수 있어요.</li>
+					<li>운영진은 누가 쓴 소원인지 볼 수 있어요. 개인정보는 적지 말아 주세요.</li>
+					<li>욕설이나 다른 사람을 불편하게 하는 소원은 밤하늘에 올라가지 않아요.</li>
+				</ul>
+			</div>
+		</section>
+	</main>
+
+	<!-- 두 탭 공통 (보고 있는 탭의 테마를 따름) -->
+	<section class="section">
+		<div class="section-inner">
+			<h2>유의사항</h2>
+			<ul class="rule-list">
+				<li>모든 이벤트는 <strong>로그인한 플레이어만</strong> 참여할 수 있어요.</li>
+				<li>단계 보상은 단계마다 <strong>한 번씩</strong>만 받을 수 있어요.</li>
+				<li>게임 플레이 중에는 이벤트 창은 닫혀요. 보상 받기와 별가루 바꾸기는 게임을 하지 않을 때 해 주세요.</li>
+				<li>부당하게 아이템을 획득한 경우, 아이템이 회수되고 제재를 받을 수 있습니다.</li>
+			</ul>
+		</div>
+	</section>
+
+	<div class="closing">1년 동안 끄투엔과 함께 해 줘서 고마워요. 다음 해에도 함께해요!</div>
+
+	<script>
+		// 탭: 주소의 #party(기본) / #star로 고른다 (공지에서 #star로 별빛 탭에 바로 연결 가능)
+		(function () {
+			var ORDER = ['party', 'star'];
+			var tabs = document.querySelectorAll('.tab');
+			var pages = document.querySelectorAll('.page');
+			var prev = document.querySelector('.side-prev'), next = document.querySelector('.side-next');
+			function show() {
+				var name = location.hash === '#star' ? 'star' : 'party';
+				var at = ORDER.indexOf(name);
+				prev.hidden = at <= 0;
+				next.hidden = at >= ORDER.length - 1;
+				if (at > 0) prev.href = '#' + ORDER[at - 1];
+				if (at < ORDER.length - 1) next.href = '#' + ORDER[at + 1];
+				document.body.className = name === 'party' ? 'theme-party' : 'theme-space';
+				for (var i = 0; i < tabs.length; i++) tabs[i].className = 'tab' + (tabs[i].getAttribute('data-tab') === name ? ' on' : '');
+				for (var j = 0; j < pages.length; j++) pages[j].hidden = pages[j].getAttribute('data-page') !== name;
+			}
+			window.addEventListener('hashchange', function () { show(); window.scrollTo(0, 0); });
+			show();
+		})();
+	</script>
+
+</body>
+
+</html>

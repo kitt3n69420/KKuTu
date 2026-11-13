@@ -3510,3 +3510,6 @@ html[data-ui="new"][data-nk-device="phone"] .nk-notice-text > .nk-notice-run { d
 html[data-ui="new"][data-nk-device="phone"] .nk-notice-text.is-run { text-overflow: clip; }
 html[data-ui="new"][data-nk-device="phone"] .nk-notice-text.is-run > .nk-notice-run { animation: nk-notice-run var(--nk-run-t, 10s) linear infinite; }
 @keyframes nk-notice-run { 0%, 20% { transform: translateX(0); } 85%, 100% { transform: translateX(var(--nk-run-x, 0)); } }
+
+/* 사운드팩 제작자 표기: 신 UI 설정 줄에서는 컨트롤 옆에 한 줄로 */
+html[data-ui="new"] #nk-settings #sound-pack-info { clear: none; width: auto; padding: 0; white-space: nowrap; }

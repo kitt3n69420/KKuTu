@@ -3,7 +3,7 @@
  * Handles event notifications and slash commands
  */
 
-const { Client, GatewayIntentBits, SlashCommandBuilder, EmbedBuilder, REST, Routes } = require('discord.js');
+const { Client, GatewayIntentBits, SlashCommandBuilder, EmbedBuilder, REST, Routes, ActionRowBuilder, ButtonBuilder, ButtonStyle, escapeMarkdown } = require('discord.js');
 const safeRegex = require('safe-regex');
 const JLog = require('./jjlog');
 const LANG = require('../Web/lang/ko_KR.json');
@@ -17,6 +17,10 @@ const GUILD_ID = '1447976671805182086';
 const GLOBAL_COMMANDS = new Set(['ping', 'help', 'dict', 'char', 'meaning', 'mission', 'topic', 'random', 'users', 'record']);
 const CHANNEL_ID = '1485462715395870800';
 const REPORT_CHANNEL_ID = '1529461366900133958';
+// 1주년 별빛 이벤트 '소원을 말해봐' 채널: 자정에 확정된 소원을 보내고 관리자가 하나씩 승인/거절한다
+const WISH_CHANNEL_ID = '1570426751912509580';
+const WISH_POLL_MS = 5 * 60 * 1000;
+const WISH_BATCH = 30; // 한 번에 보내는 최대 개수
 const BOT_PERMISSIONS = '9193377795136';
 const MAX_RESULTS = 20;
 const MAX_REGEX_LENGTH = 200;
@@ -35,6 +39,9 @@ function isBotAvailable() {
 let client = null;
 let channel = null;
 let reportChannel = null;
+let wishChannel = null;
+let _wishTimer = null;
+let _wishSending = false;
 let DB = null;
 let DIC = null;
 let ROOM = null;
@@ -303,6 +310,7 @@ exports.init = async function (token, db, dic, options = {}) {
                 await registerCommands(token);
                 isReady = true;
                 JLog.success('[Discord Bot] Ready!');
+                startWishRelay();
             } catch (err) {
                 JLog.error(`[Discord Bot] Error in ready event: ${err.message}`);
             }
@@ -316,6 +324,12 @@ exports.init = async function (token, db, dic, options = {}) {
                 return;
             }
 
+            if (interaction.isButton() && interaction.customId.indexOf('annivWish:') === 0) {
+                await safeExecute(async () => {
+                    await handleWishButton(interaction);
+                }, 'Button: annivWish');
+                return;
+            }
             if (!interaction.isChatInputCommand()) return;
             if (interaction.guildId !== GUILD_ID && !GLOBAL_COMMANDS.has(interaction.commandName)) return;
 
@@ -1892,6 +1906,124 @@ async function handleUsers(interaction) {
         JLog.error(`[Discord Bot] Users error: ${err.message}`);
         await interaction.editReply({ content: `❌ 접속자 조회 중 오류가 발생했습니다: ${err.message}` });
     }
+}
+
+// ===== 1주년 별빛 이벤트: 소원 승인 =====
+// 웹(major.js /event/anniv/wish)이 저장한 소원은 그날 자정까지 고칠 수 있고, 자정이 지나면(day < 오늘) 확정된다.
+// 확정된 소원을 '소원을 말해봐' 채널에 작성자와 함께 보내고, 관리자가 [승인]/[거절]을 누르면 status를 바꾼다.
+// 승인된 소원만 게임 안 소원 벽(밤하늘)에 이름 없이 뜬다.
+// discord_msg: NULL(아직 안 보냄) → 'sending'(보내는 중, 웹에서 더는 못 고침) → 디스코드 메시지 ID
+function wishSql(q, params) {
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('DB timeout')), DB_TIMEOUT);
+        DB.event_wish.direct(q, params, (err, res) => {
+            clearTimeout(timer);
+            if (err) reject(err);
+            else resolve(res);
+        });
+    });
+}
+function wishFind(conds) {
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('DB timeout')), DB_TIMEOUT);
+        DB.event_wish.find.apply(DB.event_wish, conds).on((rows) => {
+            clearTimeout(timer);
+            resolve(rows || []);
+        }, null, (err) => {
+            clearTimeout(timer);
+            reject(err || new Error('DB error'));
+        });
+    });
+}
+function wishDate(day) {
+    return new Date(day * 86400000).toISOString().slice(0, 10);
+}
+function wishEmbed(w, reviewer) {
+    const look = {
+        pending: { color: 0xFFC93C, label: '승인 대기' },
+        approved: { color: 0x3CCB7F, label: '승인됨 · 밤하늘에 공개' },
+        rejected: { color: 0xFF5C7A, label: '거절됨 · 공개 안 함' }
+    }[w.status] || { color: 0x888888, label: w.status };
+    return new EmbedBuilder()
+        .setColor(look.color)
+        .setTitle('🌠 ' + wishDate(w.day) + '의 소원 #' + w.id)
+        .setDescription(escapeMarkdown(String(w.text || '')).slice(0, 4000))
+        .addFields(
+            { name: '작성자', value: escapeMarkdown(String(w.nickname || '?')) + ' (' + w.uid + ')', inline: true },
+            { name: '상태', value: look.label + (reviewer ? ' (' + reviewer + ')' : ''), inline: true }
+        )
+        .setFooter({ text: '승인한 소원만 게임 안 밤하늘에 이름 없이 올라갑니다' });
+}
+function wishButtons(id) {
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('annivWish:approve:' + id).setLabel('승인').setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId('annivWish:reject:' + id).setLabel('거절').setStyle(ButtonStyle.Danger)
+    );
+}
+function startWishRelay() {
+    if (_wishTimer || !DB || !DB.event_wish) return;
+    // 보내던 중에 꺼졌으면 'sending'에 멈춰 있으므로 다시 보내도록 되돌린다 (봇 프로세스는 하나)
+    wishSql("UPDATE event_wish SET discord_msg = NULL WHERE discord_msg = 'sending'", [])
+        .catch(err => JLog.error('[ANNIV_WISH] reset sending: ' + err.message))
+        .then(() => sendPendingWishes());
+    _wishTimer = setInterval(sendPendingWishes, WISH_POLL_MS);
+}
+async function sendPendingWishes() {
+    if (_wishSending || !isReady || !client || !DB || !DB.event_wish) return;
+    _wishSending = true;
+    try {
+        if (!wishChannel) wishChannel = await client.channels.fetch(WISH_CHANNEL_ID);
+        if (!wishChannel) return;
+        // 자정이 지나 확정된(오늘 이전) 소원 중 아직 안 보낸 것. 조회는 로그가 남지 않는 find로 한다 (5분마다 돌아서)
+        const today = Const.kstDayIndex();
+        const rows = (await wishFind([["eventid", Const.ANNIV.EVENT_ID], ["status", "pending"], ["day", { $lte: today - 1 }]]))
+            .filter(w => w.discord_msg === null || w.discord_msg === undefined)
+            .sort((a, b) => a.id - b.id)
+            .slice(0, WISH_BATCH);
+        for (const w of rows) {
+            // 먼저 'sending'으로 잡는다: 겹쳐 돌거나 웹에서 고치는 것과 부딪히지 않게
+            const claim = await wishSql("UPDATE event_wish SET discord_msg = 'sending' WHERE id = $1 AND discord_msg IS NULL AND status = 'pending'", [w.id]);
+            if (!claim || !claim.rowCount) continue;
+            try {
+                const msg = await wishChannel.send({ embeds: [wishEmbed(w)], components: [wishButtons(w.id)] });
+                await wishSql("UPDATE event_wish SET discord_msg = $2 WHERE id = $1", [w.id, msg.id]);
+            } catch (err) {
+                // 못 보냈으면 다음 차례에 다시 보내도록 되돌리고 이번 차례는 멈춘다 (채널 권한·속도 제한 등)
+                await wishSql("UPDATE event_wish SET discord_msg = NULL WHERE id = $1 AND discord_msg = 'sending'", [w.id]).catch(() => {});
+                JLog.error('[ANNIV_WISH] send #' + w.id + ': ' + err.message);
+                break;
+            }
+        }
+    } catch (err) {
+        JLog.error('[ANNIV_WISH] relay: ' + err.message);
+    } finally {
+        _wishSending = false;
+    }
+}
+async function handleWishButton(interaction) {
+    if (!isAdmin(interaction)) {
+        await interaction.reply({ content: '❌ 관리자만 소원을 승인할 수 있습니다.', ephemeral: true });
+        return;
+    }
+    const parts = interaction.customId.split(':');
+    const status = { approve: 'approved', reject: 'rejected' }[parts[1]];
+    const id = parseInt(parts[2], 10);
+    if (!status || !(id > 0)) return;
+    await interaction.deferUpdate(); // DB가 늦어도 3초 안에 응답
+    const reviewer = interaction.user.globalName || interaction.user.username;
+    // 아직 대기 중일 때만 바꾼다: 두 관리자가 동시에 눌러도 먼저 누른 쪽만 반영
+    const res = await wishSql("UPDATE event_wish SET status = $2, reviewed_by = $3, reviewed_at = $4 WHERE id = $1 AND status = 'pending' "
+        + "RETURNING id, uid, day, nickname, text, status", [id, status, 'discord-' + interaction.user.id, Date.now()]);
+    if (res && res.rowCount) {
+        const w = res.rows[0];
+        JLog.log('[ANNIV_WISH] #' + id + ' ' + status + ' by discord-' + interaction.user.id);
+        await interaction.editReply({ embeds: [wishEmbed(w, reviewer)], components: [] });
+        return;
+    }
+    // 이미 다른 관리자가 처리함: 지금 상태로 메시지를 맞추고 알려 준다
+    const cur = await wishSql("SELECT id, uid, day, nickname, text, status FROM event_wish WHERE id = $1", [id]);
+    if (cur && cur.rows && cur.rows[0]) await interaction.editReply({ embeds: [wishEmbed(cur.rows[0])], components: [] });
+    await interaction.followUp({ content: '이미 처리된 소원입니다.', ephemeral: true });
 }
 
 /**

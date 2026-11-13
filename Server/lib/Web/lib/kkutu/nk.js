@@ -811,7 +811,7 @@ var NK = (function () {
 			.append($top = $("<div>").addClass("nk-room-top")
 				.append($("<div>").addClass("nk-room-no").text(o.id))
 				.append($("<div>").addClass("nk-room-title").text(badWords(o.title))))
-			.append($rules = $("<div>").addClass("nk-room-rules").append($("<b>").text(opts[0])))
+			.append($rules = $("<div>").addClass("nk-room-rules").append(annivModeStar(o.mode), $("<b>").text(opts[0])))
 			.append($("<div>").addClass("nk-room-foot")
 				.append($("<div>").addClass("nk-room-meta").text(ri.text + " · " + o.time + L['SECOND']))
 				.append($("<div>").addClass("nk-status " + state).append($("<label>").attr('data-lang-key', stKey).text(text(stKey))))
@@ -1808,7 +1808,7 @@ var NK = (function () {
 			addSettingTab(t, $pane);
 		});
 		// 등록하지 않은 기존 입력 → "기타" 탭에 그 줄(.dialog-bar)째로
-		$left = $src.children(".dialog-bar").not(".tail-button").filter(function () { return $(this).find("input, select, textarea").length; });
+		$left = $src.find(".dialog-bar").not(".tail-button").filter(function () { return $(this).find("input, select, textarea").length; });
 		if ($left.length) addSettingTab({ id: 'etc', icon: 'grid', labelKey: 'etc' }, $("<div>").addClass("nk-set-pane nk-set-legacy").attr('data-tab', 'etc').append($left));
 
 		$("#nk-settings .nk-dlg-close").on('click', function () {
@@ -1917,7 +1917,7 @@ var NK = (function () {
 		{ tab: 'sound', labelKey: 'bgm', controls: ['#SettingDiag .bgmVolume', '#mute-bgm'], kind: 'volume' },
 		{ tab: 'sound', labelKey: 'effect', controls: ['#SettingDiag .effectVolume', '#mute-effect'], kind: 'volume' },
 		{ tab: 'sound', labelKey: 'lobbyBgm', descKey: 'nkDescLobbyBgm', controls: ['#lobby-bgm'] },
-		{ tab: 'sound', labelKey: 'soundPack', descKey: 'nkDescSoundPack', controls: ['#sound-pack', '#beat-setting'] },
+		{ tab: 'sound', labelKey: 'soundPack', descKey: 'nkDescSoundPack', controls: ['#sound-pack', '#beat-setting', '#sound-pack-info'] },
 		{ tab: 'sound', labelKey: 'rhythmSync', descKey: 'rhythmSyncExpl', controls: ['#rhythm-sync', '#rhythm-sync-val'] },
 		{ tab: 'screen', labelKey: 'uiSetting', descKey: 'nkDescUi', controls: ['#ui-setting', '#ui-style-setting'] },
 		{ tab: 'screen', labelKey: 'nkScale', descKey: 'nkDescScale', controls: ['#nk-scale', '#nk-scale-val', '#nk-scale-reset'] },
@@ -1929,7 +1929,8 @@ var NK = (function () {
 		{ tab: 'screen', section: 'visual', labelKey: 'nkRuleOpen', descKey: 'nkDescRuleOpen', controls: ['#nk-rule-open'], kind: 'toggle' },
 		{ tab: 'screen', section: 'visual', labelKey: 'noShake', descKey: 'nkDescNoShake', controls: ['#no-shake'], kind: 'toggle' },
 		{ tab: 'screen', section: 'visual', labelKey: 'playerScroll', descKey: 'nkDescPlayerScroll', controls: ['#player-scroll'], kind: 'toggle' },
-		{ tab: 'screen', section: 'visual', labelKey: 'kanaReading', descKey: 'nkDescKanaReading', controls: ['#kana-reading'], kind: 'toggle' }
+		{ tab: 'screen', section: 'visual', labelKey: 'kanaReading', descKey: 'nkDescKanaReading', controls: ['#kana-reading'], kind: 'toggle' },
+		{ tab: 'screen', section: 'visual', labelKey: 'scoreENotation', descKey: 'nkDescScoreENotation', controls: ['#score-e-notation'], kind: 'toggle' }
 	].forEach(function (s, i) { s.order = i; my.registerSetting(s); });
 
 	/* ------------------------------------------------------------------

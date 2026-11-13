@@ -562,8 +562,8 @@ exports.submit = function (client, text, data) {
 					// 랜덤미션: 달성하지 않아도 매 턴마다 미션 변경
 					my.game.mission = my.applyChaosVowel(getMission(my.rule.lang, my.opts));
 				}
-				// 아이템전: 아이템 지급 판정
-				if (my.opts.item) {
+				// 아이템전 / 카오스: 아이템 지급 판정
+				if (my.opts.item || my.opts.chaos) {
 					var bp = Const.calcItemBonusPoints(itemMissionCount, false, client.game.straightStreak, fullHouseBonus > 0);
 					my.checkItemGrant(client.id, bp, true);
 				}

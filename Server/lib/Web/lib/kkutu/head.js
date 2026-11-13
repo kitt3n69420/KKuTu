@@ -17,6 +17,7 @@
  */
 
 var MODE;
+var PACK_TOOLTIP = { '차누': '차누(Chanhooyoo1) 제공 · CC BY-NC-ND 4.0' };
 var BEAT = [null,
 	"10000000",
 	"10001000",

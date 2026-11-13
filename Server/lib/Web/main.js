@@ -397,6 +397,7 @@ Server.get("/", function (req, res) {
     GROUPS: Const.GROUPS,
     MODE: Const.GAME_TYPE,
     GAME_CATEGORIES: Const.GAME_CATEGORIES,
+    ANNIV_MODE_COLOR: Const.ANNIV.MODE_COLOR, // 1주년: 모드별 별가루 색 (방 만들기 모드 설명 밑에 표시)
     RULE: Const.RULE,
     OPTIONS: Const.OPTIONS,
     NICKNAME_LIMIT: GLOBAL.NICKNAME_LIMIT,

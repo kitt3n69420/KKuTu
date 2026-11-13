@@ -1252,4 +1252,38 @@ exports.BOT_ITEM_WEIGHTS = {
 	"gradientname_pinkred": 1,
 	"gradientname_purplered": 1
 };
+
+// 끄투엔 1주년 이벤트 (2026-11-14 12:00 ~ 2026-12-15 KST)
+// 이벤트 1 파티(함께 플레이한 최대 인원) / 이벤트 2 별빛: 2-1 별가루 모으기, 2-2 별에게 소원 빌기
+// 별가루 색: R 열정 / Y 꿈 / G 행복 / B 희망 / P 용기
+exports.ANNIV = {
+	EVENT_ID: "kkn_1st",
+	PARTY_CLAIM_ID: "kkn_1st_party", // 파티 보상의 받은 기록(event_claim.eventid)
+	ITEM: { R: "stardust_r", Y: "stardust_y", G: "stardust_g", B: "stardust_b", P: "stardust_p" },
+	// 교환 순환 순서: 두 칸 떨어진 두 별가루를 하나씩 내면 그 사이의 별가루 하나로 바꿀 수 있다 (꿈+열정 → 희망 등)
+	CYCLE: ["Y", "B", "R", "G", "P"],
+	// 색마다 별가루가 나오는 모드 (달가루 모으기 KWC 제외)
+	MODES: {
+		Y: ["KSH", "JSH", "EKK", "JKT", "EKT", "KAP", "EAP", "JAP", "KAK", "EAK", "KCB", "ECB", "K4R"],
+		R: ["KDA", "EDA", "JDA", "KTY", "ETY", "JTY", "KTT", "ETT", "CAL", "CRL", "KKT", "KKU"],
+		G: ["KFR", "JFR", "KTF", "ETF", "KSS", "ESS", "JSS", "KSK", "ESK", "KWS", "EWS", "KCF"],
+		B: ["KQZ", "EQZ", "CSQ", "KPQ", "EPQ", "KSC", "ESQ", "KCW", "ECW", "CCW", "HUN", "ESH"],
+		P: ["XBB", "KJM", "EFR", "CNC", "KRT", "XRG", "KWR", "EWR", "KPF", "EPF", "KLG", "CSD"]
+	},
+	MODE_COLOR: {}, // 모드 코드 → 색 (아래에서 MODES로 채움)
+	TIERS: [5, 10, 25, 50, 75, 100], // 다섯 별가루가 모두 이 개수 이상이면 그 단계 보상
+	REWARDS: ["star_wand", "star_hat", "star_sunglasses", "galaxy_cloth", "shooting_stars", "rainbow_nick"],
+	PARTY_TIERS: [3, 4, 5, 6, 8, 10], // 게임이 끝날 때 함께한 인원(봇 제외, 손님 포함)의 개인 최고 기록
+	PARTY_REWARDS: ["party_horn", "conical_hat", "b2_1staniv", "shine_nick", "kkt_garland", "cake_cloth"],
+	EXP_PER_STAR: 200, // 아이템 효과 전 경험치 몇당 별가루 1개 (임시값, [ANNIV] 로그를 보고 조정)
+	MODE_MUL: { KQZ: 0.5, EQZ: 0.5 }, // 경험치를 많이 주는 스피드퀴즈
+	UNKNOWN_MUL: 0.1, // 언노운 워드 방 (판당 최대 1개)
+	XBB_MUL: 0.02, // 바보 모드 (판당 최대 1개)
+	SOLO_MUL: 0.01, // 사람이 1명인 방: 혼자 감산 전 경험치의 1/100
+	CONVERT_MAX: 999, // 한 번에 바꿀 수 있는 최대 개수
+	WISH_MAX_LEN: 200
+};
+Object.keys(exports.ANNIV.MODES).forEach(function (c) {
+	exports.ANNIV.MODES[c].forEach(function (m) { exports.ANNIV.MODE_COLOR[m] = c; });
+});
 Object.assign(exports, require('./game-utils'));

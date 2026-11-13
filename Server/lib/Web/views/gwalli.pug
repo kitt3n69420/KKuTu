@@ -1,17 +1,17 @@
 //-
 	Rule the words! KKuTu Online
 	Copyright (C) 2017 JJoriping(op@jjo.kr)
-	
+
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
 	the Free Software Foundation, either version 3 of the License, or
 	(at your option) any later version.
-	
+
 	This program is distributed in the hope that it will be useful,
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details.
-	
+
 	You should have received a copy of the GNU General Public License
 	along with this program. If not, see <http://www.gnu.org/licenses/>.
 extends layout
@@ -24,122 +24,163 @@ block CSS
 
 block JS
 	script(type="text/javascript", src="/js/in_admin.min.js")
-	
+
 block Middle
-	fieldset
-		legend 자격
-		input#db-password(type='password', placeholder='암호')
-		input#db-lang(placeholder='테이블')
-	fieldset
-		legend 추가 요청 받기
-		div
-			button#injeong-go 조회
-			div
-				table
+	//- 전역 style.css의 span { display: none } 때문에 이 페이지에서는 span을 쓰지 않음
+	div#admin
+		div#admin-top
+			div#admin-head
+				h1 관리 페이지
+				div#admin-busy 처리 중…
+				div.ah-field
+					label(for='db-password') 관리 암호
+					input#db-password(type='password', placeholder='저장·삭제할 때 필요', autocomplete='current-password')
+				div.ah-field
+					label(for='db-lang') 단어 DB 언어
+					select#db-lang
+						option(value='ko') 한국어 (ko)
+						option(value='en') 영어 (en)
+						option(value='ja') 일본어 (ja)
+			div#admin-tabs
+				button.admin-tab(data-tab='injeong') 어인정 신청
+				button.admin-tab(data-tab='word') 단어 편집
+				button.admin-tab(data-tab='bulk') 단어 일괄 처리
+				button.admin-tab(data-tab='shop') 상점
+				button.admin-tab(data-tab='user') 유저
+				button.admin-tab(data-tab='gamsi') 유저 감시
+				button.admin-tab(data-tab='hot') 인기 단어
+
+		div.admin-pane#pane-injeong
+			div.pane-desc
+				| 유저가 신청한 어인정 단어(최대 100개)입니다. 체크한 항목은 승인되어 한국어 DB에 들어가고,
+				b  체크하지 않은 항목은 거절
+				| 됩니다. 행을 누르면 체크가 바뀌고, 단어와 주제는 고친 뒤 승인할 수 있습니다.
+			div.toolbar
+				button#injeong-go.primary 목록 불러오기
+				div.tb-sep
+				button#injeong-everything 전체 체크
+				button#injeong-nothing 전체 해제
+				div.tb-count#injeong-count
+				div.tb-grow
+				button#injeong-apply.primary 적용
+			div.table-wrap
+				table.admin-table
 					thead: tr
-						td 승인?
-						td 링크
-						td #
-						td theme
-						td writer
-						td createdAt
+						th.c-check 승인
+						th 단어
+						th 주제
+						th 신청자
+						th 신청일
+						th 참고
 					tbody#injeong-data
-			button#injeong-everything 모두 승인
-			button#injeong-nothing 모두 거절
-			button#injeong-apply 적용
-	fieldset
-		legend 상점 DB 다루기
-		div
-			input#shop-word(placeholder='품목 (~ALL)')
-			button#shop-go 조회
-			button#shop-hide 숨기기
-			div#shop-data-wrap
-				table
-					thead: tr
-						td 선택
-						td #
-						td cost
-						td hit
-						td term
-						td group
-						td options
-						td name_ko_KR
-						td desc_ko_KR
-						td name_en_US
-						td desc_en_US
-						td name_ja_JP
-						td desc_ja_JP
-					tbody#shop-data
-			button#shop-add 추가
-			button#shop-delete-selected 선택 삭제
-			button#shop-apply 적용
-	fieldset
-		legend 유저 DB 다루기
-		div
-			input#user-id(placeholder='ID')
-			input#user-nick(placeholder='닉네임')
-			button#user-go 조회
-			div
-				table
-					thead: tr
-						td #
-						td money
-						td kkutu
-						td box
-						td equip
-						td exordial
-						td server
-						td lastLogin
-						td black
-						td blockedUntil
-						td friends
-					tbody#user-data
-			button#user-apply 적용
-	fieldset
-		legend 유저 감시하기
-		div
-			input#gamsi-id(placeholder='ID (,로 구분)')
-			button#gamsi-go 감시
-			div
-				table
-					thead: tr
-						td #
-						td 닉네임
-						td 서버
-					tbody#gamsi-data
-	fieldset
-		legend 끄투 DB 다루기
-		div
-			input#db-word(placeholder='단어')
-			button#db-go 조회
+						tr.empty-row: td(colspan=6) '목록 불러오기'를 눌러 주세요.
+
+		div.admin-pane#pane-word
+			div.pane-desc
+				| 단어 하나의 품사·주제·뜻을 고칩니다. 번호는 '뜻묶음-하위-세부' 위치이고, 앞 두 자리가 같은 줄은 첫 줄의 품사를 함께 씁니다.
+				| 뜻을 모두 지우고 저장하면 단어가 삭제됩니다.
+			div.toolbar
+				input#db-word.w-l(placeholder='단어', data-enter='#db-go')
+				button#db-go.primary 불러오기
 			div#word-data
 				div#wd-id
 				div#wd-flag
-				table
+				div.table-wrap
+					table.admin-table
+						thead: tr
+							th 번호
+							th 품사
+							th 주제
+							th 뜻
+							th 순서 · 삭제
+						tbody#wd-data
+				div.toolbar
+					button#word-add + 뜻 추가
+					div.tb-hint ↑↓에 Shift를 누르면 번호까지 서로 바꿉니다.
+					div.tb-grow
+					button#db-apply.primary 저장
+
+		div.admin-pane#pane-bulk
+			div.pane-desc 위에서 고른 언어 DB에 여러 단어를 한꺼번에 주제와 함께 추가하거나 삭제합니다. 단어는 줄바꿈이나 쉼표로 구분합니다.
+			div.toolbar
+				input#db-theme.w-l(placeholder='주제 ID (예: LOL)', list='db-theme-list')
+				datalist#db-theme-list
+				div.tb-hint#db-theme-name
+				div.tb-grow
+				button#db-load 이 주제의 단어 불러오기
+			textarea#db-list(rows=18, placeholder='단어를 한 줄에 하나씩 적어 주세요.')
+			div.toolbar
+				div.tb-count#db-list-count 0개
+				div.tb-grow
+				button#db-delete.danger 목록의 단어 삭제
+				button#db-ok.primary 주제로 추가
+
+		div.admin-pane#pane-shop
+			div.pane-desc
+				| 상점 품목을 조회하고 고칩니다.
+				b  '보이는 행 저장'은 지금 화면에 보이는 모든 행을 저장
+				| 합니다. 기간 0은 무기한이고, 구매수는 보기 전용입니다.
+			div.toolbar
+				input#shop-word.w-l(placeholder='품목 ID (비우면 전체)', data-enter='#shop-go')
+				button#shop-go.primary 조회
+				div.tb-sep
+				button#shop-add + 새 품목
+				button#shop-hide 새 품목만 보기
+				div.tb-grow
+				button#shop-delete-selected.danger 선택 삭제
+				button#shop-apply.primary 보이는 행 저장
+			div#shop-data-wrap.table-wrap
+				table.admin-table
 					thead: tr
-						td #
-						td type
-						td theme
-						td mean
-						td 행동
-					tbody#wd-data
-			div#word-flag
-			div#word-hit
-			button#word-add 추가
-			button#db-apply 적용
-	fieldset
-		legend 끄투 DB에 단어 추가하기
-		div
-			input#db-theme(placeholder='주제 ID (~부터 시작하면 검색)', list='db-theme-list')
-			datalist#db-theme-list
-			br
-			textarea#db-list(rows=20, cols=100)
-			br
-			button#db-ok 확인
-			button#db-delete 대량 삭제
-	fieldset
-		legend 끄투에서의 인기 단어
-		button#kpw-query 조회
-		textarea#kpw-html
-		div#kpw-table
-		button#kpw-flush 반영
+						th 선택
+						th ID
+						th 가격
+						th 구매수
+						th 기간
+						th 분류
+						th 효과
+						th 한국어 이름 / 설명
+						th 영어 이름 / 설명
+						th 일본어 이름 / 설명
+					tbody#shop-data
+						tr.empty-row: td(colspan=10) '조회'를 눌러 주세요.
+
+		div.admin-pane#pane-user
+			div.pane-desc 유저 ID나 닉네임으로 찾아 닉네임·핑·소개·보관함을 고칩니다. 회색 칸은 서버가 저장하지 않는 보기 전용 항목입니다.
+			div.toolbar
+				input#user-id.w-l(placeholder='유저 ID', data-enter='#user-go')
+				input#user-nick.w-l(placeholder='또는 닉네임', data-enter='#user-go')
+				button#user-go.primary 조회
+				div.tb-grow
+				button#user-apply.primary 저장
+			div#user-data
+				div.empty-box 유저를 조회해 주세요.
+
+		div.admin-pane#pane-gamsi
+			div.pane-desc 지정한 유저가 어느 서버에 있는지 확인합니다. 처음에 모두 확인한 뒤 10초마다 한 명씩 돌아가며 갱신합니다.
+			div.toolbar
+				input#gamsi-id.w-l(placeholder='유저 ID (쉼표로 여러 명)', data-enter='#gamsi-go')
+				button#gamsi-go.primary 감시 시작
+				button#gamsi-stop 중지
+				div.tb-hint#gamsi-state
+			div.table-wrap
+				table.admin-table
+					thead: tr
+						th ID
+						th 닉네임
+						th 서버
+					tbody#gamsi-data
+						tr.empty-row: td(colspan=3) 감시 중인 유저가 없습니다.
+
+		div.admin-pane#pane-hot
+			div.pane-desc 많이 쓰인 단어 순위(상위 30개)입니다. 괄호 안 숫자는 마지막으로 기준을 저장한 뒤 늘어난 횟수입니다.
+			div.toolbar
+				button#kpw-query.primary 조회
+				div.tb-grow
+				button#kpw-flush 지금 순위를 기준으로 저장
+			div#kpw-table
+			details#kpw-html-box
+				summary HTML 코드 (복사용)
+				textarea#kpw-html(rows=8, readonly)
+
+		div#admin-toast

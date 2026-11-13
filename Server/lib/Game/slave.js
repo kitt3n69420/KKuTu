@@ -407,7 +407,7 @@ KKuTu.onClientMessage = function ($c, msg) {
         else if (!(temp = ROOM[$c.place])) return;
         if (!temp.gaming) return;
         if (temp.game.late) {
-          var lateVal = (temp.opts.noswear && KKuTu.checkSwearWords(msg.value).length > 0) ? KKuTu.censorSwearWords(msg.value) : msg.value;
+          var lateVal = (temp.opts.noswear && KKuTu.checkSwearWords(msg.value, true).length > 0) ? KKuTu.censorSwearWords(msg.value, true) : msg.value;
           $c.chat(lateVal);
         } else if (!temp.game.loading) {
           var safeData = Array.isArray(msg.data) ? msg.data : undefined;
@@ -443,9 +443,9 @@ KKuTu.onClientMessage = function ($c, msg) {
             break;
           }
         }
-        // 일반 채팅: 방에 있고 noswear 규칙이 켜져 있을 때만 검열
+        // 일반 채팅: 방에 있고 noswear 규칙이 켜져 있을 때만 검열 (공백을 무시하고 검사해 "시 발" 우회 차단)
         var chatRoom = ROOM[$c.place];
-        var chatVal = (chatRoom && chatRoom.opts.noswear && KKuTu.checkSwearWords(msg.value).length > 0) ? KKuTu.censorSwearWords(msg.value) : msg.value;
+        var chatVal = (chatRoom && chatRoom.opts.noswear && KKuTu.checkSwearWords(msg.value, true).length > 0) ? KKuTu.censorSwearWords(msg.value, true) : msg.value;
         if (msg.whisper) {
           process.send({ type: "tail-report", id: $c.id, chan: CHAN, place: $c.place, msg: msg });
           process.send({ type: "whisper-log", profile: $c.profile, message: chatVal, targets: msg.whisper });
@@ -500,6 +500,10 @@ KKuTu.onClientMessage = function ($c, msg) {
           stable = false;
         }
         if (msg.password.length > 20) stable = false;
+        if (/^\d{1,3}$/.test(msg.password) || /^(.)\1*$/.test(msg.password) || ["1234", "6974"].indexOf(msg.password) != -1) {
+          msg.code = 468;
+          stable = false;
+        }
         if (msg.limit < 2 || msg.limit > 24) {
           msg.code = 432;
           stable = false;

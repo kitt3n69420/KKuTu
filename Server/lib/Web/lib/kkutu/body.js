@@ -23,7 +23,7 @@ var spamCount = 0;
 function zeroPadding(num, len) {
 	if (num < 0) {
 		var s = Math.abs(num).toString();
-		return "-" + "000000000000000".slice(0, Math.max(0, len - s.length) - 1) + s;
+		return "-" + "000000000000000".slice(0, Math.max(0, len - s.length - 1)) + s;
 	}
 	var s = num.toString();
 	return "000000000000000".slice(0, Math.max(0, len - s.length)) + s;
@@ -247,6 +247,7 @@ function applyOptions(opt) {
 	$("#no-shake").prop('checked', ($data.opts.ns === true));
 	$("#player-scroll").prop('checked', ($data.opts.ps === true));
 	$("#kana-reading").prop('checked', ($data.opts.kr !== false));
+	$("#score-e-notation").prop('checked', ($data.opts.se === true));
 
 	// 사운드팩 설정 (localStorage에 값이 있으면 localStorage, 없으면 cookie)
 	var soundPack = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts.sp || "");
@@ -764,6 +765,8 @@ function onMessage(data) {
 			updateCommunity();
 			break;
 		case 'starting':
+			// 1주년 창은 보상 받기·바꾸기가 box를 바꾸므로 게임이 시작되면 닫는다 (게임이 끝날 때 게임 서버가 box를 덮어씀)
+			if (EVENT_ACTIVE_1ST) $stage.dialog.exchangeWorkshop.hide();
 			loading(L['gameLoading']);
 			break;
 		case 'roundReady':
@@ -2008,7 +2011,8 @@ function addonNickname($R, o) {
 		var cls = "x-" + o.equip['NIK'];
 		$R.addClass(cls);
 		// For gradient names, also apply to the direct text child for proper text clipping
-		if (o.equip['NIK'].indexOf("gradientname_") === 0 || o.equip['NIK'].indexOf("kkn_triname") === 0) {
+		if (o.equip['NIK'].indexOf("gradientname_") === 0 || o.equip['NIK'].indexOf("kkn_triname") === 0
+			|| o.equip['NIK'] === "rainbow_nick" || o.equip['NIK'] === "shine_nick") {
 			var $text = $R.find(".users-name, .room-user-name, .game-user-name, .chat-head").first();
 			if ($text.length) $text.addClass(cls);
 		}
@@ -2092,6 +2096,7 @@ function roomListBar(o) {
 			});
 		}
 	}
+	if (annivModeStar(o.mode)) $rm.prepend(annivModeStar(o.mode), " ");
 	global.expl($R);
 
 	if (o.gaming) $R.addClass("rooms-gaming");
@@ -2587,7 +2592,7 @@ function animateScore(o) {
 	drawScore(o.$obj, Math.round(o.now));
 }
 function drawScore($obj, score) {
-	var i, d, m, sc, lead, neg;
+	var i, d, m, sc, lead, neg, sg, dg, x, n, dot = -1;
 
 	// 카오스 플러스 점수 가리기: 모든 점수(서바이벌은 체력)를 ?????로
 	if ($data._chaosHideScore) {
@@ -2596,16 +2601,25 @@ function drawScore($obj, score) {
 		return;
 	}
 
-	if (Math.round(score * 0.001) > 9999) {
-		// 10000k부터는 지수 표기, 다섯 칸에 맞게 소수 자리를 줄임: 1.23e7 → 1.2e10 → 1e100
-		// 칸에는 "123e7"처럼 점 없이, 점은 첫째·둘째 칸 사이에 칸 없이 얹음
-		// 반올림으로 지수가 올라가면(9.96e99 → 1.0e100) 한 자리 줄여 다시 계산
-		for (d = 2; ; d--) {
-			m = score.toExponential(d).split('e');
-			if (+m[1] < [Infinity, 100, 10][d]) break;
-		}
-		sc = m[0].replace('.', '') + 'e' + (+m[1]);
-	} else sc = (score > 99999) ? (zeroPadding(Math.round(score * 0.001), 4) + 'k') : zeroPadding(score, 5);
+	// 줄여 쓰는 점수는 0쪽으로 버림(반올림하지 않음): 유효 숫자(dg)와 10의 지수(x)를 글자로 뽑아 앞자리만 잘라 씀.
+	// 21자리면 정수 점수는 다 들어가서 잘라도 틀리지 않음 (Math.log10은 999…9를 10^n으로 올려 셀 수 있어 안 씀)
+	sg = score < 0 ? '-' : '';
+	m = Math.abs(score).toExponential(20).split('e');
+	dg = m[0].replace('.', '');
+	x = +m[1];
+	if ($data.opts.se === true ? x >= (sg ? 4 : 7) : x >= 18) {
+		// 지수 표기: e 표기 켬이면 10000k부터, 마이너스는 -10000부터 / 끔이면 q를 넘는 1000q부터
+		// 다섯 칸에 맞게 소수 자리를 줄임: 1.23e7 → 1.2e10 → 1e100, 마이너스는 -1.2e5 → -5e10
+		// 칸에는 "123e7"처럼 점 없이, 점은 첫째·둘째 숫자 사이에 칸 없이 얹음
+		d = Math.max(0, 3 - sg.length - String(x).length);
+		sc = sg + dg.slice(0, d + 1) + 'e' + x;
+		if (d) dot = 0;
+	} else if ($data.opts.se !== true && x >= 5) {
+		// 점수 e 표기 끔(기본, opts.se): 10만부터 유효 숫자 네 자리 + k·m·b·t·q, 점은 자릿수에 따라 옮김 — 123.4k → 1.234m → 12.34m → 123.4m
+		n = Math.floor(x / 3);
+		sc = sg + dg.slice(0, 4) + "kmbtq".charAt(n - 1);
+		dot = x - n * 3;
+	} else sc = (score > 99999) ? (zeroPadding(Math.floor(score / 1000), 4) + 'k') : zeroPadding(score, 5);
 
 	// 앞자리 0 (신 UI가 흐리게 표시, 마지막 자리는 0이어도 제외). 마이너스 점수는 '-' 뒤의 0들 — 신 UI는 마이너스 점수를 빨갛게(nk-neg)
 	neg = sc.charAt(0) === '-';
@@ -2615,7 +2629,8 @@ function drawScore($obj, score) {
 	$obj.empty().toggleClass("nk-neg", neg);
 	for (i = 0; i < sc.length; i++) {
 		$obj.append($("<div>").addClass("game-user-score-char" + (i < lead && sc[i] === '0' ? " nk-z" : "")).html(sc[i]));
-		if (i === 0 && d) $obj.append($("<div>").addClass("game-user-score-dot").html("."));
+		// 점(dot = '-'를 뺀 몇째 글자 뒤인지)은 칸 없이 얹음
+		if (dot >= 0 && i === dot + (neg ? 1 : 0)) $obj.append($("<div>").addClass("game-user-score-dot").html("."));
 	}
 }
 function checkFailCombo(id) {

@@ -17,6 +17,7 @@
  */
 
 var MODE;
+var PACK_TOOLTIP = { '차누': '차누(Chanhooyoo1) 제공 · CC BY-NC-ND 4.0' };
 var BEAT = [null,
 	"10000000",
 	"10001000",
@@ -417,6 +418,10 @@ $(document).ready(function () {
 		packs.forEach(function (pack) {
 			$sel.append($("<option>").val(pack.name).text(pack.name));
 		});
+		$sel.on('change', function () {
+			var tip = PACK_TOOLTIP[$(this).val()];
+			$('#sound-pack-info').toggle(!!tip).text(tip || '');
+		});
 
 		var cookieVal = $.cookie('kks');
 		try {
@@ -468,7 +473,6 @@ $(document).ready(function () {
 			// 사운드 리스트 초기화 후 로드
 			var currentPackName = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts && $data.opts.sp);
 			var currentPack = packs.find(function (p) { return p.name === currentPackName; });
-			var packFiles = currentPack ? currentPack.files : [];
 
 			$data._soundList = [
 				{ key: "k", value: "/media/kkutu/k.mp3" },
@@ -500,9 +504,8 @@ $(document).ready(function () {
 			if (currentPack) {
 				$data._soundList.forEach(function (s) {
 					var filename = s.value.split('/').pop();
-					if (packFiles.indexOf(filename) != -1) {
-						s.value = "/media/kkutu/" + currentPack.name + "/" + filename;
-					}
+					var packPath = resolvePackSoundPath(packs, currentPack, filename);
+					if (packPath) s.value = packPath;
 				});
 			}
 
@@ -527,6 +530,8 @@ $(document).ready(function () {
 	OPTIONS = JSON.parse($("#OPTIONS").html());
 	GAME_CATEGORIES = JSON.parse($("#GAME_CATEGORIES").html());
 	EVENT_ACTIVE_KWC = $("#EVENT_ACTIVE_KWC").html() == "true";
+	EVENT_ACTIVE_1ST = $("#EVENT_ACTIVE_1ST").html() == "true";
+	ANNIV_MODE_COLOR = JSON.parse($("#ANNIV_MODE_COLOR").html() || "{}");
 	KO_INJEONG = JSON.parse($("#KO_INJEONG").html() || "[]");
 	EN_INJEONG = JSON.parse($("#EN_INJEONG").html() || "[]");
 	JA_INJEONG = JSON.parse($("#JA_INJEONG").html() || "[]");
@@ -1079,6 +1084,8 @@ $(document).ready(function () {
 
 		// 사운드팩 선택 설정
 		$("#sound-pack").val(savedSettings.soundPack || "");
+		var _spTip = PACK_TOOLTIP[$("#sound-pack").val()];
+		$('#sound-pack-info').toggle(!!_spTip).text(_spTip || '');
 
 		// 레벨 아이콘 팩 선택 설정
 		$("#level-pack").val(savedSettings.levelPack || "");
@@ -1103,6 +1110,9 @@ $(document).ready(function () {
 
 		// 가나 발음 보기 설정 (기본 켜짐)
 		$("#kana-reading").prop('checked', (!$data.opts || $data.opts.kr !== false));
+
+		// 점수 e 표기 설정 (기본 꺼짐 = k·m·b·t·q)
+		$("#score-e-notation").prop('checked', ($data.opts && $data.opts.se === true));
 
 		// 이스터에그 끄기 설정 (기본 꺼짐)
 		$("#no-easter-egg").prop('checked', savedSettings.noEasterEgg === true);
@@ -1150,6 +1160,14 @@ $(document).ready(function () {
 		// 신 UI는 같은 입력 요소를 탭별로 옮겨 둔 새 설정 창을 띄움 (값·저장은 위·아래 기존 코드 그대로)
 		if (NK.active) NK.openSettings();
 		else showDialog($stage.dialog.setting);
+	});
+	// 기본 UI 설정 창 탭 (일반·사운드·그래픽): 같은 data-tab의 칸만 보임. 다시 열면 마지막에 본 탭 그대로
+	$stage.dialog.setting.find(".setting-tab").on('click', function (e) {
+		var tab = $(e.currentTarget).attr('data-tab');
+
+		$stage.dialog.setting.find(".setting-tab, .setting-pane").each(function () {
+			$(this).toggleClass('active', $(this).attr('data-tab') === tab);
+		});
 	});
 	$stage.menu.community.on('click', function (e) {
 		if ($data.guest) return fail(451);
@@ -1377,6 +1395,12 @@ $(document).ready(function () {
 		var v = $("#room-mode").val();
 		var rule = RULE[MODE[v]];
 		$("#game-mode-expl").html(L['modex' + v]);
+		// 1주년 이벤트 기간: 이 모드에서 모으는 별가루 이름을 별표와 함께 설명 밑에 같은 크기로, 그 별가루 색으로
+		if (EVENT_ACTIVE_1ST && ANNIV_MODE_COLOR[MODE[v]]) {
+			var dustC = ANNIV_MODE_COLOR[MODE[v]], dustId = "stardust_" + dustC.toLowerCase();
+			$("#game-mode-expl").append($("<div>").addClass("anniv-mode-dust anniv-dust-" + dustC)
+				.text("★ " + ((L[dustId] && L[dustId][0]) || L['annivColor_' + dustC])));
+		}
 
 		updateGameOptions(rule.opts, 'room');
 		updateGameOptions(rule.opts, 'room-flat');
@@ -2204,6 +2228,7 @@ $(document).ready(function () {
 			ns: $("#no-shake").is(":checked"),
 			ps: $("#player-scroll").is(":checked"),
 			kr: $("#kana-reading").is(":checked"),
+			se: $("#score-e-notation").is(":checked"),
 			sp: newSoundPack,
 			lp: newLevelPack
 		};
@@ -2289,9 +2314,8 @@ $(document).ready(function () {
 				$.get("/soundpacks", function (packs) {
 					var pack = packs.find(function (p) { return p.name === packName; });
 					url = "/media/kkutu/LobbyBGM.mp3"; // Default fallback
-					if (pack && pack.files.indexOf("LobbyBGM.mp3") != -1) {
-						url = "/media/kkutu/" + packName + "/LobbyBGM.mp3";
-					}
+					var packLobby = pack && resolvePackSoundPath(packs, pack, "LobbyBGM.mp3");
+					if (packLobby) url = packLobby;
 					reloadBGM(url);
 				});
 			}
@@ -2973,6 +2997,8 @@ $(document).ready(function () {
 		if (showDialog($stage.dialog.exchangeWorkshop)) {
 			// 추석 이벤트 기간에는 이 다이얼로그가 교환소 대신 달가루 패널을 보여준다 (아이템 교환소가 없는 이벤트라서)
 			if (EVENT_ACTIVE_KWC) drawMoonPanel();
+			// 1주년 기간에는 별가루·소원·파티 탭이 있는 1주년 창
+			else if (EVENT_ACTIVE_1ST) drawAnnivPanel();
 			else drawExchangeWorkshop();
 		}
 	});
@@ -11039,6 +11065,475 @@ function claimMilestone(tier) {
 	});
 }
 
+// ===== 1주년 이벤트 창: 파티(이벤트 1) / 별가루(이벤트 2-1) / 소원(이벤트 2-2) 탭 =====
+// 교환소 버튼으로 여는 창 하나 안에서 탭으로 나눈다. 서버는 major.js의 /event/anniv/* 를 쓴다.
+var ANNIV_COLORS = { R: "#FF5C7A", Y: "#FFC93C", G: "#3CCB7F", B: "#4DA3FF", P: "#B07CFF" };
+var ANNIV_WISH_COLORS = ["#FFB8C4", "#FFF0A8", "#BDF5CF", "#B8D9FF", "#DEC8FF"]; // 소원 별: 연한 빨·노·초·파·보
+var ANNIV_PARTY_SEATS = 12; // 한 번에 앉는 모레미 수 (기록은 방 최대 인원 24명까지)
+var ANNIV_PARTY_ROW = 6;
+
+// 방 목록: 1주년 기간에는 모드 이름 앞에 그 모드에서 모으는 별가루 색의 별 (마우스를 올리면 별가루 이름)
+function annivModeStar(mode) {
+	var c = EVENT_ACTIVE_1ST && ANNIV_MODE_COLOR[MODE[mode]];
+	var id;
+
+	if (!c) return null;
+	id = "stardust_" + c.toLowerCase();
+	return $("<label>").addClass("anniv-mode-star anniv-dust-" + c).attr('title', (L[id] && L[id][0]) || L['annivColor_' + c]).text("★");
+}
+function drawAnnivPanel() {
+	var old = $data._anniv || {};
+	var $panel = $("#event-anniv-panel");
+
+	// 창을 열 때마다 소원 목록은 새로 받는다 (그 사이 승인된 소원이 보이도록). 보던 탭과 고른 색은 그대로
+	$data._anniv = { tab: old.tab || 'party', conv: old.conv || null, wishes: null, wishMore: false, scroll: old.res ? old.scroll : 0 };
+	if (!old.res) $panel.empty();
+	$.get("/event/anniv/status", {}, function (res) {
+		if (!res || res.error || !res.active) {
+			$panel.empty().append($("<div>").addClass("exc-list-empty").text(res && res.error ? L['error_' + res.error] : L['excNoOffers']));
+			return;
+		}
+		$data._anniv.res = res;
+		annivRender(true);
+	});
+}
+function annivRender(keepScroll) {
+	var st = $data._anniv;
+	var $panel = $("#event-anniv-panel");
+	var top = keepScroll ? $panel.find(".anniv-body").scrollTop() || st.scroll || 0 : 0;
+	var $tabs = $("<div>").addClass("anniv-tabs");
+	var $body = $("<div>").addClass("anniv-body");
+
+	// 탭 순서: 이벤트 1 파티 → 이벤트 2 별빛(별가루·소원)
+	[["party", "annivTabParty"], ["star", "annivTabStar"], ["wish", "annivTabWish"]].forEach(function (t) {
+		$tabs.append($("<div>").addClass("anniv-tab" + (st.tab === t[0] ? " anniv-tab-on" : "")).text(L[t[1]]).on('click', function () {
+			if (st.tab === t[0]) return;
+			st.tab = t[0];
+			annivRender(false);
+		}));
+	});
+	$panel.empty().append($tabs, $body);
+	if (st.tab === 'star') annivDrawStar($body, st.res);
+	else if (st.tab === 'wish') annivDrawWish($body, st);
+	else annivDrawParty($body, st.res);
+	$body.scrollTop(top);
+	$body.on('scroll', function () { st.scroll = $body.scrollTop(); });
+}
+function annivSvg(tag, attrs) {
+	var el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+	var k;
+
+	for (k in attrs) el.setAttribute(k, attrs[k]);
+	return el;
+}
+function annivPt(r, deg) {
+	var a = deg * Math.PI / 180;
+	return [r * Math.cos(a), r * Math.sin(a)];
+}
+// 별 모양: 안쪽 꼭짓점을 정오각별(0.382)보다 바깥에 두어 통통하게 하고, 바깥 끝은 둥글게 깎는다 (사용자 요청: 끝이 덜 날카롭게)
+var ANNIV_STAR_INNER = 0.45;
+var ANNIV_STAR_ROUND = 0.22; // 끝에서 양옆 변 길이의 이 비율만큼 들어간 두 점을 끝을 조절점으로 하는 곡선으로 잇는다
+// pts를 s배 해서 잇는 SVG 경로. tips에 든 번호의 점은 둥근 끝
+function annivStarPath(pts, tips, s) {
+	var n = pts.length, d = "", i, p, prev, next;
+	function at(q) { return (q[0] * s).toFixed(2) + "," + (q[1] * s).toFixed(2); }
+	function toward(from, to) { return [from[0] + (to[0] - from[0]) * ANNIV_STAR_ROUND, from[1] + (to[1] - from[1]) * ANNIV_STAR_ROUND]; }
+
+	for (i = 0; i < n; i++) {
+		p = pts[i];
+		if (tips.indexOf(i) === -1) {
+			d += (i ? " L " : "M ") + at(p);
+			continue;
+		}
+		prev = pts[(i + n - 1) % n];
+		next = pts[(i + 1) % n];
+		d += (i ? " L " : "M ") + at(toward(p, prev)) + " Q " + at(p) + " " + at(toward(p, next));
+	}
+	return d + " Z";
+}
+function annivDot(c) {
+	return $("<div>").addClass("anniv-dot").css('background-color', ANNIV_COLORS[c]);
+}
+// 팔 길이(0~1): 단계마다 같은 길이만큼 자란다. 단계 기준이 5·10·25…로 벌어져도 화면에서는 고르게 = 로그 스케일
+// 단계 안에서는 개수에 비례해서 자란다 (추석 달 위상과 같은 방식)
+function annivStarProgress(n, tiers) {
+	var prev = 0, i;
+
+	if (n <= 0) return 0;
+	for (i = 0; i < tiers.length; i++) {
+		if (n < tiers[i]) return (i + (n - prev) / (tiers[i] - prev)) / tiers.length;
+		prev = tiers[i];
+	}
+	return 1;
+}
+// 보상 칸 그림: 모레미 아이템은 모레미에 입혀서, 나머지(이름 등)는 상점 그림
+function annivItemIcon(itemId) {
+	var shop = $data.shop[itemId];
+	var $icon = $("<div>").addClass("moremi anniv-cell-icon");
+	var eq = {};
+
+	if (!shop) return $icon;
+	if (shop.group.charAt(0) === 'M') eq[shop.group === 'Mhand' ? 'Mlhand' : shop.group] = itemId;
+	else if (shop.group.slice(0, 3) === 'BDG') eq.BDG = itemId;
+	else return $icon.css('background-image', "url(" + iImage(itemId, shop) + ")"); // jt-image는 float이 붙어서 쓰지 않음
+	renderMoremi($icon, eq);
+	return $icon;
+}
+// 보상 칸 하나: 그림 / 이름 / 기준 / [받기]·받음
+function annivRewardCell(itemId, tier, needText, reached, claimed, track) {
+	var $cell = $("<div>").addClass("anniv-cell" + (claimed ? " anniv-cell-owned" : (reached ? " anniv-cell-ready" : " anniv-cell-locked")));
+	var $name = $("<div>").addClass("anniv-cell-name");
+	var name = (L[itemId] && L[itemId][0]) || itemId; // 아이템 SQL을 아직 안 넣었으면 ID로
+
+	if ($data.shop[itemId] && $data.shop[itemId].group === 'NIK') $name.append($("<label>").addClass("x-" + itemId).text(name));
+	else $name.text(name);
+	var $act = $("<div>").addClass("anniv-cell-act"); // 받기·받음 자리: 모든 칸의 맨 아래 같은 높이
+
+	$cell.append(annivItemIcon(itemId), $name, $("<div>").addClass("anniv-cell-need").text(needText), $act);
+	if (claimed) {
+		$cell.append($("<div>").addClass("anniv-cell-check").html("&#10003;"));
+		$act.append($("<div>").addClass("anniv-cell-status").text(L['eventMoonClaimed']));
+	} else if (reached) {
+		$act.append($("<button>").addClass("anniv-claim-btn").text(L['eventMoonClaim']).on('click', function () { annivClaim(track, tier); }));
+	}
+	return $cell;
+}
+function annivClaim(track, tier) {
+	$.post("/event/anniv/claim", { track: track, tier: tier }, function (res) {
+		if (res.error) return fail(res.error);
+		send('refresh');
+		$data.box = res.box;
+		queueObtain({ key: res.obtained, value: 1 });
+
+		drawMyDress($data._avGroup);
+		updateMe();
+		drawAnnivPanel();
+	});
+}
+
+// --- 이벤트 2-1 별가루: 다섯 팔이 순환 순서(꿈→희망→열정→행복→용기)대로 시계 방향. 바꾸기의 재료가 별에서 바로 양옆 팔이 된다
+function annivDrawStar($body, res) {
+	var R = 86, r = R * ANNIV_STAR_INNER, n = res.tiers.length;
+	var min = Math.min.apply(null, res.cycle.map(function (c) { return res.stars[c] || 0; }));
+	var svg = annivSvg("svg", { "class": "anniv-star-svg", viewBox: "-160 -122 320 238" });
+	var outline = [], arms = [], k;
+	var $grid = $("<div>").addClass("anniv-grid");
+	var $conv = $("<div>").addClass("anniv-sec");
+	var $legend = $("<div>").addClass("anniv-sec");
+
+	// 단계 눈금: 단계마다 별 윤곽 하나. 다섯 팔이 모두 넘은 단계는 밝게
+	for (k = 0; k < 10; k++) outline.push(annivPt(k % 2 ? r : R, -90 + 36 * k));
+	for (k = 1; k <= n; k++) {
+		svg.appendChild(annivSvg("path", { d: annivStarPath(outline, [0, 2, 4, 6, 8], k / n), "class": "anniv-star-guide" + (min >= res.tiers[k - 1] ? " anniv-star-guide-on" : "") }));
+	}
+	res.cycle.forEach(function (c, i) {
+		var a = -90 + 72 * i;
+		var kite = [[0, 0], annivPt(r, a - 36), annivPt(R, a), annivPt(r, a + 36)];
+		var arm = annivSvg("path", { d: annivStarPath(kite, [2], 0), fill: ANNIV_COLORS[c], "class": "anniv-star-arm" });
+		var lp = annivPt(R + 12, a), cos = Math.cos(a * Math.PI / 180), sin = Math.sin(a * Math.PI / 180);
+		var dy = sin < -0.9 ? [-16, 0] : (sin > 0.5 ? [8, 23] : [-4, 11]);
+		var text = annivSvg("text", { "text-anchor": Math.abs(cos) < 0.3 ? "middle" : (cos > 0 ? "start" : "end"), fill: ANNIV_COLORS[c], "class": "anniv-star-label" });
+		var t1 = annivSvg("tspan", { x: lp[0].toFixed(1), y: (lp[1] + dy[0]).toFixed(1), "class": "anniv-star-label-name" });
+		var t2 = annivSvg("tspan", { x: lp[0].toFixed(1), y: (lp[1] + dy[1]).toFixed(1), "class": "anniv-star-label-count" });
+
+		svg.appendChild(annivSvg("path", { d: annivStarPath(kite, [2], 1), fill: ANNIV_COLORS[c], stroke: ANNIV_COLORS[c], "class": "anniv-star-track" }));
+		svg.appendChild(arm);
+		arms.push([arm, annivStarProgress(res.stars[c] || 0, res.tiers), kite]);
+		t1.textContent = L['annivColor_' + c];
+		t2.textContent = commify(res.stars[c] || 0);
+		text.appendChild(t1);
+		text.appendChild(t2);
+		svg.appendChild(text);
+	});
+	$body.append($("<div>").addClass("anniv-sky anniv-star-sky").append(svg));
+	// 팔이 가운데에서부터 커지는 모습 (SVG 안 CSS transform-origin은 브라우저마다 달라서 꼭짓점을 직접 늘린다)
+	var t0 = null;
+	function grow(ts) {
+		var k, e;
+
+		if (t0 === null) t0 = ts;
+		k = Math.min(1, (ts - t0) / 900);
+		e = 1 - Math.pow(1 - k, 3);
+		arms.forEach(function (a) { a[0].setAttribute("d", annivStarPath(a[2], [2], a[1] * e)); });
+		if (k < 1 && document.body.contains(svg)) requestAnimationFrame(grow);
+	}
+	requestAnimationFrame(grow);
+
+	$body.append($("<div>").addClass("anniv-help").text(L['annivStarHelp']));
+	res.tiers.forEach(function (need, i) {
+		$grid.append(annivRewardCell(res.rewards[i], i + 1, L['annivNeedEach'].replace("{V1}", commify(need)), min >= need, res.claimed.indexOf(i + 1) !== -1, 'star'));
+	});
+	$body.append($grid, $conv, $legend);
+	annivDrawConvert($conv, res);
+
+	$legend.append($("<div>").addClass("anniv-sec-title").text(L['annivModesTitle']));
+	res.cycle.forEach(function (c) {
+		var names = (res.modes[c] || []).map(function (m) { return L['mode' + m] || m; }).join(", ");
+		$legend.append($("<div>").addClass("anniv-legend-row").append(
+			annivDot(c),
+			$("<div>").addClass("anniv-legend-name").text(L['annivColor_' + c]),
+			$("<div>").addClass("anniv-legend-modes").text(names)
+		));
+	});
+}
+// 별가루 바꾸기: 받을 색을 고르면 순환 순서에서 그 양옆 두 색을 n개씩 낸다 (서버 Const.annivConvertSources와 같은 규칙)
+function annivDrawConvert($box, res) {
+	var st = $data._anniv, cyc = res.cycle;
+	var $targets = $("<div>").addClass("anniv-conv-targets");
+	var i, a, b, max, $n;
+
+	$box.empty().append(
+		$("<div>").addClass("anniv-sec-title").text(L['annivConvertTitle']),
+		$("<div>").addClass("anniv-help").text(L['annivConvertHelp']),
+		$targets
+	);
+	cyc.forEach(function (c) {
+		$targets.append($("<div>").addClass("anniv-conv-target" + (st.conv === c ? " anniv-conv-on" : "")).css('border-color', ANNIV_COLORS[c])
+			.append(annivDot(c), $("<div>").text(L['annivColor_' + c]))
+			.on('click', function () { st.conv = c; annivDrawConvert($box, res); }));
+	});
+	if (!st.conv) return;
+	i = cyc.indexOf(st.conv);
+	a = cyc[(i + cyc.length - 1) % cyc.length];
+	b = cyc[(i + 1) % cyc.length];
+	max = Math.min(res.stars[a] || 0, res.stars[b] || 0, 999);
+	$n = $("<input>").attr({ type: "number", min: 1, max: Math.max(1, max) }).addClass("anniv-conv-n").val(1);
+	$box.append(
+		$("<div>").addClass("anniv-conv-formula").append(
+			annivDot(a), $("<div>").text(L['annivColor_' + a] + " " + commify(res.stars[a] || 0)),
+			$("<div>").text("+"),
+			annivDot(b), $("<div>").text(L['annivColor_' + b] + " " + commify(res.stars[b] || 0)),
+			$("<div>").html("&rarr;"),
+			annivDot(st.conv), $("<div>").text(L['annivColor_' + st.conv])
+		),
+		$("<div>").addClass("anniv-conv-row").append(
+			$n,
+			$("<button>").text(L['annivConvertMax']).prop('disabled', max < 1).on('click', function () { $n.val(max); }),
+			$("<button>").text(L['annivConvertDo']).prop('disabled', max < 1).on('click', function () {
+				var n = parseInt($n.val(), 10);
+
+				if (!(n >= 1)) return;
+				if (n > max) return fail(474);
+				showConfirm(L['annivConvertSure'].replace("{V1}", L['annivColor_' + a]).replace("{V2}", L['annivColor_' + b])
+					.replace("{V3}", L['annivColor_' + st.conv]).replace(/\{V4\}/g, n), function (ok) {
+					if (!ok) return;
+					$.post("/event/anniv/convert", { to: st.conv, n: n }, function (r) {
+						if (r.error) return fail(r.error);
+						send('refresh');
+						$data.box = r.box;
+						updateMe();
+						showAlert(L['annivConverted']);
+						drawAnnivPanel();
+					});
+				});
+			})
+		)
+	);
+}
+
+// --- 이벤트 2-2 소원: 승인된 소원 하나가 밤하늘의 별 하나. 누르면 그 소원이 보이고, 쓴 사람은 보이지 않는다
+function annivRand(seed) {
+	return function () {
+		seed = (seed + 0x6D2B79F5) | 0;
+		var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
+}
+// 별 자리·색은 소원 id로 정한다 (창을 다시 열어도 같은 별이 같은 자리·색). 후보 10곳 중 다른 별과 가장 먼 곳에 둔다
+function annivWishLayout(wishes) {
+	var placed = [];
+
+	return wishes.map(function (w) {
+		var rnd = annivRand(w.id * 7919 + 17), best = null, bestD = -1, k, x, y, d;
+
+		for (k = 0; k < 10; k++) {
+			x = 5 + rnd() * 88;
+			y = 6 + rnd() * 80;
+			d = placed.reduce(function (m, p) {
+				var dx = (p[0] - x) * 3.2, dy = (p[1] - y) * 2.4;
+				return Math.min(m, dx * dx + dy * dy);
+			}, Infinity);
+			if (d > bestD) { bestD = d; best = [x, y]; }
+		}
+		placed.push(best);
+		return { x: best[0], y: best[1], color: ANNIV_WISH_COLORS[Math.floor(rnd() * ANNIV_WISH_COLORS.length)], size: 13 + Math.floor(rnd() * 7), delay: (rnd() * 3).toFixed(2) };
+	});
+}
+function annivLoadWishes(done) {
+	var st = $data._anniv;
+	var last = st.wishes && st.wishes.length ? st.wishes[st.wishes.length - 1].id : 0;
+
+	$.get("/event/anniv/wishes", last ? { before: last } : {}, function (res) {
+		if (res.error) return fail(res.error);
+		st.wishes = (st.wishes || []).concat(res.wishes || []);
+		st.wishMore = (res.wishes || []).length >= 20;
+		done();
+	});
+}
+function annivDrawWish($body, st) {
+	var $wrap = $("<div>").addClass("anniv-wish-wrap");
+	var $sky = $("<div>").addClass("anniv-sky anniv-wish-sky");
+	var $bubble = $("<div>").addClass("anniv-wish-bubble").hide();
+	var $info = $("<div>").addClass("anniv-wish-info");
+	var $mine = $("<div>").addClass("anniv-wish-mine");
+
+	$sky.on('click', function () { $bubble.hide(); $sky.find(".anniv-wish-star-on").removeClass("anniv-wish-star-on"); });
+	$bubble.on('click', function (e) { e.stopPropagation(); });
+	$wrap.append($sky.append($bubble));
+	if (st.res.wish) {
+		$mine.append($("<div>").addClass("anniv-wish-mine-label").text(L['annivWishToday']), $("<div>").addClass("anniv-wish-mine-text").text(st.res.wish));
+	}
+	$mine.append($("<button>").addClass("anniv-wish-open").text(L[st.res.wish ? 'annivWishEdit' : 'annivWishMake']).on('click', function () { annivWishForm($wrap, st); }));
+	$body.append($wrap, $info, $mine, $("<div>").addClass("anniv-help").text(L['annivWishNote']));
+
+	function drawStars() {
+		$sky.find(".anniv-wish-star").remove();
+		annivWishLayout(st.wishes).forEach(function (p, i) {
+			var w = st.wishes[i];
+			var $star = $("<div>").addClass("anniv-wish-star").html("&#9733;").css({
+				left: p.x + "%", top: p.y + "%", color: p.color, 'font-size': p.size + "px", 'animation-delay': p.delay + "s"
+			});
+
+			$star.on('click', function (e) {
+				e.stopPropagation();
+				$sky.find(".anniv-wish-star-on").removeClass("anniv-wish-star-on");
+				$star.addClass("anniv-wish-star-on");
+				$bubble.css('border-left-color', p.color).empty().append(
+					$("<div>").addClass("anniv-wish-bubble-date")
+						.text(L['annivWishDate'].replace("{V1}", parseInt(w.date.slice(5, 7), 10)).replace("{V2}", parseInt(w.date.slice(8, 10), 10))),
+					$("<div>").addClass("anniv-wish-bubble-text").text(w.text)
+				).show();
+			});
+			$sky.append($star);
+		});
+		$info.empty().append($("<div>").text(L['annivWishCount'].replace("{V1}", st.wishes.length) + " · " + L['annivWishHelp']));
+		if (st.wishMore) {
+			$info.append($("<button>").addClass("anniv-wish-more").text(L['annivWishMore']).on('click', function () { annivLoadWishes(drawStars); }));
+		}
+	}
+	if (st.wishes) drawStars();
+	else annivLoadWishes(drawStars);
+}
+// 소원 쓰는 칸: 버튼을 누르면 창 안의 밤하늘 위에 열린다. 오늘 쓴 소원이 있으면 그 내용으로 시작 (자정 전까지 고치기)
+function annivWishForm($wrap, st) {
+	var $ta = $("<textarea>").addClass("anniv-wish-text").attr({ maxlength: 200, placeholder: L['annivWishPlaceholder'] }).val(st.res.wish || "");
+	var $cnt = $("<div>").addClass("anniv-wish-cnt");
+	var $form = $("<div>").addClass("anniv-wish-form");
+	var update = function () { $cnt.text($ta.val().length + " / 200"); };
+
+	$wrap.find(".anniv-wish-form").remove();
+	$ta.on('input', update);
+	update();
+	$form.append($ta, $("<div>").addClass("anniv-wish-form-row").append(
+		$cnt,
+		$("<button>").text(L['NO']).on('click', function () { $form.remove(); }),
+		$("<button>").addClass("anniv-wish-send").text(L['annivWishSend']).on('click', function () {
+			$.post("/event/anniv/wish", { text: $ta.val() }, function (res) {
+				if (res.error) return fail(res.error);
+				st.res.wish = res.wish;
+				showAlert(L['annivWishSaved']);
+				annivRender(true);
+			});
+		})
+	));
+	$wrap.append($form);
+	$ta.focus();
+}
+
+// --- 이벤트 1 파티: 처음엔 모레미 둘이 앉아 있고, 최고 기록만큼 늘어나 한 번에 12명까지 앉는다 (그 위는 +N으로)
+// 앞줄(식탁 뒤) 6자리를 먼저 채우고 뒷줄 6자리. 내 모레미는 앞줄 가운데
+function annivMyEquip() {
+	var me = $data.users[$data.id];
+	var eq = $.extend({}, me && me.equip);
+
+	// 배경·앞 배경·휘장은 장면을 가려서 뺀다
+	delete eq.Mback;
+	delete eq.Mfront;
+	delete eq.BDG;
+	return eq;
+}
+// 함께 앉은 모레미 꾸미기: 상점에서 파는 아이템 중에서 부위마다 확률로 고른다. 자리 번호로 정해서 창을 다시 열어도 같은 모습
+var ANNIV_FRIEND_SLOTS = [
+	["Mhead", ["Mhead", "head"], 0.5],
+	["Meye", ["Meye", "eye"], 0.35],
+	["Mmouth", ["Mmouth", "mouth"], 0.3],
+	["Mclothes", ["Mclothes", "clothes"], 0.55],
+	["Mlhand", ["Mhand"], 0.35],
+	["Mshoes", ["Mshoes"], 0.25]
+];
+function annivFriendPools() {
+	var pools = {};
+
+	// 상점 목록을 다시 받으면($data.shop이 새 객체) 다시 만든다
+	if ($data._annivPools && $data._annivPoolsOf === $data.shop) return $data._annivPools;
+	ANNIV_FRIEND_SLOTS.forEach(function (s) { pools[s[0]] = []; });
+	Object.keys($data.shop).sort().forEach(function (id) {
+		var it = $data.shop[id];
+
+		if (!(it.cost > 0)) return; // 구매 불가(이벤트·관리용) 아이템은 빼서 이상한 모습이 안 나오게
+		ANNIV_FRIEND_SLOTS.forEach(function (s) { if (s[1].indexOf(it.group) !== -1) pools[s[0]].push(id); });
+	});
+	$data._annivPoolsOf = $data.shop;
+	return ($data._annivPools = pools);
+}
+function annivFriendEquip(seat) {
+	var rnd = annivRand(seat * 104729 + 7), pools = annivFriendPools(), eq = {};
+
+	if (rnd() < 0.45) eq.Mhead = 'conical_hat'; // 파티라서 고깔모자를 자주 씀
+	ANNIV_FRIEND_SLOTS.forEach(function (s) {
+		var pool = pools[s[0]], pick = rnd();
+
+		if (eq[s[0]] || !pool.length || pick >= s[2]) return;
+		eq[s[0]] = pool[Math.floor(rnd() * pool.length)];
+	});
+	return eq;
+}
+function annivDrawParty($body, res) {
+	var p = res.party, best = p.best || 0;
+	var seats = Math.min(ANNIV_PARTY_SEATS, Math.max(2, best));
+	var front = Math.min(seats, ANNIV_PARTY_ROW), back = seats - front;
+	var $scene = $("<div>").addClass("anniv-party-scene");
+	var $bunting = $("<div>").addClass("anniv-bunting");
+	var $grid = $("<div>").addClass("anniv-grid");
+	var w, gap, size, tableTop = 128, i;
+
+	for (i = 0; i < 16; i++) $bunting.append($("<div>").addClass("anniv-flag").css('border-top-color', ANNIV_WISH_COLORS[i % ANNIV_WISH_COLORS.length]));
+	$body.append($scene.append($bunting));
+	// 창 폭(모바일 최소 360px 화면에서 약 290px)에 맞춰 자리 간격과 모레미 크기를 정한다
+	w = $scene.width() || 330;
+	gap = Math.min(52, (w - 40) / 6.2);
+	size = Math.min(54, gap * 1.08);
+	function seat(idx, cnt, isBack) {
+		var s = isBack ? size * 0.86 : size;
+		var x = (idx - (cnt - 1) / 2) * gap;
+		var frontTop = tableTop - size * 0.82;
+		var $m = $("<div>").addClass("moremi anniv-party-moremi").css({
+			width: s, height: s,
+			left: "calc(50% + " + (x - s / 2).toFixed(1) + "px)",
+			top: isBack ? frontTop - size * 0.6 : frontTop,
+			'animation-delay': ((idx * 0.37 + (isBack ? 0.6 : 0)) % 1.4).toFixed(2) + "s"
+		});
+		var me = !isBack && idx === Math.floor((cnt - 1) / 2);
+
+		renderMoremi($m, me ? annivMyEquip() : annivFriendEquip((isBack ? ANNIV_PARTY_ROW : 0) + idx));
+		$scene.append($m);
+	}
+	for (i = 0; i < back; i++) seat(i, back, true);
+	for (i = 0; i < front; i++) seat(i, front, false);
+	$scene.append($("<div>").addClass("anniv-party-table").css('top', tableTop));
+	if (best > ANNIV_PARTY_SEATS) $scene.append($("<div>").addClass("anniv-party-more").text("+" + (best - ANNIV_PARTY_SEATS)));
+
+	$body.append(
+		$("<div>").addClass("anniv-party-best").text(best ? L['annivPartyRecord'].replace("{V1}", best) : L['annivPartyNone']),
+		$("<div>").addClass("anniv-help").text(L['annivPartyHelp']),
+		$grid
+	);
+	p.tiers.forEach(function (need, i) {
+		$grid.append(annivRewardCell(p.rewards[i], i + 1, L['annivPartyNeed'].replace("{V1}", need), best >= need, p.claimed.indexOf(i + 1) !== -1, 'party'));
+	});
+}
+
 function drawLeaderboard(data) {
 	var $board = $stage.dialog.lbTable.empty();
 	var fr = data.data[0] ? data.data[0].rank : 0;
@@ -11979,6 +12474,19 @@ function stopAllSounds() {
 
 	for (i in $_sound) $_sound[i].stop();
 }
+// 사운드팩에 없는 파일의 대체 팩 (예: 차누 팩에 없는 소리는 오리지널 팩 것을 사용)
+var SOUND_PACK_FALLBACK = { "차누": "오리지널" };
+// 팩에 filename이 있으면 팩 경로, 없으면 대체 팩 경로, 그것도 없으면 null (호출부가 기본 경로 유지)
+function resolvePackSoundPath(packs, pack, filename) {
+	var seen = {};
+	while (pack && !seen[pack.name]) {
+		if (pack.files.indexOf(filename) != -1) return "/media/kkutu/" + pack.name + "/" + filename;
+		seen[pack.name] = true;
+		var fbName = SOUND_PACK_FALLBACK[pack.name];
+		pack = fbName ? packs.find(function (p) { return p.name === fbName; }) : null;
+	}
+	return null;
+}
 function changeSoundPack(newPackName, callback) {
 	// 현재 재생 중인 BGM/소리 중지 (리듬/자음퀴즈 진행 중에는 $_sound에 든 BGM도 끊기므로 통째로 유지)
 	if (!isGameBGMKept()) {
@@ -11989,7 +12497,6 @@ function changeSoundPack(newPackName, callback) {
 	// 사운드 팩 목록 가져오기
 	$.get("/soundpacks", function (packs) {
 		var newPack = packs.find(function (p) { return p.name === newPackName; });
-		var packFiles = newPack ? newPack.files : [];
 		var i;
 
 		// 기본 사운드 리스트 구성
@@ -12025,9 +12532,8 @@ function changeSoundPack(newPackName, callback) {
 		if (newPack) {
 			soundList.forEach(function (s) {
 				var filename = s.value.split('/').pop();
-				if (packFiles.indexOf(filename) != -1) {
-					s.value = "/media/kkutu/" + newPack.name + "/" + filename;
-				}
+				var packPath = resolvePackSoundPath(packs, newPack, filename);
+				if (packPath) s.value = packPath;
 			});
 		}
 
@@ -12066,7 +12572,7 @@ var spamCount = 0;
 function zeroPadding(num, len) {
 	if (num < 0) {
 		var s = Math.abs(num).toString();
-		return "-" + "000000000000000".slice(0, Math.max(0, len - s.length) - 1) + s;
+		return "-" + "000000000000000".slice(0, Math.max(0, len - s.length - 1)) + s;
 	}
 	var s = num.toString();
 	return "000000000000000".slice(0, Math.max(0, len - s.length)) + s;
@@ -12290,6 +12796,7 @@ function applyOptions(opt) {
 	$("#no-shake").prop('checked', ($data.opts.ns === true));
 	$("#player-scroll").prop('checked', ($data.opts.ps === true));
 	$("#kana-reading").prop('checked', ($data.opts.kr !== false));
+	$("#score-e-notation").prop('checked', ($data.opts.se === true));
 
 	// 사운드팩 설정 (localStorage에 값이 있으면 localStorage, 없으면 cookie)
 	var soundPack = savedSettings.soundPack !== null ? savedSettings.soundPack : ($data.opts.sp || "");
@@ -12807,6 +13314,8 @@ function onMessage(data) {
 			updateCommunity();
 			break;
 		case 'starting':
+			// 1주년 창은 보상 받기·바꾸기가 box를 바꾸므로 게임이 시작되면 닫는다 (게임이 끝날 때 게임 서버가 box를 덮어씀)
+			if (EVENT_ACTIVE_1ST) $stage.dialog.exchangeWorkshop.hide();
 			loading(L['gameLoading']);
 			break;
 		case 'roundReady':
@@ -14051,7 +14560,8 @@ function addonNickname($R, o) {
 		var cls = "x-" + o.equip['NIK'];
 		$R.addClass(cls);
 		// For gradient names, also apply to the direct text child for proper text clipping
-		if (o.equip['NIK'].indexOf("gradientname_") === 0 || o.equip['NIK'].indexOf("kkn_triname") === 0) {
+		if (o.equip['NIK'].indexOf("gradientname_") === 0 || o.equip['NIK'].indexOf("kkn_triname") === 0
+			|| o.equip['NIK'] === "rainbow_nick" || o.equip['NIK'] === "shine_nick") {
 			var $text = $R.find(".users-name, .room-user-name, .game-user-name, .chat-head").first();
 			if ($text.length) $text.addClass(cls);
 		}
@@ -14135,6 +14645,7 @@ function roomListBar(o) {
 			});
 		}
 	}
+	if (annivModeStar(o.mode)) $rm.prepend(annivModeStar(o.mode), " ");
 	global.expl($R);
 
 	if (o.gaming) $R.addClass("rooms-gaming");
@@ -14630,7 +15141,7 @@ function animateScore(o) {
 	drawScore(o.$obj, Math.round(o.now));
 }
 function drawScore($obj, score) {
-	var i, d, m, sc, lead, neg;
+	var i, d, m, sc, lead, neg, sg, dg, x, n, dot = -1;
 
 	// 카오스 플러스 점수 가리기: 모든 점수(서바이벌은 체력)를 ?????로
 	if ($data._chaosHideScore) {
@@ -14639,16 +15150,25 @@ function drawScore($obj, score) {
 		return;
 	}
 
-	if (Math.round(score * 0.001) > 9999) {
-		// 10000k부터는 지수 표기, 다섯 칸에 맞게 소수 자리를 줄임: 1.23e7 → 1.2e10 → 1e100
-		// 칸에는 "123e7"처럼 점 없이, 점은 첫째·둘째 칸 사이에 칸 없이 얹음
-		// 반올림으로 지수가 올라가면(9.96e99 → 1.0e100) 한 자리 줄여 다시 계산
-		for (d = 2; ; d--) {
-			m = score.toExponential(d).split('e');
-			if (+m[1] < [Infinity, 100, 10][d]) break;
-		}
-		sc = m[0].replace('.', '') + 'e' + (+m[1]);
-	} else sc = (score > 99999) ? (zeroPadding(Math.round(score * 0.001), 4) + 'k') : zeroPadding(score, 5);
+	// 줄여 쓰는 점수는 0쪽으로 버림(반올림하지 않음): 유효 숫자(dg)와 10의 지수(x)를 글자로 뽑아 앞자리만 잘라 씀.
+	// 21자리면 정수 점수는 다 들어가서 잘라도 틀리지 않음 (Math.log10은 999…9를 10^n으로 올려 셀 수 있어 안 씀)
+	sg = score < 0 ? '-' : '';
+	m = Math.abs(score).toExponential(20).split('e');
+	dg = m[0].replace('.', '');
+	x = +m[1];
+	if ($data.opts.se === true ? x >= (sg ? 4 : 7) : x >= 18) {
+		// 지수 표기: e 표기 켬이면 10000k부터, 마이너스는 -10000부터 / 끔이면 q를 넘는 1000q부터
+		// 다섯 칸에 맞게 소수 자리를 줄임: 1.23e7 → 1.2e10 → 1e100, 마이너스는 -1.2e5 → -5e10
+		// 칸에는 "123e7"처럼 점 없이, 점은 첫째·둘째 숫자 사이에 칸 없이 얹음
+		d = Math.max(0, 3 - sg.length - String(x).length);
+		sc = sg + dg.slice(0, d + 1) + 'e' + x;
+		if (d) dot = 0;
+	} else if ($data.opts.se !== true && x >= 5) {
+		// 점수 e 표기 끔(기본, opts.se): 10만부터 유효 숫자 네 자리 + k·m·b·t·q, 점은 자릿수에 따라 옮김 — 123.4k → 1.234m → 12.34m → 123.4m
+		n = Math.floor(x / 3);
+		sc = sg + dg.slice(0, 4) + "kmbtq".charAt(n - 1);
+		dot = x - n * 3;
+	} else sc = (score > 99999) ? (zeroPadding(Math.floor(score / 1000), 4) + 'k') : zeroPadding(score, 5);
 
 	// 앞자리 0 (신 UI가 흐리게 표시, 마지막 자리는 0이어도 제외). 마이너스 점수는 '-' 뒤의 0들 — 신 UI는 마이너스 점수를 빨갛게(nk-neg)
 	neg = sc.charAt(0) === '-';
@@ -14658,7 +15178,8 @@ function drawScore($obj, score) {
 	$obj.empty().toggleClass("nk-neg", neg);
 	for (i = 0; i < sc.length; i++) {
 		$obj.append($("<div>").addClass("game-user-score-char" + (i < lead && sc[i] === '0' ? " nk-z" : "")).html(sc[i]));
-		if (i === 0 && d) $obj.append($("<div>").addClass("game-user-score-dot").html("."));
+		// 점(dot = '-'를 뺀 몇째 글자 뒤인지)은 칸 없이 얹음
+		if (dot >= 0 && i === dot + (neg ? 1 : 0)) $obj.append($("<div>").addClass("game-user-score-dot").html("."));
 	}
 }
 function checkFailCombo(id) {
@@ -16949,7 +17470,7 @@ var NK = (function () {
 			.append($top = $("<div>").addClass("nk-room-top")
 				.append($("<div>").addClass("nk-room-no").text(o.id))
 				.append($("<div>").addClass("nk-room-title").text(badWords(o.title))))
-			.append($rules = $("<div>").addClass("nk-room-rules").append($("<b>").text(opts[0])))
+			.append($rules = $("<div>").addClass("nk-room-rules").append(annivModeStar(o.mode), $("<b>").text(opts[0])))
 			.append($("<div>").addClass("nk-room-foot")
 				.append($("<div>").addClass("nk-room-meta").text(ri.text + " · " + o.time + L['SECOND']))
 				.append($("<div>").addClass("nk-status " + state).append($("<label>").attr('data-lang-key', stKey).text(text(stKey))))
@@ -17946,7 +18467,7 @@ var NK = (function () {
 			addSettingTab(t, $pane);
 		});
 		// 등록하지 않은 기존 입력 → "기타" 탭에 그 줄(.dialog-bar)째로
-		$left = $src.children(".dialog-bar").not(".tail-button").filter(function () { return $(this).find("input, select, textarea").length; });
+		$left = $src.find(".dialog-bar").not(".tail-button").filter(function () { return $(this).find("input, select, textarea").length; });
 		if ($left.length) addSettingTab({ id: 'etc', icon: 'grid', labelKey: 'etc' }, $("<div>").addClass("nk-set-pane nk-set-legacy").attr('data-tab', 'etc').append($left));
 
 		$("#nk-settings .nk-dlg-close").on('click', function () {
@@ -18055,7 +18576,7 @@ var NK = (function () {
 		{ tab: 'sound', labelKey: 'bgm', controls: ['#SettingDiag .bgmVolume', '#mute-bgm'], kind: 'volume' },
 		{ tab: 'sound', labelKey: 'effect', controls: ['#SettingDiag .effectVolume', '#mute-effect'], kind: 'volume' },
 		{ tab: 'sound', labelKey: 'lobbyBgm', descKey: 'nkDescLobbyBgm', controls: ['#lobby-bgm'] },
-		{ tab: 'sound', labelKey: 'soundPack', descKey: 'nkDescSoundPack', controls: ['#sound-pack', '#beat-setting'] },
+		{ tab: 'sound', labelKey: 'soundPack', descKey: 'nkDescSoundPack', controls: ['#sound-pack', '#beat-setting', '#sound-pack-info'] },
 		{ tab: 'sound', labelKey: 'rhythmSync', descKey: 'rhythmSyncExpl', controls: ['#rhythm-sync', '#rhythm-sync-val'] },
 		{ tab: 'screen', labelKey: 'uiSetting', descKey: 'nkDescUi', controls: ['#ui-setting', '#ui-style-setting'] },
 		{ tab: 'screen', labelKey: 'nkScale', descKey: 'nkDescScale', controls: ['#nk-scale', '#nk-scale-val', '#nk-scale-reset'] },
@@ -18067,7 +18588,8 @@ var NK = (function () {
 		{ tab: 'screen', section: 'visual', labelKey: 'nkRuleOpen', descKey: 'nkDescRuleOpen', controls: ['#nk-rule-open'], kind: 'toggle' },
 		{ tab: 'screen', section: 'visual', labelKey: 'noShake', descKey: 'nkDescNoShake', controls: ['#no-shake'], kind: 'toggle' },
 		{ tab: 'screen', section: 'visual', labelKey: 'playerScroll', descKey: 'nkDescPlayerScroll', controls: ['#player-scroll'], kind: 'toggle' },
-		{ tab: 'screen', section: 'visual', labelKey: 'kanaReading', descKey: 'nkDescKanaReading', controls: ['#kana-reading'], kind: 'toggle' }
+		{ tab: 'screen', section: 'visual', labelKey: 'kanaReading', descKey: 'nkDescKanaReading', controls: ['#kana-reading'], kind: 'toggle' },
+		{ tab: 'screen', section: 'visual', labelKey: 'scoreENotation', descKey: 'nkDescScoreENotation', controls: ['#score-e-notation'], kind: 'toggle' }
 	].forEach(function (s, i) { s.order = i; my.registerSetting(s); });
 
 	/* ------------------------------------------------------------------
