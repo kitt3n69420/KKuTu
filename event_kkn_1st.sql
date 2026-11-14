@@ -73,12 +73,14 @@ VALUES (
     '끄투엔이 한 살이 되었어요! 같이 게임을 즐기면서 별가루를 모으고, 별에게 소원도 빌어 봐요! <a href="/event/events_1st.html" target="_blank">자세히 보기</a>',
     1794625200000,
     1797346800000,
-    1,
-    1,
+    2,
+    2,
     NULL,
     0
 )
 ON CONFLICT (_id) DO NOTHING;
+-- 경험치·핑 2배 (이미 등록돼 있어도 반영되도록)
+UPDATE event SET expmul = 2, mnymul = 2 WHERE _id = 'kkn_1st';
 
 -- 2-1. 소원 벽에 처음부터 떠 있는 기본 소원 2개 (승인된 상태, 이벤트 첫날 날짜)
 -- uid는 실제 계정과 겹치지 않는 값. 승인 상태라 디스코드로 보내지지 않는다.
