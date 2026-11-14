@@ -1010,7 +1010,7 @@ exports.KO_INJEONG = [
 	"KPO", "VOC", "MED", "ETR", "JAT", 
 	"ZEL", "CKR", "TPW", "FUR", "POK", 
 	"FRC", "PSK", "HSS", "HAI", "KPM", 
-	"HDC", "HAR", "HOS", "IMS"
+	"HDC", "HAR", "HOS", "IMS", "KTN"
 
 ];
 exports.EN_INJEONG = [

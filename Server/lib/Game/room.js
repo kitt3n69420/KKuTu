@@ -3426,7 +3426,7 @@ function getRewards(mode, score, bonus, rank, all, ss, opts) {
 		;
 	// 1주년 별가루 기준 경험치: 혼자 감산 전 값. 바보 모드는 경험치가 0이라 같은 식에 기본 배율(1.25)을 넣어 따로 계산한다.
 	var annivBase = Const.GAME_TYPE[mode] !== 'XBB' ? rw.score
-		: score * 1.25 * (opts && opts.bbungtwigi ? 0.8 : 1) * (0.77 + 0.05 * (all - rank) * (all - rank)) * 1.5 / (1 + 1.25 * sr * sr);
+		: score * 1.25 * (opts && opts.bbungtwigi ? 0.8 : 1) * (0.77 + 0.05 * (all - rank) * (all - rank)) * 1.5 / (1 + 1.25 * sr * sr) / (opts && opts.inflation ? 10137 : 1); // 점수 증가(free.js getInflationMul)로 부푼 점수는 되돌려서 계산
 	rw.money = 1 + rw.score * 0.15; //0.01에서 대폭 상승한 것이다.
 	if (all < 2) {
 		rw.score = rw.score * 0.05;
