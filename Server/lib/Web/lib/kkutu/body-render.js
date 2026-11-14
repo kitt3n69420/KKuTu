@@ -27,6 +27,9 @@ function drawMyDress(avGroup, resetFields) {
 	var $view = $("#dress-view");
 	var my = $data.users[$data.id];
 
+	// 창(신 UI는 프로필 창 전체)이 닫혀 있으면 그리지 않음. 열 때 /box를 새로 받아 다시 그림 (ready.js profileDress)
+	// 이벤트 보상 받기·교환 뒤 닫힌 창의 인벤토리(글자 조각마다 canvas→PNG)를 통째로 다시 그리느라 생기던 렉
+	if (!$stage.dialog.dress.is(':visible')) return;
 	renderMoremi($view, my.equip);
 	$(".dress-type.selected").removeClass("selected");
 	$("#dress-type-all").addClass("selected");

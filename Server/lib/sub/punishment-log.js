@@ -24,6 +24,11 @@ function kstDay(ms) {
 function formatDate(ms) {
   return new Date(Number(ms) + KST_OFFSET).toISOString().slice(0, 10);
 }
+// 기한이 9999-12-31(KST) 이후면 영구 제재로 본다. 디스코드 /ban·/ipban은 기한이 꼭 있어야 해서 영구 제재를 이 날짜로 넣는다.
+var FOREVER_FROM = Date.UTC(9999, 11, 30, 15); // 9999-12-31 00:00 KST
+function isForever(ms) {
+  return Number(ms) >= FOREVER_FROM;
+}
 
 function insert(DB, target, name, kind, reason, expires, admin, note) {
   DB.punishment.direct(
@@ -96,11 +101,12 @@ function resetNickname(DB, target, reason, admin, callback) {
 
 function toView(row) {
   var kinds = row.kind.split(",");
-  var days = row.expires ? kstDay(row.expires) - kstDay(row.createdat) : 0;
+  var expires = isForever(row.expires) ? null : row.expires;
+  var days = expires ? kstDay(expires) - kstDay(row.createdat) : 0;
   var isBan = kinds.indexOf("ban") != -1 || kinds.indexOf("ipban") != -1;
 
   return {
-    date: formatDate(row.createdat) + (isBan && row.expires ? " ~ " + formatDate(row.expires) : ""),
+    date: formatDate(row.createdat) + (isBan && expires ? " ~ " + formatDate(expires) : ""),
     user: kinds.indexOf("ipban") != -1 ? maskIp(row.target) : row.name ? `${row.name} (${row.target})` : row.target,
     types: kinds.map(function (kind) {
       switch (kind) {
@@ -115,7 +121,7 @@ function toView(row) {
       }
       return kind;
     }),
-    cls: isBan ? (row.expires ? "ban-temp" : "ban-perm") : null,
+    cls: isBan ? (expires ? "ban-temp" : "ban-perm") : null,
     reason: row.reason,
     note: row.note,
     lifted: row.liftedat ? `${formatDate(row.liftedat)}에 해제됨` : null,
@@ -127,3 +133,4 @@ exports.lift = lift;
 exports.resetNickname = resetNickname;
 exports.toView = toView;
 exports.formatDate = formatDate;
+exports.isForever = isForever;

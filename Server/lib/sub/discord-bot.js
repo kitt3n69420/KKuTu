@@ -2130,7 +2130,7 @@ async function handleBan(interaction) {
         PunishmentLog.add(DB, userId, 'ban', reason, untilDate.getTime(), 'discord-' + interaction.user.id);
 
         JLog.info(`[Discord Bot] ban ${userId} by discord-${interaction.user.id}: ${reason} (until ${until})`);
-        await interaction.editReply({ content: `✅ "${userId}" 유저를 ${until}까지 제재했습니다. (사유: ${reason})` });
+        await interaction.editReply({ content: `✅ "${userId}" 유저를 ${PunishmentLog.isForever(untilDate.getTime()) ? '영구' : `${until}까지`} 제재했습니다. (사유: ${reason})` });
     } catch (err) {
         JLog.error(`[Discord Bot] Ban error: ${err.message}`);
         await interaction.editReply({ content: `❌ 제재 중 오류가 발생했습니다: ${err.message}` });
@@ -2279,7 +2279,7 @@ async function handleIpBan(interaction) {
         PunishmentLog.add(DB, ip, 'ipban', reason, untilDate.getTime(), 'discord-' + interaction.user.id);
 
         JLog.info(`[Discord Bot] ipban ${ip} by discord-${interaction.user.id}: ${reason} (until ${until})`);
-        await interaction.editReply({ content: `✅ IP "${ip}"를 ${until}까지 제재했습니다. (사유: ${reason})` });
+        await interaction.editReply({ content: `✅ IP "${ip}"를 ${PunishmentLog.isForever(untilDate.getTime()) ? '영구' : `${until}까지`} 제재했습니다. (사유: ${reason})` });
     } catch (err) {
         JLog.error(`[Discord Bot] Ipban error: ${err.message}`);
         await interaction.editReply({ content: `❌ 제재 중 오류가 발생했습니다: ${err.message}` });
@@ -2355,7 +2355,7 @@ async function handleBanList(interaction) {
         const ips = (await dbDirect(DB.ip_block, 'SELECT * FROM ip_block'))
             .filter(b => b.reasonBlocked && (!b.ipBlockedUntil || Number(b.ipBlockedUntil) > now));
 
-        const untilText = v => v ? `~${PunishmentLog.formatDate(v)}` : '영구';
+        const untilText = v => v && !PunishmentLog.isForever(v) ? `~${PunishmentLog.formatDate(v)}` : '영구';
         const lines = [
             ...users.map(u => `🚫 \`${u._id}\`${u.nickname ? ` (${u.nickname})` : ''} · ${untilText(u.blockeduntil)} · ${u.black}`),
             ...ips.map(b => `🌐 \`${b._id}\` · ${untilText(b.ipBlockedUntil)} · ${b.reasonBlocked}`)

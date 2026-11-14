@@ -28,6 +28,10 @@ function zeroPadding(num, len) {
 	var s = num.toString();
 	return "000000000000000".slice(0, Math.max(0, len - s.length)) + s;
 }
+// 차단 기한이 9999-12-31(KST) 이후면 영구 제한으로 본다. (sub/punishment-log.js의 isForever와 같은 기준)
+function isForeverBlock(until) {
+	return Number(until) >= Date.UTC(9999, 11, 30, 15);
+}
 function send(type, data, toMaster) {
 	var i, r = { type: type };
 	var subj = toMaster ? ws : (rws || ws);
@@ -1021,7 +1025,7 @@ function onMessage(data) {
 				}
 				/* Enhanced User Block System [S] */
 				$data._bannedClose = true;
-				var block444 = data.blockedUntil ? (function() {
+				var block444 = (data.blockedUntil && !isForeverBlock(data.blockedUntil)) ? (function() {
 					var d = new Date(parseInt(data.blockedUntil));
 					return "\n제한 기한: " + d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " +
 						d.getDate() + "일 " + d.getHours() + "시 " + d.getMinutes() + "분까지";
@@ -1031,7 +1035,7 @@ function onMessage(data) {
 			} else if (data.code == 446) {
 				i = data.reasonBlocked;
 				$data._bannedClose = true;
-				var block446 = data.ipBlockedUntil ? (function() {
+				var block446 = (data.ipBlockedUntil && !isForeverBlock(data.ipBlockedUntil)) ? (function() {
 					var d = new Date(parseInt(data.ipBlockedUntil));
 					return "\n제한 기한: " + d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " +
 						d.getDate() + "일 " + d.getHours() + "시 " + d.getMinutes() + "분까지";
@@ -1043,7 +1047,7 @@ function onMessage(data) {
 				if (i) {
 					$data._bannedClose = true;
 					var msg410 = "[#410] " + L['error_410'] + "\n차단 사유: " + i;
-					if (data.blockedUntil) {
+					if (data.blockedUntil && !isForeverBlock(data.blockedUntil)) {
 						var bu410 = new Date(parseInt(data.blockedUntil));
 						msg410 += "\n제한 기한: " + bu410.getFullYear() + "년 " + (bu410.getMonth() + 1) + "월 " +
 							bu410.getDate() + "일 " + bu410.getHours() + "시 " + bu410.getMinutes() + "분까지";
