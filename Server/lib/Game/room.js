@@ -2135,6 +2135,8 @@ function Room(room, channel) {
 			// 슉슉/양말대전: 보드가 고갈되지 않아 누적 점수가 무제한으로 커질 수 있어 라운드당 소프트 트랜지션을 둔다
 			// 참고: 클로드가 양말대전이라 한건 사실 솎솎(sock)이다
 			if (['KSK', 'ESK', 'KSS', 'ESS', 'JSS'].indexOf(Const.GAME_TYPE[my.mode]) !== -1) rw.score = softTransition(rw.score);
+			// 스피드퀴즈: 2만 부근에 소프트 상한
+			if (['KQZ', 'EQZ'].indexOf(Const.GAME_TYPE[my.mode]) !== -1) rw.score = softTransition(rw.score, QUIZ_SOFT_CAP);
 			if (my.opts.stop) rw.score = Math.round(rw.score * 0.4);
 			// 카오스 플러스: 인플레이션으로 부푼 점수 보정 (최종 보상 경험치·핑 0.6배)
 			if (my.opts.chaosplus) {
@@ -3256,6 +3258,9 @@ function softTransition(x, opts) {
 	var high = ratio * (x - breakpoint) + breakpoint;
 	return (low + high - Math.sqrt((low - high) * (low - high) + smoothness)) / 2;
 }
+// 스피드퀴즈 소프트 상한: 2만 부근부터 기울기 0.1. 전환 폭(smoothness)은 기본값 그대로,
+// offset은 0점일 때 0이 되도록 smoothness / (4 × (1 − ratio) × breakpoint)로 맞춘다
+var QUIZ_SOFT_CAP = { breakpoint: 20000, offset: 3000000 / (4 * 0.9 * 20000) };
 
 function shuffle(arr) {
 	var r = arr.slice(); // 원본 배열 복사
@@ -3267,9 +3272,24 @@ function shuffle(arr) {
 	}
 	return r;
 }
+// 순위 배율(인원수 보정). all = 사람 수, rank = 0부터 센 순위.
+// 10명까지는 원래 식 0.77 + 0.05 × (all − rank)² 그대로.
+// 11명부터 1등 배율 (둘 다 10명 값 5.77·기울기 1에서 이어짐):
+//   차례 모드(turnBased) — 사람이 많을수록 한 명이 받는 턴이 줄어드니 인원에 비례(선형)해 늘린다: 12명 7.77, 16명 11.77, 24명 19.77
+//   동시 모드 — 턴이 줄지 않으니 10에 부드럽게 다가간다: 12명 7.36, 16명 8.98, 24명 9.85
+// 나머지 순위는 10명 이하와 같은 모양 ((all − rank) / all)²으로 1등 배율을 나눠 받는다.
+function rankMul(all, rank, turnBased) {
+	var x = all - rank;
+	if (all <= 10) return 0.77 + 0.05 * x * x;
+	var top = turnBased ? 5.77 + (all - 10) : 10 - 4.23 * Math.exp(-(all - 10) / 4.23);
+	return 0.77 + (top - 0.77) * (x / all) * (x / all);
+}
+// 한 번에 한 사람씩 차례대로 하는 규칙 (나머지 규칙은 모두가 동시에 함)
+var TURN_RULES = ['Classic', 'Hunmin', 'Daneo', 'Free', 'Numberclap', 'Fourrelay', 'Calcrelay'];
 function getRewards(mode, score, bonus, rank, all, ss, opts) {
 	var rw = { score: 0, money: 0 };
 	var sr = score / ss;
+	var turnBased = TURN_RULES.indexOf((Const.RULE[Const.GAME_TYPE[mode]] || {}).rule) !== -1;
 
 	// all은 1~8
 	// rank는 0~7
@@ -3388,10 +3408,10 @@ function getRewards(mode, score, bonus, rank, all, ss, opts) {
 			rw.score += score * 0.75;
 			break;
 		case 'KQZ':
-			rw.score += score * 1.0;
+			rw.score += score * 0.65;
 			break;
 		case 'EQZ':
-			rw.score += score * 1.12;
+			rw.score += score * 0.8;
 			break;
 		case 'CAL':
 			rw.score += score * 0.75;
@@ -3421,12 +3441,12 @@ function getRewards(mode, score, bonus, rank, all, ss, opts) {
 	}
 	if (opts && opts.bbungtwigi) rw.score *= 0.8; // 뻥튀기: 보너스는 이미 2배이므로 기본 경험치를 0.8배로 낮춰 균형 조정
 	rw.score = rw.score
-		* (0.77 + 0.05 * (all - rank) * (all - rank)) // 순위
+		* rankMul(all, rank, turnBased) // 순위
 		* 1.5 / (1 + 1.25 * sr * sr) // 점차비(양학했을 수록 ↓)
 		;
 	// 1주년 별가루 기준 경험치: 혼자 감산 전 값. 바보 모드는 경험치가 0이라 같은 식에 기본 배율(1.25)을 넣어 따로 계산한다.
 	var annivBase = Const.GAME_TYPE[mode] !== 'XBB' ? rw.score
-		: score * 1.25 * (opts && opts.bbungtwigi ? 0.8 : 1) * (0.77 + 0.05 * (all - rank) * (all - rank)) * 1.5 / (1 + 1.25 * sr * sr) / (opts && opts.inflation ? 10137 : 1); // 점수 증가(free.js getInflationMul)로 부푼 점수는 되돌려서 계산
+		: score * 1.25 * (opts && opts.bbungtwigi ? 0.8 : 1) * rankMul(all, rank, turnBased) * 1.5 / (1 + 1.25 * sr * sr) / (opts && opts.inflation ? 10137 : 1); // 점수 증가(free.js getInflationMul)로 부푼 점수는 되돌려서 계산
 	rw.money = 1 + rw.score * 0.15; //0.01에서 대폭 상승한 것이다.
 	if (all < 2) {
 		rw.score = rw.score * 0.05;
@@ -3450,8 +3470,9 @@ function giveAnnivStars(room, o, exp, together) {
 	var type = Const.GAME_TYPE[room.mode];
 	var color = Const.ANNIV.MODE_COLOR[type];
 	if (!color) return;
-	// 경험치에 거는 방 보정과 같은 규칙 (슉슉·솎솎 완만화, 스톱, 카오스 플러스, 큰 방)
+	// 경험치에 거는 방 보정과 같은 규칙 (슉슉·솎솎 완만화, 스피드퀴즈 상한, 스톱, 카오스 플러스, 큰 방)
 	if (['KSK', 'ESK', 'KSS', 'ESS', 'JSS'].indexOf(type) !== -1) exp = softTransition(exp);
+	if (['KQZ', 'EQZ'].indexOf(type) !== -1) exp = softTransition(exp, QUIZ_SOFT_CAP);
 	if (room.opts.stop) exp *= 0.4;
 	if (room.opts.chaosplus) exp *= Const.CHAOS_PLUS_REWARD_MUL;
 	if (room.opts.big) exp /= 2;

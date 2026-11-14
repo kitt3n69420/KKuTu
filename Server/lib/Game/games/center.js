@@ -256,7 +256,9 @@ exports.getScore = function (text, delay) {
 	var primary = (typeof my.game.primary === 'number') ? my.game.primary : 0;
 	var roundTime = (typeof my.game.roundTime === 'number' && my.game.roundTime > 0) ? my.game.roundTime : 1;
 
-	var rank = Math.max(1, hum - primary + 3);
+	// 방 인원은 경험치의 순위 배율(room.js rankMul)에서만 반영한다. 1~2명 방은 예전 식 그대로,
+	// 3명 이상 방은 인원과 상관없이 처음 맞힌 사람 5, 나머지 4 (2명 방의 1등·2등과 같은 값)
+	var rank = hum <= 2 ? Math.max(1, hum - primary + 3) : Math.max(4, 5 - primary);
 	var tr = 1 - delay / roundTime;
 	if (isNaN(tr) || tr < 0) tr = 0;
 	if (tr > 1) tr = 1;

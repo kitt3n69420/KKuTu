@@ -260,7 +260,9 @@ exports.getScore = function (text, delay) {
 	var roundTime = (typeof my.game.roundTime === 'number' && my.game.roundTime > 0) ? my.game.roundTime : 1;
 	var themeBonus = (typeof my.game.themeBonus === 'number' && !isNaN(my.game.themeBonus)) ? my.game.themeBonus : 1;
 
-	var rank = Math.max(1, hum - primary + 3); // 최소 1 보장
+	// 방 인원은 순위 배율(room.js rankMul)에서 주로 반영한다. 문제 점수에 넣는 인원은 2명까지 그대로, 그 뒤로는 서서히 늘다가 4에 수렴
+	// (3명 2.79, 4명 3.26, 6명 3.73, 10명 3.96). 3명 이상 방에서는 맞히기만 하면 2명 방 2등만큼(rank 4)은 받는다.
+	var rank = hum <= 2 ? Math.max(1, hum - primary + 3) : Math.max(4, (4 - 2 * Math.exp(-(hum - 2) / 2)) - primary + 3);
 	var tr = 1 - delay / roundTime;
 	if (isNaN(tr) || tr < 0) tr = 0;
 	if (tr > 1) tr = 1;

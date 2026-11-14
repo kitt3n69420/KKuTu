@@ -262,7 +262,7 @@ var NK = (function () {
 		return $("<div>").addClass("nk-okg")
 			.append($("<div>").addClass("nk-okg-top")
 				.append($("<div>").addClass("nk-okg-k").attr('data-lang-key', 'nkOkg').text(text('nkOkg')))
-				.append($("<div>").addClass("nk-okg-n").text(($data._okg || 0) + "/18"))
+				.append($("<div>").addClass("nk-okg-n").text(($data._okg || 0) + "/36"))
 				.append($("<div>").addClass("nk-okg-t").text(prettyTime(t))))
 			.append($("<div>").addClass("nk-mini-bar").append($("<div>").css('width', (t % 600000) / 6000 + "%")));
 	}

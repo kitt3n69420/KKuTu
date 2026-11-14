@@ -44,7 +44,7 @@ var channel = process.env['CHANNEL'] || 0;
 
 const NUM_SLAVES = 4;
 const GUEST_IMAGE = "/img/kkutu/guest.png";
-const MAX_OKG = 63;
+const MAX_OKG = 36;
 const PER_OKG = 600000;
 const KST_OFFSET = 9 * 3600000;
 
@@ -1051,7 +1051,7 @@ exports.Client = function (socket, profile, sid) {
 			else {
 				my.checkExpire();
 				my.checkEventItems();
-				my.okgCount = Math.floor((my.data.playTime || 0) / PER_OKG);
+				my.okgCount = Math.min(MAX_OKG, Math.floor((my.data.playTime || 0) / PER_OKG));
 			}
 			/* Enhanced User Block System [S] */
 			if (black) {
@@ -1442,8 +1442,8 @@ exports.Client = function (socket, profile, sid) {
 			}
 		}
 		if (rw.together && my.okgCount > 0) {
-			i = 0.05 * my.okgCount;
-			j = 0.05 * my.okgCount;
+			i = 0.025 * my.okgCount;
+			j = 0.025 * my.okgCount;
 
 			rw.score += rw._score * i;
 			rw.money += rw._money * j;

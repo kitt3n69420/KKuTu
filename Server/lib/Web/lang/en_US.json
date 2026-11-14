@@ -1681,7 +1681,7 @@
     "shopNoResults": "No search results.",
     "okgExpl": "<h4><label style='color: #FFFF44;'>Thank you for playing KKuTu!</label></h4>For every 10 minutes of gameplay with others,<br>you get a <label style='color: #FFFF44;'>Buff</label> that increases XP and Ping gain!",
     "okgNotice": "You played for 10 minutes and received a Buff!",
-    "okgCurrent": "Current Buff Stacks (Max 18): ",
+    "okgCurrent": "Current Buff Stacks (Max 36): ",
     "okgExpired": "Buff stacks reset at midnight.",
     "replay": "Replay",
     "replayDate": "Date",
