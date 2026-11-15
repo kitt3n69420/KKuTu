@@ -285,7 +285,6 @@
 }
 .anniv-wish-bubble-date { margin-bottom: 2px; font-size: 11px; font-weight: bold; color: #666666; }
 .anniv-wish-info { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin: 6px 2px; font-size: 11px; opacity: 0.85; }
-.anniv-wish-more { flex-shrink: 0; padding: 2px 8px; font-size: 11px; cursor: pointer; }
 .anniv-wish-mine { margin: 8px 0 4px; padding: 8px; border: 1px solid var(--color-border, #CCCCCC); border-radius: 8px; }
 .anniv-wish-mine-label { font-size: 11px; font-weight: bold; opacity: 0.7; }
 .anniv-wish-mine-text { margin: 2px 0 6px; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
