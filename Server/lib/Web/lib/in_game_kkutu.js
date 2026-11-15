@@ -11089,7 +11089,7 @@ function drawAnnivPanel() {
 	var $panel = $("#event-anniv-panel");
 
 	// 창을 열 때마다 소원 목록은 새로 받는다 (그 사이 승인된 소원이 보이도록). 보던 탭과 고른 색은 그대로
-	$data._anniv = { tab: old.tab || 'party', conv: old.conv || null, wishes: null, wishMore: false, scroll: old.res ? old.scroll : 0 };
+	$data._anniv = { tab: old.tab || 'party', conv: old.conv || null, wishes: null, scroll: old.res ? old.scroll : 0 };
 	if (!old.res) $panel.empty();
 	$.get("/event/anniv/status", {}, function (res) {
 		if (!res || res.error || !res.active) {
@@ -11365,12 +11365,10 @@ function annivWishLayout(wishes) {
 }
 function annivLoadWishes(done) {
 	var st = $data._anniv;
-	var last = st.wishes && st.wishes.length ? st.wishes[st.wishes.length - 1].id : 0;
 
-	$.get("/event/anniv/wishes", last ? { before: last } : {}, function (res) {
+	$.get("/event/anniv/wishes", {}, function (res) {
 		if (res.error) return fail(res.error);
-		st.wishes = (st.wishes || []).concat(res.wishes || []);
-		st.wishMore = (res.wishes || []).length >= 20;
+		st.wishes = res.wishes || [];
 		done();
 	});
 }
@@ -11411,9 +11409,6 @@ function annivDrawWish($body, st) {
 			$sky.append($star);
 		});
 		$info.empty().append($("<div>").text(L['annivWishCount'].replace("{V1}", st.wishes.length) + " · " + L['annivWishHelp']));
-		if (st.wishMore) {
-			$info.append($("<button>").addClass("anniv-wish-more").text(L['annivWishMore']).on('click', function () { annivLoadWishes(drawStars); }));
-		}
 	}
 	if (st.wishes) drawStars();
 	else annivLoadWishes(drawStars);
@@ -16928,7 +16923,7 @@ var NK = (function () {
 		return $("<div>").addClass("nk-okg")
 			.append($("<div>").addClass("nk-okg-top")
 				.append($("<div>").addClass("nk-okg-k").attr('data-lang-key', 'nkOkg').text(text('nkOkg')))
-				.append($("<div>").addClass("nk-okg-n").text(($data._okg || 0) + "/18"))
+				.append($("<div>").addClass("nk-okg-n").text(($data._okg || 0) + "/36"))
 				.append($("<div>").addClass("nk-okg-t").text(prettyTime(t))))
 			.append($("<div>").addClass("nk-mini-bar").append($("<div>").css('width', (t % 600000) / 6000 + "%")));
 	}

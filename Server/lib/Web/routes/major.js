@@ -1167,13 +1167,11 @@ exports.run = function (Server, page) {
         });
     });
   });
-  // 소원 벽: 관리자가 승인한 소원만 최신순 20개씩. 작성자 정보는 응답에 넣지 않는다. (before = 이전 목록의 마지막 id)
+  // 소원 벽: 관리자가 승인한 소원을 지금까지 쌓인 것 모두 오래된 순으로. 작성자 정보는 응답에 넣지 않는다.
+  // (오래된 순이라 새 소원이 승인돼도 원래 있던 별 자리가 거의 그대로다)
   Server.get("/event/anniv/wishes", function (req, res) {
     if (!req.session.profile) return res.json({ error: 400 });
-    var before = parseInt(req.query.before, 10);
-    var q = [["eventid", ANNIV.EVENT_ID], ["status", "approved"]];
-    if (before > 0) q.push(["id", { $lte: before - 1 }]);
-    MainDB.event_wish.find.apply(MainDB.event_wish, q).sort(["id", -1]).limit(20).on(function ($r) {
+    MainDB.event_wish.find(["eventid", ANNIV.EVENT_ID], ["status", "approved"]).sort(["id", 1]).on(function ($r) {
       res.json({
         wishes: ($r || []).map(function (w) {
           return { id: w.id, date: new Date(w.day * 86400000).toISOString().slice(0, 10), text: w.text };
