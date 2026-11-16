@@ -27,6 +27,8 @@ const KKUTU_LIST = [
     "lib/Web/lib/kkutu/rule_fourrelay.js",
     "lib/Web/lib/kkutu/rule_numberclap.js",
     "lib/Web/lib/kkutu/rule_chainbattle.js",
+    "lib/Web/lib/kkutu/rule_brawl.js",
+    "lib/Web/lib/kkutu/rule_unison.js",
     "lib/Web/lib/kkutu/rule_calcbattle.js",
     "lib/Web/lib/kkutu/rule_quiz.js",
     "lib/Web/lib/kkutu/rule_flip.js",

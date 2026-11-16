@@ -26,6 +26,8 @@ var ProfanityFilter = require("../../sub/profanity-filter");
 var NicknameGuard = require("../../sub/nickname-guard");
 var { validateInput } = require("../validators");
 var KO_KR_LANG = require("../lang/ko_KR.json");
+var Wardrobe = require("../wardrobe");
+var CfAuto = require("../cf-auto");
 
 var CHUSEOK_EVENT_ID = "kkn_chuseok";
 var CHUSEOK_MILESTONES = [
@@ -484,6 +486,81 @@ exports.run = function (Server, page) {
           });
       });
   });
+  // 옷장 (Web/wardrobe.js): 지금 착용한 것을 4칸 중 하나에 저장하고, 저장한 모습 그대로 바꿔 입는다.
+  // 갖고 있지 않게 된 아이템은 읽거나 입을 때 프리셋에서 뺀다. 바꿔 입은 뒤 클라이언트가 /equip처럼 refresh를 보내 게임 서버가 다시 읽음
+  function wardrobeSlot(v) {
+    var n = Number(v);
+
+    return Number.isInteger(n) && n >= 0 && n < Wardrobe.SLOTS ? n : -1;
+  }
+  Server.get("/wardrobe", function (req, res) {
+    if (!req.session.profile) return res.json({ error: 400 });
+    var uid = req.session.profile.id;
+
+    MainDB.users
+      .findOne(["_id", uid])
+      .limit(["box", true], ["equip", true], ["wardrobe", true])
+      .on(function ($user) {
+        if (!$user) return res.json({ error: 400 });
+        $user.box = $user.box || {};
+        $user.equip = $user.equip || {};
+        var removed = Wardrobe.prune($user, Date.now() * 0.001);
+
+        if (!removed.length) return res.json({ wardrobe: $user.wardrobe, removed: removed });
+        MainDB.users
+          .update(["_id", uid])
+          .set(["wardrobe", $user.wardrobe])
+          .on(function () {
+            res.json({ wardrobe: $user.wardrobe, removed: removed });
+          });
+      });
+  });
+  Server.post("/wardrobe/save/:slot", function (req, res) {
+    if (!req.session.profile) return res.json({ error: 400 });
+    var uid = req.session.profile.id;
+    var slot = wardrobeSlot(req.params.slot);
+
+    if (slot < 0) return res.json({ error: 400 });
+    MainDB.users
+      .findOne(["_id", uid])
+      .limit(["equip", true], ["wardrobe", true])
+      .on(function ($user) {
+        if (!$user) return res.json({ error: 400 });
+        // 클라이언트가 보낸 옷 목록은 받지 않고, DB의 지금 착용 상태를 그대로 저장
+        $user.equip = $user.equip || {};
+        Wardrobe.save($user, slot, Date.now());
+        MainDB.users
+          .update(["_id", uid])
+          .set(["wardrobe", $user.wardrobe])
+          .on(function () {
+            res.json({ result: 200, wardrobe: $user.wardrobe });
+          });
+      });
+  });
+  Server.post("/wardrobe/apply/:slot", function (req, res) {
+    if (!req.session.profile) return res.json({ error: 400 });
+    var uid = req.session.profile.id;
+    var slot = wardrobeSlot(req.params.slot);
+
+    if (slot < 0) return res.json({ error: 400 });
+    MainDB.users
+      .findOne(["_id", uid])
+      .limit(["box", true], ["equip", true], ["wardrobe", true])
+      .on(function ($user) {
+        if (!$user) return res.json({ error: 400 });
+        $user.box = $user.box || {};
+        $user.equip = $user.equip || {};
+        var removed = Wardrobe.apply($user, slot, Date.now() * 0.001);
+
+        if (!removed) return res.json({ error: 477 });
+        MainDB.users
+          .update(["_id", uid])
+          .set(["box", $user.box], ["equip", $user.equip], ["wardrobe", $user.wardrobe])
+          .on(function () {
+            res.json({ result: 200, box: $user.box, equip: $user.equip, wardrobe: $user.wardrobe, removed: removed });
+          });
+      });
+  });
   Server.post("/payback/:id", function (req, res) {
     if (!req.session.profile) return res.json({ error: 400 });
     var uid = req.session.profile.id;
@@ -680,11 +757,38 @@ exports.run = function (Server, page) {
     if (word.match(/[ぁ-んァ-ヶ]/)) return "ja";
     return word.match(/[a-zA-Z]/) ? "en" : "ko";
   }
+  // 조합 한 번 처리 (/cf와 자동 조합이 같이 씀): 재료 조각(need: 조각 id → 개수)을 쓰고, 보상을 굴려 상자에 넣고, 비용을 뺀다.
+  // 핑이 충분한지와 조각이 있는지는 부르는 쪽에서 확인. 얻은 것 목록을 돌려줌
+  function applyCF($user, need, word, matchWord, cfr, blend) {
+    var gain = [];
+    var i, o;
+
+    for (i in need) consume($user, i, need[i]);
+    for (i in cfr.data) {
+      o = cfr.data[i];
+
+      if (Math.random() >= o.rate) continue;
+      if (o.key.charAt(4) == "?") {
+        o.key = o.key.slice(0, 4) + (blend ? blendWord(matchWord) : word.charAt(Math.floor(Math.random() * word.length)));
+      }
+      obtain($user, o.key, o.value, o.term);
+      gain.push(o);
+      // 의도된 보너스: 조합 보상으로 일반 글자 조각을 얻을 때 20% 확률로 공백 글자 조각('★')도 함께 얻음.
+      var tier = o.key.slice(0, 4);
+      if ((tier === "$WPA" || tier === "$WPB" || tier === "$WPC") && Math.random() < 0.2) {
+        var blankItem = { key: tier + "★", value: 1, rate: 1 };
+        obtain($user, blankItem.key, blankItem.value);
+        gain.push(blankItem);
+      }
+    }
+    $user.money -= cfr.cost;
+    return gain;
+  }
   Server.post("/cf", function (req, res) {
     if (!req.session.profile) return res.json({ error: 400 });
     var uid = req.session.profile.id;
     var tray = (req.body.tray || "").split("|");
-    var i, o;
+    var i;
 
     if (tray.length < 1 || tray.length > 10) return res.json({ error: 400 });
     MainDB.users
@@ -696,8 +800,7 @@ exports.run = function (Server, page) {
         var req = {},
           word = "",
           level = 0;
-        var cfr,
-          gain = [];
+        var cfr, gain;
         var blend;
 
         for (i in tray) {
@@ -718,25 +821,7 @@ exports.run = function (Server, page) {
           }
           cfr = getCFRewards(word, level, blend);
           if ($user.money < cfr.cost) return res.json({ error: 407 });
-          for (i in req) consume($user, i, req[i]);
-          for (i in cfr.data) {
-            o = cfr.data[i];
-
-            if (Math.random() >= o.rate) continue;
-            if (o.key.charAt(4) == "?") {
-              o.key = o.key.slice(0, 4) + (blend ? blendWord(matchWord) : word.charAt(Math.floor(Math.random() * word.length)));
-            }
-            obtain($user, o.key, o.value, o.term);
-            gain.push(o);
-            // 의도된 보너스: 조합 보상으로 일반 글자 조각을 얻을 때 20% 확률로 공백 글자 조각('★')도 함께 얻음.
-            var tier = o.key.slice(0, 4);
-            if ((tier === "$WPA" || tier === "$WPB" || tier === "$WPC") && Math.random() < 0.2) {
-              var blankItem = { key: tier + "★", value: 1, rate: 1 };
-              obtain($user, blankItem.key, blankItem.value);
-              gain.push(blankItem);
-            }
-          }
-          $user.money -= cfr.cost;
+          gain = applyCF($user, req, word, matchWord, cfr, blend);
           MainDB.users
             .update(["_id", uid])
             .set(["money", $user.money], ["box", $user.box])
@@ -746,6 +831,179 @@ exports.run = function (Server, page) {
         });
       });
     // res.send(getCFRewards(req.params.word, Number(req.query.l || 0)));
+  });
+  // 글자 조합소 자동 조합 (사용자 사양 2026-11-16, 고르기는 Web/cf-auto.js).
+  // 결과 보기 값을 내고 조합 결과(만들 단어·비용)를 먼저 봐야만 조합할 수 있다. 본 결과는 세션에 10분 두고, 조합 때 그대로 쓴다.
+  // 길 이름이 /cf/...가 아닌 이유: 위의 GET /cf/:word가 "/cf/auto"를 단어 "auto"로 잡음
+  var CF_AUTO_FEE_PER_PIECE = 100; // 결과 보기 값 = 가진 글자 조각 수(★ 공백 조각 제외, 등급 무관) × 100핑 (만들 단어가 없으면 받지 않음)
+  var CF_AUTO_MAX = 100; // 한 번에 조합하는 최대 단어 수
+  var CF_AUTO_TTL = 10 * 60 * 1000;
+  var CF_AUTO_CACHE_TTL = 3 * 60 * 1000;
+  var _cfAutoCache = {}; // 솎솎 봇(sock.js)의 단어 캐시와 같음: 같은 글자 묶음이면 3분 동안 다시 묻지 않음
+  var _cfAutoBusy = {}; // 같은 사람의 겹친 요청 막기 (DB 응답이 안 와도 30초 뒤 풀림)
+
+  function cfAutoLock(uid) {
+    var now = Date.now();
+
+    if (_cfAutoBusy[uid] && now - _cfAutoBusy[uid] < 30000) return false;
+    _cfAutoBusy[uid] = now;
+    return true;
+  }
+  // 그 글자들로만 된 2~10글자 사전 단어 (긴 단어 → 자주 쓰는 순). 솎솎 봇과 달리 글자는 SQL에 붙이지 않고 매개변수로 넘김
+  function cfAutoWords(lang, chars, cb) {
+    var key = lang + ":" + chars.split("").sort().join("");
+    var now = Date.now();
+    var cached = _cfAutoCache[key];
+
+    if (cached && now - cached.time < CF_AUTO_CACHE_TTL) return cb(cached.words);
+    MainDB.kkutu[lang].direct(
+      "SELECT _id FROM kkutu_" + lang + " WHERE char_length(_id) BETWEEN 2 AND " + CfAuto.MAX_LEN +
+        " AND _id ~ $1 ORDER BY char_length(_id) DESC, hit DESC, _id LIMIT 5000",
+      [CfAuto.wordRegex(chars)],
+      function (err, res) {
+        if (err || !res) return cb([]);
+        var words = res.rows.map(function (r) { return r._id; });
+        var k;
+
+        for (k in _cfAutoCache) if (now - _cfAutoCache[k].time >= CF_AUTO_CACHE_TTL) delete _cfAutoCache[k];
+        _cfAutoCache[key] = { time: now, words: words };
+        cb(words);
+      },
+    );
+  }
+  function cfAutoPaid(req) {
+    var paid = req.session.cfAuto;
+
+    return paid && Date.now() - paid.at < CF_AUTO_TTL ? paid : null;
+  }
+  // count: CfAuto.collectPieces(...).count (글자 → 개수, ★은 이미 빠져 있음)
+  function cfAutoFee(count) {
+    var n = 0;
+
+    for (var ch in count) n += count[ch];
+    return n * CF_AUTO_FEE_PER_PIECE;
+  }
+  // 이미 값을 내고 본 결과가 있으면 돌려줌 (창을 다시 열어도 또 내지 않게). 결과 보기 값은 지금 가진 조각 수로 셈
+  Server.get("/cf-auto", function (req, res) {
+    if (!req.session.profile) return res.json({ error: 400 });
+    var paid = cfAutoPaid(req);
+
+    MainDB.users
+      .findOne(["_id", req.session.profile.id])
+      .limit(["box", true])
+      .on(function ($user) {
+        if (!$user) return res.json({ error: 400 });
+        res.json({ plan: paid ? paid.list : null, fee: cfAutoFee(CfAuto.collectPieces($user.box || {}).count) });
+      });
+  });
+  // 결과 보기: 조각 수 × 100핑을 내면 만들 단어를 골라 보여 줌. 결과 보기 값을 뺀 핑으로 만들 수 있는 데까지만 남김
+  Server.post("/cf-auto/preview", function (req, res) {
+    if (!req.session.profile) return res.json({ error: 400 });
+    var uid = req.session.profile.id;
+
+    if (!cfAutoLock(uid)) return res.json({ error: 479 });
+    function done(data) {
+      delete _cfAutoBusy[uid];
+      res.json(data);
+    }
+    MainDB.users
+      .findOne(["_id", uid])
+      .limit(["money", true], ["box", true])
+      .on(function ($user) {
+        if (!$user) return done({ error: 400 });
+        var money = Number($user.money) || 0;
+        var pieces = CfAuto.collectPieces($user.box || {});
+        var fee = cfAutoFee(pieces.count);
+        var langs = Object.keys(pieces.chars);
+        var words = [];
+        var left = langs.length;
+
+        if (money < fee) return done({ error: 407 });
+        if (!left) return done({ result: 200, plan: [], reason: "none" });
+        langs.forEach(function (lang) {
+          cfAutoWords(lang, pieces.chars[lang], function (list) {
+            words = words.concat(list);
+            if (--left) return;
+
+            var plan = CfAuto.assignTiers(CfAuto.planWords(pieces.count, words, CF_AUTO_MAX), pieces.tiers);
+            var budget = money - fee;
+            var list2 = [];
+
+            // 긴 단어부터, 남은 핑으로 못 만드는 단어는 건너뛰고 만들 수 있는 것까지 계속
+            plan.forEach(function (p) {
+              var cost = getCFRewards(p.word, p.level, false).cost;
+
+              if (cost > budget) return;
+              budget -= cost;
+              list2.push({ word: p.word, tray: p.tray, cost: cost });
+            });
+            if (!list2.length) return done({ result: 200, plan: [], reason: plan.length ? "money" : "none" });
+            MainDB.users
+              .update(["_id", uid])
+              .set(["money", money - fee])
+              .on(function () {
+                req.session.cfAuto = { at: Date.now(), list: list2 };
+                done({ result: 200, plan: list2, money: money - fee });
+              });
+          });
+        });
+      });
+  });
+  // 조합: 결과 보기에서 정한 단어를 차례로 조합. 그사이 조각이 줄었으면 그 단어는 건너뛰고, 핑이 모자란 단어도 건너뜀
+  Server.post("/cf-auto/run", function (req, res) {
+    if (!req.session.profile) return res.json({ error: 400 });
+    var uid = req.session.profile.id;
+    var paid = cfAutoPaid(req);
+
+    if (!paid) return res.json({ error: 478 });
+    if (!cfAutoLock(uid)) return res.json({ error: 479 });
+    function done(data) {
+      delete _cfAutoBusy[uid];
+      res.json(data);
+    }
+    MainDB.users
+      .findOne(["_id", uid])
+      .limit(["money", true], ["box", true])
+      .on(function ($user) {
+        if (!$user) return done({ error: 400 });
+        if (!$user.box) $user.box = {};
+        $user.money = Number($user.money) || 0;
+        var made = [], gains = {};
+        var skipped = 0;
+
+        paid.list.forEach(function (p) {
+          var need = {}, level = 0;
+          var lacking, cfr;
+
+          p.tray.forEach(function (t) {
+            need[t] = (need[t] || 0) + 1;
+            level += 68 - t.charCodeAt(3);
+          });
+          lacking = Object.keys(need).some(function (id) { return (Number($user.box[id]) || 0) < need[id]; });
+          cfr = getCFRewards(p.word, level, false);
+          if (lacking || $user.money < cfr.cost) {
+            skipped++;
+            return;
+          }
+          applyCF($user, need, p.word, p.word, cfr, false).forEach(function (o) {
+            gains[o.key] = (gains[o.key] || 0) + o.value;
+          });
+          made.push(p.word);
+        });
+        delete req.session.cfAuto;
+
+        var gain = Object.keys(gains).map(function (k) { return { key: k, value: gains[k] }; });
+        // fee: 조각이 줄었으니 다음 결과 보기 값도 새로 셈
+        var result = { result: 200, made: made, skipped: skipped, gain: gain, box: $user.box, money: $user.money, fee: cfAutoFee(CfAuto.collectPieces($user.box).count) };
+
+        if (!made.length) return done(result);
+        MainDB.users
+          .update(["_id", uid])
+          .set(["money", $user.money], ["box", $user.box])
+          .on(function () {
+            done(result);
+          });
+      });
   });
   Server.get("/craft-check", function (req, res) {
     if (!req.session.profile) return res.json({ error: 400 });

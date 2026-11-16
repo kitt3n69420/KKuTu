@@ -59,6 +59,14 @@ function sendTip(client, langData, idx) {
     head: "TIP"
   });
 }
+// 이구동성: 게임 중에는 참가자의 채팅을 막는다 (관전자는 채팅 가능)
+function isUnisonMuted(room, $c) {
+  return !!(room && room.gaming && room.rule && room.rule.rule === "Unison" && room.game && room.game.seq && room.game.seq.indexOf($c.id) !== -1);
+}
+// 이구동성·그림퀴즈: 게임 중에는 방 안에서 귓속말을 보낼 수 없다
+function isWhisperBlocked(room) {
+  return !!(room && room.gaming && Const.NO_WHISPER_RULES.indexOf((Const.getRule(room.mode) || {}).rule) !== -1);
+}
 
 var DIC = {};
 var DNAME = {};
@@ -407,6 +415,10 @@ KKuTu.onClientMessage = function ($c, msg) {
         else if (!(temp = ROOM[$c.place])) return;
         if (!temp.gaming) return;
         if (temp.game.late) {
+          if (isUnisonMuted(temp, $c)) {
+            $c.send("chat", { notice: true, code: "unisonNoChat" });
+            break;
+          }
           var lateVal = (temp.opts.noswear && KKuTu.checkSwearWords(msg.value, true).length > 0) ? KKuTu.censorSwearWords(msg.value, true) : msg.value;
           $c.chat(lateVal);
         } else if (!temp.game.loading) {
@@ -446,7 +458,11 @@ KKuTu.onClientMessage = function ($c, msg) {
         // 일반 채팅: 방에 있고 noswear 규칙이 켜져 있을 때만 검열 (공백을 무시하고 검사해 "시 발" 우회 차단)
         var chatRoom = ROOM[$c.place];
         var chatVal = (chatRoom && chatRoom.opts.noswear && KKuTu.checkSwearWords(msg.value, true).length > 0) ? KKuTu.censorSwearWords(msg.value, true) : msg.value;
-        if (msg.whisper) {
+        if (msg.whisper && isWhisperBlocked(chatRoom)) {
+          $c.send("chat", { notice: true, code: "noWhisperInGame" });
+        } else if (!msg.whisper && isUnisonMuted(chatRoom, $c)) {
+          $c.send("chat", { notice: true, code: "unisonNoChat" });
+        } else if (msg.whisper) {
           process.send({ type: "tail-report", id: $c.id, chan: CHAN, place: $c.place, msg: msg });
           process.send({ type: "whisper-log", profile: $c.profile, message: chatVal, targets: msg.whisper });
           msg.whisper.split(",").forEach((v) => {

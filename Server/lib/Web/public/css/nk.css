@@ -1299,6 +1299,32 @@ html[data-ui="new"] body.dark-mode #nk-profile #craft-compose.craft-composable {
 html[data-ui="new"] #nk-profile .nk-pf-list { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 html[data-ui="new"] #nk-profile #craft-goods { flex: 1; }
 
+/* 옷장 (2026-11-16, 사용자 사양): 칸 4개 한 줄 — 휴대폰은 in_m_kkutu.css가 2x2. 칸은 body-render.js drawWardrobe가 그림 */
+.nk-pf-pane[data-tab="wardrobe"] { display: flex; flex-direction: column; gap: 12px; }
+html[data-ui="new"] #nk-profile #wardrobe-slots { gap: 10px; padding: 0; }
+html[data-ui="new"] #nk-profile .wd-slot,
+html[data-ui="new"] body.dark-mode #nk-profile .wd-slot { padding: 10px; border: 1px solid var(--nk-line) !important; border-radius: var(--nk-r-sm); background: var(--nk-surface-2); }
+html[data-ui="new"] #nk-profile .wd-view { width: min(120px, 100%); height: auto; aspect-ratio: 1; }
+html[data-ui="new"] #nk-profile .wd-empty-text { padding-top: 0; display: grid; place-items: center; height: 100%; color: var(--nk-text-3); }
+html[data-ui="new"] #nk-profile .wd-nick { margin: 6px 0 8px; font-size: calc((12.5px) * var(--nk-fs, 1)); }
+html[data-ui="new"] #nk-profile .wd-btns button,
+html[data-ui="new"] body.dark-mode #nk-profile .wd-btns button {
+	height: 30px; border: 1px solid var(--nk-line); border-radius: 8px; background-color: var(--nk-surface) !important; color: var(--nk-text) !important;
+	box-shadow: none !important; font-family: var(--nk-font); font-size: calc((12px) * var(--nk-fs, 1)); font-weight: 650; cursor: pointer;
+}
+html[data-ui="new"] #nk-profile .wd-btns .wd-wear:not(:disabled),
+html[data-ui="new"] body.dark-mode #nk-profile .wd-btns .wd-wear:not(:disabled) { border-color: transparent; background-color: var(--nk-fill) !important; color: var(--nk-on-accent) !important; }
+html[data-ui="new"] #nk-profile .wd-btns button:disabled { cursor: default; }
+html[data-ui="new"] #nk-profile #wardrobe-help { padding: 0; color: var(--nk-text-3); font-size: calc((12px) * var(--nk-fs, 1)); }
+/* 글자 조합소 자동 조합 창: 단어 칩 바탕·조합 단추 채움 */
+html[data-ui="new"] #cfa-list,
+html[data-ui="new"] body.dark-mode #cfa-list { border-radius: var(--nk-r-sm); background-color: var(--nk-surface-2) !important; }
+html[data-ui="new"] .cfa-word,
+html[data-ui="new"] body.dark-mode .cfa-word { background-color: var(--nk-surface) !important; box-shadow: inset 0 0 0 1px var(--nk-line); }
+html[data-ui="new"] #cfa-help { color: var(--nk-text-3); }
+html[data-ui="new"] #CfAutoDiag #cfa-run,
+html[data-ui="new"] body.dark-mode #CfAutoDiag #cfa-run { border-color: transparent; background-color: var(--nk-fill) !important; color: var(--nk-on-accent) !important; }
+
 /* ======================================================================
    12) 화면 크기별 크기 (사용자 선택 B안) — 큰 화면일수록 글자·단추·카드를 한 단계씩 키움.
        단계(--nk-up)는 창 너비로 정하고, 각 요소는 "기본 크기 + 단계 × 증가량"으로 계산.

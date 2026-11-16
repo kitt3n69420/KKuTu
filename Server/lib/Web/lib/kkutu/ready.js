@@ -193,6 +193,8 @@ $(document).ready(function () {
 			dressOK: $("#dress-ok"),
 			charFactory: $("#CharFactoryDiag"),
 			cfCompose: $("#cf-compose"),
+			cfAuto: $("#CfAutoDiag"),
+			wardrobe: $("#WardrobeDiag"),
 			craftWorkshop: $("#CraftingDiag"),
 			craftCompose: $("#craft-compose"),
 			exchangeWorkshop: $("#ExchangeDiag"),
@@ -218,6 +220,8 @@ $(document).ready(function () {
 			lateJoinText: $("#late-join-text"),
 			lateJoinOK: $("#late-join-ok"),
 			lateJoinSpectate: $("#late-join-spectate"),
+			consume: $("#ConsumeDiag"),
+			consumeText: $("#consume-text"),
 			alert: $("#AlertDiag"),
 			alertText: $("#alert-text"),
 			alertOK: $("#alert-ok"),
@@ -1465,7 +1469,7 @@ $(document).ready(function () {
 		if (!$data._injpick) $data._injpick = [];
 		if (!$data._quizpick) $data._quizpick = [];
 		if (!$data._songpick) $data._songpick = "";
-		if (rule.rule == "Typing" || rule.rule == "Chainbattle" || rule.rule == "Flip" || rule.rule == "numberclap") $("#room-round").val(3);
+		if (rule.rule == "Typing" || rule.rule == "Chainbattle" || rule.rule == "Brawl" || rule.rule == "Flip" || rule.rule == "numberclap") $("#room-round").val(3);
 		$("#room-time").children("option").each(function (i, o) {
 			$(o).html(Number($(o).val()) * rule.time + L['SECOND']);
 		});
@@ -2827,6 +2831,19 @@ $(document).ready(function () {
 		if ($data._gaming) return fail(438);
 		if (NK.active ? NK.openProfile('cf') : showDialog($stage.dialog.charFactory)) drawCharFactory();
 	});
+	// 옷장 (신 UI는 프로필 창의 옷장 탭) — 그리기·저장·입기는 body-render.js
+	$("#dress-wardrobe").on('click', function (e) {
+		if ($data.guest) return fail(421);
+		if ($data._gaming) return fail(438);
+		if (NK.active ? NK.openProfile('wardrobe') : showDialog($stage.dialog.wardrobe)) loadWardrobe();
+	});
+	// 글자 조합소 자동 조합 창 — 결과 보기·조합은 body-render.js
+	$("#cf-auto").on('click', function (e) {
+		if ($data._gaming) return fail(438);
+		if (showDialog($stage.dialog.cfAuto)) loadCfAuto();
+	});
+	$("#cfa-preview").on('click', function (e) { previewCfAuto(); });
+	$("#cfa-run").on('click', function (e) { runCfAuto(); });
 	$stage.dialog.cfCompose.on('click', function (e) {
 		if (!$stage.dialog.cfCompose.hasClass("cf-composable")) return fail(436);
 		showConfirm(L['cfSureCompose'], function (res) {

@@ -1364,6 +1364,11 @@ function processClientRequest($c, msg) {
         if (!processAdmin($c.id, msg.value)) break;
       }
       checkTailUser($c.id, $c.place, msg);
+      // 이구동성·그림퀴즈: 게임 중인 방 안 사람(참가자·관전자)은 귓속말을 보낼 수 없다 (짜고 고르기·정답 알려주기 방지)
+      if (msg.whisper && (temp = ROOM[$c.place]) && temp.gaming && Const.NO_WHISPER_RULES.indexOf((Const.getRule(temp.mode) || {}).rule) !== -1) {
+        $c.send("chat", { notice: true, code: "noWhisperInGame" });
+        break;
+      }
       if (msg.whisper) {
         msg.whisper.split(",").forEach((v) => {
           if ((temp = DIC[DNAME[v]])) {

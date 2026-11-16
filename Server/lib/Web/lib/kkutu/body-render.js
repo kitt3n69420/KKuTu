@@ -118,23 +118,42 @@ function drawMyGoods(avGroup) {
 				requestEquip(id);
 			}
 		} else if (item.group == "CNS") {
+			// 백과사전 낱장은 1개·10개·모두 중에서 골라 씀 (사용자 요청 2026-11-16)
+			if (id == "dictPage") return askConsumeCount(id);
 			showConfirm(L['sureConsume'], function (res) {
-				if (res) {
-					$.post("/consume/" + id, function (res) {
-						if (res.exp) notice(L['obtainExp'] + ": " + commify(res.exp));
-						if (res.money) notice(L['obtainMoney'] + ": " + commify(res.money));
-						res.gain.forEach(function (item) { queueObtain(item); });
-						$data.box = res.box;
-						$data.users[$data.id].data = res.data;
-						send('refresh');
-
-						drawMyDress($data._avGroup);
-						updateMe();
-					});
-				}
+				if (res) requestConsume(id, 1);
 			});
 		}
 	});
+}
+// 소모품 쓰기. count: 개수 또는 "all" — 여러 개는 서버가 1개씩 차례로 쓴 것과 같게 처리 (routes/consume.js)
+function requestConsume(id, count) {
+	$.post("/consume/" + id, { count: count }, function (res) {
+		if (res.error) return fail(res.error);
+		if (res.used > 1) notice(L['consumeUsed'].replace("{V1}", commify(res.used)));
+		if (res.exp) notice(L['obtainExp'] + ": " + commify(res.exp));
+		if (res.money) notice(L['obtainMoney'] + ": " + commify(res.money));
+		res.gain.forEach(function (item) { queueObtain(item); });
+		$data.box = res.box;
+		$data.users[$data.id].data = res.data;
+		send('refresh');
+
+		drawMyDress($data._avGroup);
+		updateMe();
+	});
+}
+function askConsumeCount(id) {
+	var have = Number($data.box[id]) || 0;
+
+	$stage.dialog.consumeText.html(escapeContent(L['consumeHowMany'].replace("{V1}", iName(id)).replace("{V2}", commify(have))).replace(/\n/g, '<br>'));
+	$("#consume-ten").prop('disabled', have < 10);
+	[["#consume-one", 1], ["#consume-ten", 10], ["#consume-all", "all"]].forEach(function (b) {
+		$(b[0]).off('click').on('click', function () {
+			$stage.dialog.consume.hide();
+			requestConsume(id, b[1]);
+		});
+	});
+	showDialog($stage.dialog.consume, true);
 }
 function requestEquip(id, isLeft) {
 	var my = $data.users[$data.id];
@@ -156,6 +175,62 @@ function requestEquip(id, isLeft) {
 				updateUI(false);
 			});
 		}
+	});
+}
+// 옷장 (서버: routes/major.js /wardrobe, Web/wardrobe.js) — 칸 4개, 이름 없음. 데스크톱은 한 줄, 휴대폰은 2x2(CSS)
+// 칸마다 모레미와 이름 스킨을 입힌 내 별명을 보여 주고, [지금 옷 저장] [입기]. 갖고 있지 않게 된 아이템은 서버가 빼고 알려 줌
+function loadWardrobe() {
+	$.get("/wardrobe", function (res) {
+		if (res.error) return fail(res.error);
+		if (!Object.keys($data.shop).length) processShop(function () { drawWardrobe(res); });
+		else drawWardrobe(res);
+	});
+}
+function drawWardrobe(res) {
+	var $slots = $("#wardrobe-slots").empty();
+
+	$data._wardrobe = res.wardrobe.slots;
+	res.wardrobe.slots.forEach(function (p, i) {
+		var $view = $("<div>").addClass("moremi wd-view");
+		var $nick = $("<div>").addClass("wd-nick");
+		var $wear = $("<button>").addClass("wd-wear").text(L['wardrobeWear']).on('click', function () { wearWardrobe(i); });
+		var $save = $("<button>").addClass("wd-save").text(L['wardrobeSave']).on('click', function () { saveWardrobe(i); });
+
+		if (p) {
+			renderMoremi($view, p.equip);
+			$nick.append($("<div>").addClass("users-name ellipse").text(myNickname()));
+			addonNickname($nick, { equip: p.equip });
+		} else {
+			$view.append($("<div>").addClass("wd-empty-text").text(L['wardrobeEmpty']));
+			$wear.prop('disabled', true);
+		}
+		$slots.append($("<div>").addClass("wd-slot" + (p ? "" : " wd-empty"))
+			.append($view, $nick, $("<div>").addClass("wd-btns").append($save, $wear)));
+	});
+	if (res.removed && res.removed.length) {
+		showAlert(L['wardrobeRemoved'].replace("{V1}", res.removed.map(function (id) { return L[id] ? iName(id) : id; }).join(", ")));
+	}
+}
+function saveWardrobe(i) {
+	function go() {
+		$.post("/wardrobe/save/" + i, function (res) {
+			if (res.error) return fail(res.error);
+			drawWardrobe(res);
+		});
+	}
+	if ($data._wardrobe && $data._wardrobe[i]) showConfirm(L['wardrobeSureSave'], function (ok) { if (ok) go(); });
+	else go();
+}
+function wearWardrobe(i) {
+	$.post("/wardrobe/apply/" + i, function (res) {
+		if (res.error) return fail(res.error);
+		// 장착(requestEquip)과 같게: 받은 상자·착용으로 바꾸고 게임 서버가 다시 읽게 함
+		$data.box = res.box;
+		$data.users[$data.id].equip = res.equip;
+		drawMyDress($data._avGroup);
+		send('refresh');
+		updateUI(false);
+		drawWardrobe(res);
 	});
 }
 function drawCharFactory() {
@@ -260,6 +335,90 @@ function drawCharFactory() {
 		drawCFTray();
 	}
 	trayEmpty();
+}
+// 글자 조합소 자동 조합 (서버: routes/major.js /cf-auto, 고르기는 Web/cf-auto.js)
+// 결과 보기 값(가진 글자 조각 수 × 100핑, ★ 제외)을 내고 결과(만들 단어 목록)를 본 뒤에만 조합할 수 있음. 이미 값을 낸 결과가 있으면(10분) 창을 다시 열어도 그대로 보여 줌
+function loadCfAuto() {
+	$.get("/cf-auto", function (res) {
+		if (res.error) return fail(res.error);
+		$data._cfaFee = res.fee;
+		drawCfAuto(res.plan);
+	});
+}
+// plan: 결과 보기에서 받은 [{ word, tray, cost }] (없으면 null), result: 조합을 마친 응답 (있으면 결과를 보여 줌)
+function drawCfAuto(plan, result) {
+	var $list = $("#cfa-list").empty();
+	var $sum = $("#cfa-summary").empty();
+	var pieces = 0, cost = 0;
+
+	$data._cfaPlan = plan;
+	$("#cfa-preview").text(L['cfAutoPreview'].replace("{V1}", commify($data._cfaFee))).toggle(!plan);
+	$("#cfa-run").toggle(!!(plan && plan.length));
+	if (result) {
+		$sum.text(L['cfAutoDone'].replace("{V1}", result.made.length)
+			+ (result.skipped ? " " + L['cfAutoSkipped'].replace("{V1}", result.skipped) : ""));
+		$list.append($("<div>").addClass("cfa-gain-head").text(L['cfAutoGain']));
+		result.gain.forEach(function (g) {
+			$list.append($("<div>").addClass("cfa-gain")
+				.append($("<div>").addClass("jt-image cfa-gain-image").css('background-image', "url(" + iImage(g.key) + ")"))
+				.append($("<div>").addClass("cfa-gain-name").text(iName(g.key) + " x" + g.value))
+			);
+		});
+		return;
+	}
+	if (!plan) return;
+	// 단어마다 글자를 조각 등급 색(희귀·고급·일반)으로
+	plan.forEach(function (p) {
+		var $w = $("<div>").addClass("cfa-word");
+
+		p.tray.forEach(function (id) {
+			$w.append($("<b>").addClass("cfa-t" + id.charAt(3)).text(id.slice(4)));
+		});
+		pieces += p.tray.length;
+		cost += p.cost;
+		$list.append($w);
+	});
+	$sum.text(L['cfAutoSummary'].replace("{V1}", plan.length).replace("{V2}", pieces).replace("{V3}", commify(cost)));
+}
+function previewCfAuto() {
+	showConfirm(L['cfAutoSurePreview'].replace("{V1}", commify($data._cfaFee)), function (ok) {
+		if (!ok) return;
+		$("#cfa-preview").prop('disabled', true);
+		$.post("/cf-auto/preview", function (res) {
+			if (res.error) return fail(res.error);
+			if (!res.plan.length) return showAlert(L[res.reason == "money" ? 'cfAutoNoMoney' : 'cfAutoNone']);
+			$data.users[$data.id].money = res.money;
+			send('refresh');
+			updateMe();
+			drawCfAuto(res.plan);
+		}).always(function () {
+			$("#cfa-preview").prop('disabled', false);
+		});
+	});
+}
+function runCfAuto() {
+	var plan = $data._cfaPlan;
+
+	if (!plan || !plan.length) return fail(478);
+	showConfirm(L['cfAutoSureRun'].replace("{V1}", plan.length), function (ok) {
+		if (!ok) return;
+		$("#cfa-run").prop('disabled', true);
+		$.post("/cf-auto/run", function (res) {
+			if (res.error) return fail(res.error);
+			// 조합(/cf)과 같게: 받은 상자·핑으로 바꾸고 게임 서버가 다시 읽게 함. 얻은 것은 창 하나씩 띄우지 않고 묶어서 보여 줌
+			$data.users[$data.id].money = res.money;
+			$data.box = res.box;
+			$data._cfaFee = res.fee; // 조각이 줄었으니 결과 보기 값도 새로
+			send('refresh');
+			playSound('success');
+			updateMe();
+			drawMyDress($data._avGroup);
+			drawCharFactory();
+			drawCfAuto(null, res);
+		}).always(function () {
+			$("#cfa-run").prop('disabled', false);
+		});
+	});
 }
 function drawCraftWorkshop() {
 	var $tray = $("#craft-tray");

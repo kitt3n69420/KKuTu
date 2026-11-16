@@ -332,6 +332,8 @@ $(document).ready(function () {
 			dressOK: $("#dress-ok"),
 			charFactory: $("#CharFactoryDiag"),
 			cfCompose: $("#cf-compose"),
+			cfAuto: $("#CfAutoDiag"),
+			wardrobe: $("#WardrobeDiag"),
 			craftWorkshop: $("#CraftingDiag"),
 			craftCompose: $("#craft-compose"),
 			exchangeWorkshop: $("#ExchangeDiag"),
@@ -357,6 +359,8 @@ $(document).ready(function () {
 			lateJoinText: $("#late-join-text"),
 			lateJoinOK: $("#late-join-ok"),
 			lateJoinSpectate: $("#late-join-spectate"),
+			consume: $("#ConsumeDiag"),
+			consumeText: $("#consume-text"),
 			alert: $("#AlertDiag"),
 			alertText: $("#alert-text"),
 			alertOK: $("#alert-ok"),
@@ -1604,7 +1608,7 @@ $(document).ready(function () {
 		if (!$data._injpick) $data._injpick = [];
 		if (!$data._quizpick) $data._quizpick = [];
 		if (!$data._songpick) $data._songpick = "";
-		if (rule.rule == "Typing" || rule.rule == "Chainbattle" || rule.rule == "Flip" || rule.rule == "numberclap") $("#room-round").val(3);
+		if (rule.rule == "Typing" || rule.rule == "Chainbattle" || rule.rule == "Brawl" || rule.rule == "Flip" || rule.rule == "numberclap") $("#room-round").val(3);
 		$("#room-time").children("option").each(function (i, o) {
 			$(o).html(Number($(o).val()) * rule.time + L['SECOND']);
 		});
@@ -2966,6 +2970,19 @@ $(document).ready(function () {
 		if ($data._gaming) return fail(438);
 		if (NK.active ? NK.openProfile('cf') : showDialog($stage.dialog.charFactory)) drawCharFactory();
 	});
+	// 옷장 (신 UI는 프로필 창의 옷장 탭) — 그리기·저장·입기는 body-render.js
+	$("#dress-wardrobe").on('click', function (e) {
+		if ($data.guest) return fail(421);
+		if ($data._gaming) return fail(438);
+		if (NK.active ? NK.openProfile('wardrobe') : showDialog($stage.dialog.wardrobe)) loadWardrobe();
+	});
+	// 글자 조합소 자동 조합 창 — 결과 보기·조합은 body-render.js
+	$("#cf-auto").on('click', function (e) {
+		if ($data._gaming) return fail(438);
+		if (showDialog($stage.dialog.cfAuto)) loadCfAuto();
+	});
+	$("#cfa-preview").on('click', function (e) { previewCfAuto(); });
+	$("#cfa-run").on('click', function (e) { runCfAuto(); });
 	$stage.dialog.cfCompose.on('click', function (e) {
 		if (!$stage.dialog.cfCompose.hasClass("cf-composable")) return fail(436);
 		showConfirm(L['cfSureCompose'], function (res) {
@@ -7596,6 +7613,340 @@ function drawChainSpeed(table) {
  */
 
 /**
+ * Brawl (난투 잇기) - 클라이언트 UI
+ * 잇기 대결 화면을 바탕으로, 가운데 글자(쿼드코어는 4칸)를 모두가 함께 씀.
+ * 누가 이은 단어든 모두의 글자·기록·체인 수가 바뀌고, 노란 바에는 마지막 단어와 이은 사람을 보여 줌.
+ * 실패·한발 늦음은 서버가 본인에게만 turnError로 알림 (body.js turnError가 단어 창에 잠깐 띄우고 $data._char로 되돌림)
+ */
+
+$lib.Brawl = {};
+$lib.Brawl._restTimer = null;
+
+// 가운데 글자 칸을 그림. 쿼드코어는 칸마다 label, 방금 바뀐 칸(fresh)은 강조
+$lib.Brawl.drawSlots = function (fresh) {
+	var slots = $data._brawlSlots || [];
+	var html = slots.map(function (s, i) {
+		var t = getCharText(s.char, s.subChar);
+
+		return slots.length > 1 ? "<label class='brawl-slot" + (i === fresh ? " brawl-fresh" : "") + "'>" + t + "</label>" : t;
+	}).join("");
+
+	$stage.game.display.toggleClass("brawl-quad", slots.length > 1).html($data._char = html);
+};
+
+$lib.Brawl.roundReady = function (data) {
+	if ($lib.Brawl._restTimer) {
+		clearTimeout($lib.Brawl._restTimer);
+		$lib.Brawl._restTimer = null;
+	}
+
+	$data._chatter = $stage.talk;
+	clearBoard();
+	$data._round = data.round;
+	$data._roundTime = $data.room.time * 1000;
+	$data._fastTime = 10000;
+	$data._brawlSlots = data.slots || [];
+	$data._brawlOut = false;
+	$data.chain = data.chain || 0;
+
+	$lib.Brawl.drawSlots(-1);
+	$stage.game.chain.show().html($data.chain);
+	$(".game-user-bomb").removeClass("game-user-bomb");
+	$(".jjo-turn-time .graph-bar")
+		.width("100%")
+		.text(L['brawlHelp'])
+		.css({ 'text-align': "center", 'background-color': "#70712D" });
+
+	drawRound(data.round);
+	playSound('round_start');
+	recordEvent('roundReady', { data: data });
+};
+
+$lib.Brawl.turnStart = function (data) {
+	// 모두가 동시에 입력 (잇기 대결과 같음)
+	if (!$data._spectate && !$data._brawlOut) {
+		$data._relay = true;
+		$stage.game.here.css('opacity', 1).show();
+		mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
+	}
+
+	ws.onmessage = _onMessage;
+	clearInterval($data._tTime);
+	clearTrespasses();
+	$data._tTime = addInterval($lib.Brawl.turnGoing, TICK);
+	$data._roundTime = data.roundTime;
+
+	playBGM('jaqwi');
+	recordEvent('turnStart', { data: data });
+};
+
+$lib.Brawl.turnGoing = function () {
+	var $rtb = $stage.game.roundBar;
+	var bRate;
+
+	if (!$data.room || !$data.room.gaming) {
+		clearInterval($data._tTime);
+		return;
+	}
+	$data._roundTime -= TICK;
+	$rtb
+		.width($data._roundTime / $data.room.time * 0.1 + "%")
+		.html($data._spectate ? L['stat_spectate'] : (Math.round($data._roundTime / 100) / 10).toFixed(1) + L['SECOND']);
+
+	// 10초 경고
+	if (!$rtb.hasClass("round-extreme") && $data._roundTime <= $data._fastTime) {
+		if ($data.bgm) {
+			bRate = $data.bgm.currentTime / $data.bgm.duration;
+			if ($data.bgm.paused) stopBGM();
+			else playBGM('jaqwiF');
+			$data.bgm.currentTime = $data.bgm.duration * bRate;
+		}
+		$rtb.addClass("round-extreme");
+	}
+};
+
+$lib.Brawl.turnEnd = function (id, data) {
+	var $uc = $("#game-user-" + id);
+	var u, name;
+
+	if (data.ok) {
+		// 누가 이었든 그 칸의 글자가 모두에게 바뀜 (실패 문구가 떠 있으면 바로 새 글자로)
+		$data._brawlSlots[data.slot] = { char: data.char, subChar: data.subChar };
+		clearTimeout($data._fail);
+		$lib.Brawl.drawSlots($data._brawlSlots.length > 1 ? data.slot : -1);
+		$stage.game.chain.html($data.chain = data.chain);
+		pushHistory(data.value, data.mean, data.theme);
+
+		u = $data.users[id] || $data.robots[id];
+		name = u && u.profile ? (u.profile.title || u.profile.name) : "";
+		$(".jjo-turn-time .graph-bar").text(badWords(data.value) + (name ? " · " + name : ""));
+
+		if (id == $data.id) playSound('mission');
+		addScore(id, data.score, data.totalScore);
+		drawObtainedScore($uc, $("<div>").addClass("deltaScore").html("+" + data.score));
+		updateScore(id, getScore(id));
+	} else if (data.out) {
+		// 낙장불입 탈락
+		if (id == $data.id) {
+			$data._brawlOut = true;
+			$data._relay = false;
+			mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
+			$(".jjo-turn-time .graph-bar").html("GAME OVER");
+		}
+		$uc.addClass("game-user-bomb");
+		playSound('timeout');
+	} else if (data.speed) {
+		// 라운드 종료: 이번 라운드에 각자 이은 단어 수를 잠깐 보여 줌 (잇기 대결의 drawChainSpeed)
+		clearInterval($data._tTime);
+		$data._relay = false;
+		mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
+
+		addTimeout(drawChainSpeed, 1000, data.speed);
+		stopBGM();
+		playSound('horr');
+
+		if ($data._round < $data.room.round) $lib.Brawl.restGoing(10);
+	}
+};
+
+$lib.Brawl.restGoing = function (rest) {
+	$(".jjo-turn-time .graph-bar").html(rest + L['afterRun']);
+	$lib.Brawl._restTimer = (rest > 0) ? addTimeout($lib.Brawl.restGoing, 1000, rest - 1) : null;
+};
+
+/**
+ * Rule the words! KKuTu Online
+ * Copyright (C) 2017 JJoriping(op@jjo.kr)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+ * Unison (이구동성) - 클라이언트 UI
+ * 라운드 준비 중에는 질문이 단어 창, 선택지가 노란 바에 나오고, 라운드가 시작되면 서로 자리를 바꿔 선택지가 단어 창으로 감.
+ * 내가 고른 선택지는 단어 창에서 노랗게. 라운드 중에는 아직 안 고른 사람 카드에 차례 효과(game-user-current)를 주고,
+ * 고르면 그 카드에서 뺌. 라운드가 끝나면 점수를 못 받은 사람 카드에 실패 효과(game-user-bomb), 누가 무엇을 골랐는지는 알림으로.
+ * 한 번 고르면 입력창을 닫음 (그 뒤 입력과 채팅은 서버가 막고 알림을 보냄)
+ */
+
+$lib.Unison = {};
+
+function unisonSeqIds() {
+	return ($data.room.game.seq || []).map(function (s) { return (typeof s === 'object' && s.id) ? s.id : s; });
+}
+function unisonChoiceText(n) {
+	return n + ". " + $data._unison.choices[n - 1];
+}
+function unisonChoiceLabel(n) {
+	return $("<label>").addClass("unison-choice").attr('data-n', n).text(unisonChoiceText(n));
+}
+function unisonCloseInput() {
+	$data._relay = false;
+	mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
+}
+
+$lib.Unison.roundReady = function (data) {
+	clearBoard();
+	$data._roundTime = $data.room.time * 1000;
+	$data._fastTime = 10000;
+	$data._unison = { question: data.question, choices: data.choices || ["", ""], pick: 0 };
+
+	$(".game-user-current").removeClass("game-user-current");
+	$stage.game.display.addClass("unison-q").empty().append($("<label>").text(data.question));
+	$data._char = $stage.game.display.html();
+	$(".jjo-turn-time .graph-bar")
+		.width("100%")
+		.text(unisonChoiceText(1) + "   /   " + unisonChoiceText(2))
+		.css({ 'text-align': "center", 'background-color': "#70712D" });
+
+	drawRound(data.round);
+	playSound('round_start');
+	recordEvent('roundReady', { data: data });
+};
+
+$lib.Unison.turnStart = function (data) {
+	var voted = data.voted || [];
+	var ids = unisonSeqIds();
+	var mine = !$data._spectate && ids.indexOf($data.id) !== -1 && voted.indexOf($data.id) === -1;
+
+	// 라운드 시작: 선택지는 단어 창, 질문은 노란 바로
+	if ($data._unison) {
+		$stage.game.display.addClass("unison-q").empty().append(unisonChoiceLabel(1), unisonChoiceLabel(2));
+		$data._char = $stage.game.display.html();
+		$(".jjo-turn-time .graph-bar").text($data._unison.question);
+	}
+	// 차례 효과: 아직 고르지 않은 사람 모두
+	$(".game-user-current").removeClass("game-user-current");
+	$(".game-user-bomb").removeClass("game-user-bomb");
+	ids.forEach(function (id) {
+		if (voted.indexOf(id) === -1) $("#game-user-" + id).addClass("game-user-current");
+	});
+	if (mine) {
+		$data._relay = true;
+		$stage.game.here.css('opacity', 1).show();
+		mobile ? $stage.game.hereText.focus() : $stage.talk.focus();
+	} else {
+		unisonCloseInput();
+	}
+
+	clearInterval($data._tTime);
+	$data._roundTime = data.roundTime;
+	$data._tTime = addInterval($lib.Unison.turnGoing, TICK);
+	playBGM('jaqwi');
+	recordEvent('turnStart', { data: data });
+};
+
+$lib.Unison.turnGoing = function () {
+	var $rtb = $stage.game.roundBar;
+	var bRate;
+
+	if (!$data.room || !$data.room.gaming) {
+		clearInterval($data._tTime);
+		return;
+	}
+	$data._roundTime -= TICK;
+	$rtb
+		.width($data._roundTime / $data.room.time * 0.1 + "%")
+		.html($data._spectate ? L['stat_spectate'] : (Math.round($data._roundTime / 100) / 10).toFixed(1) + L['SECOND']);
+
+	if (!$rtb.hasClass("round-extreme") && $data._roundTime <= $data._fastTime) {
+		if ($data.bgm) {
+			bRate = $data.bgm.currentTime / $data.bgm.duration;
+			if ($data.bgm.paused) stopBGM();
+			else playBGM('jaqwiF');
+			$data.bgm.currentTime = $data.bgm.duration * bRate;
+		}
+		$rtb.addClass("round-extreme");
+	}
+};
+
+$lib.Unison.turnEnd = function (id, data) {
+	var ch, ids, names, line;
+
+	if (data.voted) {
+		// 누가 골랐는지만 모두에게. 본인에게는 고른 번호(pick)가 함께 옴
+		$("#game-user-" + id).removeClass("game-user-current");
+		if (id == $data.id) {
+			unisonCloseInput();
+			if (data.pick && $data._unison) {
+				$data._unison.pick = data.pick;
+				$stage.game.display.find(".unison-choice[data-n='" + data.pick + "']").addClass("unison-picked");
+				playSound('mission');
+			}
+		}
+		return;
+	}
+	if (!data.counts) return;
+
+	// 라운드 결과
+	clearInterval($data._tTime);
+	unisonCloseInput();
+	stopBGM();
+	$(".game-user-current").removeClass("game-user-current");
+	ch = ($data._unison && $data._unison.choices) || ["", ""];
+	$stage.game.display.empty().append($("<label>").text(ch[0] + " " + data.counts[0] + " : " + data.counts[1] + " " + ch[1]));
+	if (data.side) line = L['unisonWin'].replace('{V1}', data.side + ". " + ch[data.side - 1]);
+	else line = (data.counts[0] === data.counts[1]) ? L['unisonTie'] : L['unisonNoWin'];
+	$(".jjo-turn-time .graph-bar").text(line);
+
+	ids = unisonSeqIds();
+	ids.forEach(function (uid) {
+		var $uc = $("#game-user-" + uid);
+
+		if (data.win.indexOf(uid) !== -1) {
+			addScore(uid, data.score, data.scores[uid]);
+			drawObtainedScore($uc, $("<div>").addClass("deltaScore").html("+" + data.score));
+			updateScore(uid, getScore(uid));
+		} else {
+			$uc.addClass("game-user-bomb");
+		}
+	});
+	if (data.win.indexOf($data.id) !== -1) playSound('success');
+	else if (ids.indexOf($data.id) !== -1) playSound('fail');
+	else playSound('horr');
+
+	// 누가 무엇을 골랐는지 (안 고른 사람은 빠짐)
+	names = [[], []];
+	ids.forEach(function (uid) {
+		var u = $data.users[uid] || $data.robots[uid];
+
+		if (data.picks[uid] && u && u.profile) names[data.picks[uid] - 1].push(u.profile.title || u.profile.name);
+	});
+	notice([1, 2].map(function (n) {
+		return n + ". " + ch[n - 1] + " (" + names[n - 1].length + "): " + (names[n - 1].join(", ") || "-");
+	}).join("  /  "), L['modeXIG']);
+};
+
+/**
+ * Rule the words! KKuTu Online
+ * Copyright (C) 2017 JJoriping(op@jjo.kr)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
  * Calcbattle (계산 대결) - 클라이언트 UI
  * 타자대결 기반 + 수학 문제 풀이
  */
@@ -10600,23 +10951,42 @@ function drawMyGoods(avGroup) {
 				requestEquip(id);
 			}
 		} else if (item.group == "CNS") {
+			// 백과사전 낱장은 1개·10개·모두 중에서 골라 씀 (사용자 요청 2026-11-16)
+			if (id == "dictPage") return askConsumeCount(id);
 			showConfirm(L['sureConsume'], function (res) {
-				if (res) {
-					$.post("/consume/" + id, function (res) {
-						if (res.exp) notice(L['obtainExp'] + ": " + commify(res.exp));
-						if (res.money) notice(L['obtainMoney'] + ": " + commify(res.money));
-						res.gain.forEach(function (item) { queueObtain(item); });
-						$data.box = res.box;
-						$data.users[$data.id].data = res.data;
-						send('refresh');
-
-						drawMyDress($data._avGroup);
-						updateMe();
-					});
-				}
+				if (res) requestConsume(id, 1);
 			});
 		}
 	});
+}
+// 소모품 쓰기. count: 개수 또는 "all" — 여러 개는 서버가 1개씩 차례로 쓴 것과 같게 처리 (routes/consume.js)
+function requestConsume(id, count) {
+	$.post("/consume/" + id, { count: count }, function (res) {
+		if (res.error) return fail(res.error);
+		if (res.used > 1) notice(L['consumeUsed'].replace("{V1}", commify(res.used)));
+		if (res.exp) notice(L['obtainExp'] + ": " + commify(res.exp));
+		if (res.money) notice(L['obtainMoney'] + ": " + commify(res.money));
+		res.gain.forEach(function (item) { queueObtain(item); });
+		$data.box = res.box;
+		$data.users[$data.id].data = res.data;
+		send('refresh');
+
+		drawMyDress($data._avGroup);
+		updateMe();
+	});
+}
+function askConsumeCount(id) {
+	var have = Number($data.box[id]) || 0;
+
+	$stage.dialog.consumeText.html(escapeContent(L['consumeHowMany'].replace("{V1}", iName(id)).replace("{V2}", commify(have))).replace(/\n/g, '<br>'));
+	$("#consume-ten").prop('disabled', have < 10);
+	[["#consume-one", 1], ["#consume-ten", 10], ["#consume-all", "all"]].forEach(function (b) {
+		$(b[0]).off('click').on('click', function () {
+			$stage.dialog.consume.hide();
+			requestConsume(id, b[1]);
+		});
+	});
+	showDialog($stage.dialog.consume, true);
 }
 function requestEquip(id, isLeft) {
 	var my = $data.users[$data.id];
@@ -10638,6 +11008,62 @@ function requestEquip(id, isLeft) {
 				updateUI(false);
 			});
 		}
+	});
+}
+// 옷장 (서버: routes/major.js /wardrobe, Web/wardrobe.js) — 칸 4개, 이름 없음. 데스크톱은 한 줄, 휴대폰은 2x2(CSS)
+// 칸마다 모레미와 이름 스킨을 입힌 내 별명을 보여 주고, [지금 옷 저장] [입기]. 갖고 있지 않게 된 아이템은 서버가 빼고 알려 줌
+function loadWardrobe() {
+	$.get("/wardrobe", function (res) {
+		if (res.error) return fail(res.error);
+		if (!Object.keys($data.shop).length) processShop(function () { drawWardrobe(res); });
+		else drawWardrobe(res);
+	});
+}
+function drawWardrobe(res) {
+	var $slots = $("#wardrobe-slots").empty();
+
+	$data._wardrobe = res.wardrobe.slots;
+	res.wardrobe.slots.forEach(function (p, i) {
+		var $view = $("<div>").addClass("moremi wd-view");
+		var $nick = $("<div>").addClass("wd-nick");
+		var $wear = $("<button>").addClass("wd-wear").text(L['wardrobeWear']).on('click', function () { wearWardrobe(i); });
+		var $save = $("<button>").addClass("wd-save").text(L['wardrobeSave']).on('click', function () { saveWardrobe(i); });
+
+		if (p) {
+			renderMoremi($view, p.equip);
+			$nick.append($("<div>").addClass("users-name ellipse").text(myNickname()));
+			addonNickname($nick, { equip: p.equip });
+		} else {
+			$view.append($("<div>").addClass("wd-empty-text").text(L['wardrobeEmpty']));
+			$wear.prop('disabled', true);
+		}
+		$slots.append($("<div>").addClass("wd-slot" + (p ? "" : " wd-empty"))
+			.append($view, $nick, $("<div>").addClass("wd-btns").append($save, $wear)));
+	});
+	if (res.removed && res.removed.length) {
+		showAlert(L['wardrobeRemoved'].replace("{V1}", res.removed.map(function (id) { return L[id] ? iName(id) : id; }).join(", ")));
+	}
+}
+function saveWardrobe(i) {
+	function go() {
+		$.post("/wardrobe/save/" + i, function (res) {
+			if (res.error) return fail(res.error);
+			drawWardrobe(res);
+		});
+	}
+	if ($data._wardrobe && $data._wardrobe[i]) showConfirm(L['wardrobeSureSave'], function (ok) { if (ok) go(); });
+	else go();
+}
+function wearWardrobe(i) {
+	$.post("/wardrobe/apply/" + i, function (res) {
+		if (res.error) return fail(res.error);
+		// 장착(requestEquip)과 같게: 받은 상자·착용으로 바꾸고 게임 서버가 다시 읽게 함
+		$data.box = res.box;
+		$data.users[$data.id].equip = res.equip;
+		drawMyDress($data._avGroup);
+		send('refresh');
+		updateUI(false);
+		drawWardrobe(res);
 	});
 }
 function drawCharFactory() {
@@ -10742,6 +11168,90 @@ function drawCharFactory() {
 		drawCFTray();
 	}
 	trayEmpty();
+}
+// 글자 조합소 자동 조합 (서버: routes/major.js /cf-auto, 고르기는 Web/cf-auto.js)
+// 결과 보기 값(가진 글자 조각 수 × 100핑, ★ 제외)을 내고 결과(만들 단어 목록)를 본 뒤에만 조합할 수 있음. 이미 값을 낸 결과가 있으면(10분) 창을 다시 열어도 그대로 보여 줌
+function loadCfAuto() {
+	$.get("/cf-auto", function (res) {
+		if (res.error) return fail(res.error);
+		$data._cfaFee = res.fee;
+		drawCfAuto(res.plan);
+	});
+}
+// plan: 결과 보기에서 받은 [{ word, tray, cost }] (없으면 null), result: 조합을 마친 응답 (있으면 결과를 보여 줌)
+function drawCfAuto(plan, result) {
+	var $list = $("#cfa-list").empty();
+	var $sum = $("#cfa-summary").empty();
+	var pieces = 0, cost = 0;
+
+	$data._cfaPlan = plan;
+	$("#cfa-preview").text(L['cfAutoPreview'].replace("{V1}", commify($data._cfaFee))).toggle(!plan);
+	$("#cfa-run").toggle(!!(plan && plan.length));
+	if (result) {
+		$sum.text(L['cfAutoDone'].replace("{V1}", result.made.length)
+			+ (result.skipped ? " " + L['cfAutoSkipped'].replace("{V1}", result.skipped) : ""));
+		$list.append($("<div>").addClass("cfa-gain-head").text(L['cfAutoGain']));
+		result.gain.forEach(function (g) {
+			$list.append($("<div>").addClass("cfa-gain")
+				.append($("<div>").addClass("jt-image cfa-gain-image").css('background-image', "url(" + iImage(g.key) + ")"))
+				.append($("<div>").addClass("cfa-gain-name").text(iName(g.key) + " x" + g.value))
+			);
+		});
+		return;
+	}
+	if (!plan) return;
+	// 단어마다 글자를 조각 등급 색(희귀·고급·일반)으로
+	plan.forEach(function (p) {
+		var $w = $("<div>").addClass("cfa-word");
+
+		p.tray.forEach(function (id) {
+			$w.append($("<b>").addClass("cfa-t" + id.charAt(3)).text(id.slice(4)));
+		});
+		pieces += p.tray.length;
+		cost += p.cost;
+		$list.append($w);
+	});
+	$sum.text(L['cfAutoSummary'].replace("{V1}", plan.length).replace("{V2}", pieces).replace("{V3}", commify(cost)));
+}
+function previewCfAuto() {
+	showConfirm(L['cfAutoSurePreview'].replace("{V1}", commify($data._cfaFee)), function (ok) {
+		if (!ok) return;
+		$("#cfa-preview").prop('disabled', true);
+		$.post("/cf-auto/preview", function (res) {
+			if (res.error) return fail(res.error);
+			if (!res.plan.length) return showAlert(L[res.reason == "money" ? 'cfAutoNoMoney' : 'cfAutoNone']);
+			$data.users[$data.id].money = res.money;
+			send('refresh');
+			updateMe();
+			drawCfAuto(res.plan);
+		}).always(function () {
+			$("#cfa-preview").prop('disabled', false);
+		});
+	});
+}
+function runCfAuto() {
+	var plan = $data._cfaPlan;
+
+	if (!plan || !plan.length) return fail(478);
+	showConfirm(L['cfAutoSureRun'].replace("{V1}", plan.length), function (ok) {
+		if (!ok) return;
+		$("#cfa-run").prop('disabled', true);
+		$.post("/cf-auto/run", function (res) {
+			if (res.error) return fail(res.error);
+			// 조합(/cf)과 같게: 받은 상자·핑으로 바꾸고 게임 서버가 다시 읽게 함. 얻은 것은 창 하나씩 띄우지 않고 묶어서 보여 줌
+			$data.users[$data.id].money = res.money;
+			$data.box = res.box;
+			$data._cfaFee = res.fee; // 조각이 줄었으니 결과 보기 값도 새로
+			send('refresh');
+			playSound('success');
+			updateMe();
+			drawMyDress($data._avGroup);
+			drawCharFactory();
+			drawCfAuto(null, res);
+		}).always(function () {
+			$("#cfa-run").prop('disabled', false);
+		});
+	});
 }
 function drawCraftWorkshop() {
 	var $tray = $("#craft-tray");
@@ -15535,6 +16045,8 @@ function clearBoard() {
 	$stage.dialog.result.hide();
 	$stage.dialog.dress.hide();
 	$stage.dialog.charFactory.hide();
+	$stage.dialog.wardrobe.hide();
+	$stage.dialog.cfAuto.hide();
 	$(".jjoriping,.rounds,.game-body").removeClass("cw");
 	$(".jjoriping,.game-body").removeClass("flip");
 	$(".jjoriping,.rounds,.game-body").removeClass("landgrab");
@@ -15548,7 +16060,7 @@ function clearBoard() {
 	}
 	$(".jjoriping").css({ "float": "", "margin": "" });
 	// Small-mode class is managed by updateRoom() based on player count, don't remove it here
-	$stage.game.display.removeClass("raingame-board").css({ 'white-space': '', 'font-size': '' }).empty();
+	$stage.game.display.removeClass("raingame-board brawl-quad unison-q").css({ 'white-space': '', 'font-size': '' }).empty();
 	$stage.game.chain.hide();
 	$stage.game.hints.empty().hide();
 	$stage.game.cwcmd.hide();
@@ -18058,7 +18570,7 @@ var NK = (function () {
 	}
 	// 게임 시작 ~ 첫 라운드 사이(잠시 후 게임이 시작됩니다!)에도 판 틀을 미리 그려 둠 — 첫 라운드에 라운드 칩·체인 칸이 생기며
 	// 판이 밀리지 않게 (사용자 요청). 각 모드의 roundReady가 그리는 것만: 라운드 칩은 리듬류 빼고 모두, 체인 칸은 아래 모드 (rule_*.js)
-	var ROUND_RULES = /^(Rhythm|Rtype)$/, CHAIN_RULES = /^(Classic|Daneo|Free|Hunmin|Typing|Rtype|Numberclap|Calcbattle|Calcrelay|Chainbattle|Fourrelay)$/;
+	var ROUND_RULES = /^(Rhythm|Rtype)$/, CHAIN_RULES = /^(Classic|Daneo|Free|Hunmin|Typing|Rtype|Numberclap|Calcbattle|Calcrelay|Chainbattle|Brawl|Fourrelay)$/;
 	my.prepareBoard = function () {
 		var room = $data.room, rule = room && RULE[MODE[room.mode]].rule;
 
@@ -18601,6 +19113,8 @@ var NK = (function () {
 	   ------------------------------------------------------------------ */
 	var PF_TABS = [
 		{ id: 'dress', icon: 'shirt', labelKey: 'nkTabDress', src: "#DressDiag", run: function () { dlgTab($("#nk-profile"), 'dress'); } },
+		// 옷장 탭도 기존 단추(#dress-wardrobe, 꾸미기 탭 아래에서는 숨김) 처리를 거쳐 칸을 새로 불러옴
+		{ id: 'wardrobe', icon: 'hanger', labelKey: 'wardrobe', src: "#WardrobeDiag", run: function () { $("#dress-wardrobe").trigger('click'); } },
 		// 조합소 탭은 기존 단추와 똑같이(게임 중 막기·목록 그리기) 기존 단추 처리를 거침
 		{ id: 'cf', icon: 'letters', labelKey: 'charFactory', src: "#CharFactoryDiag", run: function () { $("#dress-cf").trigger('click'); } },
 		{ id: 'craft', icon: 'merge', labelKey: 'craftWorkshop', src: "#CraftingDiag", run: function () { $("#dress-craft").trigger('click'); } }
@@ -18626,7 +19140,7 @@ var NK = (function () {
 
 		$("#nk-profile .nk-dlg-close").on('click', function () { $("#nk-profile").hide(); });
 		// 기존 코드가 닫는 창(프로필 저장 후, 게임 시작 때)을 이 창으로 바꿔 둠
-		$stage.dialog.dress = $stage.dialog.charFactory = $("#nk-profile");
+		$stage.dialog.dress = $stage.dialog.charFactory = $stage.dialog.wardrobe = $("#nk-profile");
 	}
 	// 기존 프로필 관리·조합소 단추 처리에서 호출 (ready.js). true를 돌려주면 기존 코드가 내용을 불러와 그림
 	my.openProfile = function (tab) {
@@ -19682,7 +20196,7 @@ var NK = (function () {
 
 	// 알림·확인·입력 등 작은 창 — 가운데 카드: 위 아이콘 · 제목 · 내용 · 폭을 나눈 단추 (CSS nk.css 16). warn: 빨간 아이콘
 	var SMALL_DLGS = [
-		["#AlertDiag", 'info'], ["#ConfirmDiag", 'help'], ["#InputDiag", 'pencil'], ["#LateJoinDiag", 'gamepad'],
+		["#AlertDiag", 'info'], ["#ConfirmDiag", 'help'], ["#InputDiag", 'pencil'], ["#LateJoinDiag", 'gamepad'], ["#ConsumeDiag", 'book'],
 		["#NickSetupDiag", 'user'], ["#ObtainDiag", 'gift'], ["#KickVoteDiag", 'users', true], ["#AfkWarnDiag", 'clock', true]
 	];
 	function initSmallDlgs() {

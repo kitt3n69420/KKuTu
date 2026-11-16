@@ -26,18 +26,21 @@ exports.run = function (Server, page) {
     var uid = req.session.profile.id;
     var gid = req.params.id;
     var isDyn = gid.charAt() == "$";
+    // 쓸 개수: 숫자 또는 "all"(가진 것 모두). 없으면 1 (기존 클라이언트)
+    var count = req.body.count === "all" ? Infinity : Number(req.body.count || 1);
 
     // Validate inputs
     if (!validateInput(gid, "string", { maxLength: 50, noSpecialChars: true })) {
       return res.json({ error: 400, message: "Invalid item id" });
     }
+    if (count !== Infinity && !(Number.isInteger(count) && count >= 1)) return res.json({ error: 400 });
 
     MainDB.users.findOne(["_id", uid]).on(function ($user) {
       if (!$user) return res.json({ error: 400 });
       if (!$user.box) return res.json({ error: 400 });
       if (!$user.lastLogin) $user.lastLogin = new Date().getTime();
       var q = $user.box[gid];
-      var output;
+      var output, r, i, n;
 
       if (!q) return res.json({ error: 430 });
       MainDB.kkutu_shop
@@ -45,8 +48,20 @@ exports.run = function (Server, page) {
         .limit(["cost", true])
         .on(function ($item) {
           if (!$item) return res.json({ error: 430 });
-          consume($user, gid, 1);
-          output = useItem($user, $item, gid);
+          // 여러 개 한 번에 쓰기는 백과사전 낱장만 (사용자 요청 2026-11-16: 1개·10개·모두).
+          // 1개씩 차례로 쓴 것과 같게 처리 — 경험치는 낱장마다 그때의 점수로 계산됨
+          if (count > 1 && $item._id !== "dictPage") return res.json({ error: 400 });
+          n = count > 1 ? Math.min(count, Number(q) || 0) : 1;
+          for (i = 0; i < n; i++) {
+            consume($user, gid, 1);
+            r = useItem($user, $item, gid);
+            if (!output) output = r;
+            else {
+              if (r.exp) output.exp = (output.exp || 0) + r.exp;
+              output.gain = output.gain.concat(r.gain);
+            }
+          }
+          output.used = n;
           MainDB.users
             .update(["_id", uid])
             .set($user)

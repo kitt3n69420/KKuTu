@@ -2988,6 +2988,8 @@ function clearBoard() {
 	$stage.dialog.result.hide();
 	$stage.dialog.dress.hide();
 	$stage.dialog.charFactory.hide();
+	$stage.dialog.wardrobe.hide();
+	$stage.dialog.cfAuto.hide();
 	$(".jjoriping,.rounds,.game-body").removeClass("cw");
 	$(".jjoriping,.game-body").removeClass("flip");
 	$(".jjoriping,.rounds,.game-body").removeClass("landgrab");
@@ -3001,7 +3003,7 @@ function clearBoard() {
 	}
 	$(".jjoriping").css({ "float": "", "margin": "" });
 	// Small-mode class is managed by updateRoom() based on player count, don't remove it here
-	$stage.game.display.removeClass("raingame-board").css({ 'white-space': '', 'font-size': '' }).empty();
+	$stage.game.display.removeClass("raingame-board brawl-quad unison-q").css({ 'white-space': '', 'font-size': '' }).empty();
 	$stage.game.chain.hide();
 	$stage.game.hints.empty().hide();
 	$stage.game.cwcmd.hide();

@@ -126,7 +126,9 @@ exports.OPTIONS = {
 	'rhd': { name: "RhythmHard" },  // 리듬: 하드 옵션 = 노멀 채보 사용
 	'rcz': { name: "RhythmCrazy" }, // 리듬: 크레이지 옵션 = 하드 채보 사용 (rhd와 동시 선택 시 크레이지)
 	'ljn': { name: "LateJoin" },   // 게임 중 참여: 게임 진행 중 들어온 사람도 경기에 참여 (LATE_JOIN_RULES의 모드만, kch/sur와 함께 사용 불가)
-	'inf': { name: "Inflation" }   // 점수 증가: 바보 모드 전용. 게임 점수를 1만 배로 올림 (바보 모드는 보상이 항상 0이라 보상과 무관)
+	'inf': { name: "Inflation" },  // 점수 증가: 바보 모드 전용. 게임 점수를 1만 배로 올림 (바보 모드는 보상이 항상 0이라 보상과 무관)
+	'qdc': { name: "Quadcore" },   // 쿼드코어: 난투 잇기에서 글자 칸이 4개, 단어는 첫 글자가 맞는 칸 하나를 이음
+	'mnr': { name: "Minority" }    // 소수결: 이구동성에서 적게 고른 쪽이 점수를 받음
 
 };
 
@@ -940,6 +942,42 @@ exports.RULE = {
 		big: false,
 		ewq: false,
 		survival: false
+	},
+
+	// 난투 잇기: 가운데 글자를 모두가 함께 쓰는 잇기 대결. 그 글자로 유효한 단어를 먼저 낸 사람이 점수를 얻고,
+	// 그 단어의 끝 글자가 모두의 다음 글자가 된다 (brawl.js). 쿼드코어(qdc)는 글자 칸이 4개
+	'KBR': {
+		lang: "ko",
+		rule: "Brawl",
+		opts: ["ext", "str", "loa", "one", "drg", "qdc", "ljn"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: false,
+		survival: false
+	},
+	'EBR': {
+		lang: "en",
+		rule: "Brawl",
+		opts: ["ext", "one", "drg", "qdc", "ljn"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: false,
+		survival: false
+	},
+
+	// 이구동성: 질문과 선택지 2개(data/xig.txt)를 보고 라운드 동안 1 또는 2를 한 번 고름. 더 많이 고른 쪽이 라운드당 100점
+	// (소수결 mnr은 적은 쪽, 동률이면 아무도 없음). 게임 중 참가자 채팅과 방 안 귓속말 금지, 봇 없음 (unison.js)
+	'XIG': {
+		lang: "etc",
+		rule: "Unison",
+		opts: ["mnr", "ljn"],
+		time: 0.1,
+		ai: false,
+		big: false,
+		ewq: false,
+		survival: false
 	}
 
 };
@@ -962,19 +1000,22 @@ exports.GAME_CATEGORIES = {
 	},
 	'speed': {
 		name: 'GameCategorySpeed',
-		modes: ['KTY', 'ETY', 'JTY', 'KTT', 'ETT', 'KCB', 'ECB', 'CAL']
+		modes: ['KTY', 'ETY', 'JTY', 'KTT', 'ETT', 'KCB', 'ECB', 'KBR', 'EBR', 'CAL']
 	},
 	'etc': {
 		name: 'GameCategoryEtc',
-		modes: ['KDA', 'EDA', 'JDA', 'HUN', 'KFR', 'EFR', 'JFR', 'KTF', 'ETF', 'CNC', 'XBB', 'XRG', 'KRT']
+		modes: ['KDA', 'EDA', 'JDA', 'HUN', 'KFR', 'EFR', 'JFR', 'KTF', 'ETF', 'CNC', 'XBB', 'XRG', 'KRT', 'XIG']
 	}
 };
 exports.GAME_TYPE = Object.keys(exports.RULE);
 // 게임 중 참여(ljn)를 지원하는 규칙과 참여 시점
 // turn: 즉시 참여 (seq 맨 끝, 라운드 사이면 다음 라운드부터) / round: 다음 라운드부터
+// 게임 중에는 방 안 사람(참가자·관전자)이 귓속말을 보낼 수 없는 규칙 (짜고 고르기·정답 알려주기 방지, master.js·slave.js)
+exports.NO_WHISPER_RULES = ["Unison", "Picture"];
 exports.LATE_JOIN_RULES = {
 	Classic: 'turn', Daneo: 'turn', Hunmin: 'turn', Free: 'turn', Numberclap: 'turn',
-	Quiz: 'round', Jaqwi: 'round', Typing: 'round', Sock: 'round', Shuk: 'round', Chainbattle: 'round', Calcbattle: 'round'
+	Quiz: 'round', Jaqwi: 'round', Typing: 'round', Sock: 'round', Shuk: 'round', Chainbattle: 'round', Calcbattle: 'round',
+	Brawl: 'round', Unison: 'round'
 };
 exports.EXAMPLE_TITLE = {
 	'ko': "기자도지사상가이소법라고자하",
@@ -1264,11 +1305,11 @@ exports.ANNIV = {
 	CYCLE: ["Y", "B", "R", "G", "P"],
 	// 색마다 별가루가 나오는 모드 (달가루 모으기 KWC 제외)
 	MODES: {
-		Y: ["KSH", "JSH", "EKK", "JKT", "EKT", "KAP", "EAP", "JAP", "KAK", "EAK", "KCB", "ECB", "K4R"],
+		Y: ["KSH", "JSH", "EKK", "JKT", "EKT", "KAP", "EAP", "JAP", "KAK", "EAK", "KCB", "ECB", "KBR", "EBR", "K4R"],
 		R: ["KDA", "EDA", "JDA", "KTY", "ETY", "JTY", "KTT", "ETT", "CAL", "CRL", "KKT", "KKU"],
 		G: ["KFR", "JFR", "KTF", "ETF", "KSS", "ESS", "JSS", "KSK", "ESK", "KWS", "EWS", "KCF"],
 		B: ["KQZ", "EQZ", "CSQ", "KPQ", "EPQ", "KSC", "ESQ", "KCW", "ECW", "CCW", "HUN", "ESH"],
-		P: ["XBB", "KJM", "EFR", "CNC", "KRT", "XRG", "KWR", "EWR", "KPF", "EPF", "KLG", "CSD"]
+		P: ["XBB", "KJM", "EFR", "CNC", "KRT", "XRG", "KWR", "EWR", "KPF", "EPF", "KLG", "CSD", "XIG"]
 	},
 	MODE_COLOR: {}, // 모드 코드 → 색 (아래에서 MODES로 채움)
 	TIERS: [5, 10, 25, 50, 75, 100], // 다섯 별가루가 모두 이 개수 이상이면 그 단계 보상

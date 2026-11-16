@@ -1431,6 +1431,26 @@ body {
 	font-size: 14px;
 }
 
+/* 난투 잇기 쿼드코어: 가운데 글자 4칸 (rule_brawl.js), 방금 바뀐 칸은 노랗게 */
+.jjo-display .brawl-slot {
+	display: inline-block;
+	margin: 0 10px;
+}
+
+.jjo-display .brawl-slot.brawl-fresh {
+	color: #FFFF44;
+}
+
+/* 이구동성: 라운드 중 단어 창의 선택지 두 개 (rule_unison.js), 내가 고른 쪽은 노랗게 */
+.jjo-display .unison-choice {
+	display: inline-block;
+	margin: 0 16px;
+}
+
+.jjo-display .unison-choice.unison-picked {
+	color: #FFFF44;
+}
+
 .cw .jjo-display {
 	position: relative;
 	padding: 5px;
@@ -2499,6 +2519,166 @@ body.dark-mode .cw-cell.sd-wrong {
 
 .cf-composable {
 	background-color: #FFAD31;
+}
+
+/* 옷장 (body-render.js drawWardrobe): 데스크톱은 칸 4개 한 줄 */
+#wardrobe-slots {
+	display: flex;
+	gap: 8px;
+	padding: 4px 0;
+}
+
+.wd-slot {
+	flex: 1 1 0;
+	min-width: 0;
+	padding: 6px;
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	box-sizing: border-box;
+	text-align: center;
+}
+
+.wd-view {
+	margin: 0 auto;
+	width: 100px;
+	height: 100px;
+}
+
+/* 칸의 가운데 정렬이 위치값 없는 모레미 그림(position: absolute)의 시작점까지 가운데로 밀지 않게 */
+.wd-view img {
+	left: 0;
+	top: 0;
+}
+
+.wd-empty-text {
+	padding-top: 42px;
+	color: #999999;
+}
+
+.wd-nick {
+	margin: 4px 0;
+	height: 18px;
+	font-size: 12px;
+}
+
+.wd-nick .users-name {
+	padding: 0;
+	width: auto;
+	font-size: 12px;
+}
+
+.wd-btns {
+	display: flex;
+	gap: 4px;
+}
+
+.wd-btns button {
+	flex: 1 1 0;
+	min-width: 0;
+	height: 24px;
+	padding: 0 2px;
+	font-size: 12px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.wd-btns button:disabled {
+	opacity: 0.4;
+}
+
+#wardrobe-help,
+#cfa-help {
+	padding: 4px 2px;
+	font-size: 12px;
+	color: #888888;
+}
+
+/* 자동 조합 (body-render.js drawCfAuto): 만들 단어 칩 — 글자 바탕색 = 조각 등급 색(body.js iDynImage와 같음) */
+#cfa-list {
+	padding: 4px;
+	height: 210px;
+	overflow-y: auto;
+	border-radius: 6px;
+	background-color: var(--color-bg-light);
+	box-sizing: border-box;
+}
+
+.cfa-word {
+	display: inline-block;
+	margin: 2px;
+	padding: 2px 4px;
+	border-radius: 6px;
+	background-color: var(--theme-surface, #FFFFFF);
+	white-space: nowrap;
+}
+
+.cfa-word b {
+	padding: 0 1px;
+	border-radius: 3px;
+	font-weight: normal;
+}
+
+.cfa-word b.cfa-tA {
+	background-color: #FFEF31;
+	color: #E69D12;
+	font-weight: bold;
+}
+
+.cfa-word b.cfa-tB {
+	background-color: #A6C5FF;
+	color: #4465C3;
+}
+
+.cfa-gain-head {
+	padding: 2px 0 4px;
+	font-weight: bold;
+}
+
+.cfa-gain {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	margin: 2px 10px 2px 0;
+}
+
+.cfa-gain-image {
+	width: 24px;
+	height: 24px;
+	background-size: contain;
+	background-repeat: no-repeat;
+}
+
+#cfa-summary {
+	padding: 6px 2px;
+	font-weight: bold;
+	text-align: center;
+}
+
+/* 아래 단추 기본 폭 80px에 "결과 보기 (1,000핑)"이 안 들어가서 글자에 맞춤 */
+#CfAutoDiag .tail-button button {
+	width: auto;
+	min-width: 80px;
+	padding: 0 10px;
+}
+
+/* 백과사전 낱장 쓰기 창: [1개 쓰기][10개 쓰기][모두 쓰기]를 적힌 순서대로 (기본 float: right면 거꾸로 놓임) */
+#ConsumeDiag .tail-button {
+	display: flex;
+	justify-content: flex-end;
+	gap: 5px;
+}
+
+#ConsumeDiag .tail-button button {
+	float: none;
+	margin: 0;
+	width: auto;
+	min-width: 70px;
+	padding: 0 8px;
+}
+
+#ConsumeDiag .tail-button button:disabled {
+	opacity: 0.4;
 }
 
 .ChatBox {
@@ -3941,6 +4121,17 @@ body.dark-mode .jjoDisplayBar {
 /* cf-dict 사전 영역: #111 → 약간 밝게 */
 body.dark-mode #cf-dict {
 	background-color: #252525 !important;
+}
+
+/* 옷장 칸·자동 조합 단어 목록 */
+body.dark-mode .wd-slot {
+	border-color: #444 !important;
+}
+body.dark-mode #cfa-list {
+	background-color: #252525 !important;
+}
+body.dark-mode .cfa-word {
+	background-color: #3A3A3A !important;
 }
 
 /* ItemButton 비활성/기본: 밝은 회색 → 어두운 회색 */

@@ -280,6 +280,11 @@ exports.init = function (_DB, _DIC) {
 	DB = _DB;
 	DIC = _DIC;
 };
+// 난투 잇기(brawl.js)가 같은 판정(두음법칙·잇기)과 봇 후보 검색을 쓰도록 내보냄
+exports.getChar = getChar;
+exports.getSubChar = getSubChar;
+exports.isChainable = isChainable;
+exports.getAuto = getAuto;
 
 exports.getTitle = function () {
 	var R = new Lizard.Tail();

@@ -379,6 +379,7 @@ block Middle
 						option(value=6, data-lang-key='modeKTY')= L('modeKTY')
 						option(value=38, data-lang-key='modeKTT')= L('modeKTT')
 						option(value=25, data-lang-key='modeKCB')= L('modeKCB')
+						option(value=62, data-lang-key='modeKBR')= L('modeKBR')
 						option(value=5, data-lang-key='modeKCW')= L('modeKCW')
 						option(value=13, data-lang-key='modeKSS')= L('modeKSS')
 						option(value=42, data-lang-key='modeKSK')= L('modeKSK')
@@ -405,6 +406,7 @@ block Middle
 						option(value=7, data-lang-key='modeETY')= L('modeETY')
 						option(value=39, data-lang-key='modeETT')= L('modeETT')
 						option(value=26, data-lang-key='modeECB')= L('modeECB')
+						option(value=63, data-lang-key='modeEBR')= L('modeEBR')
 						option(value=45, data-lang-key='modeECW')= L('modeECW')
 						option(value=14, data-lang-key='modeESS')= L('modeESS')
 						option(value=43, data-lang-key='modeESK')= L('modeESK')
@@ -434,6 +436,7 @@ block Middle
 						option(value=58, data-lang-key='modeXBB')= L('modeXBB')
 						option(value=60, data-lang-key='modeXRG')= L('modeXRG')
 						option(value=61, data-lang-key='modeKRT')= L('modeKRT')
+						option(value=64, data-lang-key='modeXIG')= L('modeXIG')
 			div.dialog-bar#quick-rules-panel(style='height: auto;')
 				h4(data-lang-key='misc')= L('misc')
 				div(style='float: left; width: 300px;')
@@ -479,6 +482,7 @@ block Middle
 					option(value=6, data-lang-key='modeKTY')= L('modeKTY')
 					option(value=38, data-lang-key='modeKTT')= L('modeKTT')
 					option(value=25, data-lang-key='modeKCB')= L('modeKCB')
+					option(value=62, data-lang-key='modeKBR')= L('modeKBR')
 					option(value=5, data-lang-key='modeKCW')= L('modeKCW')
 					option(value=13, data-lang-key='modeKSS')= L('modeKSS')
 					option(value=42, data-lang-key='modeKSK')= L('modeKSK')
@@ -505,6 +509,7 @@ block Middle
 					option(value=7, data-lang-key='modeETY')= L('modeETY')
 					option(value=39, data-lang-key='modeETT')= L('modeETT')
 					option(value=26, data-lang-key='modeECB')= L('modeECB')
+					option(value=63, data-lang-key='modeEBR')= L('modeEBR')
 					option(value=14, data-lang-key='modeESS')= L('modeESS')
 					option(value=43, data-lang-key='modeESK')= L('modeESK')
 					option(value=20, data-lang-key='modeEPQ')= L('modeEPQ')
@@ -534,6 +539,7 @@ block Middle
 					option(value=58, data-lang-key='modeXBB')= L('modeXBB')
 					option(value=60, data-lang-key='modeXRG')= L('modeXRG')
 					option(value=61, data-lang-key='modeKRT')= L('modeKRT')
+					option(value=64, data-lang-key='modeXIG')= L('modeXIG')
 		div.dialog-bar(style='margin-top: -5px; margin-bottom: 5px; height: auto; overflow: hidden;')
 			h4
 			h4#game-mode-expl(style='float: left; width: calc(100% - 100px); font-size: 11px; text-align: left; margin: 0;')
@@ -940,7 +946,14 @@ block Middle
 			button#dress-ok(data-lang-key='OK')= L('OK')
 			button#dress-cf(data-lang-key='charFactory')= L('charFactory')
 			button#dress-craft(data-lang-key='craftWorkshop')= L('craftWorkshop')
+			button#dress-wardrobe(data-lang-key='wardrobe')= L('wardrobe')
 			button(onclick="showAlert(L['paybackHelp']);", data-lang-key='payback')= L('payback')
+	//- 옷장: 칸 4개는 body-render.js drawWardrobe가 그림 (신 UI는 프로필 창의 옷장 탭으로 옮겨짐)
+	+Dialog('WardrobeDiag', 600, 250, 'wardrobe')
+		div.dialog-bar
+			div#wardrobe-slots
+		div.dialog-bar
+			div#wardrobe-help(data-lang-key='wardrobeHelp')= L('wardrobeHelp')
 	+Dialog('CharFactoryDiag', 500, 410, 'charFactory')
 		div.dialog-bar(style='width: 300px;')
 			div#cf-tray
@@ -954,6 +967,18 @@ block Middle
 			div#cf-goods.goods-box
 		div.dialog-bar.tail-button
 			button#cf-compose(data-lang-key='cfCompose')= L('cfCompose')
+			button#cf-auto(data-lang-key='cfAuto')= L('cfAuto')
+	//- 자동 조합: 결과 보기(조각 수 × 100핑, ★ 제외) → 만들 단어 목록 → 조합. 내용은 body-render.js drawCfAuto가 그림
+	+Dialog('CfAutoDiag', 500, 380, 'cfAuto')
+		div.dialog-bar
+			div#cfa-help(data-lang-key='cfAutoHelp')= L('cfAutoHelp')
+		div.dialog-bar
+			div#cfa-list
+		div.dialog-bar
+			div#cfa-summary
+		div.dialog-bar.tail-button
+			button#cfa-run(data-lang-key='cfCompose')= L('cfCompose')
+			button#cfa-preview
 	+Dialog('CraftingDiag', 500, 300, 'craftWorkshop')
 		div.dialog-bar#craft-top(style='display: flex; align-items: center; gap: 5px; padding: 5px; border-bottom: 1px solid #CCCCCC; height: 64px;')
 			div#craft-tray(style='display: flex; align-items: center; gap: 5px; min-width: 110px;')
@@ -999,6 +1024,13 @@ block Middle
 		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; right: 10px; width: calc(100% - 20px);')
 			button#late-join-spectate(data-lang-key='lateJoinBtnSpectate')= L('lateJoinBtnSpectate')
 			button#late-join-ok(data-lang-key='lateJoinBtnJoin')= L('lateJoinBtnJoin')
+	//- 백과사전 낱장 쓰기: [1개 쓰기] / [10개 쓰기] / [모두 쓰기] / 닫기(안 씀). 내용은 body-render.js askConsumeCount
+	+Dialog('ConsumeDiag', 300, 150, 'notice')
+		div.dialog-bar#consume-text(style='text-align: center; height: 90px; padding: 10px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; box-sizing: border-box;')
+		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; right: 10px; width: calc(100% - 20px);')
+			button#consume-one(data-lang-key='consumeOne')= L('consumeOne')
+			button#consume-ten(data-lang-key='consumeTen')= L('consumeTen')
+			button#consume-all(data-lang-key='consumeAll')= L('consumeAll')
 	+Dialog('AlertDiag', 300, 150, 'notice', true)
 		div.dialog-bar#alert-text(style='text-align: center; height: 90px; padding: 10px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; box-sizing: border-box;')
 		div.dialog-bar.tail-button(style='position: absolute; bottom: 10px; right: 10px; width: calc(100% - 20px);')

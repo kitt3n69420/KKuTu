@@ -1397,7 +1397,7 @@ var NK = (function () {
 	}
 	// 게임 시작 ~ 첫 라운드 사이(잠시 후 게임이 시작됩니다!)에도 판 틀을 미리 그려 둠 — 첫 라운드에 라운드 칩·체인 칸이 생기며
 	// 판이 밀리지 않게 (사용자 요청). 각 모드의 roundReady가 그리는 것만: 라운드 칩은 리듬류 빼고 모두, 체인 칸은 아래 모드 (rule_*.js)
-	var ROUND_RULES = /^(Rhythm|Rtype)$/, CHAIN_RULES = /^(Classic|Daneo|Free|Hunmin|Typing|Rtype|Numberclap|Calcbattle|Calcrelay|Chainbattle|Fourrelay)$/;
+	var ROUND_RULES = /^(Rhythm|Rtype)$/, CHAIN_RULES = /^(Classic|Daneo|Free|Hunmin|Typing|Rtype|Numberclap|Calcbattle|Calcrelay|Chainbattle|Brawl|Fourrelay)$/;
 	my.prepareBoard = function () {
 		var room = $data.room, rule = room && RULE[MODE[room.mode]].rule;
 
@@ -1940,6 +1940,8 @@ var NK = (function () {
 	   ------------------------------------------------------------------ */
 	var PF_TABS = [
 		{ id: 'dress', icon: 'shirt', labelKey: 'nkTabDress', src: "#DressDiag", run: function () { dlgTab($("#nk-profile"), 'dress'); } },
+		// 옷장 탭도 기존 단추(#dress-wardrobe, 꾸미기 탭 아래에서는 숨김) 처리를 거쳐 칸을 새로 불러옴
+		{ id: 'wardrobe', icon: 'hanger', labelKey: 'wardrobe', src: "#WardrobeDiag", run: function () { $("#dress-wardrobe").trigger('click'); } },
 		// 조합소 탭은 기존 단추와 똑같이(게임 중 막기·목록 그리기) 기존 단추 처리를 거침
 		{ id: 'cf', icon: 'letters', labelKey: 'charFactory', src: "#CharFactoryDiag", run: function () { $("#dress-cf").trigger('click'); } },
 		{ id: 'craft', icon: 'merge', labelKey: 'craftWorkshop', src: "#CraftingDiag", run: function () { $("#dress-craft").trigger('click'); } }
@@ -1965,7 +1967,7 @@ var NK = (function () {
 
 		$("#nk-profile .nk-dlg-close").on('click', function () { $("#nk-profile").hide(); });
 		// 기존 코드가 닫는 창(프로필 저장 후, 게임 시작 때)을 이 창으로 바꿔 둠
-		$stage.dialog.dress = $stage.dialog.charFactory = $("#nk-profile");
+		$stage.dialog.dress = $stage.dialog.charFactory = $stage.dialog.wardrobe = $("#nk-profile");
 	}
 	// 기존 프로필 관리·조합소 단추 처리에서 호출 (ready.js). true를 돌려주면 기존 코드가 내용을 불러와 그림
 	my.openProfile = function (tab) {
@@ -3021,7 +3023,7 @@ var NK = (function () {
 
 	// 알림·확인·입력 등 작은 창 — 가운데 카드: 위 아이콘 · 제목 · 내용 · 폭을 나눈 단추 (CSS nk.css 16). warn: 빨간 아이콘
 	var SMALL_DLGS = [
-		["#AlertDiag", 'info'], ["#ConfirmDiag", 'help'], ["#InputDiag", 'pencil'], ["#LateJoinDiag", 'gamepad'],
+		["#AlertDiag", 'info'], ["#ConfirmDiag", 'help'], ["#InputDiag", 'pencil'], ["#LateJoinDiag", 'gamepad'], ["#ConsumeDiag", 'book'],
 		["#NickSetupDiag", 'user'], ["#ObtainDiag", 'gift'], ["#KickVoteDiag", 'users', true], ["#AfkWarnDiag", 'clock', true]
 	];
 	function initSmallDlgs() {

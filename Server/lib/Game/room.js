@@ -3408,6 +3408,7 @@ function getRewards(mode, score, bonus, rank, all, ss, opts) {
 			rw.score += score * 0.75;
 			break;
 		case 'KQZ':
+		case 'XIG': // 이구동성: 한국어 스피드퀴즈와 같은 배율 (스피드퀴즈의 경험치 완만화 QUIZ_SOFT_CAP는 쓰지 않음)
 			rw.score += score * 0.65;
 			break;
 		case 'EQZ':
