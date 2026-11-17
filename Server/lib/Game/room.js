@@ -3375,6 +3375,9 @@ function getRewards(mode, score, bonus, rank, all, ss, opts) {
 		case 'JFR':
 			rw.score += score * 0.83;
 			break;
+		case 'KWY':
+			rw.score += score * 1.24;
+			break;
 		case 'XBB':
 			rw.score = 0;
 			break;

@@ -15,6 +15,9 @@ const ROBOT_THINK_COEF = [4, 2, 1, 0, 0, 0];
 const ROBOT_HIT_LIMIT = [4, 3, 2, 1, 0, 0];
 const ROBOT_LENGTH_LIMIT = [3, 7, 15, 31, 80, 80];
 const ROBOT_CANDIDATE_LIMIT = [10, 20, 40, 80, 40, 40];
+// 시간 초과 힌트에서 빼는 한국어 단어: 방언·옛말·문화어 (낯선 단어가 힌트로 나오지 않게)
+const HINT_SKIP_FLAG = Const.KOR_FLAG.SATURI | Const.KOR_FLAG.OLD | Const.KOR_FLAG.MUNHWA;
+const WOO_HINT_TOP = 30;
 // ん(어떤 단어도 이 글자로 시작하지 않음)/작은 가나/고어(ゐゑ)는 봇의 무작위 시작 글자로 뽑히면
 // 사전 조회 결과가 거의 항상 0건이 되어 봇이 부당하게 ROBOT_DEFEAT_MESSAGES_2를 보내게 됨 — 제외.
 const JA_ROBOT_START_CHARS = (function () {
@@ -43,6 +46,27 @@ function isTopicFree(my) {
 function isFool(my) {
     return Const.GAME_TYPE[my.mode] === 'XBB';
 }
+function isWoo(my) {
+    return Const.GAME_TYPE[my.mode] === 'KWY';
+}
+// 우영우: 앞뒤 글자가 같은 3글자 단어 목록 ({ _id, flag, hit }). 판정은 기존처럼 DB에서 하고, 이 목록은 봇·시간 초과 힌트에만 쓴다.
+// DB에서 찾으려면 kkutu_ko 전체를 훑어야 해서(약 0.3초) 처음 쓸 때 한 번만 불러온다. 불러오지 못하면 다음에 다시 시도
+var wooWords = null;
+var wooWaiting = null;
+// 콜백은 DB 조회처럼 늘 비동기로 부른다. getAuto의 Lizard.Tail은 then이 붙기 전에 go(undefined)가 불리면 결과를 잃어버려서,
+// 남은 단어가 0개일 때 바로 부르면 힌트를 기다리는 turnEnd가 영원히 멈춘다(다음 라운드로 안 넘어감)
+function loadWooWords(cb) {
+    if (wooWords) return setTimeout(cb, 0, wooWords);
+    if (wooWaiting) return wooWaiting.push(cb);
+    wooWaiting = [cb];
+    DB.kkutu.ko.direct("SELECT _id, flag, hit FROM kkutu_ko WHERE char_length(_id) = 3 AND substr(_id, 1, 1) = substr(_id, 3, 1)", function (err, res) {
+        var list = (!err && res && res.rows) ? res.rows : [];
+        var waiting = wooWaiting;
+        if (list.length) wooWords = list;
+        wooWaiting = null;
+        waiting.forEach(function (f) { f(list); });
+    });
+}
 // 점수 증가(inf): 바보 모드에서만 게임 점수를 1만 배로 올린다.
 // 다른 자유 모드는 게임 점수로 보상을 주므로, 옵션 값이 새어 들어와도 곱해지지 않게 isFool로 한 번 더 막는다
 function getInflationMul(my) {
@@ -58,7 +82,7 @@ exports.getTitle = function () {
 
     setTimeout(function () {
         var mc = Const.GAME_TYPE[my.mode];
-        if (mc === 'KFR' || mc === 'EFR' || mc === 'JFR' || mc === 'KTF' || mc === 'ETF' || mc === 'XBB') {
+        if (mc === 'KFR' || mc === 'EFR' || mc === 'JFR' || mc === 'KTF' || mc === 'ETF' || mc === 'XBB' || mc === 'KWY') {
             R.go("①②③④⑤⑥⑦⑧⑨⑩");
         } else {
             R.go(Const.EXAMPLE_TITLE[my.rule.lang]);
@@ -329,6 +353,8 @@ exports.submit = function (client, text) {
     if (my.opts.nolong && text.length >= 9) return client.chat(text);
     if (my.opts.noshort && text.length <= 8) return client.chat(text);
     if (my.opts.no2 && text.length <= 2) return client.chat(text);
+    // 우영우: 3글자가 아니면 채팅으로 처리
+    if (isWoo(my) && text.length !== 3) return client.chat(text);
 
     // No chaining check needed for Free mode
 
@@ -614,6 +640,8 @@ exports.submit = function (client, text) {
         }
     }
     if (isFool(my)) return onDB(null);
+    // 우영우: 앞뒤 글자가 다르면 DB를 보지 않고 없는 단어(404)로 처리
+    if (isWoo(my) && text[0] !== text[2]) return onDB(null);
     var findArgs = [['_id', text]];
     if (l == "en") findArgs.push(['_id', Const.ENG_ID]);
     DB.kkutu[l].findOne.apply(DB.kkutu[l], findArgs
@@ -772,7 +800,8 @@ exports.readyRobot = function (robot) {
     var autoArg = (isTopicFree(my) && my.opts.injpick && my.opts.injpick.length) ? my.opts.injpick : null;
 
     // 레벨 5: 미리 계산한 주제x미션 테이블에서 점수가 가장 높은 단어를 고른다. 조건이 안 맞으면 아래 기존 로직으로 폴백
-    if (level >= 5) {
+    // 우영우는 이 표에 없는 조건이라 쓰지 않는다 (아래 getAuto가 우영우 단어 목록을 줌)
+    if (level >= 5 && !isWoo(my)) {
         var tableList = MissionTable.getCandidates(my.rule.lang, autoArg, my.game.mission, my.opts, my.game.chain, robot._done, {
             injeong: isTopicFree(my) || !!my.opts.injeong, // getAuto/입력 검사와 같은 규칙: 주제 자유는 어인정 항상 허용
             noLoan: my.rule.lang == "ko" && !!my.opts.loanword, // 외래어 금지는 한국어만
@@ -912,14 +941,15 @@ function getAuto(char, type) {
     if (my.rule.lang == "ko") {
         if (my.opts.loanword) aqs.push(['flag', { '$nand': Const.KOR_FLAG.LOANWORD }]);
         // free 모드: 품사 필터 없음 (모든 품사 허용)
+        if (type === 0) aqs.push(['flag', { '$nand': HINT_SKIP_FLAG }]);
     } else if (my.rule.lang == "en") {
         aqs.push(['_id', Const.ENG_ID]);
     }
 
     // In Free mode, fetch words starting with a random character to distribute load and get variety.
     // Skip random char filter when filtering by theme (would reduce results too much)
-    if (type === 2 && !Array.isArray(char)) {
-        // For bot list, pick a random start char to get a variety of words
+    if ((type === 2 || type === 0) && !Array.isArray(char)) {
+        // For bot list and hint, pick a random start char to get a variety of words
         if (my.rule.lang == "ko") {
             var ja = 44032 + 588 * Math.floor(Math.random() * 19); // Random initial consonant group
             var range = `[\\u${ja.toString(16)}-\\u${(ja + 587).toString(16)}]`;
@@ -974,8 +1004,25 @@ function getAuto(char, type) {
             break;
     }
 
-    DB.kkutu[my.rule.lang].find.apply(this, aqs).limit(bool ? 1 : 100).on(function ($md) {
-        if (my.game.chain) aft($md.filter(function (item) { return !my.game.chain.includes(item); }));
+    // 우영우: DB 대신 미리 불러온 단어 목록에서 고른다. 봇이 늘 같은 단어부터 고르지 않게 섞어서 넘김
+    if (isWoo(my)) {
+        loadWooWords(function (list) {
+            list = list.filter(function (item) {
+                if (!my.opts.injeong && (item.flag & Const.KOR_FLAG.INJEONG)) return false;
+                if (my.opts.loanword && (item.flag & Const.KOR_FLAG.LOANWORD)) return false;
+                if (type === 0 && (item.flag & HINT_SKIP_FLAG)) return false;
+                return !(my.game.chain && my.game.chain.includes(item._id));
+            });
+            // 힌트: 많이 쓰인 단어 위쪽 WOO_HINT_TOP개 중에서 고른다
+            if (type === 0) list = list.sort(function (a, b) { return b.hit - a.hit; }).slice(0, WOO_HINT_TOP);
+            aft(shuffle(list));
+        });
+        return R;
+    }
+    var q = DB.kkutu[my.rule.lang].find.apply(this, aqs);
+    if (type === 0) q.sort(['hit', -1]); // 힌트: 많이 쓰인 단어부터 (정렬이 없으면 늘 테이블 앞쪽 100개에서만 나옴)
+    q.limit(bool ? 1 : 100).on(function ($md) {
+        if (my.game.chain) aft($md.filter(function (item) { return !my.game.chain.includes(item._id); }));
         else aft($md);
     });
 

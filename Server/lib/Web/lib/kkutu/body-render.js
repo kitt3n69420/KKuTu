@@ -1646,7 +1646,7 @@ Object.defineProperty(BONUS_COLORS, 'linking', {
 function pushDisplay(text, mean, theme, wc, isSumi, overrideLinkIndex, isStraight, isHanbang, fullHouseChars, historyOverride, isAttack, isDefense, isFlush, isJackpot, onComplete) {
 	var len;
 	var mode = MODE[$data.room.mode];
-	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK" || mode == "JKT";
+	var isKKT = mode == "KKT" || mode == "EKK" || mode == "KAK" || mode == "EAK" || mode == "JKT" || mode == "KWY";
 	var isRev = (mode == "KAP" || mode == "KAK" || mode == "EAP" || mode == "EAK" || mode == "JAP");
 	var beat = (ACTIVE_BEAT || BEAT)[len = text.length];
 	var ta, kkt;

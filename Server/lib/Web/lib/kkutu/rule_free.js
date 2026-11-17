@@ -33,7 +33,7 @@ $lib.Free.roundReady = function (data) {
         var suffix = allPicks.length >= 4 ? ', ...' : '';
         tStr = "&lt;" + names.join(', ') + suffix + "&gt;";
     } else {
-        tStr = "&lt;" + (modeCode === 'XBB' ? L['modeXBB'] : (L && L['anything'] ? L['anything'] : "아무거나")) + "&gt;";
+        tStr = "&lt;" + ((modeCode === 'XBB' || modeCode === 'KWY') ? L['mode' + modeCode] : (L && L['anything'] ? L['anything'] : "아무거나")) + "&gt;";
     }
     if ($data.room.opts.drg) tStr = "<label style='color:" + getRandomColor() + "'>" + tStr + "</label>";
     $stage.game.display.html($data._char = tStr);
@@ -125,7 +125,7 @@ $lib.Free.turnEnd = function (id, data) {
     if (data.hint) {
         // Just display the hint word without special highlighting
         $stage.game.display.empty()
-            .append($("<label>").html(data.hint));
+            .append($("<label>").html(data.hint._id));
     }
     // 서바이벌 모드에서는 자신의 점수/보너스 스플래시 숨김 (데미지만 표시)
     if (!data.survival) {

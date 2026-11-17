@@ -978,6 +978,19 @@ exports.RULE = {
 		big: false,
 		ewq: false,
 		survival: false
+	},
+
+	// 우영우: 차례대로 앞뒤 글자가 같은 3글자 단어(품사 무관)를 댐. 자유 모드의 변형 (free.js isWoo)
+	// 3글자가 아니면 채팅, 앞뒤가 다르면 없는 단어(404). 봇·힌트는 처음 쓸 때 불러온 단어 목록을 씀
+	'KWY': {
+		lang: "ko",
+		rule: "Free",
+		opts: ["ext", "mis", "mpl", "eam", "rdm", "loa", "one", "spd", "drg", "bbg", "nar", "god", "rnt", "sur", "obo", "itm", "chs", "chp", "ljn"],
+		time: 1,
+		ai: true,
+		big: false,
+		ewq: true,
+		survival: false
 	}
 
 };
@@ -1004,7 +1017,7 @@ exports.GAME_CATEGORIES = {
 	},
 	'etc': {
 		name: 'GameCategoryEtc',
-		modes: ['KDA', 'EDA', 'JDA', 'HUN', 'KFR', 'EFR', 'JFR', 'KTF', 'ETF', 'CNC', 'XBB', 'XRG', 'KRT', 'XIG']
+		modes: ['KDA', 'EDA', 'JDA', 'HUN', 'KFR', 'EFR', 'JFR', 'KTF', 'ETF', 'CNC', 'XBB', 'XRG', 'KRT', 'XIG', 'KWY']
 	}
 };
 exports.GAME_TYPE = Object.keys(exports.RULE);
@@ -1307,7 +1320,7 @@ exports.ANNIV = {
 	MODES: {
 		Y: ["KSH", "JSH", "EKK", "JKT", "EKT", "KAP", "EAP", "JAP", "KAK", "EAK", "KCB", "ECB", "KBR", "EBR", "K4R"],
 		R: ["KDA", "EDA", "JDA", "KTY", "ETY", "JTY", "KTT", "ETT", "CAL", "CRL", "KKT", "KKU"],
-		G: ["KFR", "JFR", "KTF", "ETF", "KSS", "ESS", "JSS", "KSK", "ESK", "KWS", "EWS", "KCF"],
+		G: ["KFR", "JFR", "KTF", "ETF", "KSS", "ESS", "JSS", "KSK", "ESK", "KWS", "EWS", "KCF", "KWY"],
 		B: ["KQZ", "EQZ", "CSQ", "KPQ", "EPQ", "KSC", "ESQ", "KCW", "ECW", "CCW", "HUN", "ESH"],
 		P: ["XBB", "KJM", "EFR", "CNC", "KRT", "XRG", "KWR", "EWR", "KPF", "EPF", "KLG", "CSD", "XIG"]
 	},
