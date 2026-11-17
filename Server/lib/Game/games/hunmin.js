@@ -185,7 +185,7 @@ exports.turnEnd = function () {
 		if (my.opts.invincible) {
 			score = 0;
 		} else {
-			score = Const.getPenalty(my.game.chain, target.game.score);
+			score = Const.getPenalty(my.game.chain.slice(my.game.roundChainBase), target.game.score); // 이번 라운드 체인만 (한 번만!)
 			// 나락(nar): 패널티 적용 후에도 점수가 양수면 0으로 만듦
 			if ((my.opts.narak || my.game.chaosGuillotine) && (target.game.score + score) > 0) {
 				score = -target.game.score;
@@ -445,7 +445,8 @@ exports.submit = function (client, text, data) {
 exports.getScore = function (text, delay, ignoreMission) {
 	var my = this;
 	var tr = 1 - delay / my.game.turnTime;
-	var score = Const.getPreScore(text, my.game.chain, tr);
+	// 체인 보너스는 이번 라운드에서 이은 단어 수만 센다 (한 번만! 규칙은 chain이 라운드를 넘어 이어지므로)
+	var score = Const.getPreScore(text, my.game.chain.slice(my.game.roundChainBase), tr);
 	var arr;
 
 	if (!ignoreMission) {

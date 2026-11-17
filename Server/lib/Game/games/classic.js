@@ -718,7 +718,7 @@ exports.turnEnd = function () {
 			} else if (my.opts.antitroll && my.game.isHanbang) {
 				score = 0;
 			} else {
-				score = Const.getPenalty(my.game.chain, target.game.score);
+				score = Const.getPenalty(new Array(my.game.roundChainCount), target.game.score); // 이번 라운드 체인만 (한 번만!)
 				// 나락(nar): 패널티 적용 후에도 점수가 양수면 0으로 만듦
 				if ((my.opts.narak || my.game.chaosGuillotine) && (target.game.score + score) > 0) {
 					score = -target.game.score;
@@ -2015,11 +2015,12 @@ exports.getScore = function (text, delay, ignoreMission) {
 	// 서바이벌 밸런스 보정: 아이템/카오스/랜덤턴이 모두 없는 순차 진행에서는
 	// 턴 순서상 나중에 낼수록 체인이 길어져 유리해지므로, 같은 바퀴(생존자 수만큼 한 바퀴)
 	// 내의 모든 플레이어에게 동일한 체인 값(바퀴 수 * 생존자 수)을 적용해 공정하게 만든다.
-	var chainForScore = my.game.chain;
+	// 체인 보너스는 이번 라운드에서 이은 단어 수만 센다 (한 번만! 규칙은 chain이 라운드를 넘어 이어지므로)
+	var chainForScore = new Array(my.game.roundChainCount);
 	if (my.opts.survival && !my.opts.item && !my.opts.chaos && !my.opts.randomturn) {
 		var aliveN = Const.checkSurvivalStatus(my, DIC).aliveCount;
 		if (aliveN > 0) {
-			var lapIndex = Math.floor(my.game.chain.length / aliveN);
+			var lapIndex = Math.floor(my.game.roundChainCount / aliveN);
 			chainForScore = new Array(lapIndex * aliveN);
 		}
 	}

@@ -229,7 +229,7 @@ exports.turnEnd = function () {
         } else {
             // 점수 증가(inf): 원래 점수 기준 감점을 구해 1만 배 (최소 감점 50 같은 고정값도 같이 키우기 위해)
             var infMul = getInflationMul(my);
-            score = Const.getPenalty(my.game.chain, target.game.score / infMul) * infMul;
+            score = Const.getPenalty(my.game.chain.slice(my.game.roundChainBase), target.game.score / infMul) * infMul; // 이번 라운드 체인만 (한 번만!)
             // 나락(nar): 패널티 적용 후에도 점수가 양수면 0으로 만듦
             if ((my.opts.narak || my.game.chaosGuillotine) && (target.game.score + score) > 0) {
                 score = -target.game.score;
@@ -653,7 +653,8 @@ exports.getScore = function (text, delay, ignoreMission) {
     var score, arr;
 
     if (!text || !my.game.chain) return 0;
-    score = Const.getPreScore(text, my.game.chain, tr);
+    // 체인 보너스는 이번 라운드에서 이은 단어 수만 센다 (한 번만! 규칙은 chain이 라운드를 넘어 이어지므로)
+    score = Const.getPreScore(text, my.game.chain.slice(my.game.roundChainBase), tr);
 
     if (!ignoreMission) {
         // 쉬운 미션 (easymission) 규칙: 초성과 중성만 일치하면 미션 달성
