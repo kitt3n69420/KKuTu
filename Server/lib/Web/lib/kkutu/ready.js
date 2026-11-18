@@ -1004,7 +1004,9 @@ $(document).ready(function () {
 
 		// 우선순위: URL locale > 저장된 언어 > 감지된언어 > 한국어
 		var currentLang = pageLang || savedLang || detectedLang || "ko_KR";
-		$("#language-setting").val(currentLang);
+		// ??? 언어(nya·lol·nyaj)는 바탕 언어 + 기타의 ??? 체크로 보여 줌 (예전 언어 ??? = nya는 한국어 + ???)
+		$("#language-setting").val(SECRET_LANG_BASE[currentLang] || currentLang);
+		$("#secret-lang").prop('checked', !!SECRET_LANG_BASE[currentLang]);
 
 		// 테마 설정
 		$("#theme-setting").val(savedSettings.theme || 'blue');
@@ -2074,6 +2076,9 @@ $(document).ready(function () {
 		var newTheme = $("#theme-setting").val() || 'blue';
 		var savedLang = localStorage.getItem('kkutu_lang'); // 이전에 저장된 언어 확인
 
+		// 기타의 ???가 켜져 있으면 고른 언어 대신 ??? 언어
+		if (newLang && $("#secret-lang").is(":checked")) newLang = SECRET_LANG[newLang] || newLang;
+
 		// 먼저 모든 설정을 저장 (언어 변경으로 리로드되더라도 설정이 보존되도록)
 		$data.opts = {
 			mb: $("#mute-bgm").is(":checked"),
@@ -2235,10 +2240,11 @@ $(document).ready(function () {
 			}
 		}
 
-		// 병맛 사운드팩 이스터에그: 캐릭터 리렌더링
-		// 병맛 팩 변경 또는 이스터에그 on/off 변경 시 리렌더링
+		// 병맛 사운드팩·??? 고양이귀 이스터에그: 캐릭터 리렌더링
+		// 병맛 팩 변경, ??? on/off 또는 이스터에그 on/off 변경 시 리렌더링
 		var newNoEasterEgg = $("#no-easter-egg").is(":checked");
-		if (previousSoundPack === '병맛' || newSoundPack === '병맛' || newNoEasterEgg !== previousNoEasterEgg) {
+		var secretChanged = !!SECRET_LANG_BASE[savedLang] !== !!SECRET_LANG_BASE[newLang];
+		if (previousSoundPack === '병맛' || newSoundPack === '병맛' || newNoEasterEgg !== previousNoEasterEgg || secretChanged) {
 			updateMe();
 			updateUserList(true);
 			if ($data.room) {

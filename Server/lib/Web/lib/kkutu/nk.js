@@ -1914,6 +1914,7 @@ var NK = (function () {
 		{ tab: 'basic', section: 'ingames', labelKey: 'jaAutoConvert', descKey: 'nkDescJaAutoConvert', controls: ['#ja-auto-convert'], kind: 'toggle' },
 		{ tab: 'basic', section: 'etc', labelKey: 'noFilter', descKey: 'nkDescNoFilter', controls: ['#no-filter'], kind: 'toggle' },
 		{ tab: 'basic', section: 'etc', labelKey: 'noEasterEgg', descKey: 'nkDescNoEasterEgg', controls: ['#no-easter-egg'], kind: 'toggle' },
+		{ tab: 'basic', section: 'etc', labelKey: 'secretLang', controls: ['#secret-lang'], kind: 'toggle' },
 		{ tab: 'sound', labelKey: 'bgm', controls: ['#SettingDiag .bgmVolume', '#mute-bgm'], kind: 'volume' },
 		{ tab: 'sound', labelKey: 'effect', controls: ['#SettingDiag .effectVolume', '#mute-effect'], kind: 'volume' },
 		{ tab: 'sound', labelKey: 'lobbyBgm', descKey: 'nkDescLobbyBgm', controls: ['#lobby-bgm'] },

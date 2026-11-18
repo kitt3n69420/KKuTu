@@ -53,6 +53,9 @@ var JA_INJEONG;
 var MAX_LEVEL = 720;
 var STAR_LEVEL = 360; // 이 레벨을 넘으면 3레벨씩 묶어 별렙(s1~)으로 표시
 var UI_BETA_WARN = true; // 설정에서 기본 UI → 베타 UI를 고를 때 "불안정할 수 있음" 확인 창 (false면 묻지 않음)
+// 설정 기타의 ???: 켜면 고른 언어 대신 이 언어를 씀 (고양이귀 이스터에그도 이걸로 켜짐). kkutu_lang에는 실제로 쓰는 언어(nya 등)를 저장
+var SECRET_LANG = { 'ko_KR': "nya", 'en_US': "lol", 'ja_JP': "nyaj" };
+var SECRET_LANG_BASE = { 'nya': "ko_KR", 'lol': "en_US", 'nyaj': "ja_JP" };
 var TICK = 30;
 var EXP = [];
 var BAD = new RegExp(["느으*[^가-힣]*금마?", "(?<!(밀레|심포|도미))니[^가-힣]*(엄|앰|엠)", "(ㅄ|[ㅅㅆ][^가-힣ㄱ-ㅎㅏ-ㅣ]*ㅂ|ㅂ[^가-힣ㄱ-ㅎㅏ-ㅣ]*ㅅ|ㄴ[^가-힣ㄱ-ㅎㅏ-ㅣ]*[ㄱㅇ][^가-힣ㄱ-ㅎㅏ-ㅣ]*ㅁ|ㅈ[^가-힣ㄱ-ㅎㅏ-ㅣ]*ㄹ|ㅗ|ㅅ[^가-힣ㄱ-ㅎㅏ-ㅣ]*ㄲ)", "미(친|찐|틴|띤)(년|놈)?", "(병|븅|빙|벙)[^가-힣]*신", 
@@ -1143,7 +1146,9 @@ $(document).ready(function () {
 
 		// 우선순위: URL locale > 저장된 언어 > 감지된언어 > 한국어
 		var currentLang = pageLang || savedLang || detectedLang || "ko_KR";
-		$("#language-setting").val(currentLang);
+		// ??? 언어(nya·lol·nyaj)는 바탕 언어 + 기타의 ??? 체크로 보여 줌 (예전 언어 ??? = nya는 한국어 + ???)
+		$("#language-setting").val(SECRET_LANG_BASE[currentLang] || currentLang);
+		$("#secret-lang").prop('checked', !!SECRET_LANG_BASE[currentLang]);
 
 		// 테마 설정
 		$("#theme-setting").val(savedSettings.theme || 'blue');
@@ -2213,6 +2218,9 @@ $(document).ready(function () {
 		var newTheme = $("#theme-setting").val() || 'blue';
 		var savedLang = localStorage.getItem('kkutu_lang'); // 이전에 저장된 언어 확인
 
+		// 기타의 ???가 켜져 있으면 고른 언어 대신 ??? 언어
+		if (newLang && $("#secret-lang").is(":checked")) newLang = SECRET_LANG[newLang] || newLang;
+
 		// 먼저 모든 설정을 저장 (언어 변경으로 리로드되더라도 설정이 보존되도록)
 		$data.opts = {
 			mb: $("#mute-bgm").is(":checked"),
@@ -2374,10 +2382,11 @@ $(document).ready(function () {
 			}
 		}
 
-		// 병맛 사운드팩 이스터에그: 캐릭터 리렌더링
-		// 병맛 팩 변경 또는 이스터에그 on/off 변경 시 리렌더링
+		// 병맛 사운드팩·??? 고양이귀 이스터에그: 캐릭터 리렌더링
+		// 병맛 팩 변경, ??? on/off 또는 이스터에그 on/off 변경 시 리렌더링
 		var newNoEasterEgg = $("#no-easter-egg").is(":checked");
-		if (previousSoundPack === '병맛' || newSoundPack === '병맛' || newNoEasterEgg !== previousNoEasterEgg) {
+		var secretChanged = !!SECRET_LANG_BASE[savedLang] !== !!SECRET_LANG_BASE[newLang];
+		if (previousSoundPack === '병맛' || newSoundPack === '병맛' || newNoEasterEgg !== previousNoEasterEgg || secretChanged) {
 			updateMe();
 			updateUserList(true);
 			if ($data.room) {
@@ -6768,7 +6777,7 @@ $lib.Picture.replayStrokes = function (strokes) {
 };
 
 $lib.Picture.turnStart = function (data) {
-    $(".game-user-current").removeClass("game-user-current");
+    $(".game-user-current").removeClass("game-user-current game-user-blue");
     $(".game-user-bomb").removeClass("game-user-bomb");
 
     $data._pqDrawer = data.drawer;
@@ -6783,7 +6792,8 @@ $lib.Picture.turnStart = function (data) {
     playBGM('jaqwi');
     $data._pqUrgent = false;
 
-    $("#game-user-" + data.drawer).addClass("game-user-current");
+    // 술래는 파란 차례 효과 (맞힌 사람의 초록 차례 효과와 구분)
+    $("#game-user-" + data.drawer).addClass("game-user-current game-user-blue");
     $stage.game.here.hide();
 };
 
@@ -7774,9 +7784,11 @@ $lib.Brawl.restGoing = function (rest) {
 
 /**
  * Unison (이구동성) - 클라이언트 UI
+ * 선택지는 2개, 삼지선다 규칙이면 3개 (서버가 roundReady의 choices로 보냄). 삼지선다면 점수를 받는 쪽(sides)이 둘일 수 있음.
  * 라운드 준비 중에는 질문이 단어 창, 선택지가 노란 바에 나오고, 라운드가 시작되면 서로 자리를 바꿔 선택지가 단어 창으로 감.
- * 내가 고른 선택지는 단어 창에서 노랗게. 라운드 중에는 아직 안 고른 사람 카드에 차례 효과(game-user-current)를 주고,
- * 고르면 그 카드에서 뺌. 라운드가 끝나면 점수를 못 받은 사람 카드에 실패 효과(game-user-bomb), 누가 무엇을 골랐는지는 알림으로.
+ * 내가 고른 선택지는 단어 창에서 노랗게. 라운드 중에는 이미 고른 사람 카드에만 차례 효과(game-user-current, 초록)를 줌.
+ * 라운드가 끝나면 점수를 받은 사람 카드에 파란 차례 효과(game-user-current + game-user-blue), 못 받은 사람 카드에 실패 효과(game-user-bomb),
+ * 누가 무엇을 골랐는지는 알림으로.
  * 한 번 고르면 입력창을 닫음 (그 뒤 입력과 채팅은 서버가 막고 알림을 보냄)
  */
 
@@ -7791,6 +7803,9 @@ function unisonChoiceText(n) {
 function unisonChoiceLabel(n) {
 	return $("<label>").addClass("unison-choice").attr('data-n', n).text(unisonChoiceText(n));
 }
+function unisonChoiceNums() {
+	return $data._unison.choices.map(function (c, i) { return i + 1; });
+}
 function unisonCloseInput() {
 	$data._relay = false;
 	mobile ? $stage.game.here.css('opacity', 0.5).show() : $stage.game.here.hide();
@@ -7802,12 +7817,12 @@ $lib.Unison.roundReady = function (data) {
 	$data._fastTime = 10000;
 	$data._unison = { question: data.question, choices: data.choices || ["", ""], pick: 0 };
 
-	$(".game-user-current").removeClass("game-user-current");
+	$(".game-user-current").removeClass("game-user-current game-user-blue");
 	$stage.game.display.addClass("unison-q").empty().append($("<label>").text(data.question));
 	$data._char = $stage.game.display.html();
 	$(".jjo-turn-time .graph-bar")
 		.width("100%")
-		.text(unisonChoiceText(1) + "   /   " + unisonChoiceText(2))
+		.text(unisonChoiceNums().map(unisonChoiceText).join("   /   "))
 		.css({ 'text-align': "center", 'background-color': "#70712D" });
 
 	drawRound(data.round);
@@ -7822,15 +7837,15 @@ $lib.Unison.turnStart = function (data) {
 
 	// 라운드 시작: 선택지는 단어 창, 질문은 노란 바로
 	if ($data._unison) {
-		$stage.game.display.addClass("unison-q").empty().append(unisonChoiceLabel(1), unisonChoiceLabel(2));
+		$stage.game.display.addClass("unison-q").empty().append(unisonChoiceNums().map(unisonChoiceLabel));
 		$data._char = $stage.game.display.html();
 		$(".jjo-turn-time .graph-bar").text($data._unison.question);
 	}
-	// 차례 효과: 아직 고르지 않은 사람 모두
-	$(".game-user-current").removeClass("game-user-current");
+	// 차례 효과: 이미 고른 사람만 (중간에 들어온 관전자도 voted로 받음)
+	$(".game-user-current").removeClass("game-user-current game-user-blue");
 	$(".game-user-bomb").removeClass("game-user-bomb");
 	ids.forEach(function (id) {
-		if (voted.indexOf(id) === -1) $("#game-user-" + id).addClass("game-user-current");
+		if (voted.indexOf(id) !== -1) $("#game-user-" + id).addClass("game-user-current");
 	});
 	if (mine) {
 		$data._relay = true;
@@ -7876,7 +7891,7 @@ $lib.Unison.turnEnd = function (id, data) {
 
 	if (data.voted) {
 		// 누가 골랐는지만 모두에게. 본인에게는 고른 번호(pick)가 함께 옴
-		$("#game-user-" + id).removeClass("game-user-current");
+		$("#game-user-" + id).addClass("game-user-current");
 		if (id == $data.id) {
 			unisonCloseInput();
 			if (data.pick && $data._unison) {
@@ -7895,9 +7910,12 @@ $lib.Unison.turnEnd = function (id, data) {
 	stopBGM();
 	$(".game-user-current").removeClass("game-user-current");
 	ch = ($data._unison && $data._unison.choices) || ["", ""];
-	$stage.game.display.empty().append($("<label>").text(ch[0] + " " + data.counts[0] + " : " + data.counts[1] + " " + ch[1]));
-	if (data.side) line = L['unisonWin'].replace('{V1}', data.side + ". " + ch[data.side - 1]);
-	else line = (data.counts[0] === data.counts[1]) ? L['unisonTie'] : L['unisonNoWin'];
+	// 2개: "산 3 : 2 바다", 3개: "산 3 : 바다 2 : 계곡 1"
+	$stage.game.display.empty().append($("<label>").text(ch.length === 2
+		? ch[0] + " " + data.counts[0] + " : " + data.counts[1] + " " + ch[1]
+		: ch.map(function (c, i) { return c + " " + data.counts[i]; }).join(" : ")));
+	if (data.sides.length) line = L['unisonWin'].replace('{V1}', data.sides.map(function (s) { return s + ". " + ch[s - 1]; }).join(", "));
+	else line = data.tie ? L['unisonTie'] : L['unisonNoWin'];
 	$(".jjo-turn-time .graph-bar").text(line);
 
 	ids = unisonSeqIds();
@@ -7905,6 +7923,7 @@ $lib.Unison.turnEnd = function (id, data) {
 		var $uc = $("#game-user-" + uid);
 
 		if (data.win.indexOf(uid) !== -1) {
+			$uc.addClass("game-user-current game-user-blue");
 			addScore(uid, data.score, data.scores[uid]);
 			drawObtainedScore($uc, $("<div>").addClass("deltaScore").html("+" + data.score));
 			updateScore(uid, getScore(uid));
@@ -7917,14 +7936,14 @@ $lib.Unison.turnEnd = function (id, data) {
 	else playSound('horr');
 
 	// 누가 무엇을 골랐는지 (안 고른 사람은 빠짐)
-	names = [[], []];
+	names = ch.map(function () { return []; });
 	ids.forEach(function (uid) {
 		var u = $data.users[uid] || $data.robots[uid];
 
 		if (data.picks[uid] && u && u.profile) names[data.picks[uid] - 1].push(u.profile.title || u.profile.name);
 	});
-	notice([1, 2].map(function (n) {
-		return n + ". " + ch[n - 1] + " (" + names[n - 1].length + "): " + (names[n - 1].join(", ") || "-");
+	notice(ch.map(function (c, i) {
+		return (i + 1) + ". " + c + " (" + names[i].length + "): " + (names[i].join(", ") || "-");
 	}).join("  /  "), L['modeXIG']);
 };
 
@@ -17034,14 +17053,14 @@ function renderMoremi(target, equip) {
 	if (!equip) equip = {};
 	else equip = $.extend({}, equip); // Create a shallow copy to prevent mutation
 
-	// Easter Egg for 'nya' language
+	// Easter Egg for 설정 기타의 ??? (nya·lol·nyaj 언어)
 	var HAMSTER_HEAD_ITEMS = ['hamster_G', 'hamster_O'];
 	var savedLang = localStorage.getItem('kkutu_lang');
 	var savedVolume = loadVolumeSettings();
 	var easterEggDisabled = savedVolume.noEasterEgg === true;
 	var showCatEars = false;
 
-	if (!easterEggDisabled && savedLang === 'nya') {
+	if (!easterEggDisabled && SECRET_LANG_BASE[savedLang]) {
 		if (HAMSTER_HEAD_ITEMS.indexOf(equip['Mhead']) != -1) {
 			equip['Mhead'] = 'nekomimi';
 		} else {
@@ -19087,6 +19106,7 @@ var NK = (function () {
 		{ tab: 'basic', section: 'ingames', labelKey: 'jaAutoConvert', descKey: 'nkDescJaAutoConvert', controls: ['#ja-auto-convert'], kind: 'toggle' },
 		{ tab: 'basic', section: 'etc', labelKey: 'noFilter', descKey: 'nkDescNoFilter', controls: ['#no-filter'], kind: 'toggle' },
 		{ tab: 'basic', section: 'etc', labelKey: 'noEasterEgg', descKey: 'nkDescNoEasterEgg', controls: ['#no-easter-egg'], kind: 'toggle' },
+		{ tab: 'basic', section: 'etc', labelKey: 'secretLang', controls: ['#secret-lang'], kind: 'toggle' },
 		{ tab: 'sound', labelKey: 'bgm', controls: ['#SettingDiag .bgmVolume', '#mute-bgm'], kind: 'volume' },
 		{ tab: 'sound', labelKey: 'effect', controls: ['#SettingDiag .effectVolume', '#mute-effect'], kind: 'volume' },
 		{ tab: 'sound', labelKey: 'lobbyBgm', descKey: 'nkDescLobbyBgm', controls: ['#lobby-bgm'] },

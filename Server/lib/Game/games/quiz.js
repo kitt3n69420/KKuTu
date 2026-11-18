@@ -181,7 +181,7 @@ exports.turnEnd = function () {
 			var _missed = (my.game.seq || []).filter(function (id) {
 				return _winners.indexOf(id) === -1 && _giveup.indexOf(id) === -1;
 			});
-			my.sendQuizRoundEnd(_ans, _winners, _missed, _giveup, my.game.round);
+			my.sendQuizRoundEnd(_ans, _winners, _missed, _giveup, my.game.round, null, my.game.question);
 		}
 	}
 

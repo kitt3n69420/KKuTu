@@ -3311,6 +3311,9 @@ html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-ap
 html[data-ui="new"][data-nk-device="phone"][data-nk-place="gaming"] #nk-app .GameBox .game-user.game-user-bomb,
 html[data-ui="new"]:not([data-nk-device="phone"])[data-nk-place="gaming"] #nk-app .GameBox .game-body.cw .game-user.game-user-bomb { box-shadow: inset 0 0 0 2px var(--nk-danger); }
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .game-body.cw .game-user.game-user-current[style*="--nk-pc"] { background: color-mix(in oklch, var(--nk-pt) 32%, var(--nk-surface-2)); box-shadow: inset 5px 0 0 var(--nk-pc), inset 0 0 0 2px var(--nk-accent); }
+/* 파란 차례 효과 (game-user-current + game-user-blue — 이구동성 라운드 결과 점수 받은 사람, 그림퀴즈 술래): 위 차례 규칙들이 쓰는 강조 변수만 카드에서 파랑으로 */
+html[data-ui="new"] #nk-app .GameBox .game-user.game-user-current.game-user-blue { --nk-accent: #2f7bea; --nk-accent-soft: color-mix(in oklch, #2f7bea 12%, var(--color-bg-light)); --nk-accent-ink: #1d5fc4; }
+html[data-ui="new"] body.dark-mode #nk-app .GameBox .game-user.game-user-current.game-user-blue { --nk-accent: #4d8eff; --nk-accent-soft: color-mix(in oklab, #4d8eff 20%, var(--nk-surface)); --nk-accent-ink: #8db8ff; }
 /* 팀 색: 팀 모양 표시(데스크톱 카드는 좌상단, 줄 카드는 이름 앞 — 사용자 요청) + 점수 칸을 팀 색으로(판 뒤집기·땅따먹기는 줄 바탕이 개인/팀 색이라 표시만) */
 html[data-ui="new"][data-nk-place="gaming"] #nk-app .GameBox .game-user:has(> .game-user-score[class*="team-"]) .game-user-title::before {
 	content: ""; flex: none; order: -1; width: 15px; height: 15px; background: color-mix(in oklch, var(--team) 72%, #000); -webkit-mask: var(--team-icon) center / contain no-repeat; mask: var(--team-icon) center / contain no-repeat;

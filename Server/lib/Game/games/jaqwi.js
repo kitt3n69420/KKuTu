@@ -164,7 +164,9 @@ exports.turnEnd = function () {
 			var _missed = (my.game.seq || []).filter(function (id) {
 				return _winners.indexOf(id) === -1 && _giveup.indexOf(id) === -1;
 			});
-			my.sendQuizRoundEnd(_ans, _winners, _missed, _giveup, my.game.round);
+			// 스크램블·스펠링 퀴즈는 섞이거나 가려진 글자가 문제. 자음퀴즈는 정답에서 바로 보이니 넣지 않는다
+			var _q = Const.GAME_TYPE[my.mode] == "CSQ" ? null : my.game.conso;
+			my.sendQuizRoundEnd(_ans, _winners, _missed, _giveup, my.game.round, null, _q);
 		}
 	}
 	// 기존 타이머가 있으면 취소 후 새로 등록

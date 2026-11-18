@@ -1907,6 +1907,14 @@ body.dark-mode .cw-cell.sd-wrong {
 	border-color: #FF6666;
 }
 
+/* 파란 차례 효과: game-user-current와 함께 붙이면 초록 대신 파랑 (이구동성 라운드 결과 점수 받은 사람, 그림퀴즈 술래) */
+.game-user-current.game-user-blue,
+.cw .game-user.game-user-current.game-user-blue,
+.game-body.small-mode .game-user.game-user-current.game-user-blue {
+	animation-name: CurrentBlinkBlue;
+	background-color: #DDEEFF;
+}
+
 .game-user-image {
 	margin: 3px 5px;
 	width: 100px;
@@ -2856,6 +2864,20 @@ body.dark-mode .cw-cell.sd-wrong {
 
 	100% {
 		border-color: #3EFF3E;
+	}
+}
+
+@keyframes CurrentBlinkBlue {
+	0% {
+		border-color: #3E9EFF;
+	}
+
+	50% {
+		border-color: #0050C0;
+	}
+
+	100% {
+		border-color: #3E9EFF;
 	}
 }
 
@@ -4103,6 +4125,11 @@ body.dark-mode .game-user-current,
 body.dark-mode .cw .game-user.game-user-current,
 body.dark-mode .game-body.small-mode .game-user.game-user-current {
 	background-color: #1A3A1A !important;
+}
+body.dark-mode .game-user-current.game-user-blue,
+body.dark-mode .cw .game-user.game-user-current.game-user-blue,
+body.dark-mode .game-body.small-mode .game-user.game-user-current.game-user-blue {
+	background-color: #1A2A40 !important;
 }
 
 /* bb-char, cw-q-body: #111 → 약간 밝게 (어두운 배경과 구분) */

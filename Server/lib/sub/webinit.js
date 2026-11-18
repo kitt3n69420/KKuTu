@@ -24,7 +24,9 @@ var Language = {
 	'ko_KR': require("../Web/lang/ko_KR.json"),
 	'en_US': require("../Web/lang/en_US.json"),
 	'ja_JP': require("../Web/lang/ja_JP.json"),
-	'nya': require("../Web/lang/nya.json")
+	'nya': require("../Web/lang/nya.json"),
+	'lol': require("../Web/lang/lol.json"),
+	'nyaj': require("../Web/lang/nyaj.json")
 };
 
 function updateLanguage() {

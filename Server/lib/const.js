@@ -128,7 +128,8 @@ exports.OPTIONS = {
 	'ljn': { name: "LateJoin" },   // 게임 중 참여: 게임 진행 중 들어온 사람도 경기에 참여 (LATE_JOIN_RULES의 모드만, kch/sur와 함께 사용 불가)
 	'inf': { name: "Inflation" },  // 점수 증가: 바보 모드 전용. 게임 점수를 1만 배로 올림 (바보 모드는 보상이 항상 0이라 보상과 무관)
 	'qdc': { name: "Quadcore" },   // 쿼드코어: 난투 잇기에서 글자 칸이 4개, 단어는 첫 글자가 맞는 칸 하나를 이음
-	'mnr': { name: "Minority" }    // 소수결: 이구동성에서 적게 고른 쪽이 점수를 받음
+	'mnr': { name: "Minority" },   // 소수결: 이구동성에서 적게 고른 쪽이 점수를 받음
+	'ch3': { name: "ThreeWay" }    // 삼지선다: 이구동성에서 선택지가 3개인 문제만 나옴 (끄면 모든 문제를 앞의 2개로)
 
 };
 
@@ -968,11 +969,11 @@ exports.RULE = {
 	},
 
 	// 이구동성: 질문과 선택지 2개(data/xig.txt)를 보고 라운드 동안 1 또는 2를 한 번 고름. 더 많이 고른 쪽이 라운드당 100점
-	// (소수결 mnr은 적은 쪽, 동률이면 아무도 없음). 게임 중 참가자 채팅과 방 안 귓속말 금지, 봇 없음 (unison.js)
+	// (소수결 mnr은 적은 쪽, 동률이면 아무도 없음. 삼지선다 ch3은 선택지 3개, 가장 많은 쪽이 둘이면 둘 다). 게임 중 참가자 채팅과 방 안 귓속말 금지, 봇 없음 (unison.js)
 	'XIG': {
 		lang: "etc",
 		rule: "Unison",
-		opts: ["mnr", "ljn"],
+		opts: ["mnr", "ch3", "ljn"],
 		time: 0.1,
 		ai: false,
 		big: false,

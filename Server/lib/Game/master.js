@@ -127,10 +127,26 @@ function formatDiscordFallback(type, data) {
       var qd = data.data || {};
       var qRoundText = (qd.round && qd.totalRounds) ? ` (${qd.round}/${qd.totalRounds})` : "";
       var parts = [`정답: ${qd.answer}`];
+      if (qd.question) parts.unshift(`문제: ${qd.question}`);
+      if (qd.drawer) parts.push(`그린 사람: ${qd.drawer}`);
       if (qd.winners && qd.winners.length) parts.push(`맞힘: ${qd.winners.join(", ")}`);
       if (qd.missed && qd.missed.length) parts.push(`못맞힘: ${qd.missed.join(", ")}`);
       if (qd.giveup && qd.giveup.length) parts.push(`포기: ${qd.giveup.join(", ")}`);
       return `[퀴즈라운드종료] ${data.roomId}번 방${qRoundText} ${parts.join(" | ")}`;
+    }
+    case "notify-unison-round-end": {
+      var ud = data.data || {};
+      var uRoundText = (ud.round && ud.totalRounds) ? ` (${ud.round}/${ud.totalRounds})` : "";
+      var uParts = [`질문: ${ud.question}`];
+      (ud.choices || []).forEach(function (c, i) {
+        var g = (ud.groups && ud.groups[i]) || [];
+        uParts.push(`${i + 1}. ${c}(${g.length}명): ${g.join(", ") || "없음"}`);
+      });
+      if (ud.none && ud.none.length) uParts.push(`안 고름: ${ud.none.join(", ")}`);
+      uParts.push((ud.sides && ud.sides.length)
+        ? `${ud.sides.map(function (s) { return `${s}번 ${ud.choices[s - 1]}`; }).join(", ")} 승리${ud.minority ? " (소수결)" : ""}`
+        : (ud.tie ? "동률이라 아무도 점수를 얻지 못함" : "모두 같은 쪽을 골라 아무도 점수를 얻지 못함"));
+      return `[이구동성라운드종료] ${data.roomId}번 방${uRoundText} ${uParts.join(" | ")}`;
     }
     case "notify-game-over": {
       var lines = (data.rankings || []).map(function (r) {
@@ -187,6 +203,9 @@ function relayDiscordEvent(type, data) {
       break;
     case "quiz-round-end":
       discordSend("notify-quiz-round-end", { roomId: data.room, data: data.data });
+      break;
+    case "unison-round-end":
+      discordSend("notify-unison-round-end", { roomId: data.room, data: data.data });
       break;
     case "game-over":
       discordSend("notify-game-over", { roomId: data.room, rankings: data.rankings });
@@ -962,6 +981,7 @@ Cluster.on("message", function (worker, msg) {
     case "whisper-log":
     case "round-end":
     case "quiz-round-end":
+    case "unison-round-end":
     case "game-over":
     case "room-settings":
     case "bot-settings":

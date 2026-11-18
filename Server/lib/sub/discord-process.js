@@ -100,6 +100,9 @@ process.on('message', function (msg) {
         case 'notify-quiz-round-end':
             DiscordBot.notifyQuizRoundEnd(msg.roomId, msg.data);
             break;
+        case 'notify-unison-round-end':
+            DiscordBot.notifyUnisonRoundEnd(msg.roomId, msg.data);
+            break;
         case 'notify-game-over':
             DiscordBot.notifyGameOver(msg.roomId, msg.rankings);
             break;

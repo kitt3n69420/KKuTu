@@ -2936,9 +2936,11 @@ exports.notifyQuizRoundEnd = function (roomId, data) {
     if (!data) return;
 
     if (!isBotAvailable()) {
-        const { answer, winners, missed, giveup, round, totalRounds } = data;
+        const { question, drawer, answer, winners, missed, giveup, round, totalRounds } = data;
         const roundText = (round && totalRounds) ? ` (${round}/${totalRounds})` : '';
         const parts = [`정답: ${answer}`];
+        if (question) parts.unshift(`문제: ${question}`);
+        if (drawer) parts.push(`그린 사람: ${drawer}`);
         if (winners && winners.length > 0) parts.push(`맞힘: ${winners.join(', ')}`);
         if (missed && missed.length > 0) parts.push(`못맞힘: ${missed.join(', ')}`);
         if (giveup && giveup.length > 0) parts.push(`포기: ${giveup.join(', ')}`);
@@ -2947,11 +2949,13 @@ exports.notifyQuizRoundEnd = function (roomId, data) {
     }
 
     safeExecute(async () => {
-        const { answer, winners, missed, giveup, round, totalRounds } = data;
+        const { question, drawer, answer, winners, missed, giveup, round, totalRounds } = data;
         const roundText = (round && totalRounds) ? ` (${round}/${totalRounds})` : '';
 
         const lines = [];
+        if (question) lines.push(`문제: ${question}`);
         lines.push(`**정답: ${answer}**`);
+        if (drawer) lines.push(`✏️ 그린 사람: ${drawer}`);
 
         if (winners && winners.length > 0) {
             lines.push('');
@@ -2979,6 +2983,56 @@ exports.notifyQuizRoundEnd = function (roomId, data) {
 
         await channel.send({ embeds: [embed] });
     }, 'notifyQuizRoundEnd');
+};
+
+/**
+ * Notify unison(이구동성) round end with the question and who picked which side
+ * @param {number} roomId - Room ID
+ * @param {object} data - { question, choices, groups, none, tie, sides, minority, round, totalRounds } (sides: 점수를 받은 선택지 번호들, 삼지선다면 둘일 수 있음)
+ */
+exports.notifyUnisonRoundEnd = function (roomId, data) {
+    if (!data) return;
+    const { question, choices, groups, none, tie, sides, minority, round, totalRounds } = data;
+    const roundText = (round && totalRounds) ? ` (${round}/${totalRounds})` : '';
+    const resultText = sides.length
+        ? `${sides.map(s => `${s}번 ${choices[s - 1]}`).join(', ')} 승리${minority ? ' (소수결)' : ''}`
+        : (tie ? '동률이라 아무도 점수를 얻지 못함' : '모두 같은 쪽을 골라 아무도 점수를 얻지 못함');
+
+    if (!isBotAvailable()) {
+        const parts = [`질문: ${question}`];
+        choices.forEach(function (c, i) {
+            parts.push(`${i + 1}. ${c}(${groups[i].length}명): ${groups[i].join(', ') || '없음'}`);
+        });
+        if (none && none.length > 0) parts.push(`안 고름: ${none.join(', ')}`);
+        parts.push(resultText);
+        logToFile(`[이구동성라운드종료] ${roomId}번 방${roundText} ${parts.join(' | ')}`);
+        return;
+    }
+
+    safeExecute(async () => {
+        const lines = [];
+        lines.push(`**질문: ${question}**`);
+        choices.forEach(function (c, i) {
+            lines.push('');
+            lines.push(`${sides.indexOf(i + 1) !== -1 ? '✅' : '▫️'} **${i + 1}. ${c}** (${groups[i].length}명)`);
+            lines.push(groups[i].length > 0 ? groups[i].join(', ') : '(없음)');
+        });
+        if (none && none.length > 0) {
+            lines.push('');
+            lines.push('⏳ **안 고른 사람**');
+            lines.push(none.join(', '));
+        }
+        lines.push('');
+        lines.push(`결과: ${resultText}`);
+
+        const embed = new EmbedBuilder()
+            .setColor(0x3498DB)
+            .setTitle(`📝 ${roomId}번 방 라운드 종료${roundText}`)
+            .setDescription(lines.join('\n'))
+            .setTimestamp();
+
+        await channel.send({ embeds: [embed] });
+    }, 'notifyUnisonRoundEnd');
 };
 
 /**

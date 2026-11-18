@@ -185,6 +185,12 @@ block Middle
 					h4
 					+SettingOption('ja-auto-convert', 'jaAutoConvert', "width: 190px;")
 				div.dialog-bar
+					h4(data-lang-key='language')= L('language')
+					select#language-setting(style="width: 150px;")
+						option(value="ko_KR") 한국어
+						option(value="en_US") English
+						option(value="ja_JP") 日本語
+				div.dialog-bar
 					h4(data-lang-key='etc')= L('etc')
 					//- +SettingOption('sort-user', L('sortUser'), "width: 200px;")
 					//- h4
@@ -195,13 +201,8 @@ block Middle
 					+SettingOption('no-filter', 'noFilter', "width: 200px;")
 					h4(style="clear: both;")
 					+SettingOption('no-easter-egg', 'noEasterEgg', "width: 200px;")
-				div.dialog-bar
-					h4(data-lang-key='language')= L('language')
-					select#language-setting(style="width: 150px;")
-						option(value="ko_KR") 한국어
-						option(value="en_US") English
-						option(value="ja_JP") 日本語
-						option(value="nya") ???
+					h4(style="clear: both;")
+					+SettingOption('secret-lang', 'secretLang', "width: 200px;")
 			div.setting-pane(data-tab='sound')
 				div.dialog-bar
 					div.dialog-opt(style="width: 100%;")
@@ -389,6 +390,7 @@ block Middle
 						option(value=15, data-lang-key='modeKPQ')= L('modeKPQ')
 						option(value=17, data-lang-key='modeKFR')= L('modeKFR')
 						option(value=40, data-lang-key='modeKTF')= L('modeKTF')
+						option(value=65, data-lang-key='modeKWY')= L('modeKWY')
 						option(value=28, data-lang-key='modeKQZ')= L('modeKQZ')
 						option(value=31, data-lang-key='modeKPF')= L('modeKPF')
 						option(value=34, data-lang-key='modeKWR')= L('modeKWR')
@@ -437,7 +439,6 @@ block Middle
 						option(value=60, data-lang-key='modeXRG')= L('modeXRG')
 						option(value=61, data-lang-key='modeKRT')= L('modeKRT')
 						option(value=64, data-lang-key='modeXIG')= L('modeXIG')
-						option(value=65, data-lang-key='modeKWY')= L('modeKWY')
 			div.dialog-bar#quick-rules-panel(style='height: auto;')
 				h4(data-lang-key='misc')= L('misc')
 				div(style='float: left; width: 300px;')
@@ -493,6 +494,7 @@ block Middle
 					option(value=15, data-lang-key='modeKPQ')= L('modeKPQ')
 					option(value=17, data-lang-key='modeKFR')= L('modeKFR')
 					option(value=40, data-lang-key='modeKTF')= L('modeKTF')
+					option(value=65, data-lang-key='modeKWY')= L('modeKWY')
 					option(value=28, data-lang-key='modeKQZ')= L('modeKQZ')
 					option(value=31, data-lang-key='modeKPF')= L('modeKPF')
 					option(value=34, data-lang-key='modeKWR')= L('modeKWR')
@@ -541,7 +543,6 @@ block Middle
 					option(value=60, data-lang-key='modeXRG')= L('modeXRG')
 					option(value=61, data-lang-key='modeKRT')= L('modeKRT')
 					option(value=64, data-lang-key='modeXIG')= L('modeXIG')
-					option(value=65, data-lang-key='modeKWY')= L('modeKWY')
 		div.dialog-bar(style='margin-top: -5px; margin-bottom: 5px; height: auto; overflow: hidden;')
 			h4
 			h4#game-mode-expl(style='float: left; width: calc(100% - 100px); font-size: 11px; text-align: left; margin: 0;')

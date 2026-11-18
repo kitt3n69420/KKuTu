@@ -258,9 +258,22 @@ exports.turnEnd = function () {
         drawerScore: drawerScore,
         drawer: drawerId
     });
+    sendRoundLog.call(my, drawerId);
 
     my.game._rrt = setTimeout(my.roundReady, 3000);
 };
+
+// 디스코드 라운드 로그: 정답·그린 사람·맞힌/못 맞힌/포기한 사람 (그린 사람은 못 맞힌 사람에서 뺀다)
+function sendRoundLog(drawerId) {
+    var my = this;
+    if (typeof my.sendQuizRoundEnd !== 'function') return;
+    var winners = (my.game.winner || []).slice();
+    var giveup = (my.game.giveup || []).slice();
+    var missed = (my.game.seq || []).filter(function (id) {
+        return id !== drawerId && winners.indexOf(id) === -1 && giveup.indexOf(id) === -1;
+    });
+    my.sendQuizRoundEnd(my.game.answer ? my.game.answer._id : "", winners, missed, giveup, my.game.round, null, null, drawerId);
+}
 
 exports.submit = function (client, text) {
     var my = this;
@@ -387,6 +400,7 @@ exports.onLeave = function (clientId) {
             answer: my.game.answer ? my.game.answer._id : "",
             drawerLeft: true
         });
+        sendRoundLog.call(my, drawerId);
         my.game._rrt = setTimeout(my.roundReady, 3000);
     }
 };

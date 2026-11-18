@@ -740,6 +740,9 @@
 		try{ saved = localStorage.getItem('kkutu_lang'); }catch(e){}
 		return saved || (m ? m[1] : "ko_KR");
 	}
+	// 게임 설정 기타의 ???가 켜진 언어(nya·lol·nyaj) → 바탕 언어 (head.js SECRET_LANG_BASE와 같음)
+	var SECRET_LANG_BASE = { 'nya': "ko_KR", 'lol': "en_US", 'nyaj': "ja_JP" };
+	var SECRET_LANG = { 'ko_KR': "nya", 'en_US': "lol", 'ja_JP': "nyaj" };
 	// 테마 견본: 메인 색 | 강조 색. 커스텀은 만든 것이 있을 때만 (설정 창과 테마 편집 창의 프리셋 견본)
 	function paintSwatches(){
 		var TE = window.ThemeEngine;
@@ -786,6 +789,8 @@
 		$("#np-set-lang").on('click', "button", function(){
 			var v = $(this).attr('data-v');
 
+			// ???가 켜져 있으면 그대로 둔 채 바탕 언어만 바꿈
+			if(SECRET_LANG_BASE[currentLang()]) v = SECRET_LANG[v];
 			if(v == currentLang()) return;
 			try{ localStorage.setItem('kkutu_lang', v); }catch(e){}
 			// 다시 불러오면 위 ready가 저장된 언어로 주소(locale=)를 맞춤
@@ -814,7 +819,7 @@
 
 		markSetting("#np-set-theme", s.theme || 'blue');
 		markSetting("#np-set-dark", s.darkMode || 'light');
-		markSetting("#np-set-lang", currentLang());
+		markSetting("#np-set-lang", SECRET_LANG_BASE[currentLang()] || currentLang());
 	}
 	function openSettings(){
 		drawSettings();

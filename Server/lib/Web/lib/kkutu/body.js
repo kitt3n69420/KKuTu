@@ -3977,14 +3977,14 @@ function renderMoremi(target, equip) {
 	if (!equip) equip = {};
 	else equip = $.extend({}, equip); // Create a shallow copy to prevent mutation
 
-	// Easter Egg for 'nya' language
+	// Easter Egg for 설정 기타의 ??? (nya·lol·nyaj 언어)
 	var HAMSTER_HEAD_ITEMS = ['hamster_G', 'hamster_O'];
 	var savedLang = localStorage.getItem('kkutu_lang');
 	var savedVolume = loadVolumeSettings();
 	var easterEggDisabled = savedVolume.noEasterEgg === true;
 	var showCatEars = false;
 
-	if (!easterEggDisabled && savedLang === 'nya') {
+	if (!easterEggDisabled && SECRET_LANG_BASE[savedLang]) {
 		if (HAMSTER_HEAD_ITEMS.indexOf(equip['Mhead']) != -1) {
 			equip['Mhead'] = 'nekomimi';
 		} else {

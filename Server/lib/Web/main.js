@@ -50,7 +50,11 @@ var Language = {
   en_US: require("./lang/en_US.json"),
   ja_JP: require("./lang/ja_JP.json"),
   nya: require("./lang/nya.json"),
+  lol: require("./lang/lol.json"),
+  nyaj: require("./lang/nyaj.json"),
 };
+// 상점 아이템 이름·설명이 비어 있으면 넘어갈 언어 (lol은 칼럼이 없어 늘 영어로)
+var SHOP_FALLBACK = { en_US: "ko_KR", ja_JP: "en_US", nya: "ko_KR", nyaj: "ja_JP", lol: "en_US" };
 //볕뉘 수정
 var ROUTES = ["major", "consume", "admin", "login", "dictsearch"];
 //볕뉘 수정 끝
@@ -206,8 +210,17 @@ DB.ready = function () {
 
       Language[lang].SHOP = db = {};
       for (j in $docs) {
-        db[$docs[j]._id] = [$docs[j][`name_${lang}`], $docs[j][`desc_${lang}`]];
+        db[$docs[j]._id] = [shopText($docs[j], "name", lang), shopText($docs[j], "desc", lang)];
       }
+    }
+    function shopText(doc, field, lang) {
+      var v = doc[`${field}_${lang}`];
+
+      while (!v && SHOP_FALLBACK[lang]) {
+        lang = SHOP_FALLBACK[lang];
+        v = doc[`${field}_${lang}`];
+      }
+      return v;
     }
   });
   if (Const.IS_SECURED || Const.WAF) {

@@ -838,7 +838,7 @@ $lib.Picture.replayStrokes = function (strokes) {
 };
 
 $lib.Picture.turnStart = function (data) {
-    $(".game-user-current").removeClass("game-user-current");
+    $(".game-user-current").removeClass("game-user-current game-user-blue");
     $(".game-user-bomb").removeClass("game-user-bomb");
 
     $data._pqDrawer = data.drawer;
@@ -853,7 +853,8 @@ $lib.Picture.turnStart = function (data) {
     playBGM('jaqwi');
     $data._pqUrgent = false;
 
-    $("#game-user-" + data.drawer).addClass("game-user-current");
+    // 술래는 파란 차례 효과 (맞힌 사람의 초록 차례 효과와 구분)
+    $("#game-user-" + data.drawer).addClass("game-user-current game-user-blue");
     $stage.game.here.hide();
 };
 

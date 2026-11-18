@@ -1801,7 +1801,9 @@ function Room(room, channel) {
 			process.send({ type: "round-end", room: my.id, chainLog: logCopy, round: r, totalRounds: totalRounds });
 		}
 	};
-	my.sendQuizRoundEnd = function (answer, winnerIds, missedIds, giveupIds, round, winnerWords) {
+	// question을 주면 디스코드 로그에 "문제" 줄로 함께 나온다 (정답만으로는 문제를 알 수 없는 모드용)
+	// drawerId를 주면 "그린 사람" 줄이 나온다 (그림퀴즈)
+	my.sendQuizRoundEnd = function (answer, winnerIds, missedIds, giveupIds, round, winnerWords, question, drawerId) {
 		var r = round || my.game.round || 0;
 		var totalRounds = my.round || 0;
 		function resolveId(id) {
@@ -1820,6 +1822,8 @@ function Room(room, channel) {
 			return name;
 		}
 		var data = {
+			question: question || null,
+			drawer: drawerId ? resolveId(drawerId) : null,
 			answer: answer,
 			winners: (winnerIds || []).map(resolveWinner),
 			missed: (missedIds || []).map(resolveId),
@@ -1831,6 +1835,31 @@ function Room(room, channel) {
 			DiscordRelay("quiz-round-end", { room: my.id, data: data });
 		} else if (Cluster.isWorker) {
 			process.send({ type: "quiz-round-end", room: my.id, data: data });
+		}
+	};
+	// 이구동성: 질문·선택지와 누가 어느 쪽을 골랐는지 (봇은 들어올 수 없으므로 DIC만 본다)
+	my.sendUnisonRoundEnd = function (question, choices, picks, sides, tie) {
+		var groups = choices.map(function () { return []; }), none = [];
+		(my.game.seq || []).forEach(function (id) {
+			var name = my.getPlayerName(DIC[id]);
+			if (picks[id]) groups[picks[id] - 1].push(name);
+			else none.push(name);
+		});
+		var data = {
+			question: question,
+			choices: choices,
+			groups: groups,
+			none: none,
+			tie: tie,
+			sides: sides,
+			minority: !!my.opts.minority,
+			round: my.game.round || 0,
+			totalRounds: my.round || 0
+		};
+		if (Cluster.isMaster) {
+			DiscordRelay("unison-round-end", { room: my.id, data: data });
+		} else if (Cluster.isWorker) {
+			process.send({ type: "unison-round-end", room: my.id, data: data });
 		}
 	};
 	// Helper: 라운드 전환 시 알림 전송 후 chainLog 초기화
@@ -3411,7 +3440,6 @@ function getRewards(mode, score, bonus, rank, all, ss, opts) {
 			rw.score += score * 0.75;
 			break;
 		case 'KQZ':
-		case 'XIG': // 이구동성: 한국어 스피드퀴즈와 같은 배율 (스피드퀴즈의 경험치 완만화 QUIZ_SOFT_CAP는 쓰지 않음)
 			rw.score += score * 0.65;
 			break;
 		case 'EQZ':
@@ -3438,6 +3466,9 @@ function getRewards(mode, score, bonus, rank, all, ss, opts) {
 		case 'XRG':
 		case 'KRT':
 			rw.score += score * 0.5;
+			break;
+		case 'XIG':
+			rw.score += score * 0.4;
 			break;
 		default:
 			rw.score += score * 1.25;
